@@ -1,0 +1,83 @@
+syntax = "proto3";
+package action;
+option go_package = "hub/action";
+
+// Our address book file is just one of these.
+message SetAttr {
+  string id = 1;
+  string attr = 2;
+  string val = 3;
+}
+
+message GetAttr {
+  string id = 1;
+  string attr = 2;
+}
+
+message MoveOffset {
+  int64 from = 1;
+  int64 to = 2;
+}
+
+message MoveElement {
+  string from = 1;
+  string to = 2;
+}
+
+message Touch {
+  string id = 1;
+  int64 xoffset = 2;
+  int64 yoffset = 3;
+}
+
+enum ActionType {
+    Custom = 0;
+    GetSceneGraph = 1;
+    ElementIsDisplayed = 2;
+    ElementSetValue = 3;
+    ElementGetValue = 4;
+    Move = 5;
+    TouchDown = 6;
+    TouchUp = 7;
+    DragAndDrop = 8;
+    LongTouch = 9;
+    ElementTouch = 10;
+    GetScreenshot = 113;
+}
+
+message Request {
+  ActionType actionType = 1;
+  oneof payload {
+      string id = 2;
+      string data = 3;
+      SetAttr setAttr = 4;
+      GetAttr getAttr = 5;
+      MoveOffset moveOffset = 6;
+      Touch touch = 7;
+      MoveElement moveElement = 8;
+    }
+}
+
+message Session {
+    string deviceID = 1;
+    string sessionID = 2;
+    string version = 3;
+}
+
+message Screenshot {
+  bytes sceengraph = 1;
+  bytes screenshot = 2;
+}
+
+
+message Response {
+  ActionType actionType = 1;
+  bool success = 2;
+  oneof payload {
+      bool visible = 3;
+      bytes data = 4;
+      string value = 5;
+      Screenshot screenshot = 6;
+      Session session = 7;
+    }
+}

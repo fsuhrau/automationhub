@@ -1,0 +1,186 @@
+{{ define "title" }}
+    Inspector
+{{ end }}
+{{ define "content" }}
+    <script>
+        function setCookie(cname, cvalue, exdays) {
+            var d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            var expires = "expires=" + d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+        function resetCookie() {
+            document.cookie = null
+        }
+
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+
+        function notify(msg) {
+            var notification = document.querySelector('.mdl-js-snackbar');
+            notification.MaterialSnackbar.showSnackbar(
+                {
+                    message: msg
+                }
+            )
+        }
+
+        function updateState() {
+            var sessionId = getCookie("session_id");
+            if (sessionId !== "") {
+                $('#screenshotButton').show()
+            } else {
+                $('#screenshotButton').hide()
+            }
+        }
+
+        function getBaseURL() {
+            var sessionId = getCookie("session_id");
+            return "/wd/hub/session/" + sessionId + "/"
+        }
+
+        function sessionStart() {
+            $.ajax({
+                type: "POST",
+                url: "/wd/hub/session",
+                // The key needs to match your method's input parameter (case-sensitive).
+                data: JSON.stringify({
+                    desiredCapabilities: {},
+                    requiredCapabilities: {}
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    setCookie("session_id", data.sessionId, 365);
+                    updateState();
+                    notify("device started");
+                    getScreenshot();
+                },
+                failure: function (errMsg) {
+                    notify(errMsg);
+                }
+            });
+        }
+
+        function sessionStop() {
+            var sessionId = getCookie("session_id");
+            if (sessionId != "") {
+                $.ajax({
+                    type: "DELETE",
+                    url: getBaseURL(),
+                    success: function (data) {
+                        resetCookie();
+                        updateState();
+                    },
+                    failure: function (errMsg) {
+                        notify(errMsg);
+                    }
+                });
+            }
+        }
+
+        function getScreenshot() {
+            $.ajax({
+                type: "GET",
+                url: getBaseURL() + "screenshot",
+                success: function (data) {
+                    if (data !== "" && data.value !== "" && data.payload !== "") {
+                        $("#screenshot").attr("src", "data:image/png;base64," + data.value);
+                        $("#graph").prop('value', atob(data.payload));
+                    } else {
+                        notify("could not get screenshot")
+                    }
+                },
+                failure: function (errMsg) {
+                    notify(errMsg)
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            updateState();
+            const canvas = document.getElementById('deviceCanvas');
+            const ctx = canvas.getContext('2d');
+            const image = document.getElementById('screenshot');
+            image.addEventListener('load', e => {
+                ctx.drawImage(image, 0, 0);
+            });
+            var jsTreeDiv = $('#jstree_div');
+            jsTreeDiv.jstree({
+                "core": {
+                    "animation": 0,
+                    "check_callback": true,
+                    "themes": {"stripes": true},
+                    'data': {
+                        'url': function (node) {
+                            return getBaseURL() + "graph"
+                        },
+                        'data': function (node) {
+                            return {'id': node.id};
+                        }
+                    }
+                }
+            });
+            jsTreeDiv.on("changed.jstree", function (e, data) {
+                console.log(data.selected);
+            });
+        })
+    </script>
+    <div class="mdl-grid" style="width: 100%">
+        <div class="mdl-cell mdl-cell--12-col">
+            <button id="sessionStartButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStart()">
+                Start
+            </button>
+            <button id="sessionStopButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStop()">
+                Stop
+            </button>
+            <button id="screenshotButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="getScreenshot()">
+                Screenshot
+            </button>
+        </div>
+        <div class="mdl-cell mdl-cell--12-col">
+            <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
+                <div class="mdl-tabs__tab-bar">
+                    <a href="#deviceView" class="mdl-tabs__tab is-active">View</a>
+                    <a href="#deviceGraph" class="mdl-tabs__tab">SceneGraph</a>
+                </div>
+
+                <div class="mdl-tabs__panel is-active" id="deviceView">
+                    <div style="display:none;"><img id="screenshot" src=""></div>
+                    <canvas id="deviceCanvas" width="1139" height="640" style="border:1px solid #d3d3d3;"></canvas>
+                </div>
+                <div class="mdl-tabs__panel" id="deviceGraph">
+                    <div id="jstree_div"></div>
+                    <textarea id="graph" style="width: 100%; height: 640px;" aria-multiline="true"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="mdl-cell mdl-cell--12-col">
+            <span>xpath:</span>
+            <div class="mdl-textfield mdl-js-textfield">
+                <input class="mdl-textfield__input" type="text" id="xpath">
+                <label class="mdl-textfield__label" for="sample1">xpath</label>
+            </div>
+            <button id="visualXPath" class="mdl-button mdl-js-button mdl-button--raised" onclick="visualXPath()">
+                Show
+            </button>
+        </div>
+    </div>
+    <div aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">
+        <div class="mdl-snackbar__text"></div>
+        <button type="button" class="mdl-snackbar__action"></button>
+    </div>
+{{ end }}

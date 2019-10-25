@@ -1,0 +1,19 @@
+// package defintions
+
+namespace hub.networking;
+
+table Node {
+  Class:string;
+  ID:int;
+  Name:string;
+  CSS:string;
+  X:int;
+  Y:int;
+  RectangleX:int;
+  RectangleY:int;
+  IsVisible:bool;
+  LabelText:string;
+  Children: [Node];
+}
+
+root_type Node;
