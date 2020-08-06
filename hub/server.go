@@ -16,9 +16,23 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
+
+
+type Selectable struct {
+	ID string
+	Name string
+}
+type Selectables []*Selectable
+func (s Selectables) Len() int      { return len(s) }
+func (s Selectables) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type ByName struct{ Selectables }
+func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
+
 
 type Server struct {
 	server        *http.Server
@@ -151,11 +165,22 @@ func (s *Server) Run() error {
 
 	inspector.Init(r)
 
+	r.GET("/devices", func(c *gin.Context) {
+		devices, _:= s.deviceManager.Devices()
+		list := Selectables{}
+		for i := range devices {
+			list = append(list, &Selectable{devices[i].DeviceID(), fmt.Sprintf("%s(%s) %s", devices[i].DeviceOSName(), devices[i].DeviceOSVersion(), devices[i].DeviceName())})
+		}
+		sort.Sort(ByName{list})
+		c.JSON(200, list)
+	})
+
 	r.POST("/wd/hub/session", s.InitNewTestSession)
 	authGroup := r.Group("/wd/hub/session/:sessionID")
 	authGroup.Use(SessionMiddleware(s))
 	authGroup.DELETE("", HandleWithSession(s.StopTestingSession))
 	authGroup.GET("screenshot", HandleWithSession(s.TakeScreenshot))
+	authGroup.GET("screen", HandleWithSession(s.GetScreen))
 	authGroup.GET("graph", HandleWithSession(s.GetGraph))
 	authGroup.POST("timeouts", HandleWithSession(s.SetTimeouts))
 	authGroup.POST("element", HandleWithSession(s.GetElement))
@@ -170,6 +195,10 @@ func (s *Server) Run() error {
 	authGroup.POST("element/:elementID/click", HandleWithSession(s.ElementClick))
 	authGroup.POST("element/:elementID/value", HandleWithSession(s.ElementSetValue))
 	authGroup.POST("touch/longclick", HandleWithSession(s.LongClickElement))
+	authGroup.POST("touch/position", HandleWithSession(s.TouchPosition))
+	authGroup.POST("touch/down", HandleWithSession(s.TouchDown))
+	authGroup.POST("touch/move", HandleWithSession(s.TouchMove))
+	authGroup.POST("touch/up", HandleWithSession(s.TouchUp))
 	authGroup.POST("moveto", HandleWithSession(s.MoveTo))
 	authGroup.POST("buttondown", HandleWithSession(s.ButtonDown))
 	authGroup.POST("buttonup", HandleWithSession(s.ButtonUp))

@@ -26,6 +26,7 @@ const (
 
 type DeviceProperties struct {
 	Name         string
+	DeviceID     string
 	Type         string
 	OS           string
 	Architecture string
@@ -78,7 +79,7 @@ func (dm *DeviceManager) ListDevices() {
 
 func (dm *DeviceManager) Devices() ([]devices.Device, error) {
 	var devices []devices.Device
-	for _, m := range dm.Managers { 
+	for _, m := range dm.Managers {
 		d, err := m.GetDevices()
 		if err != nil {
 			dm.log.Errorf("failed: %v", err)
@@ -118,6 +119,10 @@ func (dm *DeviceManager) isLocked(dev devices.Device) bool {
 func evaluateDevice(dev devices.Device, properties *DeviceProperties) bool {
 	if properties == nil {
 		return true
+	}
+
+	if len(properties.DeviceID) > 0 && dev.DeviceID() != properties.DeviceID {
+		return false
 	}
 
 	if len(properties.Name) > 0 && dev.DeviceName() != properties.Name {
@@ -226,7 +231,7 @@ func (dm *DeviceManager) SocketListener() error {
 }
 
 var (
-	DeviceHandshakeRegex = regexp.MustCompile(`.*DEVICE_ID:([a-zA-Z0-9\-]+).*`)
+	DeviceHandshakeRegex  = regexp.MustCompile(`.*DEVICE_ID:([a-zA-Z0-9\-]+).*`)
 	SessionHandshakeRegex = regexp.MustCompile(`.*SESSION_ID:([a-zA-Z0-9\-]+).*`)
 )
 
@@ -376,7 +381,7 @@ func (dm *DeviceManager) Send(session *Session, content string) ([]byte, error) 
 	return dm.SendBytes(session, []byte(content))
 }
 
-func (dm *DeviceManager)SendAction(logger *logrus.Entry, session *Session, act action.Interface) error {
+func (dm *DeviceManager) SendAction(logger *logrus.Entry, session *Session, act action.Interface) error {
 	logger.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
 	buf, err := act.Serialize()
 	if err != nil {

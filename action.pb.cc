@@ -335,13 +335,13 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "\007visible\030\003 \001(\010H\000\022\016\n\004data\030\004 \001(\014H\000\022\017\n\005valu"
   "e\030\005 \001(\tH\000\022(\n\nscreenshot\030\006 \001(\0132\022.action.S"
   "creenshotH\000\022\"\n\007session\030\007 \001(\0132\017.action.Se"
-  "ssionH\000B\t\n\007payload*\330\001\n\nActionType\022\n\n\006Cus"
+  "ssionH\000B\t\n\007payload*\347\001\n\nActionType\022\n\n\006Cus"
   "tom\020\000\022\021\n\rGetSceneGraph\020\001\022\026\n\022ElementIsDis"
   "played\020\002\022\023\n\017ElementSetValue\020\003\022\023\n\017Element"
-  "GetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDown\020\006\022\013\n\007T"
-  "ouchUp\020\007\022\017\n\013DragAndDrop\020\010\022\r\n\tLongTouch\020\t"
-  "\022\020\n\014ElementTouch\020\n\022\021\n\rGetScreenshot\020qB\014Z"
-  "\nhub/actionb\006proto3"
+  "GetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDown\020\006\022\r\n\tT"
+  "ouchMove\020\007\022\013\n\007TouchUp\020\010\022\017\n\013DragAndDrop\020\t"
+  "\022\r\n\tLongTouch\020\n\022\020\n\014ElementTouch\020\013\022\021\n\rGet"
+  "Screenshot\020\014B\014Z\nhub/actionb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
@@ -359,7 +359,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 1099,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 1114,
   &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 9, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
   file_level_metadata_action_2eproto, 9, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
@@ -385,7 +385,8 @@ bool ActionType_IsValid(int value) {
     case 8:
     case 9:
     case 10:
-    case 113:
+    case 11:
+    case 12:
       return true;
     default:
       return false;

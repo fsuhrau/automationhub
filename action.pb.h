@@ -105,11 +105,12 @@ enum ActionType : int {
   ElementGetValue = 4,
   Move = 5,
   TouchDown = 6,
-  TouchUp = 7,
-  DragAndDrop = 8,
-  LongTouch = 9,
-  ElementTouch = 10,
-  GetScreenshot = 113,
+  TouchMove = 7,
+  TouchUp = 8,
+  DragAndDrop = 9,
+  LongTouch = 10,
+  ElementTouch = 11,
+  GetScreenshot = 12,
   ActionType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ActionType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };

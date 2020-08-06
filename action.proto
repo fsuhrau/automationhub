@@ -38,11 +38,12 @@ enum ActionType {
     ElementGetValue = 4;
     Move = 5;
     TouchDown = 6;
-    TouchUp = 7;
-    DragAndDrop = 8;
-    LongTouch = 9;
-    ElementTouch = 10;
-    GetScreenshot = 113;
+    TouchMove = 7;
+    TouchUp = 8;
+    DragAndDrop = 9;
+    LongTouch = 10;
+    ElementTouch = 11;
+    GetScreenshot = 12;
 }
 
 message Request {

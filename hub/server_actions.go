@@ -511,16 +511,118 @@ func (s *Server) ButtonUp(session *Session, c *gin.Context) {
 	moveElementToElement = nil
 	elementID = ""
 
-	// if CacheXMLFile {
-	// 	session.XmlDocument = nil
-	// }
-
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
 		HCode:     time.Now().UTC().Unix(),
 		Status:    0,
 		Value:     true,
+	})
+}
+
+func (s *Server) TouchPosition(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+
+	type Request struct {
+		X float64 `json:"x"`
+		Y float64 `json:"y"`
+	}
+
+	req := &Request{}
+	c.Bind(req)
+
+	downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
+	if err := s.deviceManager.SendAction(log, session, downAction); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
+	if err := s.deviceManager.SendAction(log, session, upAction); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+	})
+}
+
+func (s *Server) TouchDown(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+
+	type Request struct {
+		X float64 `json:"x"`
+		Y float64 `json:"y"`
+	}
+
+	req := &Request{}
+	c.Bind(req)
+
+	downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
+	if err := s.deviceManager.SendAction(log, session, downAction); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+	})
+}
+
+func (s *Server) TouchMove(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+
+	type Request struct {
+		X float64 `json:"x"`
+		Y float64 `json:"y"`
+	}
+
+	req := &Request{}
+	c.Bind(req)
+
+	downAction := &action.TouchMovePosition{int64(req.X), int64(req.Y), false}
+	if err := s.deviceManager.SendAction(log, session, downAction); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+	})
+}
+
+func (s *Server) TouchUp(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+
+	type Request struct {
+		X float64 `json:"x"`
+		Y float64 `json:"y"`
+	}
+
+	req := &Request{}
+	c.Bind(req)
+
+	upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
+	if err := s.deviceManager.SendAction(log, session, upAction); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
 	})
 }
 
@@ -560,10 +662,6 @@ func (s *Server) LongClickElement(session *Session, c *gin.Context) {
 			break
 		}
 	}
-
-	// if CacheXMLFile {
-	// 	session.XmlDocument = nil
-	// }
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,

@@ -2,7 +2,6 @@ package hub
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"time"
 
 	"github.com/antchfx/xmlquery"
@@ -44,9 +43,6 @@ type Session struct {
 func createNewSession(log *logrus.Logger, properties *DeviceProperties) *Session {
 	u, _ := uuid.NewV4()
 	sessionID := fmt.Sprintf("%s", u)
-	if viper.GetBool("debugger") {
-		sessionID = "896e98bc-c49a-47e6-8fe5-cbbc6a775048"
-	}
 	session := &Session{
 		SessionID:  sessionID,
 		logger:     log.WithField("session", sessionID),

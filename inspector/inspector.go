@@ -18,5 +18,5 @@ func Init(router *gin.Engine) {
 	router.Static("/js", "./public/js")
 	router.GET("/", dashboard.Index)
 	router.GET("/inspector", gui.Index)
-	router.POST("/inspector/start", gui.Start)
+	router.POST("/inspector/upload", gui.UploadFile)
 }

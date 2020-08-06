@@ -2,15 +2,77 @@
     Inspector
 {{ end }}
 {{ define "content" }}
+    <style>
+        .mdl-button--file {
+
+        input {
+            cursor: pointer;
+            height: 100%;
+            right: 0;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            width: 300px;
+            z-index: 4;
+        }
+
+        }
+
+        .mdl-textfield--file {
+
+        .mdl-textfield__input {
+            box-sizing: border-box;
+            width: calc(100% - 32px);
+        }
+
+        .mdl-button--file {
+            right: 0;
+        }
+    </style>
     <script>
+        var domParser = new DOMParser();
+        var xmlDocumentCache = null;
+        var mousePressed = false;
+        var ctx = null;
+        var actionRunning = false;
+
+        function Draw(x, y, isDown) {
+            if (isDown) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.lineJoin = "round";
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            lastX = x;
+            lastY = y;
+        }
+
+        function DrawRect(x, y, width, height) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = "round";
+            ctx.rect(x, y, width, height);
+            ctx.stroke();
+        }
+
+        function clearArea() {
+            // Use the identity matrix while clearing the canvas
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            const image = document.getElementById('screenshot');
+            ctx.drawImage(image, 0, 0);
+        }
+
         function setCookie(cname, cvalue, exdays) {
             var d = new Date();
             d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
             var expires = "expires=" + d.toUTCString();
             document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-        }
-        function resetCookie() {
-            document.cookie = null
         }
 
         function getCookie(cname) {
@@ -27,6 +89,14 @@
                 }
             }
             return "";
+        }
+
+        function activity(show) {
+            if (show) {
+                $('#activityIndicator').addClass("is-active");
+            } else {
+                $('#activityIndicator').removeClass("is-active");
+            }
         }
 
         function notify(msg) {
@@ -53,39 +123,75 @@
         }
 
         function sessionStart() {
+            if (actionRunning) {
+                return;
+            }
+            var deviceSelection = $('#deviceSelectionBoxValue');
+            if (deviceSelection.val() === "") {
+                return;
+            }
+            actionRunning = true;
+            activity(true);
             $.ajax({
                 type: "POST",
                 url: "/wd/hub/session",
                 // The key needs to match your method's input parameter (case-sensitive).
                 data: JSON.stringify({
                     desiredCapabilities: {},
-                    requiredCapabilities: {}
+                    requiredCapabilities: {
+                        device_id: deviceSelection.val(),
+                    }
                 }),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function (data) {
+                    actionRunning = false;
+                    activity(false);
                     setCookie("session_id", data.sessionId, 365);
                     updateState();
                     notify("device started");
                     getScreenshot();
                 },
+                error: function (request, status, error) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(request.responseJSON.message)
+                },
                 failure: function (errMsg) {
+                    actionRunning = false;
+                    activity(false);
                     notify(errMsg);
                 }
             });
         }
 
         function sessionStop() {
+            if (actionRunning) {
+                return;
+            }
+            actionRunning = true;
+            activity(true);
             var sessionId = getCookie("session_id");
-            if (sessionId != "") {
+            if (sessionId !== "") {
                 $.ajax({
                     type: "DELETE",
                     url: getBaseURL(),
                     success: function (data) {
-                        resetCookie();
+                        actionRunning = false;
+                        activity(false);
+                        setCookie("session_id", "", 365);
+                        $("#screenshot").attr("src", "");
+                        $("#graph").prop('value', "");
                         updateState();
                     },
+                    error: function (request, status, error) {
+                        actionRunning = false;
+                        activity(false);
+                        notify(request.responseJSON.message)
+                    },
                     failure: function (errMsg) {
+                        actionRunning = false;
+                        activity(false);
                         notify(errMsg);
                     }
                 });
@@ -93,90 +199,337 @@
         }
 
         function getScreenshot() {
+            if (actionRunning) {
+                return;
+            }
+            actionRunning = true;
+            activity(true);
             $.ajax({
                 type: "GET",
-                url: getBaseURL() + "screenshot",
+                url: getBaseURL() + "screen",
                 success: function (data) {
+                    actionRunning = false;
+                    activity(false);
                     if (data !== "" && data.value !== "" && data.payload !== "") {
+                        var document = atob(data.payload);
+                        $("#graph").prop('value', document);
+                        xmlDocumentCache = domParser.parseFromString(document, "text/xml");
                         $("#screenshot").attr("src", "data:image/png;base64," + data.value);
-                        $("#graph").prop('value', atob(data.payload));
+                        clearArea();
                     } else {
                         notify("could not get screenshot")
                     }
                 },
+                error: function (request, status, error) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(request.responseJSON.message)
+                },
                 failure: function (errMsg) {
+                    actionRunning = false;
+                    activity(false);
                     notify(errMsg)
                 }
             });
         }
 
+        function visualXPath() {
+            var value = $('#xpath').val();
+            if (xmlDocumentCache == null) {
+                return
+            }
+            var nodes = xmlDocumentCache.evaluate(value, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
+            var result = nodes.iterateNext();
+            clearArea();
+            while (result) {
+                var x = result.getAttribute("X");
+                var y = result.getAttribute("Y");
+                var width = result.getAttribute("RectangleX");
+                var height = result.getAttribute("RectangleY");
+                DrawRect(x, y, width, height);
+                result = nodes.iterateNext();
+            }
+        }
+
+        function touchPosition(action, x, y) {
+            if (actionRunning) {
+                return;
+            }
+            actionRunning = true;
+            activity(true);
+            $.ajax({
+                type: "POST",
+                url: getBaseURL() + "touch/" + action,
+                // The key needs to match your method's input parameter (case-sensitive).
+                data: JSON.stringify({
+                    x: x,
+                    y: y
+                }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    actionRunning = false;
+                    activity(false);
+                    //notify("touched");
+                    if (action === "up") {
+                        getScreenshot();
+                    }
+                },
+                error: function (request, status, error) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(request.responseJSON.message)
+                },
+                failure: function (errMsg) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(errMsg);
+                }
+            });
+        }
+
+        function buildPath(node) {
+            if (node.parentNode) {
+                return buildPath(node.parentNode) + "/" + node.nodeName
+            }
+            return "/" + node.nodeName
+        }
+
+        function showElementInfos(id) {
+            var xpath = "//*[@ID=" + id + "]";
+            var nodes = xmlDocumentCache.evaluate(xpath, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
+            var result = nodes.iterateNext();
+            if (result != null) {
+                var html = "";
+                for (var i = 0, atts = result.attributes, n = atts.length, arr = []; i < n; i++){
+                    html += atts[i].nodeName + ": " +  atts[i].nodeValue + "<br />";
+                }
+                $('#elementDetails').html(html)
+            }
+        }
+
+        function locateAndHighlightElement(x, y, width, height) {
+            if (xmlDocumentCache == null) {
+                return;
+            }
+            var endX = x + width;
+            var endY = y + height;
+            var xpath = "//*[@X>" + x + "]" + "[@X<" + endX + "]" + "[@Y>" + y + "]" + "[@Y<" + endY + "]";
+            var nodes = xmlDocumentCache.evaluate(xpath, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
+            var result = nodes.iterateNext();
+            clearArea();
+            var elements = "<ul class=\"mdl-list\">";
+            while (result) {
+                var id = result.getAttribute("ID");
+                var x = result.getAttribute("X");
+                var y = result.getAttribute("Y");
+                var width = result.getAttribute("RectangleX");
+                var height = result.getAttribute("RectangleY");
+                DrawRect(x, y, width, height);
+                var nodeXPath = buildPath(result);
+                nodeXPath = nodeXPath.replace("/#document", "");
+                elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onmouseover='showElementInfos(" + id + ")'>" + nodeXPath + "</span></li>";
+                result = nodes.iterateNext();
+            }
+            elements += "</ul>"
+            $('#xpathSelection').html(elements);
+        }
+
+        function hoverElement(x, y) {
+            clearArea();
+            var xpath = "//*[@X<" + x + "]" + "[@RectangleX>" + x + "]" + "[@Y<" + y + "]" + "[@RectangleY>" + y + "]";
+            var nodes = xmlDocumentCache.evaluate(xpath, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
+            var result = nodes.iterateNext();
+            while (result) {
+                var id = result.getAttribute("ID");
+                var x = result.getAttribute("X");
+                var y = result.getAttribute("Y");
+                var width = result.getAttribute("RectangleX");
+                var height = result.getAttribute("RectangleY");
+                DrawRect(x, y, width, height);
+                // var nodeXPath = buildPath(result);
+                // nodeXPath = nodeXPath.replace("/#document", "");
+                showElementInfos(id);
+                result = nodes.iterateNext();
+            }
+        }
+
+        var isClick = true;
+        var startPositionX = 0;
+        var startPositionY = 0;
+
+        function isControlMode() {
+            return $('#controlMode').prop("checked")
+        }
+
         $(document).ready(function () {
             updateState();
             const canvas = document.getElementById('deviceCanvas');
-            const ctx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d');
             const image = document.getElementById('screenshot');
             image.addEventListener('load', e => {
                 ctx.drawImage(image, 0, 0);
             });
-            var jsTreeDiv = $('#jstree_div');
-            jsTreeDiv.jstree({
-                "core": {
-                    "animation": 0,
-                    "check_callback": true,
-                    "themes": {"stripes": true},
-                    'data': {
-                        'url': function (node) {
-                            return getBaseURL() + "graph"
-                        },
-                        'data': function (node) {
-                            return {'id': node.id};
-                        }
+            clearArea();
+
+            var deviceCanvas = $('#deviceCanvas');
+            deviceCanvas.mousedown(function (e) {
+                mousePressed = true;
+                isClick = true;
+                if (isControlMode()) {
+                    touchPosition("down", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+                    return;
+                }
+                startPositionX = e.pageX - $(this).offset().left;
+                startPositionY = e.pageY - $(this).offset().top;
+                DrawRect(startPositionX, startPositionY, 0, 0);
+            })
+            deviceCanvas.mousemove(function (e) {
+                isClick = false;
+                if (!mousePressed) {
+                    // var currentX = e.pageX - $(this).offset().left;
+                    // var currentY = e.pageY - $(this).offset().top;
+                    // hoverElement(currentX, currentY);
+                    return;
+                }
+
+                if (isControlMode()) {
+                    touchPosition("move", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+                    return;
+                }
+
+                var currentX = e.pageX - $(this).offset().left;
+                var currentY = e.pageY - $(this).offset().top;
+                clearArea()
+                DrawRect(startPositionX, startPositionY, currentX - startPositionX, currentY - startPositionY);
+            });
+            deviceCanvas.mouseup(function (e) {
+                mousePressed = false;
+
+                if (isControlMode()) {
+                    touchPosition("up", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+                    return;
+                }
+
+                clearArea()
+                var currentX = e.pageX - $(this).offset().left;
+                var currentY = e.pageY - $(this).offset().top;
+                locateAndHighlightElement(startPositionX, startPositionY, currentX - startPositionX, currentY - startPositionY)
+            });
+
+            deviceCanvas.mouseleave(function (e) {
+                mousePressed = false;
+            });
+
+            var deviceList = $('#deviceSelectionContainer');
+            activity(true);
+            $.ajax({
+                type: "GET",
+                url: "/devices",
+                success: function (data) {
+                    activity(false);
+                    actionRunning = false;
+                    var elements = "";
+                    for (i = 0; i < data.length; i++) {
+                        elements += "<li class=\"mdl-menu__item\" data-val=\"" + data[i].ID + "\">" + data[i].Name + "</li>";
                     }
+                    deviceList.html(elements);
+                },
+                error: function (request, status, error) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(request.responseJSON.message)
+                },
+                failure: function (errMsg) {
+                    actionRunning = false;
+                    activity(false);
+                    notify(errMsg)
                 }
             });
-            jsTreeDiv.on("changed.jstree", function (e, data) {
-                console.log(data.selected);
+
+            $('#fileuploader').uploadFile({
+                url:"inspector/upload",
+                fileName:"test_target",
+                multiple: false,
+                dragDrop: true,
             });
         })
     </script>
     <div class="mdl-grid" style="width: 100%">
-        <div class="mdl-cell mdl-cell--12-col">
-            <button id="sessionStartButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStart()">
-                Start
-            </button>
-            <button id="sessionStopButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStop()">
-                Stop
-            </button>
-            <button id="screenshotButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="getScreenshot()">
-                Screenshot
-            </button>
-        </div>
-        <div class="mdl-cell mdl-cell--12-col">
-            <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
-                <div class="mdl-tabs__tab-bar">
-                    <a href="#deviceView" class="mdl-tabs__tab is-active">View</a>
-                    <a href="#deviceGraph" class="mdl-tabs__tab">SceneGraph</a>
+        <div class="mdl-cell mdl-cell--2-col">
+            <div class="mdl-grid" style="width: 100%">
+                <div class="mdl-cell mdl-cell--12-col">
+                    <span>XPath: </span>
+                    <div class="mdl-textfield mdl-js-textfield">
+                        <input class="mdl-textfield__input" type="text" id="xpath">
+                        <label class="mdl-textfield__label" for="xpath">//</label>
+                    </div>
+                    <button id="visualXPath" class="mdl-button mdl-js-button mdl-button--raised" onclick="visualXPath()">
+                        Show
+                    </button>
+                    <button id="clearAreaButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="clearArea()">
+                        Clear
+                    </button>
                 </div>
+                <div class="mdl-cell mdl-cell--12-col">
+                    <div id="elementDetails"></div>
+                </div>
+                <div class="mdl-cell mdl-cell--12-col">
+                    <div id="xpathSelection"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mdl-cell mdl-cell--8-col">
+            <div class="mdl-grid" style="width: 100%">
+                <div class="mdl-cell mdl-cell--12-col">
+                    <div id="fileuploader" style="float: left;">Upload</div>
+                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label getmdl-select">
+                            <input type="text" value="" class="mdl-textfield__input" id="deviceSelectionBox" readonly>
+                            <input type="hidden" value="" name="deviceSelectionBox" id="deviceSelectionBoxValue">
+                            <label for="deviceSelectionBox" class="mdl-textfield__label">Devides</label>
+                            <ul id="deviceSelectionContainer" for="deviceSelectionBox" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
+                            </ul>
+                        </div>
 
-                <div class="mdl-tabs__panel is-active" id="deviceView">
-                    <div style="display:none;"><img id="screenshot" src=""></div>
-                    <canvas id="deviceCanvas" width="1139" height="640" style="border:1px solid #d3d3d3;"></canvas>
+{{/*                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--file">*/}}
+{{/*                            <input class="mdl-textfield__input" placeholder="File" type="text" id="appFile" readonly/>*/}}
+{{/*                            <div class="mdl-button mdl-button--primary mdl-button--icon mdl-button--file">*/}}
+{{/*                                <i class="material-icons">attach_file</i><input type="file" id="uploadApp">*/}}
+{{/*                            </div>*/}}
+{{/*                        </div>*/}}
+                    <button id="sessionStartButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStart()">
+                        Start
+                    </button>
+                    <button id="sessionStopButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="sessionStop()">
+                        Stop
+                    </button>
+                    <button id="screenshotButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="getScreenshot()">
+                        Screenshot
+                    </button>
                 </div>
-                <div class="mdl-tabs__panel" id="deviceGraph">
-                    <div id="jstree_div"></div>
-                    <textarea id="graph" style="width: 100%; height: 640px;" aria-multiline="true"></textarea>
+                <div class="mdl-cell mdl-cell--12-col">
+                    <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
+                        <div id="activityIndicator" class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active" style="left:50%;top:50%;position: absolute"></div>
+                        <div class="mdl-tabs__tab-bar">
+                            <a href="#deviceView" class="mdl-tabs__tab is-active">View</a>
+                            <a href="#deviceGraph" class="mdl-tabs__tab">SceneGraph</a>
+                        </div>
+                        <div class="mdl-tabs__panel is-active" id="deviceView">
+                            <div style="display:none;"><img id="screenshot" src=""></div>
+                            <canvas id="deviceCanvas" width="1139" height="640" style="border:1px solid #d3d3d3;"></canvas>
+                        </div>
+                        <div class="mdl-tabs__panel" id="deviceGraph">
+                            <textarea id="graph" style="width: 100%; height: 640px;" aria-multiline="true"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--12-col">
+                    <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="controlMode">
+                        <input type="checkbox" id="controlMode" class="mdl-switch__input">
+                        <span class="mdl-switch__label">Control Device</span>
+                    </label>
                 </div>
             </div>
-        </div>
-        <div class="mdl-cell mdl-cell--12-col">
-            <span>xpath:</span>
-            <div class="mdl-textfield mdl-js-textfield">
-                <input class="mdl-textfield__input" type="text" id="xpath">
-                <label class="mdl-textfield__label" for="sample1">xpath</label>
-            </div>
-            <button id="visualXPath" class="mdl-button mdl-js-button mdl-button--raised" onclick="visualXPath()">
-                Show
-            </button>
         </div>
     </div>
     <div aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">

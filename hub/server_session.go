@@ -102,6 +102,9 @@ func mapCapabilities(req map[string]interface{}, properties *DeviceProperties) {
 	if v, ok := req["device_name"]; ok {
 		properties.Name = v.(string)
 	}
+	if v, ok := req["device_id"]; ok {
+		properties.DeviceID = v.(string)
+	}
 	if v, ok := req["device_os"]; ok {
 		properties.OS = v.(string)
 	}
@@ -114,16 +117,16 @@ func (s *Server) getSessions(c *gin.Context) {
 func (s *Server) getDevices(c *gin.Context) {
 	type device struct {
 		Name string
-		OS string
-		ID string
+		OS   string
+		ID   string
 	}
 	var deviceList []device
 	devices, _ := s.deviceManager.Devices()
 	for _, d := range devices {
 		deviceList = append(deviceList, device{
-			ID: d.DeviceID(),
+			ID:   d.DeviceID(),
 			Name: d.DeviceName(),
-			OS: d.DeviceOSName(),
+			OS:   d.DeviceOSName(),
 		})
 	}
 	c.JSON(200, deviceList)
@@ -154,52 +157,56 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	properties := &DeviceProperties{}
 
 	mapCapabilities(req.DesiredCapabilities, properties)
+	mapCapabilities(req.RequiredCapabilities, properties)
 
-	deviceType := 3
-	//var properties *DeviceProperties
-	switch deviceType {
-	case 1:
-		properties = &DeviceProperties{
-			Name:  "MacOS",
-			Type: "macos_app",
-			App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mac_develop.app",
-			AppId: "com.innogames.enterprise.iforge",
-		}
-		break
-	case 2:
-		properties = &DeviceProperties{
-			Name: "iPad (5th generation)",
-			Type: "ios_simulator",
-			OS:   "iOS-13-5",
-			App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
-			AppId: "com.innogames.enterprise.iforge",
-		}
-		break
-	case 3:
-		//properties = &DeviceProperties{
-		//	Name:  "iPad von Fabian Suhrau",
-		//	Type: "ios_device",
-		//	App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mobile_develop.app",
-		//	AppId: "com.innogames.enterprise.iforge",
-		//}
-		properties = &DeviceProperties{
-			Name:  "[FoE]06237",
-			Type: "ios_device",
-			OS: "iphoneos",
-			App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
-			AppId: "com.innogames.enterprise.iforge",
-		}
-		break
-	case 4:
-		properties = &DeviceProperties{
-			// Name:  "shieldtablet",
-			Name:  "Tinker_Board_S",
-			Type: "android_device",
-			App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.android/app/build/outputs/apk/googleV7aUnity/debug/app-google-v7a-unity-debug.apk",
-			AppId: "com.innogames.foeandroid",
-		}
-		break
-	}
+	properties.App = "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app"
+	properties.AppId = "com.innogames.enterprise.iforge"
+
+	//deviceType := 3
+	////var properties *DeviceProperties
+	//switch deviceType {
+	//case 1:
+	//	properties = &DeviceProperties{
+	//		Name:  "MacOS",
+	//		Type: "macos_app",
+	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mac_develop.app",
+	//		AppId: "com.innogames.enterprise.iforge",
+	//	}
+	//	break
+	//case 2:
+	//	properties = &DeviceProperties{
+	//		Name: "iPad (5th generation)",
+	//		Type: "ios_simulator",
+	//		OS:   "iOS-13-5",
+	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
+	//		AppId: "com.innogames.enterprise.iforge",
+	//	}
+	//	break
+	//case 3:
+	//	//properties = &DeviceProperties{
+	//	//	Name:  "iPad von Fabian Suhrau",
+	//	//	Type: "ios_device",
+	//	//	App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mobile_develop.app",
+	//	//	AppId: "com.innogames.enterprise.iforge",
+	//	//}
+	//	properties = &DeviceProperties{
+	//		Name:  "[FoE]06237",
+	//		Type: "ios_device",
+	//		OS: "iphoneos",
+	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
+	//		AppId: "com.innogames.enterprise.iforge",
+	//	}
+	//	break
+	//case 4:
+	//	properties = &DeviceProperties{
+	//		// Name:  "shieldtablet",
+	//		Name:  "Tinker_Board_S",
+	//		Type: "android_device",
+	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.android/app/build/outputs/apk/googleV7aUnity/debug/app-google-v7a-unity-debug.apk",
+	//		AppId: "com.innogames.foeandroid",
+	//	}
+	//	break
+	//}
 
 	params, err := extractAppRequirements(properties.App, properties)
 	if err != nil {
@@ -252,7 +259,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	if recordSession {
 		session.Recorder = &Recorder{
 			Storage: session.Storage,
-			Device: session.Lock.Device,
+			Device:  session.Lock.Device,
 		}
 
 		logrus.Infof("Start Recording of session for device: %s", session.Lock.Device.DeviceName())

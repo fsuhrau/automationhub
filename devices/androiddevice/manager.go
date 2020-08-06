@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DeviceListRegex = `([a-zA-Z0-9\.\:]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`
+	DeviceListRegex = `([a-zA-Z0-9\.\:]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`
 )
 
 type Manager struct {

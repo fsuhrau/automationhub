@@ -38,6 +38,27 @@ func (s *Server) GetGraph(session *Session, c *gin.Context) {
 	c.String(http.StatusOK, a.Content())
 }
 
+func (s *Server) GetScreen(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+
+	a := &action.GetScreenshot{}
+	if err := s.deviceManager.SendAction(log, session, a); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	data := base64.StdEncoding.EncodeToString(a.ScreenshotData())
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+		Value:     data,
+		Payload:   a.SceengraphXML(),
+	})
+}
+
 func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
