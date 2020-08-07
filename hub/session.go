@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"time"
 
 	"github.com/antchfx/xmlquery"
@@ -13,12 +14,12 @@ import (
 
 var (
 	DEVICE_CONNECTION_TIMEOUT = 30 * time.Second
-	CONNECTION_TIMEOUT = fmt.Errorf("connection timeout")
+	CONNECTION_TIMEOUT        = fmt.Errorf("connection timeout")
 )
 
 type Recorder struct {
-	Storage   *SessionStorage
-	Device devices.Device
+	Storage *SessionStorage
+	Device  devices.Device
 }
 
 func (r *Recorder) Start() error {
@@ -30,24 +31,26 @@ func (r *Recorder) Stop() error {
 }
 
 type Session struct {
-	SessionID   string
-	LastAccess  time.Time
-	Lock        *DeviceLock
-	logger      *logrus.Entry
-	Recorder    *Recorder
-	Properties  *DeviceProperties
-	XmlDocument *xmlquery.Node
-	Storage 		*SessionStorage
+	SessionID        string
+	LastAccess       time.Time
+	Lock             *DeviceLock
+	logger           *logrus.Entry
+	Recorder         *Recorder
+	DeviceProperties *devices.Properties
+	AppParameter     *app.Parameter
+	XmlDocument      *xmlquery.Node
+	Storage          *SessionStorage
 }
 
-func createNewSession(log *logrus.Logger, properties *DeviceProperties) *Session {
+func createNewSession(log *logrus.Logger, properties *devices.Properties, appParameter *app.Parameter) *Session {
 	u, _ := uuid.NewV4()
 	sessionID := fmt.Sprintf("%s", u)
 	session := &Session{
-		SessionID:  sessionID,
-		logger:     log.WithField("session", sessionID),
-		Properties: properties,
-		Storage: NewSessionStorage("logs", sessionID),
+		SessionID:        sessionID,
+		logger:           log.WithField("session", sessionID),
+		DeviceProperties: properties,
+		AppParameter:     appParameter,
+		Storage:          NewSessionStorage("logs", sessionID),
 	}
 	return session
 }

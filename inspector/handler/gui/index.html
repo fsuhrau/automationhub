@@ -35,6 +35,7 @@
         var mousePressed = false;
         var ctx = null;
         var actionRunning = false;
+        var testAppPath = "";
 
         function Draw(x, y, isDown) {
             if (isDown) {
@@ -132,6 +133,7 @@
             }
             actionRunning = true;
             activity(true);
+            debugger;
             $.ajax({
                 type: "POST",
                 url: "/wd/hub/session",
@@ -140,6 +142,7 @@
                     desiredCapabilities: {},
                     requiredCapabilities: {
                         device_id: deviceSelection.val(),
+                        app: testAppPath,
                     }
                 }),
                 contentType: "application/json; charset=utf-8",
@@ -448,11 +451,18 @@
             });
 
             $('#fileuploader').uploadFile({
-                url:"inspector/upload",
-                fileName:"test_target",
-                multiple: false,
-                dragDrop: true,
-            });
+                    url: "inspector/upload",
+                    fileName: "test_target",
+                    multiple: false,
+                    dragDrop: true,
+                    returnType: "json",
+                    onSuccess: function (files, data, xhr, pd) {
+                        //files: list of files
+                        //data: response from server
+                        //xhr : jquer xhr object
+                        testAppPath = data.app_path;
+                    },
+                });
         })
     </script>
     <div class="mdl-grid" style="width: 100%">

@@ -24,13 +24,17 @@ func UploadFile(c *gin.Context) {
 	}
 
 	filename := filepath.Base(file.Filename)
+	filePath := filepath.Join("upload", filename)
 	os.MkdirAll("upload", os.ModePerm)
 
-	if err := c.SaveUploadedFile(file, filepath.Join("upload", filename)); err != nil {
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
 		return
 	}
 
-	c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
+	c.JSON(http.StatusOK, map[string]string{
+		"filename": filename,
+		"app_path": filePath,
+	})
 }
 

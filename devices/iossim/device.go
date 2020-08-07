@@ -2,6 +2,7 @@ package iossim
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"net"
 	"os"
 	"os/exec"
@@ -61,17 +62,17 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) ExtractAppParameters(bundlePath string) error {
+func (d *Device) UpdateParameter() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(appId string) bool {
-	cmd := devices.NewCommand("xcrun", "simctl", "get_app_container", d.DeviceID(), appId)
+func (d *Device) IsAppInstalled(params *app.Parameter) bool {
+	cmd := devices.NewCommand("xcrun", "simctl", "get_app_container", d.DeviceID(), params.Identifier)
 	return cmd.Run() == nil
 }
 
-func (d *Device) InstallApp(bundlePath string) error {
-	cmd := devices.NewCommand("xcrun", "simctl", "install", d.DeviceID(), bundlePath)
+func (d *Device) InstallApp(params *app.Parameter) error {
+	cmd := devices.NewCommand("xcrun", "simctl", "install", d.DeviceID(), params.AppPath)
 	return cmd.Run()
 }
 
@@ -80,9 +81,9 @@ func (d *Device) UninstallApp(bundleId string) error {
 	return cmd.Run()
 }
 
-func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
 	if restart {
-		cmd := devices.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), bundleId, "SESSION_ID", sessionId, "HOST", hostIP.String())
+		cmd := devices.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "HOST", hostIP.String())
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -90,9 +91,9 @@ func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hos
 	return nil
 }
 
-func (d *Device) StopApp(appPath, bundleId string) error {
+func (d *Device) StopApp(params *app.Parameter) error {
 	if restart {
-		cmd := devices.NewCommand("xcrun", "simctl", "terminate", d.DeviceID(), bundleId)
+		cmd := devices.NewCommand("xcrun", "simctl", "terminate", d.DeviceID(), params.Identifier)
 		return cmd.Run()
 	}
 	return nil

@@ -8,6 +8,8 @@ import (
 	"github.com/fsuhrau/automationhub/devices"
 )
 
+var OSVersionLookupRegex = regexp.MustCompile(`com.apple.CoreSimulator.SimRuntime.([a-z]+OS)-([0-9]+-[0-9]+)`)
+
 type SimDevice struct {
 	State       string `json:"state"`
 	IsAvailable bool   `json:"isAvailable"`
@@ -77,11 +79,11 @@ func (m *Manager) StopDevice(deviceID string) error {
 }
 
 func (m *Manager) GetDevices() ([]devices.Device, error) {
-	devices := make([]devices.Device, 0, len(m.devices))
+	devs := make([]devices.Device, 0, len(m.devices))
 	for _, d := range m.devices {
-		devices = append(devices, d)
+		devs = append(devs, d)
 	}
-	return devices, nil
+	return devs, nil
 }
 
 func (m *Manager) RefreshDevices() error {
@@ -94,10 +96,8 @@ func (m *Manager) RefreshDevices() error {
 	if err := json.Unmarshal(output, &resp); err != nil {
 		return err
 	}
-	regex := regexp.MustCompile(`com.apple.CoreSimulator.SimRuntime.([a-z]+OS)-([0-9]+-[0-9]+)`)
-
-	for runtime, devices := range resp.Devices {
-		subs := regex.FindAllStringSubmatch(runtime, -1)
+	for runtime, devs := range resp.Devices {
+		subs := OSVersionLookupRegex.FindAllStringSubmatch(runtime, -1)
 		deviceOSName := subs[0][1]
 		osVersion := subs[0][2]
 
@@ -105,7 +105,7 @@ func (m *Manager) RefreshDevices() error {
 			deviceOSName = "iphonesimulator"
 		}
 
-		for _, device := range devices {
+		for _, device := range devs {
 			if _, ok := m.devices[device.UDID]; ok {
 				m.devices[device.UDID].deviceName = device.Name
 				m.devices[device.UDID].deviceID = device.UDID

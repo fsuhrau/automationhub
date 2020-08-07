@@ -24,16 +24,6 @@ const (
 	DeviceConnectionTimeout = 5 * time.Second
 )
 
-type DeviceProperties struct {
-	Name         string
-	DeviceID     string
-	Type         string
-	OS           string
-	Architecture string
-	App          string
-	AppId        string
-}
-
 type DeviceLock struct {
 	Device          devices.Device
 	Connection      net.Conn
@@ -116,7 +106,7 @@ func (dm *DeviceManager) isLocked(dev devices.Device) bool {
 	return false
 }
 
-func evaluateDevice(dev devices.Device, properties *DeviceProperties) bool {
+func evaluateDevice(dev devices.Device, properties *devices.Properties) bool {
 	if properties == nil {
 		return true
 	}
@@ -140,7 +130,7 @@ func evaluateDevice(dev devices.Device, properties *DeviceProperties) bool {
 	return true
 }
 
-func (dm *DeviceManager) LockDevice(session *Session, properties *DeviceProperties) error {
+func (dm *DeviceManager) LockDevice(session *Session, properties *devices.Properties) error {
 	for _, manager := range dm.Managers {
 		devices, _ := manager.GetDevices()
 		for i := range devices {
@@ -169,7 +159,7 @@ func (dm *DeviceManager) UnlockDevice(session *Session) error {
 			dm.log.Debugf("Cose Connection for device %v from session %s", d, session.SessionID)
 			d.Connection.Close()
 		}
-		d.Device.StopApp(session.Properties.App, session.Properties.AppId)
+		d.Device.StopApp(session.AppParameter)
 
 		delete(dm.LockedDevices, session.SessionID)
 		return nil

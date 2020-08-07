@@ -1,11 +1,16 @@
 package hub
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/fsuhrau/automationhub/devices"
@@ -15,12 +20,11 @@ import (
 	"howett.net/plist"
 )
 
-var recordSession = false
-
-type BinaryParameter struct {
-	Identifier string
-	Version    string
-}
+var (
+	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='(.*)' versionCode='(.*)' versionName='(.*)' compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)'`)
+	LaunchActivityRegex = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
+	recordSession = false
+)
 
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
@@ -30,8 +34,9 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func extractAppRequirements(applicationPath string, properties *DeviceProperties) (BinaryParameter, error) {
-	var params BinaryParameter
+func extractAppRequirements(applicationPath string, properties *devices.Properties) (*app.Parameter, error) {
+	params := &app.Parameter{}
+	params.AppPath = applicationPath
 	extension := filepath.Ext(applicationPath)
 	if extension == ".app" {
 		// apple app
@@ -86,19 +91,37 @@ func extractAppRequirements(applicationPath string, properties *DeviceProperties
 	} else if extension == ".apk" {
 		// android app
 		properties.OS = "android"
-		// cmd.Execute("aapt", "dump", "badging", applicationPath)
-
+		cmd := devices.NewCommand("aapt", "dump", "badging", applicationPath)
+		output, err := cmd.Output()
+		if err != nil {
+			return params, err
+		}
+		scanner := bufio.NewScanner(bytes.NewReader(output))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if matches := AndroidAPKInfosRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
+				params.Identifier = matches[0][1]
+				params.Version = matches[0][3]
+				params.Additional = fmt.Sprintf("versionCode: %s compileSdkVersion %s", matches[0][2], matches[0][4])
+				continue
+			}
+			if matches := LaunchActivityRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
+				params.LaunchActivity = matches[0][1]
+				params.Name = matches[0][2]
+				continue
+			}
+		}
 	}
 	return params, nil
 }
 
-func mapCapabilities(req map[string]interface{}, properties *DeviceProperties) {
+func mapCapabilities(req map[string]interface{}, properties *devices.Properties) {
 	if v, ok := req["app"]; ok {
 		properties.App = v.(string)
 	}
-	if v, ok := req["app_id"]; ok {
-		properties.AppId = v.(string)
-	}
+	//if v, ok := req["app_id"]; ok {
+	//	properties.AppId = v.(string)
+	//}
 	if v, ok := req["device_name"]; ok {
 		properties.Name = v.(string)
 	}
@@ -154,13 +177,13 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	var req Request
 	c.Bind(&req)
 
-	properties := &DeviceProperties{}
+	properties := &devices.Properties{}
 
 	mapCapabilities(req.DesiredCapabilities, properties)
 	mapCapabilities(req.RequiredCapabilities, properties)
 
-	properties.App = "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app"
-	properties.AppId = "com.innogames.enterprise.iforge"
+	//properties.App = "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app"
+	//properties.AppId = "com.innogames.enterprise.iforge"
 
 	//deviceType := 3
 	////var properties *DeviceProperties
@@ -208,14 +231,12 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	//	break
 	//}
 
-	params, err := extractAppRequirements(properties.App, properties)
+	appParameter, err := extractAppRequirements(properties.App, properties)
 	if err != nil {
 		s.renderError(c, errors.WithMessage(err, "unable to identify app requirements"))
 	}
 
-	_ = params
-
-	session := createNewSession(s.logger, properties)
+	session := createNewSession(s.logger, properties, appParameter)
 
 	err = s.deviceManager.LockDevice(session, properties)
 
@@ -233,9 +254,9 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 		}
 	}
 
-	if !session.Lock.Device.IsAppInstalled(properties.AppId) {
+	if !session.Lock.Device.IsAppInstalled(appParameter) {
 		logrus.Infof("InstallApp on device: %s", session.Lock.Device.DeviceName())
-		if err := session.Lock.Device.InstallApp(properties.App); err != nil {
+		if err := session.Lock.Device.InstallApp(appParameter); err != nil {
 			logrus.Errorf("InstallApp: %v", err)
 			s.deviceManager.UnlockDevice(session)
 			s.renderError(c, errors.WithMessage(err, "could not install app on device"))
@@ -245,15 +266,9 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 		logrus.Infof("InstallApp is already installed on device: %s", session.Lock.Device.DeviceName())
 	}
 
-	if err := session.Lock.Device.ExtractAppParameters(properties.App); err != nil {
-		s.deviceManager.UnlockDevice(session)
-		s.renderError(c, errors.WithMessage(err, "could not identify app parameter"))
-		return
-	}
-
 	logrus.Infof("Stop App on Device: %s", session.Lock.Device.DeviceName())
 	if !viper.GetBool("debugger") {
-		session.Lock.Device.StopApp(properties.App, properties.AppId)
+		session.Lock.Device.StopApp(appParameter)
 	}
 
 	if recordSession {
@@ -270,7 +285,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 
 	logrus.Infof("Start App on device: %s", session.Lock.Device.DeviceName())
 	if !viper.GetBool("debugger") {
-		if err := session.Lock.Device.StartApp(properties.App, properties.AppId, session.SessionID, s.hostIP); err != nil {
+		if err := session.Lock.Device.StartApp(appParameter, session.SessionID, s.hostIP); err != nil {
 			logrus.Errorf("StartApp: %v", err)
 			s.deviceManager.UnlockDevice(session)
 			s.renderError(c, errors.WithMessage(err, "could not start app on device"))

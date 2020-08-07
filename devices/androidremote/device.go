@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"net"
 	"os"
 	"os/exec"
@@ -18,6 +19,8 @@ import (
 
 var restart bool = true
 
+var IPLookupRegex = regexp.MustCompile(`\s+inet\s+([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/[0-9]+\sbrd\s([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\s+.*`)
+
 const CONNECTION_TIMEOUT = 40 * time.Second
 
 type Device struct {
@@ -31,8 +34,9 @@ type Device struct {
 	deviceModel     string
 	transportID     string
 	connectionState devices.ConnectionState
-	launcActivity   string
 	deviceIP        net.IP
+	deviceSupportedABIS   []string
+	deviceAPILevel  int64
 
 	testRecordingPath string
 
@@ -74,53 +78,30 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) IsAppInstalled(bundleId string) bool {
+func (d *Device) IsAppInstalled(params *app.Parameter) bool {
 	cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "list", "packages")
 	output, _ := cmd.Output()
-	return strings.Contains(string(output), bundleId)
+	return strings.Contains(string(output), params.Identifier)
 }
 
-func (d *Device) getApiLevel() int64 {
-	// pattern := regexp.MustCompile(`([0-9]{2,})`)
-
-	cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "getprop", "ro.build.version.sdk")
+func (d *Device) getParameterRaw(param string) string {
+	cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "getprop", param)
 	output, err := cmd.Output()
 	if err != nil {
-		return -1
+		return ""
 	}
-	versionSring := string(output)
-	versionSring = strings.Trim(versionSring, "\n")
+	return  strings.Trim(string(output), "\n")
+}
 
-	apiLevel, err := strconv.ParseInt(versionSring, 10, 64)
+func (d *Device) getParameterInt(param string) int64 {
+	versionString := d.getParameterRaw(param)
+	intParam, err := strconv.ParseInt(versionString, 10, 64)
 	if err != nil {
 		logrus.Errorf("Could not parse: %v", err)
 		return -1
 	}
 
-	return apiLevel
-}
-
-func (d *Device) findLaunchActivity(apkPath string) error {
-	cmd := devices.NewCommand("aapt", "d", "badging", apkPath)
-	output, err := cmd.Output()
-	if err != nil {
-		return err
-	}
-	regex := regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
-	scanner := bufio.NewScanner(bytes.NewReader(output))
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := regex.FindAllStringSubmatch(line, -1)
-		if len(matches) < 1 {
-			continue
-		}
-		if len(matches[0]) < 3 {
-			continue
-		}
-		d.launcActivity = matches[0][1]
-		break
-	}
-	return nil
+	return intParam
 }
 
 func (d *Device) lookupDeviceIP() error {
@@ -129,11 +110,10 @@ func (d *Device) lookupDeviceIP() error {
 	if err != nil {
 		return err
 	}
-	regex := regexp.MustCompile(`\s+inet\s+([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\/[0-9]+\sbrd\s([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\s+.*`)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := regex.FindAllStringSubmatch(line, -1)
+		matches := IPLookupRegex.FindAllStringSubmatch(line, -1)
 		if len(matches) < 1 {
 			continue
 		}
@@ -146,22 +126,20 @@ func (d *Device) lookupDeviceIP() error {
 	return nil
 }
 
-func (d *Device) ExtractAppParameters(apkPath string) error {
-	if err := d.findLaunchActivity(apkPath); err != nil {
-		return err
-	}
+func (d *Device) UpdateParameter() error {
+	d.deviceAPILevel = d.getParameterInt("ro.build.version.sdk")
+	d.deviceOSVersion = d.getParameterRaw("ro.build.version.release")
+	d.deviceSupportedABIS = strings.Split(d.getParameterRaw("ro.product.cpu.abilist"), ",")
 
 	if err := d.lookupDeviceIP(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (d *Device) InstallApp(apkPath string) error {
+func (d *Device) InstallApp(params *app.Parameter) error {
 
-	apiLevel := d.getApiLevel()
-	isApkDebuggable := isDebuggablePackage(apkPath)
+	isApkDebuggable := isDebuggablePackage(params.AppPath)
 
 	var debug string
 	if isApkDebuggable {
@@ -169,12 +147,12 @@ func (d *Device) InstallApp(apkPath string) error {
 	}
 
 	parameter := []string{"-s", d.DeviceID(), "install"}
-	if apiLevel < 24 {
-		parameter = append(parameter, []string{"-rg" + debug, apkPath}...)
+	if d.deviceAPILevel < 24 {
+		parameter = append(parameter, []string{"-rg" + debug, params.AppPath}...)
 	} else if isApkDebuggable {
-		parameter = append(parameter, []string{"-r", "-g", "-d", apkPath}...)
+		parameter = append(parameter, []string{"-r", "-g", "-d", params.AppPath}...)
 	} else {
-		parameter = append(parameter, []string{"-r", "-g", apkPath}...)
+		parameter = append(parameter, []string{"-r", "-g", params.AppPath}...)
 	}
 
 	cmd := devices.NewCommand("adb", parameter...)
@@ -184,7 +162,7 @@ func (d *Device) InstallApp(apkPath string) error {
 	logrus.Debugf("%v", output)
 
 	if strings.Contains(string(output), "Failure [") {
-		return fmt.Errorf("Installation Failed")
+		return fmt.Errorf("installation failed")
 	}
 
 	return err
@@ -202,18 +180,18 @@ func (d *Device) unlockScreen() error {
 	return nil
 }
 
-func (d *Device) StartApp(appPath string, bundleId string, sessionID string) error {
+func (d *Device) StartApp(params *app.Parameter, sessionID string) error {
 	d.unlockScreen()
 	if restart {
-		cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", bundleId, d.launcActivity))
+		cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity))
 		return cmd.Run()
 	}
 	return nil
 }
 
-func (d *Device) StopApp(appPath, bundleId string) error {
+func (d *Device) StopApp(params *app.Parameter) error {
 	if restart {
-		cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", bundleId)
+		cmd := devices.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
 		return cmd.Run()
 	}
 	return nil

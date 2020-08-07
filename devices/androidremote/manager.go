@@ -9,9 +9,7 @@ import (
 	"github.com/fsuhrau/automationhub/devices"
 )
 
-const (
-	DeviceListRegex = `([a-zA-Z0-9]+)\s+device\susb:([a-zA-Z0-9]+)\s+product:([a-zA-Z_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`
-)
+var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9]+)\s+device\susb:([a-zA-Z0-9]+)\s+product:([a-zA-Z_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`)
 
 type Manager struct {
 	devices map[string]*Device
@@ -70,11 +68,11 @@ func (m *Manager) StopDevice(deviceID string) error {
 }
 
 func (m *Manager) GetDevices() ([]devices.Device, error) {
-	devices := make([]devices.Device, 0, len(m.devices))
+	devs := make([]devices.Device, 0, len(m.devices))
 	for _, d := range m.devices {
-		devices = append(devices, d)
+		devs = append(devs, d)
 	}
-	return devices, nil
+	return devs, nil
 }
 
 func (m *Manager) RefreshDevices() error {
@@ -83,11 +81,10 @@ func (m *Manager) RefreshDevices() error {
 	if err != nil {
 		return err
 	}
-	regex := regexp.MustCompile(DeviceListRegex)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := regex.FindAllStringSubmatch(line, -1)
+		matches := DeviceListRegex.FindAllStringSubmatch(line, -1)
 		if len(matches) < 1 {
 			continue
 		}
@@ -119,7 +116,9 @@ func (m *Manager) RefreshDevices() error {
 				deviceUSB:   deviceUSB,
 				deviceModel: model,
 				transportID: transportID,
+				deviceOSName: "android",
 			}
+			m.devices[deviceID].UpdateParameter()
 			m.devices[deviceID].SetDeviceState("Booted")
 		}
 	}

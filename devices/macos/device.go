@@ -1,6 +1,7 @@
 package macos
 
 import (
+	"github.com/fsuhrau/automationhub/app"
 	"net"
 	"os/exec"
 	"time"
@@ -59,15 +60,15 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) ExtractAppParameters(bundlePath string) error {
+func (d *Device) UpdateParameter() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(appId string) bool {
+func (d *Device) IsAppInstalled(params *app.Parameter) bool {
 	return true
 }
 
-func (d *Device) InstallApp(bundlePath string) error {
+func (d *Device) InstallApp(params *app.Parameter) error {
 	return nil
 }
 
@@ -75,9 +76,9 @@ func (d *Device) UninstallApp(bundleId string) error {
 	return nil
 }
 
-func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
 	if reinstall {
-		cmd := devices.NewCommand("open", appPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
+		cmd := devices.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -85,9 +86,9 @@ func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hos
 	return nil
 }
 
-func (d *Device) StopApp(appPath, bundleId string) error {
+func (d *Device) StopApp(params *app.Parameter) error {
 	if reinstall {
-		cmd := devices.NewCommand("killall", appPath)
+		cmd := devices.NewCommand("killall", params.AppPath)
 		return cmd.Run()
 	}
 	return nil

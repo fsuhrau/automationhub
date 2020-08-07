@@ -172,7 +172,7 @@ func (s *Server) Run() error {
 			list = append(list, &Selectable{devices[i].DeviceID(), fmt.Sprintf("%s(%s) %s", devices[i].DeviceOSName(), devices[i].DeviceOSVersion(), devices[i].DeviceName())})
 		}
 		sort.Sort(ByName{list})
-		c.JSON(200, list)
+		c.JSON(http.StatusOK, list)
 	})
 
 	r.POST("/wd/hub/session", s.InitNewTestSession)

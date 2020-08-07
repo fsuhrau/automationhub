@@ -20,7 +20,7 @@ func NewCommand(executable string, params ...string) *exec.Cmd {
 	writer := &LogWriter{
 		Tag: executable + " " + strings.Join(params, " "),
 	}
-	logrus.Debugf("New Command: %s %v", executable, params)
+	logrus.Infof("New Command: %s %v", executable, params)
 	cmd := exec.Command(executable, params...)
 	cmd.Stderr = writer
 	return cmd

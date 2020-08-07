@@ -127,8 +127,8 @@ func (s *Server) RestartApp(session *Session, c *gin.Context) {
 			Status:    0,
 		})
 	} else {
-		session.Lock.Device.StopApp(session.Properties.App, session.Properties.AppId)
-		session.Lock.Device.StartApp(session.Properties.App, session.Properties.AppId, "", s.hostIP)
+		session.Lock.Device.StopApp(session.AppParameter)
+		session.Lock.Device.StartApp(session.AppParameter, "", s.hostIP)
 		session.WaitForConnection()
 
 		c.JSON(http.StatusOK, &ServerResponse{

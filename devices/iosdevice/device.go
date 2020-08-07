@@ -2,6 +2,7 @@ package iosdevice
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"github.com/sirupsen/logrus"
 	"net"
 	"os"
@@ -64,12 +65,12 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) ExtractAppParameters(bundlePath string) error {
+func (d *Device) UpdateParameter() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(bundleId string) bool {
-	cmd := devices.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--exists", "--bundle_id", bundleId)
+func (d *Device) IsAppInstalled(params *app.Parameter) bool {
+	cmd := devices.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
 	output, err := cmd.Output()
 	if err != nil {
 		return false
@@ -77,8 +78,8 @@ func (d *Device) IsAppInstalled(bundleId string) bool {
 	return strings.Contains(string(output), "true")
 }
 
-func (d *Device) InstallApp(bundlePath string) error {
-	cmd := devices.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--bundle", bundlePath)
+func (d *Device) InstallApp(params *app.Parameter) error {
+	cmd := devices.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--bundle", params.AppPath)
 	return cmd.Run()
 }
 
@@ -87,9 +88,9 @@ func (d *Device) UninstallApp(bundleId string) error {
 	return cmd.Run()
 }
 
-func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
 	if reinstall {
-		d.runningAppProcess = devices.NewCommand("/usr/local/bin/ios-deploy", "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", appPath, "--bundle_id", bundleId, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
+		d.runningAppProcess = devices.NewCommand("/usr/local/bin/ios-deploy", "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
 		if false {
 			d.runningAppProcess.Stdout = os.Stdout
 		}
@@ -101,7 +102,7 @@ func (d *Device) StartApp(appPath string, bundleId string, sessionId string, hos
 	return nil
 }
 
-func (d *Device) StopApp(appPath, bundleId string) error {
+func (d *Device) StopApp(params *app.Parameter) error {
 	var err error
 	if reinstall {
 		if d.runningAppProcess != nil && d.runningAppProcess.Process != nil {
