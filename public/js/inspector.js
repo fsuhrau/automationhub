@@ -430,6 +430,8 @@ function isControlMode() {
 }
 
 $(document).ready(function () {
+    $.ajaxSetup({ cache: false });
+
     const canvas = document.getElementById('deviceCanvas');
     ctx = canvas.getContext('2d');
     const image = document.getElementById('screenshot');
