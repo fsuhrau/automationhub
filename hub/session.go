@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/antchfx/xmlquery"
-	"github.com/fsuhrau/automationhub/devices"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/sirupsen/logrus"
@@ -19,7 +19,7 @@ var (
 
 type Recorder struct {
 	Storage *SessionStorage
-	Device  devices.Device
+	Device  device.Device
 }
 
 func (r *Recorder) Start() error {
@@ -36,13 +36,13 @@ type Session struct {
 	Lock             *DeviceLock
 	logger           *logrus.Entry
 	Recorder         *Recorder
-	DeviceProperties *devices.Properties
+	DeviceProperties *device.Properties
 	AppParameter     *app.Parameter
 	XmlDocument      *xmlquery.Node
 	Storage          *SessionStorage
 }
 
-func createNewSession(log *logrus.Logger, properties *devices.Properties, appParameter *app.Parameter) *Session {
+func createNewSession(log *logrus.Logger, properties *device.Properties, appParameter *app.Parameter) *Session {
 	u, _ := uuid.NewV4()
 	sessionID := fmt.Sprintf("%s", u)
 	session := &Session{

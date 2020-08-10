@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,8 +11,14 @@ import (
 
 // List all articles
 func Index(c *gin.Context) {
-
+	files, _ := ioutil.ReadDir("./upload")
+	var pathes []string
+	pathes = append(pathes, "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app")
+	for _, f := range files {
+		pathes = append(pathes, filepath.Join("upload", f.Name()))
+	}
 	c.HTML(http.StatusOK, "gui/index", gin.H{
+		"apps": pathes,
 	})
 }
 

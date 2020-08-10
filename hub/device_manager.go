@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsuhrau/automationhub/devices"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +25,7 @@ const (
 )
 
 type DeviceLock struct {
-	Device          devices.Device
+	Device          device.Device
 	Connection      net.Conn
 	AppName         string
 	WaitingGroup    *sync.WaitGroup
@@ -33,7 +33,7 @@ type DeviceLock struct {
 }
 
 type DeviceManager struct {
-	Managers      map[string]devices.Manager
+	Managers      map[string]device.Manager
 	LockedDevices map[string]*DeviceLock
 	stop          bool
 	log           *logrus.Entry
@@ -44,12 +44,12 @@ func NewManager(logger *logrus.Logger) *DeviceManager {
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
-		Managers:      make(map[string]devices.Manager),
+		Managers:      make(map[string]device.Manager),
 		LockedDevices: make(map[string]*DeviceLock),
 	}
 }
 
-func (dm *DeviceManager) AddManager(manager devices.Manager) error {
+func (dm *DeviceManager) AddManager(manager device.Manager) error {
 	dm.Managers[manager.Name()] = manager
 	return nil
 }
@@ -67,8 +67,8 @@ func (dm *DeviceManager) ListDevices() {
 	}
 }
 
-func (dm *DeviceManager) Devices() ([]devices.Device, error) {
-	var devices []devices.Device
+func (dm *DeviceManager) Devices() ([]device.Device, error) {
+	var devices []device.Device
 	for _, m := range dm.Managers {
 		d, err := m.GetDevices()
 		if err != nil {
@@ -79,25 +79,25 @@ func (dm *DeviceManager) Devices() ([]devices.Device, error) {
 	return devices, nil
 }
 
-func (dm *DeviceManager) Start(dev devices.Device) error {
+func (dm *DeviceManager) Start(dev device.Device) error {
 	for _, m := range dm.Managers {
 		if m.HasDevice(dev) {
 			return m.StartDevice(dev.DeviceID())
 		}
 	}
-	return devices.DeviceNotFoundError
+	return device.DeviceNotFoundError
 }
 
-func (dm *DeviceManager) Stop(dev devices.Device) error {
+func (dm *DeviceManager) Stop(dev device.Device) error {
 	for _, m := range dm.Managers {
 		if m.HasDevice(dev) {
 			return m.StopDevice(dev.DeviceID())
 		}
 	}
-	return devices.DeviceNotFoundError
+	return device.DeviceNotFoundError
 }
 
-func (dm *DeviceManager) isLocked(dev devices.Device) bool {
+func (dm *DeviceManager) isLocked(dev device.Device) bool {
 	for _, v := range dm.LockedDevices {
 		if v.Device == dev {
 			return true
@@ -106,7 +106,7 @@ func (dm *DeviceManager) isLocked(dev devices.Device) bool {
 	return false
 }
 
-func evaluateDevice(dev devices.Device, properties *devices.Properties) bool {
+func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 	if properties == nil {
 		return true
 	}
@@ -130,7 +130,7 @@ func evaluateDevice(dev devices.Device, properties *devices.Properties) bool {
 	return true
 }
 
-func (dm *DeviceManager) LockDevice(session *Session, properties *devices.Properties) error {
+func (dm *DeviceManager) LockDevice(session *Session, properties *device.Properties) error {
 	for _, manager := range dm.Managers {
 		devices, _ := manager.GetDevices()
 		for i := range devices {
@@ -148,7 +148,7 @@ func (dm *DeviceManager) LockDevice(session *Session, properties *devices.Proper
 			}
 		}
 	}
-	return devices.ManagerNotFoundError
+	return device.ManagerNotFoundError
 }
 
 func (dm *DeviceManager) UnlockDevice(session *Session) error {
@@ -295,7 +295,7 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		dm.log.Infof("Received Handshake from %v", remoteAddress)
 		dm.log.Debugf("Device with ID %s connected", lock.Device.DeviceID())
 		lock.Connection = c
-		lock.Device.SetConnectionState(devices.Connected)
+		lock.Device.SetConnectionState(device.Connected)
 		lock.ResponseChannel = make(chan []byte, 1)
 		go handleMessages(dm.log, lock)
 	}
@@ -313,7 +313,7 @@ func handleMessages(log *logrus.Entry, dev *DeviceLock) {
 			}
 			dev.Connection.Close()
 			close(dev.ResponseChannel)
-			dev.Device.SetConnectionState(devices.Disconnected)
+			dev.Device.SetConnectionState(device.Disconnected)
 			dev.Connection = nil
 			dev.WaitingGroup = nil
 			return

@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/fsuhrau/automationhub/devices"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func extractAppRequirements(applicationPath string, properties *devices.Properties) (*app.Parameter, error) {
+func extractAppRequirements(applicationPath string, properties *device.Properties) (*app.Parameter, error) {
 	params := &app.Parameter{}
 	params.AppPath = applicationPath
 	extension := filepath.Ext(applicationPath)
@@ -91,7 +91,7 @@ func extractAppRequirements(applicationPath string, properties *devices.Properti
 	} else if extension == ".apk" {
 		// android app
 		properties.OS = "android"
-		cmd := devices.NewCommand("aapt", "dump", "badging", applicationPath)
+		cmd := device.NewCommand("aapt", "dump", "badging", applicationPath)
 		output, err := cmd.Output()
 		if err != nil {
 			return params, err
@@ -115,7 +115,7 @@ func extractAppRequirements(applicationPath string, properties *devices.Properti
 	return params, nil
 }
 
-func mapCapabilities(req map[string]interface{}, properties *devices.Properties) {
+func mapCapabilities(req map[string]interface{}, properties *device.Properties) {
 	if v, ok := req["app"]; ok {
 		properties.App = v.(string)
 	}
@@ -177,7 +177,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	var req Request
 	c.Bind(&req)
 
-	properties := &devices.Properties{}
+	properties := &device.Properties{}
 
 	mapCapabilities(req.DesiredCapabilities, properties)
 	mapCapabilities(req.RequiredCapabilities, properties)
@@ -245,7 +245,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 		return
 	}
 
-	if session.Lock.Device.DeviceState() != devices.Booted {
+	if session.Lock.Device.DeviceState() != device.Booted {
 		if err := s.deviceManager.Start(session.Lock.Device); err != nil {
 			logrus.Errorf("DeviceState: %v", err)
 			s.deviceManager.UnlockDevice(session)

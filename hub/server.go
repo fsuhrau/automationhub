@@ -3,10 +3,10 @@ package hub
 import (
 	"context"
 	"fmt"
-	"github.com/fsuhrau/automationhub/devices/androiddevice"
-	"github.com/fsuhrau/automationhub/devices/iosdevice"
-	"github.com/fsuhrau/automationhub/devices/iossim"
-	"github.com/fsuhrau/automationhub/devices/macos"
+	"github.com/fsuhrau/automationhub/device/androiddevice"
+	"github.com/fsuhrau/automationhub/device/iosdevice"
+	"github.com/fsuhrau/automationhub/device/iossim"
+	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/inspector"
 	"github.com/fsuhrau/automationhub/remlog"
 	"github.com/gin-gonic/gin"
@@ -100,6 +100,10 @@ func ZeroConfServer(ctx context.Context, name string, address string) {
 	logrus.Infof("MDNS server shutdown.")
 }
 
+func (s *Server) Sessions() map[string]*Session {
+	return s.sessions
+}
+
 func (s *Server) cleanupSessions() {
 	for sessionID, session := range s.sessions {
 		if session.LastAccess.Add(time.Duration(10 * time.Second)).Before(time.Now()) {
@@ -163,7 +167,7 @@ func (s *Server) Run() error {
 		c.String(200, "pong")
 	})
 
-	inspector.Init(r)
+	inspector.Init(r, s.deviceManager)
 
 	r.GET("/devices", func(c *gin.Context) {
 		devices, _:= s.deviceManager.Devices()

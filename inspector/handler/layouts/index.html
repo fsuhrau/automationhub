@@ -42,9 +42,12 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 	<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.cyan-light_blue.min.css">
-	<link rel="stylesheet" href="css/styles.css">
-	<link rel="stylesheet" href="css/getmdl-select.min.css">
+	<link rel="stylesheet" href="/css/styles.css">
+	<link rel="stylesheet" href="/css/getmdl-select.min.css">
 	<link href="http://hayageek.github.io/jQuery-Upload-File/4.0.11/uploadfile.css" rel="stylesheet">
+	<link rel="stylesheet" href="/css/fileupload.css">
+	<link rel="stylesheet" href="/css/tree.css">
+	<link rel="stylesheet" href="/css/dialog-polyfill.css">
 	<style>
 		#view-source {
 			position: fixed;
@@ -59,16 +62,20 @@
 	<script src="/js/jquery-3.5.1.min.js" ></script>
 	<script src="/js/getmdl-select.min.js" ></script>
 	<script src="http://hayageek.github.io/jQuery-Upload-File/4.0.11/jquery.uploadfile.min.js"></script>
-	{{/*	<script src="https://raw.githubusercontent.com/hayageek/jquery-upload-file/master/js/jquery.uploadfile.js"></script>*/}}
+	<script>
+		function navigate(to) {
+			window.location = to;
+		}
+	</script>
 </head>
 <body>
-<div class="demo-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
-	<header class="demo-header mdl-layout__header mdl-color--grey-100 mdl-color-text--grey-600">
+
+<div class="mdl-layout mdl-js-layout">
+	<header class="mdl-layout__header mdl-layout__header--transparent">
 		<div class="mdl-layout__header-row">
 			<span class="mdl-layout-title">{{ template "title" }}</span>
-			<!--
 			<div class="mdl-layout-spacer"></div>
-			<div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+			<!--<div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
 				<label class="mdl-button mdl-js-button mdl-button--icon" for="search">
 					<i class="material-icons">search</i>
 				</label>
@@ -76,33 +83,38 @@
 					<input class="mdl-textfield__input" type="text" id="search">
 					<label class="mdl-textfield__label" for="search">Enter your query...</label>
 				</div>
-			</div>
+			</div>-->
+			<!--
 			<button class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon" id="hdrbtn">
 				<i class="material-icons">more_vert</i>
 			</button>
 			<ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
-				<li class="mdl-menu__item">About</li>
-				<li class="mdl-menu__item">Contact</li>
-				<li class="mdl-menu__item">Legal information</li>
+				<li class="mdl-menu__item" onclick="navigate('/')">Dashboard</li>
+				<li class="mdl-menu__item" onclick="navigate('/inspector')">Inspector</li>
+				<li class="mdl-menu__item" onclick="navigate('/inspector/tests')">Test Results</li>
+				<li class="mdl-menu__item" onclick="navigate('/inspector/sessions')">Active Sessions</li>
+				<li class="mdl-menu__item" onclick="navigate('/inspector/davices')">Device Pool</li>
 			</ul>
 			-->
 		</div>
 	</header>
-	<div class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
-		<header class="demo-drawer-header">
-			Automation HUB
-		</header>
-		<nav class="demo-navigation mdl-navigation mdl-color--blue-grey-800">
+
+	<div class="mdl-layout__drawer">
+		<nav class="mdl-navigation">
 			<a class="mdl-navigation__link" href="/"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">home</i>Dashboard</a>
 			<a class="mdl-navigation__link" href="/inspector"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">new_releases</i>Inspector</a>
-			<a class="mdl-navigation__link" href="/tests"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">store</i>Tests</a>
-			<a class="mdl-navigation__link" href="/sessions"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">theaters</i>Sessions</a>
-			<a class="mdl-navigation__link" href="/devices"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">new_releases</i>Devices</a>
+			<a class="mdl-navigation__link" href="/inspector/tests"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">store</i>Test Results</a>
+			<a class="mdl-navigation__link" href="/inspector/sessions"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">theaters</i>Active Sessions</a>
+			<a class="mdl-navigation__link" href="/inspector/devices"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">new_releases</i>Device Pool</a>
 		</nav>
-	</div>
+	</div -->
 	<main class="mdl-layout__content mdl-color--grey-100">
 		<div class="mdl-grid demo-content">
 			{{ template "content" . }}
+		</div>
+		<div aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">
+			<div class="mdl-snackbar__text"></div>
+			<button type="button" class="mdl-snackbar__action"></button>
 		</div>
 	</main>
 </div>

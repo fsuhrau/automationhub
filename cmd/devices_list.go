@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fsuhrau/automationhub/devices/iossim"
+	"github.com/fsuhrau/automationhub/device/iossim"
 	"github.com/fsuhrau/automationhub/hub"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
