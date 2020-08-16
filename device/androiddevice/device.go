@@ -1,9 +1,13 @@
 package androiddevice
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/tools/android"
+	"image"
+	"image/png"
 	"net"
 	"os"
 	"os/exec"
@@ -176,6 +180,64 @@ func (d *Device) StopRecording() error {
 	}
 
 	return os.Rename("automation_hub_record.mp4", d.testRecordingPath)
+}
+
+func (d *Device)GetScreenshot() ([]byte, error) {
+	fileName := fmt.Sprintf("%s.png", d.deviceID)
+	// cmd := device.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
+	if (false) {
+		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/" + fileName)
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+
+		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/" + fileName)
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+
+		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/" + fileName)
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+	} else {
+		cmd := device.NewCommand("/bin/sh", "android_screen.sh", d.DeviceID(), fileName)
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+	}
+
+	imagePath, _ := os.Open(fileName)
+	defer imagePath.Close()
+	srcImage, _, _ := image.Decode(imagePath)
+
+	width := float64(srcImage.Bounds().Dx())
+	height := float64(srcImage.Bounds().Dy())
+	srcImage.Bounds().Dy()
+	factor := 640.0 / height
+	resultImage := imaging.Resize(srcImage, int(width * factor), int(height * factor), imaging.Linear)
+	var data []byte
+	writer := bytes.NewBuffer(data)
+	err := png.Encode(writer, resultImage)
+	return writer.Bytes(), err
+}
+
+func (d *Device) HasFeature(feature string) bool {
+	if feature == "back" {
+		return true
+	}
+	return false
+}
+
+func (d *Device) Execute(feature string) {
+	features := map[string] func(d *Device) {
+		"back": func(d *Device){
+			d.pressKey(KEYCODE_BACK)
+		},
+	}
+	if v, ok := features[feature]; ok {
+		v(d)
+	}
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {

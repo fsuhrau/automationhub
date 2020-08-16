@@ -207,6 +207,7 @@ func (s *Server) Run() error {
 	authGroup.POST("buttondown", HandleWithSession(s.ButtonDown))
 	authGroup.POST("buttonup", HandleWithSession(s.ButtonUp))
 	authGroup.POST("url", HandleWithSession(s.RestartApp))
+	authGroup.POST("back", HandleWithSession(s.NavigateBack))
 
 	// runOn := fmt.Sprintf("%s:8002", ip.String())
 	runOn := ":8002"

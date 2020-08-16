@@ -1,15 +1,20 @@
 package iosdevice
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/sirupsen/logrus"
+	"image"
+	"image/color"
+	"image/png"
 	"net"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/device"
 )
 
@@ -146,6 +151,40 @@ func (d *Device) StopRecording() error {
 	// 	d.recordingSessionProcess = nil
 	// }
 	return err
+}
+
+func (d *Device)GetScreenshot() ([]byte, error) {
+	fileName := fmt.Sprintf("%s.png", d.deviceID)
+	cmd := device.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	imagePath, _ := os.Open(fileName)
+	defer imagePath.Close()
+	srcImage, _, _ := image.Decode(imagePath)
+
+	//srcDim := srcImage.Bounds()
+	// dstImage := image.NewRGBA(image.Rect(0, 0, srcDim.Dy(), srcDim.Dx()))
+	uploadedImage := imaging.Rotate(srcImage, -90, color.Gray{})
+	// graphics.Rotate(dstImage, srcImage, &graphics.RotateOptions{math.Pi / 2.0})
+	width := float64(srcImage.Bounds().Dy())
+	height := float64(srcImage.Bounds().Dx())
+	srcImage.Bounds().Dy()
+	factor := 640.0 / height
+	resultImage := imaging.Resize(uploadedImage, int(width * factor), int(height * factor), imaging.Linear)
+	var data []byte
+	writer := bytes.NewBuffer(data)
+	err := png.Encode(writer, resultImage)
+	return writer.Bytes(), err
+	//return ioutil.ReadFile(fileName)
+}
+
+func (d *Device) HasFeature(string) bool {
+	return false
+}
+
+func (d *Device) Execute(string) {
+
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {

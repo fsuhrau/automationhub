@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"net/http"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,13 +41,42 @@ func (s *Server) GetGraph(session *Session, c *gin.Context) {
 func (s *Server) GetScreen(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
-	a := &action.GetScreenshot{}
-	if err := s.deviceManager.SendAction(log, session, a); err != nil {
-		s.renderError(c, err)
-		return
-	}
+	var data string
+	var payload []byte
 
-	data := base64.StdEncoding.EncodeToString(a.ScreenshotData())
+	if false {
+		a := &action.GetScreenshot{}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+
+		data = base64.StdEncoding.EncodeToString(a.ScreenshotData())
+		payload = a.SceengraphXML()
+	} else {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			a := &action.GetSceenGraph{}
+			if err := s.deviceManager.SendAction(log, session, a); err != nil {
+				s.renderError(c, err)
+			}
+			payload = []byte(a.Content())
+			wg.Done()
+		}()
+
+		go func() {
+			rawData, err := session.Lock.Device.GetScreenshot()
+			if err != nil {
+				s.logger.Errorf("Screenshot could not be created: %v", err)
+				s.renderError(c, err)
+			}
+			data = base64.StdEncoding.EncodeToString(rawData)
+			wg.Done()
+		}()
+
+		wg.Wait()
+	}
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -55,31 +84,59 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 		HCode:     time.Now().UTC().Unix(),
 		Status:    0,
 		Value:     data,
-		Payload:   a.SceengraphXML(),
+		Payload:   payload,
 	})
 }
 
 func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
+	var data string
+	var payload []byte
 
-	a := &action.GetScreenshot{}
-	if err := s.deviceManager.SendAction(log, session, a); err != nil {
-		s.renderError(c, err)
-		return
+	if false {
+		a := &action.GetScreenshot{}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+		xmlPath, err := session.Storage.StoreSceneGraph(a.SceengraphXML())
+		if err != nil {
+			s.logger.Errorf("Store SceneGraph failed: %v", err)
+		}
+
+		pngPath, err := session.Storage.StoreImage(a.ScreenshotData())
+		if err != nil {
+			s.logger.Errorf("Store SceneImage failed: %v", err)
+		}
+
+		s.logger.Infof("Files:\n%s\n%s", xmlPath, pngPath)
+
+		data = base64.StdEncoding.EncodeToString(a.ScreenshotData())
+		payload = a.SceengraphXML()
+
+	} else {
+		a := &action.GetSceenGraph{}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+
+		rawData, err := session.Lock.Device.GetScreenshot()
+		if err != nil {
+			s.logger.Errorf("Screenshot could not be created: %v", err)
+		}
+		_, err = session.Storage.StoreSceneGraph([]byte(a.Content()))
+		if err != nil {
+			s.logger.Errorf("Store SceneGraph failed: %v", err)
+		}
+		_, err = session.Storage.StoreImage(rawData)
+		if err != nil {
+			s.logger.Errorf("Store SceneImage failed: %v", err)
+		}
+
+		data = base64.StdEncoding.EncodeToString(rawData)
+		payload = []byte(a.Content())
 	}
-	xmlPath, err := session.Storage.StoreSceneGraph(a.SceengraphXML())
-	if err != nil {
-		s.logger.Errorf("Store SceneGraph failed: %v", err)
-	}
-
-	pngPath, err := session.Storage.StoreImage(a.ScreenshotData())
-	if err != nil {
-		s.logger.Errorf("Store SceneImage failed: %v", err)
-	}
-
-	s.logger.Infof("Files:\n%s\n%s", xmlPath, pngPath)
-
-	data := base64.StdEncoding.EncodeToString(a.ScreenshotData())
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -87,7 +144,7 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 		HCode:     time.Now().UTC().Unix(),
 		Status:    0,
 		Value:     data,
-		Payload:   a.SceengraphXML(),
+		Payload:   payload,
 	})
 }
 
@@ -140,7 +197,24 @@ func (s *Server) RestartApp(session *Session, c *gin.Context) {
 	}
 }
 
-func trimDelimiter(msg []byte) string {
-	data := string(msg)
-	return strings.Replace(data, "+++++++!\n", "", -1)
+func (s *Server) NavigateBack(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+	if session.Lock.Device.HasFeature("back") {
+		session.Lock.Device.Execute("back")
+	} else {
+		a := &action.Custom{
+			RequestData: "back",
+		}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+	})
 }

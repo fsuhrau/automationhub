@@ -111,6 +111,18 @@ func (d *Device) StopRecording() error {
 	return err
 }
 
+func (d *Device)GetScreenshot() ([]byte, error) {
+	return nil, nil
+}
+
+func (d *Device) HasFeature(string) bool {
+	return false
+}
+
+func (d *Device) Execute(string) {
+
+}
+
 func (d *Device) ConnectionTimeout() time.Duration {
 	return CONNECTION_TIMEOUT
 }

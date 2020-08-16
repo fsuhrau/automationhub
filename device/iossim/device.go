@@ -3,6 +3,7 @@ package iossim
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -16,14 +17,13 @@ var restart bool = true
 const CONNECTION_TIMEOUT = 10 * time.Second
 
 type Device struct {
-	deviceOSName    string
-	deviceOSVersion string
-	deviceName      string
-	deviceID        string
-	deviceIP        net.IP
-	deviceState     device.State
-	connectionState device.ConnectionState
-
+	deviceOSName     string
+	deviceOSVersion  string
+	deviceName       string
+	deviceID         string
+	deviceIP         net.IP
+	deviceState      device.State
+	connectionState  device.ConnectionState
 	recordingSession *exec.Cmd
 }
 
@@ -122,6 +122,24 @@ func (d *Device) StopRecording() error {
 		d.recordingSession = nil
 	}
 	return err
+}
+
+func (d *Device) GetScreenshot() ([]byte, error) {
+	fileName := fmt.Sprintf("tmp/%s.png", d.deviceID)
+	cmd := device.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	return ioutil.ReadFile(fileName)
+}
+
+func (d *Device) HasFeature(string) bool {
+	return false
+}
+
+func (d *Device) Execute(string) {
+
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {

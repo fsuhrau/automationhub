@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -228,6 +229,34 @@ func (d *Device) StopRecording() error {
 	}
 
 	return os.Rename("automation_hub_record.mp4", d.testRecordingPath)
+}
+
+func (d *Device)GetScreenshot() ([]byte, error) {
+	fileName := fmt.Sprintf("tmp/%s.png", d.deviceID)
+	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return ioutil.ReadFile(fileName)
+}
+
+
+func (d *Device) HasFeature(feature string) bool {
+	if feature == "back" {
+		return true
+	}
+	return false
+}
+
+func (d *Device) Execute(feature string) {
+	features := map[string] func(d *Device) {
+		"back": func(d *Device){
+			d.pressKey(KEYCODE_BACK)
+		},
+	}
+	if v, ok := features[feature]; ok {
+		v(d)
+	}
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
