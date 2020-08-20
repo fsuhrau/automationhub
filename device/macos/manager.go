@@ -1,22 +1,29 @@
 package macos
 
 import (
+	"github.com/fsuhrau/automationhub/config"
 	"net"
+	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
 type Manager struct {
-	devices map[string]*Device
-	hostIP  net.IP
+	devices      map[string]*Device
+	hostIP       net.IP
+	deviceConfig config.Interface
 }
 
-func NewManager(ip net.IP) *Manager {
-	return &Manager{devices: make(map[string]*Device), hostIP: ip}
+func NewManager(deviceConfig config.Interface, ip net.IP) *Manager {
+	return &Manager{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
 }
 
 func (m *Manager) Name() string {
 	return "macos"
+}
+
+func (m *Manager) Init() error {
+	return nil
 }
 
 func (m *Manager) Start() error {
@@ -51,6 +58,7 @@ func (m *Manager) RefreshDevices() error {
 			deviceOSName:    "MacOSX",
 			deviceOSVersion: "10-14",
 			deviceIP:        m.hostIP,
+			lastUpdateAt:    time.Now().UTC(),
 		}
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("Booted")
 	}

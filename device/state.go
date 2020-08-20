@@ -5,6 +5,7 @@ type State uint8
 const (
 	Unknown State = iota
 	Shutdown
+	RemoteDisconnected
 	Booted
 )
 
@@ -16,6 +17,8 @@ func StateToString(state State) string {
 		return "shutdown"
 	case Booted:
 		return "booted"
+	case RemoteDisconnected:
+		return "remote disconnected"
 	}
 	return ""
 }

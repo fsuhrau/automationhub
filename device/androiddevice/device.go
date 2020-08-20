@@ -1,16 +1,17 @@
 package androiddevice
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/tools/android"
+	"github.com/spf13/viper"
 	"image"
-	"image/png"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,7 +19,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var restart bool = true
+var (
+	DeviceLockRegex  = regexp.MustCompile(`.*mDreamingLockscreen=(true|false).*`)
+	DeviceAwakeRegex = regexp.MustCompile(`.*mHoldingDisplaySuspendBlocker=(true|false).*`)
+)
 
 const CONNECTION_TIMEOUT = 2 * time.Minute
 
@@ -36,10 +40,10 @@ type Device struct {
 	deviceIP            net.IP
 	deviceSupportedABIS []string
 	deviceAPILevel      int64
-
-	testRecordingPath string
-
-	recordingSession *exec.Cmd
+	testRecordingPath   string
+	recordingSession    *exec.Cmd
+	cfg                 *config.Device
+	lastUpdateAt        time.Time
 }
 
 func (d *Device) DeviceOSName() string {
@@ -72,6 +76,10 @@ func (d *Device) SetDeviceState(state string) {
 		d.deviceState = device.Booted
 	case "Shutdown":
 		d.deviceState = device.Shutdown
+	case "RemoteDisconnected":
+		d.deviceState = device.RemoteDisconnected
+	case "Unknown":
+		d.deviceState = device.Unknown
 	default:
 		d.deviceState = device.Unknown
 	}
@@ -126,15 +134,37 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) unlockScreen() error {
-	d.pressKey(KEYCODE_WAKEUP)
-	d.pressKey(KEYCODE_MENU)
-	d.swipe(400, 800, 400, 200)
+	isAwake, err := d.IsAwake()
+	if err != nil {
+		return err
+	}
+	if !isAwake {
+		_ = d.pressKey(KEYCODE_WAKEUP)
+		_ = d.pressKey(KEYCODE_MENU)
+		_ = d.swipe(400, 800, 400, 200)
+	}
+
+	isLocked, err := d.IsLocked()
+	if err != nil {
+		return err
+	}
+	if isLocked {
+		if d.cfg != nil && len(d.cfg.PIN) > 0 {
+			for i := range d.cfg.PIN {
+				offset := int(d.cfg.PIN[i] - '0')
+				_ = d.pressKey(KEYCODE_NUMPAD_0 + offset)
+			}
+			_ = d.pressKey(KEYCODE_NUMPAD_ENTER)
+		}
+	}
 	return nil
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	d.unlockScreen()
-	if restart {
+	if err := d.unlockScreen(); err != nil {
+		return err
+	}
+	if viper.GetBool("restart") {
 		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String())
 		return cmd.Run()
 	}
@@ -142,7 +172,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	if restart {
+	if viper.GetBool("restart") {
 		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
 		return cmd.Run()
 	}
@@ -182,44 +212,73 @@ func (d *Device) StopRecording() error {
 	return os.Rename("automation_hub_record.mp4", d.testRecordingPath)
 }
 
-func (d *Device)GetScreenshot() ([]byte, error) {
+func (d *Device) IsLocked() (bool, error) {
+	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "window", "|", "grep", "mDreamingLockscreen")
+	out, err := cmd.Output()
+	if err != nil {
+		return true, err
+	}
+	findings := DeviceLockRegex.FindStringSubmatch(string(out))
+	if len(findings) == 0 {
+		return true, fmt.Errorf("IsLocked Regex cant be evaluated")
+	}
+	return findings[1] == "true", nil
+}
+
+func (d *Device) IsAwake() (bool, error) {
+	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "power", "|", "grep", "mHoldingDisplaySuspendBlocker")
+	out, err := cmd.Output()
+	if err != nil {
+		return true, err
+	}
+	findings := DeviceAwakeRegex.FindStringSubmatch(string(out))
+	if len(findings) == 0 {
+		return true, fmt.Errorf("IsAwake Regex cant be evaluated")
+	}
+	return findings[1] == "true", nil
+}
+
+func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	fileName := fmt.Sprintf("%s.png", d.deviceID)
+	var width int
+	var height int
 	// cmd := device.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
-	if (false) {
-		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/" + fileName)
+	if false {
+		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
-			return nil, err
+			return nil, width, height, err
 		}
 
-		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/" + fileName)
+		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
-			return nil, err
+			return nil, width, height, err
 		}
 
-		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/" + fileName)
+		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
-			return nil, err
+			return nil, width, height, err
 		}
 	} else {
+		start := time.Now()
 		cmd := device.NewCommand("/bin/sh", "android_screen.sh", d.DeviceID(), fileName)
 		if err := cmd.Run(); err != nil {
-			return nil, err
+			return nil, width, height, err
 		}
+		logrus.Infof("Android Take Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
 	}
 
+	start := time.Now()
 	imagePath, _ := os.Open(fileName)
 	defer imagePath.Close()
+
 	srcImage, _, _ := image.Decode(imagePath)
 
-	width := float64(srcImage.Bounds().Dx())
-	height := float64(srcImage.Bounds().Dy())
-	srcImage.Bounds().Dy()
-	factor := 640.0 / height
-	resultImage := imaging.Resize(srcImage, int(width * factor), int(height * factor), imaging.Linear)
-	var data []byte
-	writer := bytes.NewBuffer(data)
-	err := png.Encode(writer, resultImage)
-	return writer.Bytes(), err
+	width = srcImage.Bounds().Dx()
+	height = srcImage.Bounds().Dy()
+	imagePath.Seek(0, 0)
+	bytes, err := ioutil.ReadAll(imagePath)
+	logrus.Infof("Android open Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
+	return bytes, width, height, err
 }
 
 func (d *Device) HasFeature(feature string) bool {
@@ -230,14 +289,19 @@ func (d *Device) HasFeature(feature string) bool {
 }
 
 func (d *Device) Execute(feature string) {
-	features := map[string] func(d *Device) {
-		"back": func(d *Device){
+	features := map[string]func(d *Device){
+		"back": func(d *Device) {
 			d.pressKey(KEYCODE_BACK)
 		},
 	}
 	if v, ok := features[feature]; ok {
 		v(d)
 	}
+}
+
+func (d *Device) Tap(x, y int64) error {
+	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
+	return cmd.Run()
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {

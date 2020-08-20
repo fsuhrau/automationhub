@@ -3,8 +3,10 @@ package androiddevice
 import (
 	"bufio"
 	"bytes"
+	"github.com/fsuhrau/automationhub/config"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -13,14 +15,46 @@ var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:]+)\s+device\s(usb:([a-zA
 
 type Manager struct {
 	devices map[string]*Device
+	deviceConfig config.Interface
 }
 
-func NewManager() *Manager {
-	return &Manager{devices: make(map[string]*Device)}
+func NewManager(deviceConfig config.Interface) *Manager {
+	return &Manager{devices: make(map[string]*Device), deviceConfig: deviceConfig}
 }
 
 func (m *Manager) Name() string {
 	return "androiddevice"
+}
+
+func (m *Manager) Init() error {
+	devices := m.deviceConfig.GetDevicesForManager(m.Name())
+	for i := range devices {
+		// connect all remote devices
+		if devices[i].Connection.Type == "remote" {
+			cmd := device.NewCommand("adb", "connect", devices[i].Connection.IP)
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := m.RefreshDevices(); err != nil {
+		return err
+	}
+
+	for i := range devices {
+		// connect all remote devices
+		if devices[i].Connection.Type == "remote" {
+			cmd := device.NewCommand("adb", "disconnect", devices[i].Connection.IP)
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (m *Manager) Start() error {
@@ -39,6 +73,13 @@ func (m *Manager) StartDevice(deviceID string) error {
 	found := false
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
+			if v.deviceState == device.RemoteDisconnected {
+				cmd := device.NewCommand("adb", "connect", v.cfg.Connection.IP)
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					return err
+				}
+			}
 			found = true
 			break
 		}
@@ -56,6 +97,11 @@ func (m *Manager) StopDevice(deviceID string) error {
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
 			found = true
+			cmd := device.NewCommand("adb", "disconnect", v.cfg.Connection.IP)
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return err
+			}
 			break
 		}
 	}
@@ -76,6 +122,7 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 }
 
 func (m *Manager) RefreshDevices() error {
+	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
 	if err != nil {
@@ -107,8 +154,13 @@ func (m *Manager) RefreshDevices() error {
 			m.devices[deviceID].deviceUSB = deviceUSB
 			m.devices[deviceID].deviceModel = model
 			m.devices[deviceID].transportID = transportID
+			m.devices[deviceID].lastUpdateAt = lastUpdate
 
 		} else {
+			var cfg *config.Device
+			if m.deviceConfig != nil {
+				cfg = m.deviceConfig.GetDeviceConfig(deviceID)
+			}
 			m.devices[deviceID] = &Device{
 				deviceName:  name,
 				deviceID:    deviceID,
@@ -117,9 +169,21 @@ func (m *Manager) RefreshDevices() error {
 				deviceModel: model,
 				transportID: transportID,
 				deviceOSName: "android",
+				cfg: cfg,
+				lastUpdateAt: lastUpdate,
 			}
 			m.devices[deviceID].UpdateDeviceInfos()
 			m.devices[deviceID].SetDeviceState("Booted")
+		}
+	}
+
+	for i := range m.devices {
+		if m.devices[i].lastUpdateAt != lastUpdate {
+			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+				m.devices[i].SetDeviceState("RemoteDisconnected")
+			} else {
+				m.devices[i].SetDeviceState("Unknown")
+			}
 		}
 	}
 

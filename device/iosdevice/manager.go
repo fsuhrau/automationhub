@@ -3,8 +3,10 @@ package iosdevice
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -33,14 +35,19 @@ type Detect struct {
 
 type Manager struct {
 	devices map[string]*Device
+	deviceConfig config.Interface
 }
 
-func NewManager() *Manager {
-	return &Manager{devices: make(map[string]*Device)}
+func NewManager(deviceConfig config.Interface) *Manager {
+	return &Manager{devices: make(map[string]*Device), deviceConfig: deviceConfig}
 }
 
 func (m *Manager) Name() string {
 	return "iosdevice"
+}
+
+func (m *Manager) Init() error {
+	return nil
 }
 
 func (m *Manager) Start() error {
@@ -92,6 +99,7 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 }
 
 func (m *Manager) RefreshDevices() error {
+	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
 	cmd.Stderr = os.Stderr
 	output, err := cmd.Output()
@@ -112,16 +120,33 @@ func (m *Manager) RefreshDevices() error {
 			m.devices[device.Device.DeviceIdentifier].deviceID = device.Device.DeviceIdentifier
 			m.devices[device.Device.DeviceIdentifier].deviceOSName = device.Device.ModelSDK
 			m.devices[device.Device.DeviceIdentifier].deviceOSVersion = device.Device.ProductVersion
+			m.devices[device.Device.DeviceIdentifier].lastUpdateAt = lastUpdate
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("Booted")
 
 		} else {
+			var cfg *config.Device
+			if m.deviceConfig != nil {
+				cfg = m.deviceConfig.GetDeviceConfig(device.Device.DeviceIdentifier)
+			}
 			m.devices[device.Device.DeviceIdentifier] = &Device{
 				deviceName:      device.Device.DeviceName,
 				deviceID:        device.Device.DeviceIdentifier,
 				deviceOSName:    device.Device.ModelSDK,
 				deviceOSVersion: device.Device.ProductVersion,
+				cfg: cfg,
+				lastUpdateAt: lastUpdate,
 			}
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("Booted")
+		}
+	}
+
+	for i := range m.devices {
+		if m.devices[i].lastUpdateAt != lastUpdate {
+			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+				m.devices[i].SetDeviceState("RemoteDisconnected")
+			} else {
+				m.devices[i].SetDeviceState("Unknown")
+			}
 		}
 	}
 

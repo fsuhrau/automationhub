@@ -59,7 +59,7 @@
                         </div>
                         <div class="mdl-card__supporting-text">
                             <div class="mdl-textfield mdl-js-textfield">
-                                <input class="mdl-textfield__input" type="text" id="xpath">
+                                <input class="mdl-textfield__input" type="text" id="xpath" onkeyup="visualXPath()">
                                 <label class="mdl-textfield__label" for="xpath">//</label>
                             </div>
                             <button id="visualXPath" class="mdl-button mdl-js-button mdl-button--raised" onclick="visualXPath()">
@@ -182,11 +182,11 @@
                                         <a href="#deviceGraph" class="mdl-tabs__tab">SceneGraph</a>
                                         <a href="#deviceLog" class="mdl-tabs__tab">Log</a>
                                     </div>
-                                    <div class="mdl-tabs__panel is-active" id="deviceView">
+                                    <div class="mdl-tabs__panel is-active" id="deviceView" style="height: 680px">
                                         <div style="display:none;">
-                                            <img id="screenshot" src="" style="height: 640px;">
+                                            <img id="screenshot" src="">
                                         </div>
-                                        <canvas id="deviceCanvas" width="1139" height="640" style="border:1px solid #d3d3d3;"></canvas>
+                                        <canvas id="deviceCanvas" width="100%" height="100%"></canvas>
                                     </div>
                                     <div class="mdl-tabs__panel" id="deviceGraph">
                                         <textarea id="graph" style="width: 100%; height: 640px;" aria-multiline="true"></textarea>
@@ -197,14 +197,22 @@
                                 </div>
                             </div>
                             <div class="bar">
-                                <div style="float:left;">
+                                <div style="float:left; width: 200px;">
                                     <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="controlMode">
                                         <input type="checkbox" id="controlMode" class="mdl-switch__input">
                                         <span class="mdl-switch__label">Control Device</span>
                                     </label>
                                 </div>
+                                <div style="float:left; width: 400px; margin: -16px; color: white;">
+                                    <div class="mdl-textfield mdl-js-textfield" >
+                                        <input class="mdl-textfield__input" type="text" id="sendTextInput">
+                                        <label class="mdl-textfield__label" for="sendTextInput">Send Text to Device</label>
+                                    </div>
+                                    <button id="sendTextButton" class="mdl-button mdl-js-button" onclick="sendText()">
+                                        Send
+                                    </button>
+                                </div>
                                 <div class="wrapper">
-
                                     <button id="sessionStartButton" class="mdl-button mdl-js-button mdl-button--icon" onclick="showStartAppDialog()">
                                         <i class="material-icons">play_arrow</i>
                                     </button>

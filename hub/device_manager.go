@@ -10,7 +10,6 @@ import (
 	"io"
 	"net"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -161,6 +160,8 @@ func (dm *DeviceManager) UnlockDevice(session *Session) error {
 		}
 		d.Device.StopApp(session.AppParameter)
 
+		dm.Stop(d.Device)
+
 		delete(dm.LockedDevices, session.SessionID)
 		return nil
 	}
@@ -171,6 +172,7 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 	dm.log.Debug("Starting device manager")
 
 	for _, v := range dm.Managers {
+		v.Init()
 		v.Start()
 	}
 
@@ -219,11 +221,6 @@ func (dm *DeviceManager) SocketListener() error {
 	}()
 	return nil
 }
-
-var (
-	DeviceHandshakeRegex  = regexp.MustCompile(`.*DEVICE_ID:([a-zA-Z0-9\-]+).*`)
-	SessionHandshakeRegex = regexp.MustCompile(`.*SESSION_ID:([a-zA-Z0-9\-]+).*`)
-)
 
 func (dm *DeviceManager) lookupDevice(session *action.Session, remoteAddress string) *DeviceLock {
 

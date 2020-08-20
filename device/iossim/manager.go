@@ -2,8 +2,10 @@ package iossim
 
 import (
 	"encoding/json"
+	"github.com/fsuhrau/automationhub/config"
 	"net"
 	"regexp"
+	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -17,21 +19,26 @@ type SimDevice struct {
 	UDID        string `json:"udid"`
 }
 
-type SimulatoDescriptions struct {
+type SimulatorDescriptions struct {
 	Devices map[string][]SimDevice `json:"devices"`
 }
 
 type Manager struct {
-	devices map[string]*Device
-	hostIP  net.IP
+	devices      map[string]*Device
+	hostIP       net.IP
+	deviceConfig config.Interface
 }
 
-func NewManager(ip net.IP) *Manager {
-	return &Manager{devices: make(map[string]*Device), hostIP: ip}
+func NewManager(deviceConfig config.Interface, ip net.IP) *Manager {
+	return &Manager{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
 }
 
 func (m *Manager) Name() string {
 	return "iossim"
+}
+
+func (m *Manager) Init() error {
+	return nil
 }
 
 func (m *Manager) Start() error {
@@ -87,12 +94,13 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 }
 
 func (m *Manager) RefreshDevices() error {
+	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("xcrun", "simctl", "list", "devices", "--json")
 	output, err := cmd.Output()
 	if err != nil {
 		return err
 	}
-	var resp SimulatoDescriptions
+	var resp SimulatorDescriptions
 	if err := json.Unmarshal(output, &resp); err != nil {
 		return err
 	}
@@ -112,17 +120,35 @@ func (m *Manager) RefreshDevices() error {
 				m.devices[device.UDID].deviceOSName = deviceOSName
 				m.devices[device.UDID].deviceOSVersion = osVersion
 				m.devices[device.UDID].deviceIP = m.hostIP
+				m.devices[device.UDID].lastUpdateAt = lastUpdate
 				m.devices[device.UDID].SetDeviceState(device.State)
 
 			} else {
+				var cfg *config.Device
+				if m.deviceConfig != nil {
+					cfg = m.deviceConfig.GetDeviceConfig(device.UDID)
+				}
+
 				m.devices[device.UDID] = &Device{
 					deviceName:      device.Name,
 					deviceID:        device.UDID,
 					deviceOSName:    deviceOSName,
 					deviceOSVersion: osVersion,
 					deviceIP:        m.hostIP,
+					cfg:             cfg,
+					lastUpdateAt: lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
+			}
+		}
+	}
+
+	for i := range m.devices {
+		if m.devices[i].lastUpdateAt != lastUpdate {
+			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+				m.devices[i].SetDeviceState("RemoteDisconnected")
+			} else {
+				m.devices[i].SetDeviceState("Unknown")
 			}
 		}
 	}

@@ -182,55 +182,6 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	mapCapabilities(req.DesiredCapabilities, properties)
 	mapCapabilities(req.RequiredCapabilities, properties)
 
-	//properties.App = "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app"
-	//properties.AppId = "com.innogames.enterprise.iforge"
-
-	//deviceType := 3
-	////var properties *DeviceProperties
-	//switch deviceType {
-	//case 1:
-	//	properties = &DeviceProperties{
-	//		Name:  "MacOS",
-	//		Type: "macos_app",
-	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mac_develop.app",
-	//		AppId: "com.innogames.enterprise.iforge",
-	//	}
-	//	break
-	//case 2:
-	//	properties = &DeviceProperties{
-	//		Name: "iPad (5th generation)",
-	//		Type: "ios_simulator",
-	//		OS:   "iOS-13-5",
-	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
-	//		AppId: "com.innogames.enterprise.iforge",
-	//	}
-	//	break
-	//case 3:
-	//	//properties = &DeviceProperties{
-	//	//	Name:  "iPad von Fabian Suhrau",
-	//	//	Type: "ios_device",
-	//	//	App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.ios/build/Debug/foe_mobile_develop.app",
-	//	//	AppId: "com.innogames.enterprise.iforge",
-	//	//}
-	//	properties = &DeviceProperties{
-	//		Name:  "[FoE]06237",
-	//		Type: "ios_device",
-	//		OS: "iphoneos",
-	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app",
-	//		AppId: "com.innogames.enterprise.iforge",
-	//	}
-	//	break
-	//case 4:
-	//	properties = &DeviceProperties{
-	//		// Name:  "shieldtablet",
-	//		Name:  "Tinker_Board_S",
-	//		Type: "android_device",
-	//		App:   "/Users/fabian.suhrau/projects/game_foe_mobile/proj.android/app/build/outputs/apk/googleV7aUnity/debug/app-google-v7a-unity-debug.apk",
-	//		AppId: "com.innogames.foeandroid",
-	//	}
-	//	break
-	//}
-
 	appParameter, err := extractAppRequirements(properties.App, properties)
 	if err != nil {
 		s.renderError(c, errors.WithMessage(err, "unable to identify app requirements"))

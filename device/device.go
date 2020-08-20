@@ -28,7 +28,7 @@ type Device interface {
 	StartRecording(string) error
 	StopRecording() error
 
-	GetScreenshot() ([]byte, error)
+	GetScreenshot() ([]byte, int, int, error)
 
 	HasFeature(string) bool
 	Execute(string)

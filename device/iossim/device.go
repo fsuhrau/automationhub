@@ -1,9 +1,12 @@
 package iossim
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
-	"io/ioutil"
+	"github.com/fsuhrau/automationhub/config"
+	"image"
+	"image/png"
 	"net"
 	"os"
 	"os/exec"
@@ -25,6 +28,8 @@ type Device struct {
 	deviceState      device.State
 	connectionState  device.ConnectionState
 	recordingSession *exec.Cmd
+	cfg              *config.Device
+	lastUpdateAt     time.Time
 }
 
 func (d *Device) DeviceOSName() string {
@@ -124,14 +129,26 @@ func (d *Device) StopRecording() error {
 	return err
 }
 
-func (d *Device) GetScreenshot() ([]byte, error) {
-	fileName := fmt.Sprintf("tmp/%s.png", d.deviceID)
+func (d *Device) GetScreenshot() ([]byte, int, int, error) {
+	var width int
+	var height int
+	fileName := fmt.Sprintf("%s.png", d.deviceID)
 	cmd := device.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
 	if err := cmd.Run(); err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 
-	return ioutil.ReadFile(fileName)
+	imagePath, _ := os.Open(fileName)
+	defer imagePath.Close()
+	srcImage, _, _ := image.Decode(imagePath)
+
+	height = srcImage.Bounds().Dy()
+	width = srcImage.Bounds().Dx()
+
+	var data []byte
+	writer := bytes.NewBuffer(data)
+	err := png.Encode(writer, srcImage)
+	return writer.Bytes(), width, height, err
 }
 
 func (d *Device) HasFeature(string) bool {

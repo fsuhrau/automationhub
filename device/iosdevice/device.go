@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/sirupsen/logrus"
 	"image"
 	"image/color"
@@ -23,16 +24,17 @@ var reinstall bool = true
 const CONNECTION_TIMEOUT = 120 * time.Second
 
 type Device struct {
-	deviceOSName    string
-	deviceOSVersion string
-	deviceName      string
-	deviceID        string
-	deviceState     device.State
-	connectionState device.ConnectionState
-	deviceIP        net.IP
-
+	deviceOSName            string
+	deviceOSVersion         string
+	deviceName              string
+	deviceID                string
+	deviceState             device.State
+	connectionState         device.ConnectionState
+	deviceIP                net.IP
 	recordingSessionProcess *exec.Cmd
 	runningAppProcess       *exec.Cmd
+	cfg                     *config.Device
+	lastUpdateAt            time.Time
 }
 
 func (d *Device) DeviceOSName() string {
@@ -119,7 +121,7 @@ func (d *Device) StopApp(params *app.Parameter) error {
 			//if err != nil {
 			//	logrus.Errorf("Stop Kill error: %v", err)
 			//}
-			if e := d.runningAppProcess.Wait(); e != nil{
+			if e := d.runningAppProcess.Wait(); e != nil {
 				logrus.Errorf("Stop Kill error: %v", e)
 			}
 			d.runningAppProcess = nil
@@ -153,30 +155,25 @@ func (d *Device) StopRecording() error {
 	return err
 }
 
-func (d *Device)GetScreenshot() ([]byte, error) {
+func (d *Device) GetScreenshot() ([]byte, int, int, error) {
+	var width int
+	var height int
 	fileName := fmt.Sprintf("%s.png", d.deviceID)
 	cmd := device.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
 	if err := cmd.Run(); err != nil {
-		return nil, err
+		return nil, width, height, err
 	}
 	imagePath, _ := os.Open(fileName)
 	defer imagePath.Close()
 	srcImage, _, _ := image.Decode(imagePath)
 
-	//srcDim := srcImage.Bounds()
-	// dstImage := image.NewRGBA(image.Rect(0, 0, srcDim.Dy(), srcDim.Dx()))
 	uploadedImage := imaging.Rotate(srcImage, -90, color.Gray{})
-	// graphics.Rotate(dstImage, srcImage, &graphics.RotateOptions{math.Pi / 2.0})
-	width := float64(srcImage.Bounds().Dy())
-	height := float64(srcImage.Bounds().Dx())
-	srcImage.Bounds().Dy()
-	factor := 640.0 / height
-	resultImage := imaging.Resize(uploadedImage, int(width * factor), int(height * factor), imaging.Linear)
+	width = uploadedImage.Bounds().Dx()
+	height = uploadedImage.Bounds().Dy()
 	var data []byte
 	writer := bytes.NewBuffer(data)
-	err := png.Encode(writer, resultImage)
-	return writer.Bytes(), err
-	//return ioutil.ReadFile(fileName)
+	err := png.Encode(writer, uploadedImage)
+	return writer.Bytes(), width, height, err
 }
 
 func (d *Device) HasFeature(string) bool {

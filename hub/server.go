@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/iosdevice"
 	"github.com/fsuhrau/automationhub/device/iossim"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/grandcat/zeroconf"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"log"
 	"net"
@@ -21,25 +23,25 @@ import (
 	"time"
 )
 
-
 type Selectable struct {
-	ID string
+	ID   string
 	Name string
 }
 type Selectables []*Selectable
+
 func (s Selectables) Len() int      { return len(s) }
 func (s Selectables) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 type ByName struct{ Selectables }
-func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
 
+func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
 
 type Server struct {
 	server        *http.Server
 	deviceManager *DeviceManager
 	sessions      map[string]*Session
 	logger        *logrus.Logger
-	hostIP net.IP
+	hostIP        net.IP
 }
 
 func NewServer() *Server {
@@ -50,8 +52,6 @@ func NewServer() *Server {
 }
 
 func GetOutboundIP() net.IP {
-	// return net.IPv4(0,0,0,0)
-
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal(err)
@@ -123,11 +123,23 @@ func (s *Server) cleanupSessions() {
 
 func (s *Server) Run() error {
 
+	var serviceConfig config.Service
+
+	if err := viper.Unmarshal(&serviceConfig); err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	s.hostIP = GetOutboundIP()
+	if len(serviceConfig.IP) > 0 {
+		s.hostIP = net.ParseIP(serviceConfig.IP)
+	}
+
+	if s.hostIP == nil {
+		s.hostIP = GetOutboundIP()
+	}
 
 	//gocron.Every(30).Second().Do(s.cleanupSessions)
 
@@ -153,10 +165,10 @@ func (s *Server) Run() error {
 	}
 
 	// start device observer thread
-	s.deviceManager.AddManager(iossim.NewManager(s.hostIP))
-	s.deviceManager.AddManager(macos.NewManager(s.hostIP))
-	s.deviceManager.AddManager(iosdevice.NewManager())
-	s.deviceManager.AddManager(androiddevice.NewManager())
+	s.deviceManager.AddManager(iossim.NewManager(&serviceConfig, s.hostIP))
+	s.deviceManager.AddManager(macos.NewManager(&serviceConfig, s.hostIP))
+	s.deviceManager.AddManager(iosdevice.NewManager(&serviceConfig))
+	s.deviceManager.AddManager(androiddevice.NewManager(&serviceConfig))
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}
@@ -170,7 +182,7 @@ func (s *Server) Run() error {
 	inspector.Init(r, s.deviceManager)
 
 	r.GET("/devices", func(c *gin.Context) {
-		devices, _:= s.deviceManager.Devices()
+		devices, _ := s.deviceManager.Devices()
 		list := Selectables{}
 		for i := range devices {
 			list = append(list, &Selectable{devices[i].DeviceID(), fmt.Sprintf("%s(%s) %s", devices[i].DeviceOSName(), devices[i].DeviceOSVersion(), devices[i].DeviceName())})

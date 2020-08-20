@@ -1,12 +1,16 @@
 package action
 
 import (
+	"bytes"
 	"google.golang.org/protobuf/proto"
+	"image"
 )
 
 type GetScreenshot struct {
-	Success bool
+	Success    bool
 	screenshot *Screenshot
+	width      int
+	height     int
 }
 
 func (a *GetScreenshot) Serialize() ([]byte, error) {
@@ -23,6 +27,12 @@ func (a *GetScreenshot) Deserialize(content []byte) error {
 	}
 	a.Success = resp.Success
 	a.screenshot = resp.GetScreenshot()
+	if a.screenshot != nil {
+		reader := bytes.NewReader(a.screenshot.Screenshot)
+		srcImage, _, _ := image.Decode(reader)
+		a.width = srcImage.Bounds().Dx()
+		a.height = srcImage.Bounds().Dy()
+	}
 	return nil
 }
 
@@ -32,4 +42,12 @@ func (a *GetScreenshot) SceengraphXML() []byte {
 
 func (a *GetScreenshot) ScreenshotData() []byte {
 	return a.screenshot.Screenshot
+}
+
+func (a *GetScreenshot) Width() int {
+	return a.width
+}
+
+func (a *GetScreenshot) Height() int {
+	return a.height
 }

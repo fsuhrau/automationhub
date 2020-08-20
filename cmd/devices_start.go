@@ -37,7 +37,7 @@ to quickly create a Cobra application.`,
 			return
 		}
 		manager := hub.NewManager(logrus.New())
-		manager.AddManager(iossim.NewManager(hub.GetOutboundIP()))
+		manager.AddManager(iossim.NewManager(nil, hub.GetOutboundIP()))
 		//manager.Start(args[0], args[1])
 	},
 }

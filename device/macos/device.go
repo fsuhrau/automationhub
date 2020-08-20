@@ -23,6 +23,7 @@ type Device struct {
 	connectionState device.ConnectionState
 
 	recordingSession *exec.Cmd
+	lastUpdateAt     time.Time
 }
 
 func (d *Device) DeviceOSName() string {
@@ -111,8 +112,8 @@ func (d *Device) StopRecording() error {
 	return err
 }
 
-func (d *Device)GetScreenshot() ([]byte, error) {
-	return nil, nil
+func (d *Device) GetScreenshot() ([]byte, int, int, error) {
+	return nil, 0, 0, nil
 }
 
 func (d *Device) HasFeature(string) bool {

@@ -6,6 +6,24 @@ var actionRunning = false;
 var testAppPath = "";
 var selectedNode = "";
 
+var useNaturalTouches = true;
+var isClick = true;
+var startPositionX = 0;
+var startPositionY = 0;
+
+var screenScale = 1;
+
+var sceneGraphWidth = 0;
+var sceneGraphHeight = 0;
+var screenshotWidth = 0;
+var screenshotHeight = 0;
+var canvasHeight = 0;
+var canvasWidth = 0;
+var canvasMaxWidth = 1024;
+var canvasMaxHeight = 700;
+var selectOffset = 10;
+
+
 function Draw(x, y, isDown) {
     if (isDown) {
         ctx.beginPath();
@@ -24,18 +42,21 @@ function Draw(x, y, isDown) {
 function DrawRect(x, y, width, height) {
     ctx.beginPath();
     ctx.strokeStyle = '#FF0000';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 1;
     ctx.lineJoin = "round";
     ctx.rect(x, y, width, height);
     ctx.stroke();
 }
 
 function clearArea() {
+    ctx.save()
     // Use the identity matrix while clearing the canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const image = document.getElementById('screenshot');
+    ctx.scale(screenScale, screenScale);
     ctx.drawImage(image, 0, 0);
+    ctx.restore()
 }
 
 function setCookie(cname, cvalue, exdays) {
@@ -137,7 +158,6 @@ function sessionStart() {
 
     actionRunning = true;
     activity(true);
-    debugger;
     $.ajax({
         type: "POST",
         url: "/wd/hub/session",
@@ -221,24 +241,48 @@ function getScreenshot() {
         success: function (data) {
             actionRunning = false;
             activity(false);
-            if (data !== "" && data.value !== "" && data.payload !== "") {
+            if (data !== "" && data.value.data !== "" && data.payload !== "") {
                 var document = atob(data.payload);
                 $("#graph").prop('value', document);
                 xmlDocumentCache = domParser.parseFromString(document, "text/xml");
-                $("#screenshot").attr("src", "data:image/png;base64," + data.value);
+                var rootNode = xmlDocumentCache.documentElement;
+
+                sceneGraphWidth = rootNode.getAttribute("RectangleX");
+                sceneGraphHeight = rootNode.getAttribute("RectangleY");
+
+                screenshotWidth = data.value.width;
+                screenshotHeight = data.value.height;
+
+                screenScale = Math.min(canvasMaxWidth / screenshotWidth, canvasMaxHeight / screenshotHeight/*, 1*/)
+
+
+                canvasHeight = screenshotHeight * screenScale;
+                canvasWidth = screenshotWidth * screenScale;
+
+                var screenImage = $("#screenshot")
+                var canvas = $('#deviceCanvas');
+                screenImage.attr("src", "data:image/png;base64," + data.value.data);
+                canvas.attr("width", canvasWidth);
+                canvas.attr("height", canvasHeight);
+
                 clearArea();
                 updateGraph();
+                DrawRect(0,0,0,0);
             } else {
                 notify("could not get screenshot")
             }
         },
         error: function (request, status, error) {
             actionRunning = false;
+            clearArea();
+            updateGraph();
             activity(false);
             notify(request.responseJSON.message)
         },
         failure: function (errMsg) {
             actionRunning = false;
+            clearArea();
+            updateGraph();
             activity(false);
             notify(errMsg)
         }
@@ -246,10 +290,10 @@ function getScreenshot() {
 }
 
 function HighlightElement(node) {
-    var x = node.getAttribute("X");
-    var y = node.getAttribute("Y");
-    var width = node.getAttribute("RectangleX");
-    var height = node.getAttribute("RectangleY");
+    var x = (node.getAttribute("X") / sceneGraphWidth) * canvasWidth;
+    var y = (node.getAttribute("Y") / sceneGraphHeight) * canvasHeight;
+    var width = (node.getAttribute("RectangleX") / sceneGraphWidth) * canvasWidth;
+    var height = (node.getAttribute("RectangleY") / sceneGraphHeight) * canvasHeight;
     DrawRect(x, y, width, height);
 }
 
@@ -258,23 +302,33 @@ function visualXPath() {
     if (xmlDocumentCache == null) {
         return
     }
-    var nodes = xmlDocumentCache.evaluate(value, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
-    var result = nodes.iterateNext();
     clearArea();
-    var elements = "<ul class=\"mdl-list\">";
-    while (result) {
-        var id = result.getAttribute("ID");
-        var cl = result.getAttribute("Class");
-        HighlightElement(result);
-        elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + cl + "</span></li>";
-        result = nodes.iterateNext();
+    try {
+        var nodes = xmlDocumentCache.evaluate(value, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
+        var elements = "";
+        elements += "<ul class=\"mdl-list\">";
+        var node = null;
+        while (node = nodes.iterateNext()) {
+            if (node.nodeName === '#document') {
+                continue;
+            }
+            var id = node.getAttribute("ID");
+            var cl = node.getAttribute("Class");
+            HighlightElement(node);
+            elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + getNodeName(node) + "</span></li>";
+        }
+        elements += "</ul>"
+        $('#xpathSelection').html(elements);
+    } catch (e) {
+
     }
-    elements += "</ul>"
-    $('#xpathSelection').html(elements);
 }
+
+var nextTouchActions = new Map();
 
 function touchPosition(action, x, y) {
     if (actionRunning) {
+        nextTouchActions.set(action, [x, y])
         return;
     }
     actionRunning = true;
@@ -293,10 +347,20 @@ function touchPosition(action, x, y) {
         dataType: "json",
         success: function (data) {
             actionRunning = false;
-            if (action === "up") {
-                activity(false);
+            var next = nextTouchActions.get("move");
+            if (next !== undefined && next.length === 2) {
+                nextTouchActions.set("move", [])
+                touchPosition("move", next[0], next[1])
+                return;
             }
-            if (action === "up") {
+            next = nextTouchActions.get("up");
+            if (next !== undefined && next.length === 2) {
+                nextTouchActions.set("up", [])
+                touchPosition("up", next[0], next[1])
+                return;
+            }
+            if (action === "up" || action === "position") {
+                activity(false);
                 getScreenshot();
             }
         },
@@ -391,9 +455,9 @@ function locateAndHighlightElement(x, y, width, height) {
     var elements = "<ul class=\"mdl-list\">";
     while (result) {
         var id = result.getAttribute("ID");
-        var cl = result.getAttribute("Class");
+        // var cl = result.getAttribute("Class");
         HighlightElement(result);
-        elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + cl + "</span></li>";
+        elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + getNodeName(result) + "</span></li>";
         result = nodes.iterateNext();
     }
     elements += "</ul>"
@@ -421,13 +485,24 @@ function hoverElementPos(x, y) {
     }
 }
 
-var isClick = true;
-var startPositionX = 0;
-var startPositionY = 0;
-
 function isControlMode() {
     return $('#controlMode').prop("checked")
 }
+
+function isNaturalTouch() {
+    return useNaturalTouches;
+}
+
+function getCanvasPosX(e, canvas) {
+    return e.pageX - canvas.offset().left
+}
+
+function getCanvasPosY(e, canvas) {
+    return  e.pageY - canvas.offset().top
+}
+
+var moveAction = null;
+var upAction = null;
 
 $(document).ready(function () {
     $.ajaxSetup({ cache: false });
@@ -436,53 +511,75 @@ $(document).ready(function () {
     ctx = canvas.getContext('2d');
     const image = document.getElementById('screenshot');
     image.addEventListener('load', e => {
-        ctx.drawImage(image, 0, 0);
+        clearArea();
     });
     clearArea();
 
+    var deviceView = $('#deviceView');
+    canvasMaxWidth = deviceView.width();
+    canvasMaxHeight = deviceView.height();
+
+    canvasHeight = canvasMaxHeight;
+    canvasWidth = canvasMaxWidth;
+
+
     var deviceCanvas = $('#deviceCanvas');
+    deviceCanvas.attr("width", canvasWidth);
+    deviceCanvas.attr("height", canvasHeight);
     deviceCanvas.mousedown(function (e) {
         mousePressed = true;
         isClick = true;
-        if (isControlMode()) {
-            touchPosition("down", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+        startPositionX = getCanvasPosX(e, $(this));
+        startPositionY = getCanvasPosY(e, $(this));
+        if (isControlMode() && isNaturalTouch()) {
+            touchPosition("down", (startPositionX / canvasWidth) * sceneGraphWidth, (startPositionY / canvasHeight) * sceneGraphHeight);
             return;
         }
-        startPositionX = e.pageX - $(this).offset().left;
-        startPositionY = e.pageY - $(this).offset().top;
         DrawRect(startPositionX, startPositionY, 0, 0);
     })
     deviceCanvas.mousemove(function (e) {
         isClick = false;
+        var posX = getCanvasPosX(e, $(this));
+        var posY = getCanvasPosY(e, $(this));
+
         if (!mousePressed) {
-            // var currentX = e.pageX - $(this).offset().left;
-            // var currentY = e.pageY - $(this).offset().top;
-            // hoverElement(currentX, currentY);
+            // hoverElement(posX, posY);
             return;
         }
 
-        if (isControlMode()) {
-            touchPosition("move", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+        if (isControlMode() && isNaturalTouch()) {
+            touchPosition("move", (posX / canvasWidth) * sceneGraphWidth, (posY / canvasHeight) * sceneGraphHeight);
             return;
         }
 
-        var currentX = e.pageX - $(this).offset().left;
-        var currentY = e.pageY - $(this).offset().top;
+        var minX = Math.min(startPositionX, posX);
+        var minY = Math.min(startPositionY, posY);
+        var maxX = Math.max(startPositionX, posX);
+        var maxY = Math.max(startPositionY, posY);
+
         clearArea()
-        DrawRect(startPositionX, startPositionY, currentX - startPositionX, currentY - startPositionY);
+        DrawRect(minX, minY, maxX - minX, maxY - minY);
     });
     deviceCanvas.mouseup(function (e) {
         mousePressed = false;
+        var posX = getCanvasPosX(e, $(this));
+        var posY = getCanvasPosY(e, $(this));
 
         if (isControlMode()) {
-            touchPosition("up", e.pageX - $(this).offset().left, e.pageY - $(this).offset().top);
+            if (isNaturalTouch()) {
+                touchPosition("up", (posX / canvasWidth) * sceneGraphWidth, (posY / canvasHeight) * sceneGraphHeight);
+            } else {
+                touchPosition("position", (posX / canvasWidth) * screenshotWidth, (posY / canvasHeight) * screenshotHeight);
+            }
             return;
         }
 
         clearArea()
-        var currentX = e.pageX - $(this).offset().left;
-        var currentY = e.pageY - $(this).offset().top;
-        locateAndHighlightElement(startPositionX, startPositionY, currentX - startPositionX, currentY - startPositionY)
+        var minX = Math.min(startPositionX, posX) - selectOffset;
+        var minY = Math.min(startPositionY, posY) - selectOffset;
+        var maxX = Math.max(startPositionX, posX) + selectOffset;
+        var maxY = Math.max(startPositionY, posY) + selectOffset;
+        locateAndHighlightElement((minX / canvasWidth) * sceneGraphWidth, (minY / canvasHeight) * sceneGraphHeight, ((maxX - minX)/ canvasWidth) * sceneGraphWidth, ((maxY - minY)/ canvasHeight) * sceneGraphHeight)
     });
 
     deviceCanvas.mouseleave(function (e) {
@@ -541,6 +638,19 @@ function selectNode(nodeID) {
     showElementInfos();
 }
 
+function getNodeName(node) {
+    var name = node.getAttribute("Name");
+    if (name.length > 0) {
+        name = "(" + name + ")"
+    } else {
+        name = node.getAttribute("LabelText");
+        if (name.length > 0) {
+            name = "(" + name + ")"
+        }
+    }
+    return node.nodeName + name
+}
+
 function graphRenderChildren(node, expand) {
     if (node.nodeType === 3) {
         return "";
@@ -548,7 +658,7 @@ function graphRenderChildren(node, expand) {
     var html = "";
     if (node.childNodes.length > 1) {
         html = "<li role=\"treeitem\" aria-expanded=\"" + expand + "\">";
-        html += "<span onclick='selectNode(\"" + node.getAttribute("ID") + "\")'>" + node.nodeName + "</span>";
+        html += "<span onclick='selectNode(\"" + node.getAttribute("ID") + "\")'>" + getNodeName(node) + "</span>";
         html += "<ul>";
         var i = 0;
         for (i = 0; i < node.childNodes.length; i++) {
@@ -559,7 +669,7 @@ function graphRenderChildren(node, expand) {
         }
     } else {
         html = "<li class=\"doc\" onclick='selectNode(\"" + node.getAttribute("ID") + "\")'>";
-        html += node.nodeName;
+        html += getNodeName(node);
     }
     html += "</li>";
     return html;

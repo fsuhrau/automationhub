@@ -3,6 +3,7 @@ package hub
 import (
 	"encoding/base64"
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/spf13/viper"
 	"net/http"
 	"sync"
 	"time"
@@ -38,44 +39,65 @@ func (s *Server) GetGraph(session *Session, c *gin.Context) {
 	c.String(http.StatusOK, a.Content())
 }
 
+type screen struct {
+	Width int `json:"width"`
+	Height int `json:"height"`
+	Data string `json:"data"`
+}
+
 func (s *Server) GetScreen(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
-	var data string
+	var data *screen
 	var payload []byte
-
-	if false {
-		a := &action.GetScreenshot{}
-		if err := s.deviceManager.SendAction(log, session, a); err != nil {
-			s.renderError(c, err)
-			return
-		}
-
-		data = base64.StdEncoding.EncodeToString(a.ScreenshotData())
-		payload = a.SceengraphXML()
-	} else {
+	if viper.GetBool("use_os_screenshot") {
+		st := time.Now()
 		var wg sync.WaitGroup
 		wg.Add(2)
 		go func() {
+			start := time.Now()
 			a := &action.GetSceenGraph{}
 			if err := s.deviceManager.SendAction(log, session, a); err != nil {
 				s.renderError(c, err)
 			}
 			payload = []byte(a.Content())
+			log.Infof("GetGraph took: %d ms", time.Now().Sub(start).Milliseconds())
 			wg.Done()
 		}()
 
 		go func() {
-			rawData, err := session.Lock.Device.GetScreenshot()
+			start := time.Now()
+			rawData, width, height, err := session.Lock.Device.GetScreenshot()
 			if err != nil {
 				s.logger.Errorf("Screenshot could not be created: %v", err)
 				s.renderError(c, err)
 			}
-			data = base64.StdEncoding.EncodeToString(rawData)
+			data = &screen{
+				Width: width,
+				Height: height,
+				Data: base64.StdEncoding.EncodeToString(rawData),
+			}
+			log.Infof("GetScreenshot took: %d ms", time.Now().Sub(start).Milliseconds())
 			wg.Done()
 		}()
-
 		wg.Wait()
+		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
+
+	} else {
+		st := time.Now()
+		a := &action.GetScreenshot{}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+		a.ScreenshotData()
+		data = &screen{
+			Width: a.Width(),
+			Height: a.Height(),
+			Data: base64.StdEncoding.EncodeToString(a.ScreenshotData()),
+		}
+		payload = a.SceengraphXML()
+		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
 	}
 
 	c.JSON(http.StatusOK, &ServerResponse{
@@ -90,10 +112,37 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 
 func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
-	var data string
+	var data *screen
 	var payload []byte
 
-	if false {
+	if viper.GetBool("use_os_screenshot") {
+		a := &action.GetSceenGraph{}
+		if err := s.deviceManager.SendAction(log, session, a); err != nil {
+			s.renderError(c, err)
+			return
+		}
+
+		rawData, width, height, err := session.Lock.Device.GetScreenshot()
+		if err != nil {
+			s.logger.Errorf("Screenshot could not be created: %v", err)
+		}
+		_, err = session.Storage.StoreSceneGraph([]byte(a.Content()))
+		if err != nil {
+			s.logger.Errorf("Store SceneGraph failed: %v", err)
+		}
+		_, err = session.Storage.StoreImage(rawData)
+		if err != nil {
+			s.logger.Errorf("Store SceneImage failed: %v", err)
+		}
+
+		data = &screen{
+			Width: width,
+			Height: height,
+			Data: base64.StdEncoding.EncodeToString(rawData),
+		}
+		payload = []byte(a.Content())
+	} else {
+		st := time.Now()
 		a := &action.GetScreenshot{}
 		if err := s.deviceManager.SendAction(log, session, a); err != nil {
 			s.renderError(c, err)
@@ -111,31 +160,13 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 
 		s.logger.Infof("Files:\n%s\n%s", xmlPath, pngPath)
 
-		data = base64.StdEncoding.EncodeToString(a.ScreenshotData())
+		data = &screen{
+			Width: a.Width(),
+			Height: a.Height(),
+			Data: base64.StdEncoding.EncodeToString(a.ScreenshotData()),
+		}
 		payload = a.SceengraphXML()
-
-	} else {
-		a := &action.GetSceenGraph{}
-		if err := s.deviceManager.SendAction(log, session, a); err != nil {
-			s.renderError(c, err)
-			return
-		}
-
-		rawData, err := session.Lock.Device.GetScreenshot()
-		if err != nil {
-			s.logger.Errorf("Screenshot could not be created: %v", err)
-		}
-		_, err = session.Storage.StoreSceneGraph([]byte(a.Content()))
-		if err != nil {
-			s.logger.Errorf("Store SceneGraph failed: %v", err)
-		}
-		_, err = session.Storage.StoreImage(rawData)
-		if err != nil {
-			s.logger.Errorf("Store SceneImage failed: %v", err)
-		}
-
-		data = base64.StdEncoding.EncodeToString(rawData)
-		payload = []byte(a.Content())
+		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
 	}
 
 	c.JSON(http.StatusOK, &ServerResponse{

@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"net/http"
 	"strings"
@@ -328,8 +329,8 @@ func (s *Server) ElementSetValue(session *Session, c *gin.Context) {
 	elementID := c.Param("elementID")
 	a := &action.SetValue{
 		ElementID: elementID,
-		Attr: "text",
-		Value: strings.Join(req.Value, ""),
+		Attr:      "text",
+		Value:     strings.Join(req.Value, ""),
 	}
 
 	if err := s.deviceManager.SendAction(log, session, a); err != nil {
@@ -502,7 +503,7 @@ func (s *Server) ButtonUp(session *Session, c *gin.Context) {
 
 	a := &action.DragAndDrop{
 		From: moveElementToElement.From,
-		To: elementID,
+		To:   elementID,
 	}
 	err := s.deviceManager.SendAction(log, session, a)
 	if err != nil {
@@ -531,16 +532,20 @@ func (s *Server) TouchPosition(session *Session, c *gin.Context) {
 	req := &Request{}
 	c.Bind(req)
 
-	downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
-	if err := s.deviceManager.SendAction(log, session, downAction); err != nil {
-		s.renderError(c, err)
-		return
-	}
+	if device, ok := session.Lock.Device.(*androiddevice.Device); ok {
+		device.Tap(int64(req.X), int64(req.Y))
+	} else {
+		downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
+		if err := s.deviceManager.SendAction(log, session, downAction); err != nil {
+			s.renderError(c, err)
+			return
+		}
 
-	upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
-	if err := s.deviceManager.SendAction(log, session, upAction); err != nil {
-		s.renderError(c, err)
-		return
+		upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
+		if err := s.deviceManager.SendAction(log, session, upAction); err != nil {
+			s.renderError(c, err)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, &ServerResponse{

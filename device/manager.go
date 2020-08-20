@@ -2,6 +2,7 @@ package device
 
 type Manager interface {
 	Name() string
+	Init() error
 	Start() error
 	Stop() error
 	StartDevice(string) error
