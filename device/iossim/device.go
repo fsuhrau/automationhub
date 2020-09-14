@@ -71,9 +71,10 @@ func (d *Device) UpdateDeviceInfos() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(params *app.Parameter) bool {
+func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	cmd := device.NewCommand("xcrun", "simctl", "get_app_container", d.DeviceID(), params.Identifier)
-	return cmd.Run() == nil
+	err := cmd.Run()
+	return err == nil, err
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {

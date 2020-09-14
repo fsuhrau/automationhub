@@ -14,7 +14,7 @@ type Device interface {
 	DeviceOSVersion() string
 	DeviceName() string
 
-	IsAppInstalled(*app.Parameter) bool
+	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error
 	UninstallApp(params *app.Parameter) error
 	UpdateDeviceInfos() error

@@ -3,10 +3,11 @@ package androiddevice
 import (
 	"bufio"
 	"bytes"
-	"github.com/fsuhrau/automationhub/config"
 	"os"
 	"regexp"
 	"time"
+
+	"github.com/fsuhrau/automationhub/config"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -14,7 +15,7 @@ import (
 var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`)
 
 type Manager struct {
-	devices map[string]*Device
+	devices      map[string]*Device
 	deviceConfig config.Interface
 }
 
@@ -97,10 +98,12 @@ func (m *Manager) StopDevice(deviceID string) error {
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
 			found = true
-			cmd := device.NewCommand("adb", "disconnect", v.cfg.Connection.IP)
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return err
+			if v.cfg != nil && v.cfg.Connection.Type == "remote" {
+				cmd := device.NewCommand("adb", "disconnect", v.cfg.Connection.IP)
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					return err
+				}
 			}
 			break
 		}
@@ -162,14 +165,14 @@ func (m *Manager) RefreshDevices() error {
 				cfg = m.deviceConfig.GetDeviceConfig(deviceID)
 			}
 			m.devices[deviceID] = &Device{
-				deviceName:  name,
-				deviceID:    deviceID,
-				product:     product,
-				deviceUSB:   deviceUSB,
-				deviceModel: model,
-				transportID: transportID,
+				deviceName:   name,
+				deviceID:     deviceID,
+				product:      product,
+				deviceUSB:    deviceUSB,
+				deviceModel:  model,
+				transportID:  transportID,
 				deviceOSName: "android",
-				cfg: cfg,
+				cfg:          cfg,
 				lastUpdateAt: lastUpdate,
 			}
 			m.devices[deviceID].UpdateDeviceInfos()

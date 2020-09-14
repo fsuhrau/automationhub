@@ -85,7 +85,7 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) IsAppInstalled(params *app.Parameter) bool {
+func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	return android.IsAppInstalled(d.deviceID, params)
 }
 
@@ -106,7 +106,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 	if isApkDebuggable {
 		debug = "d"
 	}
-	parameter := []string{"-s", d.DeviceID(), "install"}
+	parameter := []string{"-s", d.DeviceID(), "install", "-t"}
 	if d.deviceAPILevel < 24 {
 		parameter = append(parameter, []string{"-rg" + debug, params.AppPath}...)
 		//} else if isApkDebuggable {

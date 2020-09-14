@@ -2,11 +2,12 @@ package hub
 
 import (
 	"encoding/base64"
-	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/spf13/viper"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,9 +41,9 @@ func (s *Server) GetGraph(session *Session, c *gin.Context) {
 }
 
 type screen struct {
-	Width int `json:"width"`
-	Height int `json:"height"`
-	Data string `json:"data"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+	Data   string `json:"data"`
 }
 
 func (s *Server) GetScreen(session *Session, c *gin.Context) {
@@ -73,9 +74,9 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 				s.renderError(c, err)
 			}
 			data = &screen{
-				Width: width,
+				Width:  width,
 				Height: height,
-				Data: base64.StdEncoding.EncodeToString(rawData),
+				Data:   base64.StdEncoding.EncodeToString(rawData),
 			}
 			log.Infof("GetScreenshot took: %d ms", time.Now().Sub(start).Milliseconds())
 			wg.Done()
@@ -92,9 +93,9 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 		}
 		a.ScreenshotData()
 		data = &screen{
-			Width: a.Width(),
+			Width:  a.Width(),
 			Height: a.Height(),
-			Data: base64.StdEncoding.EncodeToString(a.ScreenshotData()),
+			Data:   base64.StdEncoding.EncodeToString(a.ScreenshotData()),
 		}
 		payload = a.SceengraphXML()
 		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
@@ -112,7 +113,7 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 
 func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
-	var data *screen
+	var data string
 	var payload []byte
 
 	if viper.GetBool("use_os_screenshot") {
@@ -122,7 +123,7 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 			return
 		}
 
-		rawData, width, height, err := session.Lock.Device.GetScreenshot()
+		rawData, _, _, err := session.Lock.Device.GetScreenshot()
 		if err != nil {
 			s.logger.Errorf("Screenshot could not be created: %v", err)
 		}
@@ -135,11 +136,7 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 			s.logger.Errorf("Store SceneImage failed: %v", err)
 		}
 
-		data = &screen{
-			Width: width,
-			Height: height,
-			Data: base64.StdEncoding.EncodeToString(rawData),
-		}
+		data = base64.StdEncoding.EncodeToString(rawData)
 		payload = []byte(a.Content())
 	} else {
 		st := time.Now()
@@ -160,11 +157,7 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 
 		s.logger.Infof("Files:\n%s\n%s", xmlPath, pngPath)
 
-		data = &screen{
-			Width: a.Width(),
-			Height: a.Height(),
-			Data: base64.StdEncoding.EncodeToString(a.ScreenshotData()),
-		}
+		data = base64.StdEncoding.EncodeToString(a.ScreenshotData())
 		payload = a.SceengraphXML()
 		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
 	}
@@ -180,7 +173,17 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 }
 
 func (s *Server) SetTimeouts(session *Session, c *gin.Context) {
-
+	type timeout struct {
+		Type string `json:"type"`
+		MS   int    `json:"ms"`
+	}
+	var to timeout
+	if err := c.Bind(&to); err != nil {
+		s.renderError(c, err)
+		return
+	}
+	s.logger.Infof("set timeout: %v", to)
+	session.SetActionTimeout(time.Millisecond * time.Duration(to.MS))
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",

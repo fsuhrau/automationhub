@@ -2,18 +2,19 @@ package hub
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/device/androiddevice"
-	"github.com/fsuhrau/automationhub/hub/action"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/device/androiddevice"
+	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/spf13/viper"
 
 	"github.com/antchfx/xmlquery"
 	"github.com/gin-gonic/gin"
 )
 
 var CacheXMLFile = false
-var ActionTimeout = 20 * time.Second
 var LookupRetry = 50 * time.Millisecond
 
 const (
@@ -58,7 +59,7 @@ type ActionRequest struct {
 
 func (s *Server) getElements(session *Session) error {
 
-	if CacheXMLFile && session.XmlDocument != nil {
+	if viper.GetBool("use_element_cache") && session.XmlDocument != nil {
 		return nil
 	}
 
@@ -71,7 +72,7 @@ func (s *Server) getElements(session *Session) error {
 	var err error
 	session.XmlDocument, err = a.XML()
 	if err != nil {
-		return err
+		log.Infof("Could not Convert Content to XML: %v", err)
 	}
 	return nil
 }
@@ -84,7 +85,7 @@ func (s *Server) GetElement(session *Session, c *gin.Context) {
 
 	var element *xmlquery.Node
 
-	until := time.Now().Add(ActionTimeout)
+	until := session.GetActionTimeout()
 
 	for {
 		if time.Now().After(until) {
@@ -100,12 +101,12 @@ func (s *Server) GetElement(session *Session, c *gin.Context) {
 		}
 
 		if err := s.getElements(session); err != nil {
-			//s.renderError(c, err)
-			//return
+			// elements commented
+			s.renderError(c, err)
+			return
 		}
 
 		if session.XmlDocument == nil {
-			log.Debugf("document could not be loaded")
 			time.Sleep(LookupRetry)
 			continue
 		}
@@ -129,11 +130,13 @@ func (s *Server) GetElement(session *Session, c *gin.Context) {
 		} else {
 
 			attribute := action.Using
-			if action.Using == "name" {
+			switch action.Using {
+			case "name":
 				attribute = "LabelText"
-			} else if action.Using == "tag name" {
+			case "tag name":
 				attribute = "Name"
 			}
+
 			log.Debugf("%v", action)
 
 			element := xmlquery.FindOne(session.XmlDocument, fmt.Sprintf("//*[@%s='%s']", attribute, action.Value))
@@ -162,7 +165,7 @@ func (s *Server) GetElements(session *Session, c *gin.Context) {
 	action := ActionRequest{}
 	c.Bind(&action)
 
-	until := time.Now().Add(60 * time.Second)
+	until := session.GetActionTimeout()
 
 	for {
 		if time.Now().After(until) {
@@ -180,11 +183,11 @@ func (s *Server) GetElements(session *Session, c *gin.Context) {
 		log.Debugf("locate element Using: %s Value: %s", action.Using, action.Value)
 
 		if err := s.getElements(session); err != nil {
-			//s.renderError(c, err)
-			//continue
+			// elements commented
+			s.renderError(c, err)
+			return
 		}
 		if session.XmlDocument == nil {
-			log.Debugf("document could not be loaded")
 			time.Sleep(50 * time.Millisecond)
 			continue
 		}
@@ -274,8 +277,7 @@ func (s *Server) ElementClick(session *Session, c *gin.Context) {
 
 	elementID := c.Param("elementID")
 
-	// s.printBody(c)
-	until := time.Now().Add(60 * time.Second)
+	until := session.GetActionTimeout()
 
 	var result string
 	for {
@@ -301,9 +303,8 @@ func (s *Server) ElementClick(session *Session, c *gin.Context) {
 			break
 		}
 	}
-	// if CacheXMLFile {
-	// 	session.XmlDocument = nil
-	// }
+
+	session.XmlDocument = nil
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -343,6 +344,8 @@ func (s *Server) ElementSetValue(session *Session, c *gin.Context) {
 		result = "sentValue"
 	}
 
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -352,19 +355,72 @@ func (s *Server) ElementSetValue(session *Session, c *gin.Context) {
 	})
 }
 
+func (s *Server) ElementGetValue(session *Session, c *gin.Context) {
+	log := session.logger.WithField("prefix", "action")
+	attr := c.Param("attribute")
+	elementID := c.Param("elementID")
+
+	a := &action.GetValue{
+		ElementID: elementID,
+		Attr:      attr,
+	}
+
+	if err := s.deviceManager.SendAction(log, session, a); err != nil {
+		s.renderError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &ServerResponse{
+		SessionID: session.SessionID,
+		State:     "success",
+		HCode:     time.Now().UTC().Unix(),
+		Status:    0,
+		Value:     a.Value,
+	})
+}
+
 func (s *Server) ElementGetText(session *Session, c *gin.Context) {
-	c.Set("attribute", "LabelText")
-	s.ElementGetAttribute(session, c)
+	c.Params = append(c.Params, gin.Param{"attribute", "text"})
+	if viper.GetBool("innium_support") {
+		s.ElementGetValue(session, c)
+	} else {
+		s.ElementGetAttribute(session, c)
+	}
 }
 
 func (s *Server) ElementGetCSS(session *Session, c *gin.Context) {
-	c.Set("attribute", "CSS")
-	s.ElementGetAttribute(session, c)
+	c.Params = append(c.Params, gin.Param{"attribute", "css"})
+	if viper.GetBool("innium_support") {
+		s.ElementGetValue(session, c)
+	} else {
+		s.ElementGetAttribute(session, c)
+	}
 }
 
 func (s *Server) ElementGetName(session *Session, c *gin.Context) {
-	c.Set("attribute", "name")
+	c.Params = append(c.Params, gin.Param{"attribute", "Name"})
 	s.ElementGetAttribute(session, c)
+}
+
+func mapSeleniumAttr(attr string) string {
+	switch attr {
+	case "id":
+	case "href":
+		attr = "ID"
+	case "css":
+		attr = "CSS"
+	case "text":
+		attr = "Text"
+	case "name":
+	case "tag":
+		attr = "Name"
+	case "class":
+	case "type":
+		attr = "Class"
+	case "value":
+		attr = "LabelText"
+	}
+	return attr
 }
 
 func (s *Server) ElementGetAttribute(session *Session, c *gin.Context) {
@@ -377,12 +433,14 @@ func (s *Server) ElementGetAttribute(session *Session, c *gin.Context) {
 		return
 	}
 
+	attr = mapSeleniumAttr(attr)
+
 	action := ActionRequest{}
 	c.Bind(&action)
 
 	var element *xmlquery.Node
 
-	until := time.Now().Add(60 * time.Second)
+	until := session.GetActionTimeout()
 
 	for {
 		if time.Now().After(until) {
@@ -398,9 +456,12 @@ func (s *Server) ElementGetAttribute(session *Session, c *gin.Context) {
 		}
 		log.Debugf("locate element Using: %s Value: %s", action.Using, action.Value)
 
-		s.getElements(session)
+		if err := s.getElements(session); err != nil {
+			// elements commented
+			s.renderError(c, err)
+			return
+		}
 		if session.XmlDocument == nil {
-			log.Debugf("document could not be loaded")
 			time.Sleep(50 * time.Millisecond)
 			continue
 		}
@@ -471,9 +532,9 @@ func (s *Server) MoveTo(session *Session, c *gin.Context) {
 		log.Debugf("MoveTo: %s\n", move.Element)
 		elementID = move.Element
 	}
-	// if CacheXMLFile {
-	// 	session.XmlDocument = nil
-	// }
+
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -488,6 +549,8 @@ func (s *Server) ButtonDown(session *Session, c *gin.Context) {
 		moveElementToElement.From = elementID
 	}
 
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -499,8 +562,6 @@ func (s *Server) ButtonDown(session *Session, c *gin.Context) {
 func (s *Server) ButtonUp(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
-	s.printBody(c)
-
 	a := &action.DragAndDrop{
 		From: moveElementToElement.From,
 		To:   elementID,
@@ -511,6 +572,8 @@ func (s *Server) ButtonUp(session *Session, c *gin.Context) {
 	}
 	moveElementToElement = nil
 	elementID = ""
+
+	session.XmlDocument = nil
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -548,6 +611,8 @@ func (s *Server) TouchPosition(session *Session, c *gin.Context) {
 		}
 	}
 
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -572,6 +637,8 @@ func (s *Server) TouchDown(session *Session, c *gin.Context) {
 		s.renderError(c, err)
 		return
 	}
+
+	session.XmlDocument = nil
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -598,6 +665,8 @@ func (s *Server) TouchMove(session *Session, c *gin.Context) {
 		return
 	}
 
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -623,6 +692,8 @@ func (s *Server) TouchUp(session *Session, c *gin.Context) {
 		return
 	}
 
+	session.XmlDocument = nil
+
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
 		State:     "success",
@@ -638,7 +709,7 @@ func (s *Server) LongClickElement(session *Session, c *gin.Context) {
 	}
 	req := &Request{}
 	c.Bind(req)
-	until := time.Now().Add(60 * time.Second)
+	until := session.GetActionTimeout()
 
 	var result string
 	for {
@@ -667,6 +738,8 @@ func (s *Server) LongClickElement(session *Session, c *gin.Context) {
 			break
 		}
 	}
+
+	session.XmlDocument = nil
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,

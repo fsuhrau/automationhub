@@ -65,8 +65,8 @@ func (d *Device) UpdateDeviceInfos() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(params *app.Parameter) bool {
-	return true
+func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
+	return true, nil
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {

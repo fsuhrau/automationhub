@@ -3,6 +3,12 @@ package hub
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"sort"
+	"strings"
+
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/iosdevice"
@@ -15,12 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
-	"log"
-	"net"
-	"net/http"
-	"sort"
-	"strings"
-	"time"
 )
 
 type Selectable struct {
@@ -37,18 +37,28 @@ type ByName struct{ Selectables }
 func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
 
 type Server struct {
-	server        *http.Server
-	deviceManager *DeviceManager
-	sessions      map[string]*Session
-	logger        *logrus.Logger
-	hostIP        net.IP
+	server         *http.Server
+	deviceManager  *DeviceManager
+	sessionManager *SessionManager
+	logger         *logrus.Logger
+	hostIP         net.IP
+	// sessions       map[string]*Session
 }
 
 func NewServer() *Server {
 	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
+	level, err := logrus.ParseLevel(viper.GetString("log"))
+	if err != nil {
+		logrus.Infof("Parse Log Level: %s", err)
+		logrus.Info("using default info")
+		logger.SetLevel(logrus.InfoLevel)
+	} else {
+		logger.SetLevel(level)
+	}
 	logger.Formatter = new(prefixed.TextFormatter)
-	return &Server{logger: logger, sessions: make(map[string]*Session), deviceManager: NewManager(logger)}
+	deviceManager := NewManager(logger)
+	sessionManager := NewSessionManager(logger, deviceManager)
+	return &Server{logger: logger /*sessions: make(map[string]*Session)*/, sessionManager: sessionManager, deviceManager: deviceManager}
 }
 
 func GetOutboundIP() net.IP {
@@ -100,28 +110,9 @@ func ZeroConfServer(ctx context.Context, name string, address string) {
 	logrus.Infof("MDNS server shutdown.")
 }
 
-func (s *Server) Sessions() map[string]*Session {
-	return s.sessions
-}
-
-func (s *Server) cleanupSessions() {
-	for sessionID, session := range s.sessions {
-		if session.LastAccess.Add(time.Duration(10 * time.Second)).Before(time.Now()) {
-			s.logger.Debugf("session %s expired", sessionID)
-
-			if session.Recorder != nil {
-				if err := session.Recorder.Stop(); err != nil {
-					logrus.Errorf("stop recording session failed: %v", err)
-				}
-			}
-
-			s.deviceManager.UnlockDevice(session)
-			delete(s.sessions, session.SessionID)
-		}
-	}
-}
-
 func (s *Server) Run() error {
+
+	showRemlog := viper.GetBool("display_remlog")
 
 	var serviceConfig config.Service
 
@@ -141,23 +132,22 @@ func (s *Server) Run() error {
 		s.hostIP = GetOutboundIP()
 	}
 
-	//gocron.Every(30).Second().Do(s.cleanupSessions)
-
-	// f, _ := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE, 0755)
-	// defer f.Close()
-	// s.logger.SetOutput(f)
-
 	go ZeroConfServer(ctx, "", s.hostIP.String())
 
 	remoteLoggingService := remlog.NewService(s.logger)
 	if err := remoteLoggingService.Run(func(msg string) {
 		data := strings.Split(msg, "|")
 		if len(data) > 1 {
-			if session, ok := s.sessions[data[0]]; ok {
+			session, _ := s.sessionManager.GetSession(data[0])
+			if session != nil {
 				session.Storage.RemoteDeviceLog(data[1])
-				session.logger.Info(data[1])
+				if showRemlog {
+					session.logger.Debug(data[1])
+				}
 			} else {
-				s.logger.Info(msg)
+				if showRemlog {
+					s.logger.Debug(msg)
+				}
 			}
 		}
 	}); err != nil {
@@ -172,6 +162,8 @@ func (s *Server) Run() error {
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}
+
+	s.sessionManager.Run(ctx)
 
 	r := gin.New()
 	r.Use(Logger(s.logger.WithFields(logrus.Fields{"prefix": "rest"})), gin.Recovery())

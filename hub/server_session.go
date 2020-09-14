@@ -4,14 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/fsuhrau/automationhub/app"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/fsuhrau/automationhub/app"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/gin-gonic/gin"
@@ -22,8 +22,8 @@ import (
 
 var (
 	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='(.*)' versionCode='(.*)' versionName='(.*)' compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)'`)
-	LaunchActivityRegex = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
-	recordSession = false
+	LaunchActivityRegex  = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
+	recordSession        = false
 )
 
 func fileExists(filename string) bool {
@@ -117,24 +117,23 @@ func extractAppRequirements(applicationPath string, properties *device.Propertie
 
 func mapCapabilities(req map[string]interface{}, properties *device.Properties) {
 	if v, ok := req["app"]; ok {
-		properties.App = v.(string)
+		properties.App, ok = v.(string)
 	}
 	//if v, ok := req["app_id"]; ok {
-	//	properties.AppId = v.(string)
+	//	properties.AppId, ok = v.(string)
 	//}
 	if v, ok := req["device_name"]; ok {
-		properties.Name = v.(string)
+		properties.Name, ok = v.(string)
+	}
+	if v, ok := req["device"]; ok {
+		properties.DeviceID, ok = v.(string)
 	}
 	if v, ok := req["device_id"]; ok {
-		properties.DeviceID = v.(string)
+		properties.DeviceID, ok = v.(string)
 	}
 	if v, ok := req["device_os"]; ok {
-		properties.OS = v.(string)
+		properties.OS, ok = v.(string)
 	}
-}
-
-func (s *Server) getSessions(c *gin.Context) {
-	c.JSON(200, s.sessions)
 }
 
 func (s *Server) getDevices(c *gin.Context) {
@@ -182,60 +181,84 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	mapCapabilities(req.DesiredCapabilities, properties)
 	mapCapabilities(req.RequiredCapabilities, properties)
 
+	if !properties.AreValid() {
+		s.renderError(c, fmt.Errorf("session can't be created because of missing parameters"))
+		return
+	}
+
 	appParameter, err := extractAppRequirements(properties.App, properties)
 	if err != nil {
 		s.renderError(c, errors.WithMessage(err, "unable to identify app requirements"))
 	}
 
-	session := createNewSession(s.logger, properties, appParameter)
+	session := s.sessionManager.CreateNewSession(s.logger, properties, appParameter)
 
-	err = s.deviceManager.LockDevice(session, properties)
+	retryTimer := 500 * time.Millisecond
+
+	for counter := 0; counter < 5; counter++ {
+		if err = s.deviceManager.LockDevice(session, properties); err != nil {
+			// wit to unlock
+			time.Sleep(retryTimer)
+			err = errors.WithMessage(err, "no available device found")
+			continue
+		}
+
+		if session.Lock.Device.DeviceState() != device.Booted {
+			if err := s.deviceManager.Start(session.Lock.Device); err != nil {
+				logrus.Errorf("DeviceState: %v", err)
+				s.deviceManager.UnlockDevice(session)
+				time.Sleep(retryTimer)
+				continue
+			}
+		}
+
+		isInstalled, err := session.Lock.Device.IsAppInstalled(appParameter)
+		if err != nil {
+			s.deviceManager.UnlockDevice(session)
+			err = errors.WithMessage(err, "could not check if app is installed on device")
+			time.Sleep(retryTimer)
+			continue
+		}
+		if !isInstalled {
+			logrus.Infof("InstallApp on device: %s", session.Lock.Device.DeviceName())
+			if err := session.Lock.Device.InstallApp(appParameter); err != nil {
+				logrus.Errorf("InstallApp: %v", err)
+				s.deviceManager.UnlockDevice(session)
+				err = errors.WithMessage(err, "could not install app on device")
+				time.Sleep(retryTimer)
+				continue
+			}
+		} else {
+			logrus.Infof("InstallApp is already installed on device: %s", session.Lock.Device.DeviceName())
+		}
+
+		logrus.Infof("Stop App on Device: %s", session.Lock.Device.DeviceName())
+		if true {
+			session.Lock.Device.StopApp(appParameter)
+		}
+
+		if recordSession {
+			session.Recorder = &Recorder{
+				Storage: session.Storage,
+				Device:  session.Lock.Device,
+			}
+
+			logrus.Infof("Start Recording of session for device: %s", session.Lock.Device.DeviceName())
+			if err := session.Recorder.Start(); err != nil {
+				logrus.Errorf("start recording failed: %v", err)
+			}
+		}
+		break
+	}
 
 	if err != nil {
-		s.renderError(c, errors.WithMessage(err, "no available device found"))
+		s.deviceManager.UnlockDevice(session)
+		s.renderError(c, err)
 		return
 	}
 
-	if session.Lock.Device.DeviceState() != device.Booted {
-		if err := s.deviceManager.Start(session.Lock.Device); err != nil {
-			logrus.Errorf("DeviceState: %v", err)
-			s.deviceManager.UnlockDevice(session)
-			s.renderError(c, errors.WithMessage(err, "could not start device"))
-			return
-		}
-	}
-
-	if !session.Lock.Device.IsAppInstalled(appParameter) {
-		logrus.Infof("InstallApp on device: %s", session.Lock.Device.DeviceName())
-		if err := session.Lock.Device.InstallApp(appParameter); err != nil {
-			logrus.Errorf("InstallApp: %v", err)
-			s.deviceManager.UnlockDevice(session)
-			s.renderError(c, errors.WithMessage(err, "could not install app on device"))
-			return
-		}
-	} else {
-		logrus.Infof("InstallApp is already installed on device: %s", session.Lock.Device.DeviceName())
-	}
-
-	logrus.Infof("Stop App on Device: %s", session.Lock.Device.DeviceName())
-	if !viper.GetBool("debugger") {
-		session.Lock.Device.StopApp(appParameter)
-	}
-
-	if recordSession {
-		session.Recorder = &Recorder{
-			Storage: session.Storage,
-			Device:  session.Lock.Device,
-		}
-
-		logrus.Infof("Start Recording of session for device: %s", session.Lock.Device.DeviceName())
-		if err := session.Recorder.Start(); err != nil {
-			logrus.Errorf("start recording failed: %v", err)
-		}
-	}
-
 	logrus.Infof("Start App on device: %s", session.Lock.Device.DeviceName())
-	if !viper.GetBool("debugger") {
+	if true {
 		if err := session.Lock.Device.StartApp(appParameter, session.SessionID, s.hostIP); err != nil {
 			logrus.Errorf("StartApp: %v", err)
 			s.deviceManager.UnlockDevice(session)
@@ -252,9 +275,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 		return
 	}
 
-	// s.deviceManager.Send(session, fmt.Sprintf("event:SetSession///%s", session.SessionID))
-
-	s.sessions[session.SessionID] = session
+	s.sessionManager.AddSession(session)
 
 	c.JSON(http.StatusOK, &ServerResponse{
 		SessionID: session.SessionID,
@@ -277,15 +298,6 @@ func (s *Server) StopTestingSession(session *Session, c *gin.Context) {
 		HCode     int64  `json:"hcode"`
 		Status    int64  `json:"status"`
 	}
-
-	if session.Recorder != nil {
-		if err := session.Recorder.Stop(); err != nil {
-			logrus.Errorf("stop recording session failed: %v", err)
-		}
-	}
-
-	s.deviceManager.UnlockDevice(session)
-	session.Storage.Close()
-	delete(s.sessions, session.SessionID)
+	s.sessionManager.StopSession(session)
 	c.String(http.StatusOK, "")
 }

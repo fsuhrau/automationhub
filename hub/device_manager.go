@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"net"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/golang/protobuf/proto"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/sirupsen/logrus"
@@ -21,14 +22,25 @@ import (
 const (
 	ReceiveBufferSize       = 20 * 1024
 	DeviceConnectionTimeout = 5 * time.Second
+	DefaultSocketTimeout    = 60 * time.Second
 )
+
+var (
+	DeviceDisconnectedError = fmt.Errorf("device disconnected")
+)
+
+type ResponseData struct {
+	Data []byte
+	Err  error
+}
 
 type DeviceLock struct {
 	Device          device.Device
 	Connection      net.Conn
 	AppName         string
 	WaitingGroup    *sync.WaitGroup
-	ResponseChannel chan []byte
+	ResponseChannel chan ResponseData
+	//ConnectionStateChannel chan bool
 }
 
 type DeviceManager struct {
@@ -39,7 +51,6 @@ type DeviceManager struct {
 }
 
 func NewManager(logger *logrus.Logger) *DeviceManager {
-
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
@@ -256,6 +267,10 @@ func (dm *DeviceManager) lookupDevice(session *action.Session, remoteAddress str
 }
 
 func (dm *DeviceManager) handleConnection(c net.Conn) {
+	if err := c.SetDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
+		dm.log.Errorf("SocketAccept SetDeadline: %v", err)
+		return
+	}
 
 	remoteAddress := c.RemoteAddr().String()
 	dm.log.Infof("SocketAccept established: %v", remoteAddress)
@@ -293,24 +308,36 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		dm.log.Debugf("Device with ID %s connected", lock.Device.DeviceID())
 		lock.Connection = c
 		lock.Device.SetConnectionState(device.Connected)
-		lock.ResponseChannel = make(chan []byte, 1)
+		lock.ResponseChannel = make(chan ResponseData, 1)
+		//lock.ConnectionStateChannel = make(chan bool, 1)
 		go handleMessages(dm.log, lock)
 	}
 }
 
 func handleMessages(log *logrus.Entry, dev *DeviceLock) {
 	for {
+		if err := dev.Connection.SetDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
+			log.Errorf("SocketAccept SetDeadline: %v", err)
+			return
+		}
+		var responseData ResponseData
 		chunkBuffer := make([]byte, 4)
 		_, err := dev.Connection.Read(chunkBuffer)
 		if err != nil {
 			if io.EOF != err {
-				log.Errorf("handleMessages ReadError: %v", err)
+				log.Info("Device disconnected: %v", err)
 			} else {
-				log.Info("Device connection closed")
+				log.Info("Device disconnected")
 			}
+			responseData.Err = DeviceDisconnectedError
+			// dev.ConnectionStateChannel <- true
 			dev.Connection.Close()
-			close(dev.ResponseChannel)
+			dev.ResponseChannel <- responseData
 			dev.Device.SetConnectionState(device.Disconnected)
+			if dev.WaitingGroup != nil {
+				dev.WaitingGroup.Done()
+			}
+			close(dev.ResponseChannel)
 			dev.Connection = nil
 			dev.WaitingGroup = nil
 			return
@@ -319,17 +346,19 @@ func handleMessages(log *logrus.Entry, dev *DeviceLock) {
 		r := bytes.NewReader(chunkBuffer)
 		var messageSize uint32
 		binary.Read(r, binary.LittleEndian, &messageSize)
-		buffer := make([]byte, 0, messageSize)
+		responseData.Data = make([]byte, 0, messageSize)
 		chunkBuffer = make([]byte, ReceiveBufferSize)
-		for uint32(len(buffer)) < messageSize {
+		for uint32(len(responseData.Data)) < messageSize {
 			n, err := dev.Connection.Read(chunkBuffer)
 			if err != nil {
+				responseData.Err = err
 				log.Errorf("Chunk ReadError: %v", err)
+				break
 			}
-			buffer = append(buffer, chunkBuffer[:n]...)
+			responseData.Data = append(responseData.Data, chunkBuffer[:n]...)
 		}
 
-		dev.ResponseChannel <- buffer
+		dev.ResponseChannel <- responseData
 		if dev.WaitingGroup != nil {
 			dev.WaitingGroup.Done()
 		}
@@ -357,8 +386,11 @@ func (dm *DeviceManager) SendBytes(session *Session, content []byte) ([]byte, er
 		session.Lock.Connection.Write(content)
 		session.Lock.WaitingGroup.Wait()
 		session.Lock.WaitingGroup = nil
-		content := <-session.Lock.ResponseChannel
-		return content, nil
+		data := <-session.Lock.ResponseChannel
+		if data.Err == DeviceDisconnectedError {
+			session.DeviceDisconnected()
+		}
+		return data.Data, data.Err
 	}
 
 	return []byte{}, fmt.Errorf("device not connected")

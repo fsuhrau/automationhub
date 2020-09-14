@@ -3,13 +3,14 @@ package android
 import (
 	"bufio"
 	"bytes"
-	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/device"
-	"github.com/sirupsen/logrus"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/device"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -42,11 +43,23 @@ func GetParameterInt(deviceID, param string) int64 {
 }
 
 func GetDeviceIP(deviceID string) (net.IP, error) {
-	cmd := device.NewCommand(ADB, "-s", deviceID, "shell", "ip", "-f", "inet", "addr", "show", "wlan0")
-	output, err := cmd.Output()
+	networkDevices := []string{
+		"wlan0",
+		"eth0",
+	}
+	var output []byte
+	var err error
+	for _, nd := range networkDevices {
+		cmd := device.NewCommand(ADB, "-s", deviceID, "shell", "ip", "-f", "inet", "addr", "show", nd)
+		output, err = cmd.Output()
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -62,8 +75,8 @@ func GetDeviceIP(deviceID string) (net.IP, error) {
 	return nil, nil
 }
 
-func IsAppInstalled(deviceID string, params *app.Parameter) bool {
+func IsAppInstalled(deviceID string, params *app.Parameter) (bool, error) {
 	cmd := device.NewCommand(ADB, "-s", deviceID, "shell", "pm", "list", "packages")
-	output, _ := cmd.Output()
-	return strings.Contains(string(output), params.Identifier)
+	output, err := cmd.Output()
+	return strings.Contains(string(output), params.Identifier), err
 }

@@ -76,13 +76,13 @@ func (d *Device) UpdateDeviceInfos() error {
 	return nil
 }
 
-func (d *Device) IsAppInstalled(params *app.Parameter) bool {
+func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
 	output, err := cmd.Output()
 	if err != nil {
-		return false
+		return false, err
 	}
-	return strings.Contains(string(output), "true")
+	return strings.Contains(string(output), "true"), nil
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {

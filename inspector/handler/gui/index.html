@@ -19,36 +19,6 @@
             height: 20px;
         }
     </style>
-
-    <dialog id="startAppDialog" class="mdl-dialog" style="width: 520px;">
-        <h4 class="mdl-dialog__title">Start new Session</h4>
-        <div class="mdl-dialog__content">
-            <div id="fileuploader" style="float: left;">Upload</div>
-            <div id="deviceSelection" class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label getmdl-select">
-                <input type="text" value="" class="mdl-textfield__input" id="deviceSelectionBox" readonly>
-                <input type="hidden" value="" name="deviceSelectionBox" id="deviceSelectionBoxValue">
-                <label for="deviceSelectionBox" class="mdl-textfield__label">Devides</label>
-                <ul id="deviceSelectionContainer" for="deviceSelectionBox" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
-                </ul>
-            </div>
-            <div id="appSelection" class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label getmdl-select">
-                <input type="text" value="" class="mdl-textfield__input" id="appSelectBox" readonly>
-                <input type="hidden" value="" name="deviceSelectionBox" id="appSelectBoxValue">
-                <label for="appSelectBox" class="mdl-textfield__label">Apps</label>
-                <ul id="appSelectionContainer" for="appSelectBox" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
-                    {{ $apps := .apps }}
-                    {{ range $app := $apps }}
-                        <li class="mdl-menu__item" data-val="{{ $app }}">{{ $app }}</li>
-                    {{ end }}
-                </ul>
-            </div>
-        </div>
-        <div class="mdl-dialog__actions">
-            <button type="button" class="mdl-button close" onclick="closeStartAppDialog()">Close</button>
-            <button id="startSession" class="mdl-button mdl-js-button mdl-button--raised" onclick="startAppDialogSessionStart()">Start</button>
-        </div>
-    </dialog>
-
     <div class="mdl-grid" style="width: 100%">
         <div class="mdl-cell mdl-cell--3-col">
             <div class="mdl-grid" style="width: 100%">

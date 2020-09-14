@@ -77,6 +77,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".automationhub" (without extension).
 		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
 		viper.SetConfigName(".automationhub")
 	}
 
