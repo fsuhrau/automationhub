@@ -501,6 +501,23 @@ function getCanvasPosY(e, canvas) {
     return  e.pageY - canvas.offset().top
 }
 
+function keepAlive() {
+    var sessionId = getCookie("session_id");
+    if (sessionId !== "") {
+        $.ajax({
+            type: "GET",
+            url: getBaseURL() + "ping",
+            success: function (data) {
+            },
+            error: function (request, status, error) {
+            },
+            failure: function (errMsg) {
+            }
+        });
+    
+    }
+}
+
 var moveAction = null;
 var upAction = null;
 
@@ -586,32 +603,6 @@ $(document).ready(function () {
         mousePressed = false;
     });
 
-    var deviceList = $('#deviceSelectionContainer');
-    activity(true);
-    $.ajax({
-        type: "GET",
-        url: "/devices",
-        success: function (data) {
-            activity(false);
-            actionRunning = false;
-            var elements = "";
-            for (i = 0; i < data.length; i++) {
-                elements += "<li class=\"mdl-menu__item\" data-val=\"" + data[i].ID + "\">" + data[i].Name + "</li>";
-            }
-            deviceList.html(elements);
-        },
-        error: function (request, status, error) {
-            actionRunning = false;
-            activity(false);
-            notify(request.responseJSON.message)
-        },
-        failure: function (errMsg) {
-            actionRunning = false;
-            activity(false);
-            notify(errMsg)
-        }
-    });
-
     $('#fileuploader').uploadFile({
         url: "inspector/upload",
         fileName: "test_target",
@@ -631,7 +622,10 @@ $(document).ready(function () {
     if (sessionId !== "") {
         getScreenshot();
     }
+
+    setInterval(keepAlive, 30000);
 })
+
 
 function selectNode(nodeID) {
     selectedNode = nodeID;

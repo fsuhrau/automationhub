@@ -3,9 +3,6 @@ package iosdevice
 import (
 	"bytes"
 	"fmt"
-	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/config"
-	"github.com/sirupsen/logrus"
 	"image"
 	"image/color"
 	"image/png"
@@ -15,13 +12,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/config"
+	"github.com/sirupsen/logrus"
+
 	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/device"
 )
 
 var reinstall bool = true
 
-const CONNECTION_TIMEOUT = 120 * time.Second
+const (
+	IOS_DEPLOY_BIN     = "ios-deploy" // "/usr/local/bin/ios-deploy"
+	CONNECTION_TIMEOUT = 120 * time.Second
+)
 
 type Device struct {
 	deviceOSName            string
@@ -77,7 +81,7 @@ func (d *Device) UpdateDeviceInfos() error {
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
-	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
+	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
 	output, err := cmd.Output()
 	if err != nil {
 		return false, err
@@ -86,18 +90,18 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
-	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--bundle", params.AppPath)
+	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--bundle", params.AppPath)
 	return cmd.Run()
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--id", d.DeviceID(), "--uninstall_only", "--bundle_id", params.Identifier)
+	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--uninstall_only", "--bundle_id", params.Identifier)
 	return cmd.Run()
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
 	if reinstall {
-		d.runningAppProcess = device.NewCommand("/usr/local/bin/ios-deploy", "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
+		d.runningAppProcess = device.NewCommand(IOS_DEPLOY_BIN, "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
 		if false {
 			d.runningAppProcess.Stdout = os.Stdout
 		}

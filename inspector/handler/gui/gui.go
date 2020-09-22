@@ -2,24 +2,31 @@ package gui
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/fsuhrau/automationhub/inspector/handler/manager"
+	"github.com/gin-gonic/gin"
 )
 
 // List all articles
-func Index(c *gin.Context) {
-	files, _ := ioutil.ReadDir("./upload")
-	var pathes []string
-	pathes = append(pathes, "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app")
-	for _, f := range files {
-		pathes = append(pathes, filepath.Join("upload", f.Name()))
+func Index(m manager.DeviceManager) func(*gin.Context) {
+	return func(c *gin.Context) {
+		deviceList := manager.DeviceList(m)
+
+		files, _ := ioutil.ReadDir("./upload")
+		var pathes []string
+		pathes = append(pathes, "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app")
+		for _, f := range files {
+			pathes = append(pathes, filepath.Join("upload", f.Name()))
+		}
+		c.HTML(http.StatusOK, "gui/index", gin.H{
+			"apps":    pathes,
+			"devices": deviceList,
+		})
 	}
-	c.HTML(http.StatusOK, "gui/index", gin.H{
-		"apps": pathes,
-	})
 }
 
 func UploadFile(c *gin.Context) {
@@ -44,4 +51,3 @@ func UploadFile(c *gin.Context) {
 		"app_path": filePath,
 	})
 }
-

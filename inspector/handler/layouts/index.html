@@ -78,11 +78,15 @@
 			<input type="hidden" value="" name="deviceSelectionBox" id="deviceSelectionBoxValue">
 			<label for="deviceSelectionBox" class="mdl-textfield__label">Devides</label>
 			<ul id="deviceSelectionContainer" for="deviceSelectionBox" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
+				{{ $devices := .devices }}
+				{{ range $device := $devices }}
+					<li class="mdl-menu__item" data-val="{{ $device.Identifier }}">{{ $device.Name }}({{ $device.OperationSystem }})</li>
+				{{ end }}
 			</ul>
 		</div>
 		<div id="appSelection" class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label getmdl-select">
 			<input type="text" value="" class="mdl-textfield__input" id="appSelectBox" readonly>
-			<input type="hidden" value="" name="deviceSelectionBox" id="appSelectBoxValue">
+			<input type="hidden" value="" name="appSelectBox" id="appSelectBoxValue">
 			<label for="appSelectBox" class="mdl-textfield__label">Apps</label>
 			<ul id="appSelectionContainer" for="appSelectBox" class="mdl-menu mdl-menu--bottom-left mdl-js-menu">
 				{{ $apps := .apps }}

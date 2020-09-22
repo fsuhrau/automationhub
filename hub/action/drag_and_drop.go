@@ -1,7 +1,6 @@
 package action
 
 import (
-	"fmt"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -23,8 +22,8 @@ func (a *DragAndDrop) Deserialize(content []byte) error {
 	if err := proto.Unmarshal(content, resp); err != nil {
 		return err
 	}
-	if !resp.Success {
-		return fmt.Errorf("drag and drop failed")
-	}
+	//if !resp.Success {
+	//	return fmt.Errorf("drag and drop failed")
+	//}
 	return nil
 }

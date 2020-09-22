@@ -166,12 +166,13 @@ func (s *Server) Run() error {
 	s.sessionManager.Run(ctx)
 
 	r := gin.New()
-	r.Use(Logger(s.logger.WithFields(logrus.Fields{"prefix": "rest"})), gin.Recovery())
+	r.Use(Recovery())
+	r.Use(Logger(s.logger.WithFields(logrus.Fields{"prefix": "rest"})))
 	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
+		c.String(http.StatusOK, "pong")
 	})
 
-	inspector.Init(r, s.deviceManager)
+	inspector.Init(r, s.deviceManager, s.sessionManager)
 
 	r.GET("/devices", func(c *gin.Context) {
 		devices, _ := s.deviceManager.Devices()
@@ -187,6 +188,9 @@ func (s *Server) Run() error {
 	authGroup := r.Group("/wd/hub/session/:sessionID")
 	authGroup.Use(SessionMiddleware(s))
 	authGroup.DELETE("", HandleWithSession(s.StopTestingSession))
+	authGroup.GET("ping", HandleWithSession(func(s *Session, c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	}))
 	authGroup.GET("screenshot", HandleWithSession(s.TakeScreenshot))
 	authGroup.GET("screen", HandleWithSession(s.GetScreen))
 	authGroup.GET("graph", HandleWithSession(s.GetGraph))

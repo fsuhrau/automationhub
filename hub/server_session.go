@@ -3,6 +3,7 @@ package hub
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/spf13/viper"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/gin-gonic/gin"
@@ -23,7 +25,6 @@ import (
 var (
 	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='(.*)' versionCode='(.*)' versionName='(.*)' compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)'`)
 	LaunchActivityRegex  = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
-	recordSession        = false
 )
 
 func fileExists(filename string) bool {
@@ -111,6 +112,9 @@ func extractAppRequirements(applicationPath string, properties *device.Propertie
 				continue
 			}
 		}
+		data, err := ioutil.ReadFile(applicationPath)
+		params.Hash = sha1.Sum(data)
+
 	}
 	return params, nil
 }
@@ -237,7 +241,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 			session.Lock.Device.StopApp(appParameter)
 		}
 
-		if recordSession {
+		if viper.GetBool("screen_recording") {
 			session.Recorder = &Recorder{
 				Storage: session.Storage,
 				Device:  session.Lock.Device,
@@ -258,13 +262,11 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	}
 
 	logrus.Infof("Start App on device: %s", session.Lock.Device.DeviceName())
-	if true {
-		if err := session.Lock.Device.StartApp(appParameter, session.SessionID, s.hostIP); err != nil {
-			logrus.Errorf("StartApp: %v", err)
-			s.deviceManager.UnlockDevice(session)
-			s.renderError(c, errors.WithMessage(err, "could not start app on device"))
-			return
-		}
+	if err := session.Lock.Device.StartApp(appParameter, session.SessionID, s.hostIP); err != nil {
+		logrus.Errorf("StartApp: %v", err)
+		s.deviceManager.UnlockDevice(session)
+		s.renderError(c, errors.WithMessage(err, "could not start app on device"))
+		return
 	}
 
 	logrus.Infof("Wait for app to be started and connected for device: %s", session.Lock.Device.DeviceName())

@@ -1,5 +1,5 @@
 {{ define "title" }}
-    Device Pool
+    Active Sessions
 {{ end }}
 {{ define "content" }}
     <script>
@@ -12,10 +12,10 @@
             )
         }
 
-        function bootupDevice(deviceID) {
+        function endSession(deviceID) {
             $.ajax({
                 type: "POST",
-                url: "device/bootup",
+                url: "session/stop",
                 // The key needs to match your method's input parameter (case-sensitive).
                 data: JSON.stringify({
                     device_id: deviceID,
@@ -23,69 +23,44 @@
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function (data) {
-                    notify("device booted up")
+                    notify("session ended")
                 },
                 error: function (request, status, error) {
-                    notify("failed to bootup device: " + error)
+                    notify("can't end session: " + error)
                 },
                 failure: function (error) {
-                    notify("failed to bootup device: " + error)
-                }
-            });
-        }
-
-        function shutdownDevice(deviceID) {
-            $.ajax({
-                type: "POST",
-                url: "device/shutdown",
-                // The key needs to match your method's input parameter (case-sensitive).
-                data: JSON.stringify({
-                    device_id: deviceID,
-                }),
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: function (data) {
-                    notify("device shutdown")
-                },
-                error: function (request, status, error) {
-                    notify("failed to shutdown device: " + error)
-                },
-                failure: function (error) {
-                    notify("failed to shutdown device: " + error)
+                    notify("can't end session: " + error)
                 }
             });
         }
     </script>
-    {{ $devices := .devices }}
+    {{ $sessions := .sessions }}
     <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
         <thead>
         <tr>
-            <th class="mdl-data-table__cell--non-numeric">Name</th>
-            <th class="mdl-data-table__cell--non-numeric">Identifier</th>
-            <th class="mdl-data-table__cell--non-numeric">Operation System</th>
-            <th class="mdl-data-table__cell--non-numeric">Supported Architectures</th>
-            <th class="mdl-data-table__cell--non-numeric">Status</th>
+            <th class="mdl-data-table__cell--non-numeric">SessionID</th>
+            <th class="mdl-data-table__cell--non-numeric">Last Action</th>
+            <th class="mdl-data-table__cell--non-numeric" style="max-width: 400px;">App</th>
+            <th class="mdl-data-table__cell--non-numeric" style="max-width: 400px;">Device</th>
             <th class="mdl-data-table__cell--non-numeric">Actions</th>
         </tr>
         </thead>
         <tbody>
-        {{ range $device := $devices }}
+        {{ range $session := $sessions }}
             <tr>
-                <td class="mdl-data-table__cell--non-numeric">{{ $device.Name }}</td>
-                <td class="mdl-data-table__cell--non-numeric">{{ $device.Identifier }}</td>
-                <td class="mdl-data-table__cell--non-numeric">{{ $device.OperationSystem }}</td>
-                <td class="mdl-data-table__cell--non-numeric">{{ $device.SupportedArchitectures }}</td>
-                <td class="mdl-data-table__cell--non-numeric">{{ $device.Status }}</td>
+                <td class="mdl-data-table__cell--non-numeric">{{ $session.GetSessionID }}</td>
+                <td class="mdl-data-table__cell--non-numeric">{{ $session.GetLastAccessTime }}</td>
+                <td class="mdl-data-table__cell--non-numeric" style="max-width: 400px;">
+                    {{ $session.GetAppParameter.Name }}<br />
+                    {{ $session.GetAppParameter.AppPath }}<br />
+                </td>
+                <td class="mdl-data-table__cell--non-numeric" style="max-width: 400px;">
+                    {{ $session.GetDevice.DeviceName }} / {{ $session.GetDevice.DeviceID }}<br />
+                    {{ $session.GetDevice.DeviceIP }} <br />
+                    {{ $session.GetDevice.DeviceOSName }}({{ $session.GetDevice.DeviceOSVersion }})<br />
+                </td>
                 <td class="mdl-data-table__cell--non-numeric">
-                    {{ if eq $device.Status "booted" }}
-                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent" onclick="shutdownDevice({{ $device.Identifier }})">
-                            Shutdown
-                        </button>
-                    {{ else }}
-                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="bootupDevice({{ $device.Identifier }})">
-                            Bootup
-                        </button>
-                    {{ end }}
+                    <a href="/inspector/session/{{ $session.GetSessionID }}/show">Show</a><br />
                 </td>
             </tr>
         {{ end }}

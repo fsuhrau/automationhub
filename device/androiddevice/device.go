@@ -2,10 +2,6 @@ package androiddevice
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/tools/android"
-	"github.com/spf13/viper"
 	"image"
 	"io/ioutil"
 	"net"
@@ -14,6 +10,12 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/tools/android"
+	"github.com/prometheus/common/log"
+	"github.com/spf13/viper"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/sirupsen/logrus"
@@ -44,6 +46,7 @@ type Device struct {
 	recordingSession    *exec.Cmd
 	cfg                 *config.Device
 	lastUpdateAt        time.Time
+	installedApps       map[string][20]byte
 }
 
 func (d *Device) DeviceOSName() string {
@@ -86,7 +89,13 @@ func (d *Device) SetDeviceState(state string) {
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
-	return android.IsAppInstalled(d.deviceID, params)
+	isAppInstalled := false
+	hash, ok := d.installedApps[params.Identifier]
+	if ok {
+		isAppInstalled = hash == params.Hash
+	}
+	installed, err := android.IsAppInstalled(d.deviceID, params)
+	return installed && isAppInstalled, err
 }
 
 func (d *Device) UpdateDeviceInfos() error {
@@ -99,6 +108,7 @@ func (d *Device) UpdateDeviceInfos() error {
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
+
 	isApkDebuggable := isDebuggablePackage(params.AppPath)
 
 	var debug string
@@ -116,21 +126,23 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 	}
 
 	cmd := device.NewCommand("adb", parameter...)
-	cmd.Stderr = os.Stderr
-	output, err := cmd.Output()
-
-	logrus.Debugf("%v", output)
-
-	if strings.Contains(string(output), "Failure [") {
-		return fmt.Errorf("Installation Failed")
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	return err
+	d.installedApps[params.Identifier] = params.Hash
+
+	return nil
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
 	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "uninstall", params.Identifier)
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	d.installedApps[params.Identifier] = [20]byte{}
+	return nil
 }
 
 func (d *Device) unlockScreen() error {
@@ -198,13 +210,16 @@ func (d *Device) StartRecording(path string) error {
 
 func (d *Device) StopRecording() error {
 	if d.recordingSession != nil && d.recordingSession.Process != nil {
-		err := d.recordingSession.Process.Signal(os.Interrupt)
-		d.recordingSession = nil
-		if err != nil {
+		if err := d.recordingSession.Process.Signal(os.Interrupt); err != nil {
 			return err
 		}
+		if err := d.recordingSession.Wait(); err != nil {
+			log.Infof("stop recording session failed: %v", err)
+		}
+		d.recordingSession = nil
 	}
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "pull", "/data/local/tmp/automation_hub_record.mp4")
+	time.Sleep(500 * time.Millisecond)
+	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/data/local/tmp/automation_hub_record.mp4")
 	if err := cmd.Run(); err != nil {
 		return err
 	}

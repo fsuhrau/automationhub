@@ -7,12 +7,13 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/inspector/handler/manager"
 	"github.com/gofrs/uuid"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	SessionTimeout = time.Second * 60
+	SessionTimeout = 1 * time.Minute
 )
 
 var (
@@ -100,4 +101,19 @@ func (s *SessionManager) GetSession(sessionID string) (*Session, error) {
 		return session, nil
 	}
 	return nil, UnkownSessionError
+}
+
+func (s *SessionManager) GetSessions() []manager.Session {
+	var sessions []manager.Session
+	for _, v := range s.sessions {
+		sessions = append(sessions, v)
+	}
+	return sessions
+}
+
+func (s *SessionManager) GetSessionDetails(sessionID string) manager.Session {
+	if session, ok := s.sessions[sessionID]; ok {
+		return session
+	}
+	return nil
 }

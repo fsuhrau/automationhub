@@ -44,6 +44,25 @@ type Session struct {
 	endSession       bool
 }
 
+func (s *Session) GetSessionID() string {
+	return s.SessionID
+}
+
+func (s *Session) GetLastAccessTime() time.Time {
+	return s.LastAccess
+}
+
+func (s *Session) GetAppParameter() *app.Parameter {
+	return s.AppParameter
+}
+
+func (s *Session) GetDevice() device.Device {
+	if s.Lock != nil {
+		return s.Lock.Device
+	}
+	return nil
+}
+
 func (s *Session) WaitForConnection() error {
 
 	timeout := time.Now().Add(s.Lock.Device.ConnectionTimeout())

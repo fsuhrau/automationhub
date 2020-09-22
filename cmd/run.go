@@ -16,7 +16,9 @@ package cmd
 
 import (
 	"github.com/fsuhrau/automationhub/hub"
+	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // runCmd represents the run command
@@ -30,6 +32,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		sentryDns := viper.GetString("sentry_dsn")
+		if len(sentryDns) > 0 {
+			sentry.Init(sentry.ClientOptions{
+				Dsn: sentryDns,
+			})
+		}
 		server := hub.NewServer()
 		return server.Run()
 	},

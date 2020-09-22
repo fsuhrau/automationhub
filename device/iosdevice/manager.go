@@ -3,10 +3,10 @@ package iosdevice
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fsuhrau/automationhub/config"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/config"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -34,7 +34,7 @@ type Detect struct {
 }
 
 type Manager struct {
-	devices map[string]*Device
+	devices      map[string]*Device
 	deviceConfig config.Interface
 }
 
@@ -100,8 +100,8 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 
 func (m *Manager) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
-	cmd := device.NewCommand("/usr/local/bin/ios-deploy", "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
-	cmd.Stderr = os.Stderr
+	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
+	// cmd.Stderr = os.Stderr
 	output, err := cmd.Output()
 	if err != nil {
 		return err
@@ -133,8 +133,8 @@ func (m *Manager) RefreshDevices() error {
 				deviceID:        device.Device.DeviceIdentifier,
 				deviceOSName:    device.Device.ModelSDK,
 				deviceOSVersion: device.Device.ProductVersion,
-				cfg: cfg,
-				lastUpdateAt: lastUpdate,
+				cfg:             cfg,
+				lastUpdateAt:    lastUpdate,
 			}
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("Booted")
 		}

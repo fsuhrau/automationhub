@@ -7,4 +7,5 @@ type Parameter struct {
 	Version        string
 	LaunchActivity string
 	Additional     string
+	Hash           [20]byte
 }

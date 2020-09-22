@@ -3,7 +3,6 @@ package androiddevice
 import (
 	"bufio"
 	"bytes"
-	"os"
 	"regexp"
 	"time"
 
@@ -33,7 +32,7 @@ func (m *Manager) Init() error {
 		// connect all remote devices
 		if devices[i].Connection.Type == "remote" {
 			cmd := device.NewCommand("adb", "connect", devices[i].Connection.IP)
-			cmd.Stderr = os.Stderr
+			// cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				return err
 			}
@@ -48,7 +47,7 @@ func (m *Manager) Init() error {
 		// connect all remote devices
 		if devices[i].Connection.Type == "remote" {
 			cmd := device.NewCommand("adb", "disconnect", devices[i].Connection.IP)
-			cmd.Stderr = os.Stderr
+			// cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				return err
 			}
@@ -60,13 +59,13 @@ func (m *Manager) Init() error {
 
 func (m *Manager) Start() error {
 	cmd := device.NewCommand("adb", "start-server")
-	cmd.Stderr = os.Stderr
+	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func (m *Manager) Stop() error {
 	cmd := device.NewCommand("adb", "kill-server")
-	cmd.Stderr = os.Stderr
+	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
@@ -76,7 +75,7 @@ func (m *Manager) StartDevice(deviceID string) error {
 		if v.deviceID == deviceID {
 			if v.deviceState == device.RemoteDisconnected {
 				cmd := device.NewCommand("adb", "connect", v.cfg.Connection.IP)
-				cmd.Stderr = os.Stderr
+				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					return err
 				}
@@ -100,7 +99,7 @@ func (m *Manager) StopDevice(deviceID string) error {
 			found = true
 			if v.cfg != nil && v.cfg.Connection.Type == "remote" {
 				cmd := device.NewCommand("adb", "disconnect", v.cfg.Connection.IP)
-				cmd.Stderr = os.Stderr
+				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					return err
 				}
@@ -165,15 +164,16 @@ func (m *Manager) RefreshDevices() error {
 				cfg = m.deviceConfig.GetDeviceConfig(deviceID)
 			}
 			m.devices[deviceID] = &Device{
-				deviceName:   name,
-				deviceID:     deviceID,
-				product:      product,
-				deviceUSB:    deviceUSB,
-				deviceModel:  model,
-				transportID:  transportID,
-				deviceOSName: "android",
-				cfg:          cfg,
-				lastUpdateAt: lastUpdate,
+				deviceName:    name,
+				deviceID:      deviceID,
+				product:       product,
+				deviceUSB:     deviceUSB,
+				deviceModel:   model,
+				transportID:   transportID,
+				deviceOSName:  "android",
+				cfg:           cfg,
+				lastUpdateAt:  lastUpdate,
+				installedApps: make(map[string][20]byte),
 			}
 			m.devices[deviceID].UpdateDeviceInfos()
 			m.devices[deviceID].SetDeviceState("Booted")
