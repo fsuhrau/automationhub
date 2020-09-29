@@ -140,7 +140,7 @@ func mapCapabilities(req map[string]interface{}, properties *device.Properties) 
 	}
 }
 
-func (s *Server) getDevices(c *gin.Context) {
+func (s *Service) getDevices(c *gin.Context) {
 	type device struct {
 		Name string
 		OS   string
@@ -158,7 +158,7 @@ func (s *Server) getDevices(c *gin.Context) {
 	c.JSON(200, deviceList)
 }
 
-func (s *Server) InitNewTestSession(c *gin.Context) {
+func (s *Service) InitNewTestSession(c *gin.Context) {
 	type Capabilities struct {
 		DeviceID string `json:"device"`
 	}
@@ -293,7 +293,7 @@ func (s *Server) InitNewTestSession(c *gin.Context) {
 	})
 }
 
-func (s *Server) StopTestingSession(session *Session, c *gin.Context) {
+func (s *Service) StopTestingSession(session *Session, c *gin.Context) {
 	type SessionResponse struct {
 		SessionID string `json:"sessionId"`
 		State     string `json:"state"`

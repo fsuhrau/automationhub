@@ -57,7 +57,7 @@ type ActionRequest struct {
 	Value string `json:"value"`
 }
 
-func (s *Server) getElements(session *Session) error {
+func (s *Service) getElements(session *Session) error {
 
 	if viper.GetBool("use_element_cache") && session.XmlDocument != nil {
 		return nil
@@ -77,7 +77,7 @@ func (s *Server) getElements(session *Session) error {
 	return nil
 }
 
-func (s *Server) GetElement(session *Session, c *gin.Context) {
+func (s *Service) GetElement(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	action := ActionRequest{}
@@ -159,7 +159,7 @@ func (s *Server) GetElement(session *Session, c *gin.Context) {
 	}
 }
 
-func (s *Server) GetElements(session *Session, c *gin.Context) {
+func (s *Service) GetElements(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	action := ActionRequest{}
@@ -247,7 +247,7 @@ func (s *Server) GetElements(session *Session, c *gin.Context) {
 	}
 }
 
-func (s *Server) ElementIsDisplayed(session *Session, c *gin.Context) {
+func (s *Service) ElementIsDisplayed(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	elementID := c.Param("elementID")
@@ -272,7 +272,7 @@ func (s *Server) ElementIsDisplayed(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ElementClick(session *Session, c *gin.Context) {
+func (s *Service) ElementClick(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	elementID := c.Param("elementID")
@@ -315,7 +315,7 @@ func (s *Server) ElementClick(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ElementSetValue(session *Session, c *gin.Context) {
+func (s *Service) ElementSetValue(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type ActionRequest struct {
@@ -355,7 +355,7 @@ func (s *Server) ElementSetValue(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ElementGetValue(session *Session, c *gin.Context) {
+func (s *Service) ElementGetValue(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	attr := c.Param("attribute")
 	elementID := c.Param("elementID")
@@ -379,7 +379,7 @@ func (s *Server) ElementGetValue(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ElementGetText(session *Session, c *gin.Context) {
+func (s *Service) ElementGetText(session *Session, c *gin.Context) {
 	c.Params = append(c.Params, gin.Param{"attribute", "text"})
 	if viper.GetBool("innium_support") {
 		s.ElementGetValue(session, c)
@@ -388,7 +388,7 @@ func (s *Server) ElementGetText(session *Session, c *gin.Context) {
 	}
 }
 
-func (s *Server) ElementGetCSS(session *Session, c *gin.Context) {
+func (s *Service) ElementGetCSS(session *Session, c *gin.Context) {
 	c.Params = append(c.Params, gin.Param{"attribute", "css"})
 	if viper.GetBool("innium_support") {
 		s.ElementGetValue(session, c)
@@ -397,7 +397,7 @@ func (s *Server) ElementGetCSS(session *Session, c *gin.Context) {
 	}
 }
 
-func (s *Server) ElementGetName(session *Session, c *gin.Context) {
+func (s *Service) ElementGetName(session *Session, c *gin.Context) {
 	c.Params = append(c.Params, gin.Param{"attribute", "Name"})
 	s.ElementGetAttribute(session, c)
 }
@@ -423,7 +423,7 @@ func mapSeleniumAttr(attr string) string {
 	return attr
 }
 
-func (s *Server) ElementGetAttribute(session *Session, c *gin.Context) {
+func (s *Service) ElementGetAttribute(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	attr := c.Param("attribute")
 	elementID := c.Param("elementID")
@@ -505,7 +505,7 @@ type MoveElementToElement struct {
 var moveElementToElement *MoveElementToElement
 var elementID string
 
-func (s *Server) MoveTo(session *Session, c *gin.Context) {
+func (s *Service) MoveTo(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type Move struct {
@@ -543,7 +543,7 @@ func (s *Server) MoveTo(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ButtonDown(session *Session, c *gin.Context) {
+func (s *Service) ButtonDown(session *Session, c *gin.Context) {
 
 	if moveElementToElement != nil {
 		moveElementToElement.From = elementID
@@ -559,7 +559,7 @@ func (s *Server) ButtonDown(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) ButtonUp(session *Session, c *gin.Context) {
+func (s *Service) ButtonUp(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	a := &action.DragAndDrop{
@@ -584,7 +584,7 @@ func (s *Server) ButtonUp(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) TouchPosition(session *Session, c *gin.Context) {
+func (s *Service) TouchPosition(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type Request struct {
@@ -621,7 +621,7 @@ func (s *Server) TouchPosition(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) TouchDown(session *Session, c *gin.Context) {
+func (s *Service) TouchDown(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type Request struct {
@@ -648,7 +648,7 @@ func (s *Server) TouchDown(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) TouchMove(session *Session, c *gin.Context) {
+func (s *Service) TouchMove(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type Request struct {
@@ -675,7 +675,7 @@ func (s *Server) TouchMove(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) TouchUp(session *Session, c *gin.Context) {
+func (s *Service) TouchUp(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	type Request struct {
@@ -702,7 +702,7 @@ func (s *Server) TouchUp(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) LongClickElement(session *Session, c *gin.Context) {
+func (s *Service) LongClickElement(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	type Request struct {
 		ElementID string `json:"element"`

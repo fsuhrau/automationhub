@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) printBody(c *gin.Context) {
+func (s *Service) printBody(c *gin.Context) {
 	debugmap := map[string]interface{}{}
 	c.Bind(&debugmap)
 	s.logger.Debugf("body: %v\n", debugmap)
 }
 
-func (s *Server) renderError(c *gin.Context, err error) {
+func (s *Service) renderError(c *gin.Context, err error) {
 	s.logger.Errorf("%v", err)
 	c.JSON(http.StatusNotFound, &ServerResponse{
 		SessionID: "",
@@ -28,7 +28,7 @@ func (s *Server) renderError(c *gin.Context, err error) {
 	})
 }
 
-func (s *Server) GetGraph(session *Session, c *gin.Context) {
+func (s *Service) GetGraph(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	a := &action.GetSceenGraph{}
@@ -46,7 +46,7 @@ type screen struct {
 	Data   string `json:"data"`
 }
 
-func (s *Server) GetScreen(session *Session, c *gin.Context) {
+func (s *Service) GetScreen(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 
 	var data *screen
@@ -111,7 +111,7 @@ func (s *Server) GetScreen(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
+func (s *Service) TakeScreenshot(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	var data string
 	var payload []byte
@@ -172,7 +172,7 @@ func (s *Server) TakeScreenshot(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) SetTimeouts(session *Session, c *gin.Context) {
+func (s *Service) SetTimeouts(session *Session, c *gin.Context) {
 	type timeout struct {
 		Type string `json:"type"`
 		MS   int    `json:"ms"`
@@ -192,7 +192,7 @@ func (s *Server) SetTimeouts(session *Session, c *gin.Context) {
 	})
 }
 
-func (s *Server) RestartApp(session *Session, c *gin.Context) {
+func (s *Service) RestartApp(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	type Request struct {
 		Url string `json:"url"`
@@ -231,7 +231,7 @@ func (s *Server) RestartApp(session *Session, c *gin.Context) {
 	}
 }
 
-func (s *Server) NavigateBack(session *Session, c *gin.Context) {
+func (s *Service) NavigateBack(session *Session, c *gin.Context) {
 	log := session.logger.WithField("prefix", "action")
 	if session.Lock.Device.HasFeature("back") {
 		session.Lock.Device.Execute("back")

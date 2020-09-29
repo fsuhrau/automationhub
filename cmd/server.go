@@ -1,4 +1,4 @@
-// Copyright © 2019 Fabian Suhrau <fabian.suhrau@me.com>
+// Copyright © 2020 Fabian Suhrau <fabian.suhrau@me.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,16 +21,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// runCmd represents the run command
-var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+// serverCmd represents the run command
+var serverCmd = &cobra.Command{
+	Use:   "server",
+	Short: "start the automaton hub server",
+	Long:  `automation hub server is a service which handle device connections and provides a device inspector gui`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sentryDns := viper.GetString("sentry_dsn")
 		if len(sentryDns) > 0 {
@@ -38,23 +33,19 @@ to quickly create a Cobra application.`,
 				Dsn: sentryDns,
 			})
 		}
-		server := hub.NewServer()
-		return server.Run()
+		server := hub.NewService()
+		return server.RunServer()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(serverCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
 	if false {
-		runCmd.Flags().StringP("address", "a", "", "address to listen on")
+		serverCmd.Flags().StringP("address", "a", "", "address to listen on")
 	}
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// serverCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

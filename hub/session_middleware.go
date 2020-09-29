@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SessionMiddleware(s *Server) gin.HandlerFunc {
+func SessionMiddleware(s *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sessionID := c.Param("sessionID")
 		session, _ := s.sessionManager.GetSession(sessionID)

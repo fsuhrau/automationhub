@@ -3,7 +3,6 @@ package hub
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"sort"
@@ -16,101 +15,13 @@ import (
 	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/inspector"
 	"github.com/fsuhrau/automationhub/remlog"
+	"github.com/fsuhrau/automationhub/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/grandcat/zeroconf"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-type Selectable struct {
-	ID   string
-	Name string
-}
-type Selectables []*Selectable
-
-func (s Selectables) Len() int      { return len(s) }
-func (s Selectables) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-type ByName struct{ Selectables }
-
-func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
-
-type Server struct {
-	server         *http.Server
-	deviceManager  *DeviceManager
-	sessionManager *SessionManager
-	logger         *logrus.Logger
-	hostIP         net.IP
-	// sessions       map[string]*Session
-}
-
-func NewServer() *Server {
-	logger := logrus.New()
-	level, err := logrus.ParseLevel(viper.GetString("log"))
-	if err != nil {
-		logrus.Infof("Parse Log Level: %s", err)
-		logrus.Info("using default info")
-		logger.SetLevel(logrus.InfoLevel)
-	} else {
-		logger.SetLevel(level)
-	}
-	logger.Formatter = new(prefixed.TextFormatter)
-	deviceManager := NewManager(logger)
-	sessionManager := NewSessionManager(logger, deviceManager)
-	return &Server{logger: logger /*sessions: make(map[string]*Session)*/, sessionManager: sessionManager, deviceManager: deviceManager}
-}
-
-func GetOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddr.IP
-}
-
-func ZeroConfServer(ctx context.Context, name string, address string) {
-	logrus.Infof("Starting MDNS server")
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		logrus.Errorf("getting interfaces failed: %v", err)
-	}
-
-	allowedInterfaces := []net.Interface{}
-	for _, interf := range ifaces {
-		addresses, _ := interf.Addrs()
-		for _, addr := range addresses {
-			if strings.Contains(addr.String(), address) {
-				allowedInterfaces = append(allowedInterfaces, interf)
-				break
-			}
-		}
-	}
-
-	serviceName := "_automationhub._tcp"
-	if name != "" {
-		serviceName = fmt.Sprintf("_automationhub_%s._tcp", name)
-	}
-
-	server, err := zeroconf.Register("AutomationHub", serviceName, "local.", 3939, []string{"txtv=0", "lo=1", "la=2"}, allowedInterfaces)
-	if err != nil {
-		panic(err)
-	}
-	defer server.Shutdown()
-
-	// Clean exit.
-	select {
-	case <-ctx.Done():
-	}
-
-	logrus.Infof("MDNS server shutdown.")
-}
-
-func (s *Server) Run() error {
+func (s *Service) RunServer() error {
 
 	showRemlog := viper.GetBool("display_remlog")
 
@@ -124,12 +35,12 @@ func (s *Server) Run() error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if len(serviceConfig.IP) > 0 {
-		s.hostIP = net.ParseIP(serviceConfig.IP)
+	if len(serviceConfig.HostIP) > 0 {
+		s.hostIP = net.ParseIP(serviceConfig.HostIP)
 	}
 
 	if s.hostIP == nil {
-		s.hostIP = GetOutboundIP()
+		s.hostIP = utils.GetOutboundIP()
 	}
 
 	go ZeroConfServer(ctx, "", s.hostIP.String())
@@ -159,6 +70,9 @@ func (s *Server) Run() error {
 	s.deviceManager.AddManager(macos.NewManager(&serviceConfig, s.hostIP))
 	s.deviceManager.AddManager(iosdevice.NewManager(&serviceConfig))
 	s.deviceManager.AddManager(androiddevice.NewManager(&serviceConfig))
+
+	// s.deviceManager.AddManager(remove.NewManager(&serviceConfig, s.hostIP))
+
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}

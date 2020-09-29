@@ -2,7 +2,49 @@ syntax = "proto3";
 package action;
 option go_package = "hub/action";
 
-// Our address book file is just one of these.
+service RemoteDevice {
+  rpc DeviceList (stream DeviceRequest) returns (stream DeviceResponse) {}
+  rpc DeviceInteraction (InteractionRequest) returns (stream InteractionRespone) {}
+  rpc ActionExecute (Request) returns (stream Response) {}
+}
+
+message Device {
+  string manager = 1;
+  string deviceId = 2;
+  string name = 3;
+  string OperationSystem = 4;
+  string SupportedArchitectures = 5;
+  string Status = 6;
+}
+
+message DeviceRequest {
+}
+
+message DeviceResponse {
+  repeated Device devices = 1;
+}
+
+enum DeviceInteractionType {
+    IsAppInstalled = 0;
+    InstallApp = 1;
+    UninstallApp = 2;
+    StartApp = 3;
+    StopApp = 4;
+    IsAppConnected = 5;
+    StartRecording = 6;
+    StopRecording = 7;
+    HasFeature = 8;
+    ExecuteFeature = 9;
+    GetScreenShopt = 10;
+}
+
+message InteractionRequest {
+  DeviceInteractionType type = 1;
+}
+
+message InteractionRespone {
+}
+
 message SetAttr {
   string id = 1;
   string attr = 2;

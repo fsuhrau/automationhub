@@ -1,4 +1,4 @@
-// Copyright © 2019 Fabian Suhrau <fabian.suhrau@me.com>
+// Copyright © 2020 Fabian Suhrau <fabian.suhrau@me.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,39 +15,31 @@
 package cmd
 
 import (
-	"github.com/fsuhrau/automationhub/device/iossim"
 	"github.com/fsuhrau/automationhub/hub"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// deviceListCmd represents the list command
-var deviceListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		manager := hub.NewManager(logrus.New())
-		manager.AddManager(iossim.NewManager(nil, hub.GetOutboundIP()))
-		manager.ListDevices()
+// slaveCmd represents the slave command
+var slaveCmd = &cobra.Command{
+	Use:   "slave",
+	Short: "start an automaton hub slave and connect to the server",
+	Long:  `an automation hub slave will handle every connection on the local machine and will act as a proxy between local attached devices and the automation hub server`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		server := hub.NewService()
+		return server.RunSlave()
 	},
 }
 
 func init() {
-	deviceCmd.AddCommand(deviceListCmd)
+	rootCmd.AddCommand(slaveCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// deviceListCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// slaveCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// deviceListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// slaveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

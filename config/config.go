@@ -16,7 +16,8 @@ type Device struct {
 
 type Service struct {
 	Autodetect bool     `mapstructure:"autodetect_ip"`
-	IP         string   `mapstructure:"ip"`
+	HostIP     string   `mapstructure:"host_ip"`
+	ServerURL  string   `mapstructure:"server_url"`
 	Port       uint16   `mapstructure:"port"`
 	Devices    []Device `mapstructure:"devices"`
 }
