@@ -2,10 +2,12 @@ package iossim
 
 import (
 	"encoding/json"
-	"github.com/fsuhrau/automationhub/config"
 	"net"
 	"regexp"
+	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/config"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -107,7 +109,7 @@ func (m *Manager) RefreshDevices() error {
 	for runtime, devices := range resp.Devices {
 		subs := OSVersionLookupRegex.FindAllStringSubmatch(runtime, -1)
 		deviceOSName := subs[0][1]
-		osVersion := subs[0][2]
+		osVersion := strings.ReplaceAll(subs[0][2], "-", ".")
 
 		if deviceOSName == "iOS" {
 			deviceOSName = "iphonesimulator"
@@ -136,7 +138,7 @@ func (m *Manager) RefreshDevices() error {
 					deviceOSVersion: osVersion,
 					deviceIP:        m.hostIP,
 					cfg:             cfg,
-					lastUpdateAt: lastUpdate,
+					lastUpdateAt:    lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
 			}

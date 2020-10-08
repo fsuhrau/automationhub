@@ -14,6 +14,7 @@ type Dev struct {
 	Identifier             string
 	Name                   string
 	OperationSystem        string
+	OperationSystemVersion string
 	SupportedArchitectures string
 	Status                 string
 }
@@ -34,6 +35,7 @@ func DeviceList(m DeviceManager) (deviceList []*Dev) {
 			Identifier:             d.DeviceID(),
 			Name:                   d.DeviceName(),
 			OperationSystem:        d.DeviceOSName(),
+			OperationSystemVersion: d.DeviceOSVersion(),
 			SupportedArchitectures: "",
 			Status:                 device.StateToString(d.DeviceState()),
 		})
