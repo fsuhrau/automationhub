@@ -43,7 +43,7 @@ func NewManager(deviceConfig config.Interface) *Manager {
 }
 
 func (m *Manager) Name() string {
-	return "iosdevice"
+	return "ios_device"
 }
 
 func (m *Manager) Init() error {

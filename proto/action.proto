@@ -1,11 +1,12 @@
 syntax = "proto3";
 package action;
 option go_package = "hub/action";
+option csharp_namespace = "Com.AutomationHub";
 
 service RemoteDevice {
   rpc DeviceList (stream DeviceRequest) returns (stream DeviceResponse) {}
-  rpc DeviceInteraction (InteractionRequest) returns (stream InteractionRespone) {}
-  rpc ActionExecute (Request) returns (stream Response) {}
+  rpc DeviceInteraction (stream InteractionRequest) returns (stream InteractionResponse) {}
+  rpc ActionExecute (stream Request) returns (stream Response) {}
 }
 
 message Device {
@@ -25,24 +26,28 @@ message DeviceResponse {
 }
 
 enum DeviceInteractionType {
-    IsAppInstalled = 0;
-    InstallApp = 1;
-    UninstallApp = 2;
-    StartApp = 3;
-    StopApp = 4;
-    IsAppConnected = 5;
-    StartRecording = 6;
-    StopRecording = 7;
-    HasFeature = 8;
-    ExecuteFeature = 9;
-    GetScreenShopt = 10;
+  LockDevice = 0;
+  UnlockDevice = 1;
+  GetDeviceState = 2;
+  IsAppInstalled = 3;
+  InstallApp = 4;
+  UninstallApp = 5;
+  StartApp = 6;
+  StopApp = 7;
+  IsAppConnected = 8;
+  StartRecording = 9;
+  StopRecording = 10;
+  HasFeature = 11;
+  ExecuteFeature = 12;
+  GetScreenShot = 13;
 }
 
 message InteractionRequest {
-  DeviceInteractionType type = 1;
+  string DeviceID = 1;
+  DeviceInteractionType type = 2;
 }
 
-message InteractionRespone {
+message InteractionResponse {
 }
 
 message SetAttr {
@@ -88,6 +93,12 @@ enum ActionType {
     GetScreenshot = 12;
 }
 
+enum ContentType {
+  Flatbuffer = 0;
+  Json = 1;
+  Xml = 2;
+}
+
 message Request {
   ActionType actionType = 1;
   oneof payload {
@@ -110,6 +121,7 @@ message Session {
 message Screenshot {
   bytes sceengraph = 1;
   bytes screenshot = 2;
+  ContentType contentType = 3;
 }
 
 

@@ -20,8 +20,6 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-var reinstall bool = true
-
 const (
 	IOS_DEPLOY_BIN     = "ios-deploy" // "/usr/local/bin/ios-deploy"
 	CONNECTION_TIMEOUT = 120 * time.Second
@@ -82,11 +80,9 @@ func (d *Device) UpdateDeviceInfos() error {
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
-	output, err := cmd.Output()
-	if err != nil {
-		return false, err
-	}
-	return strings.Contains(string(output), "true"), nil
+	output, _ := cmd.Output()
+	out := string(output)
+	return strings.Contains(out, "true"), nil
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
@@ -100,36 +96,32 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	if reinstall {
-		d.runningAppProcess = device.NewCommand(IOS_DEPLOY_BIN, "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
-		if false {
-			d.runningAppProcess.Stdout = os.Stdout
-		}
-		d.runningAppProcess.Stderr = os.Stderr
-		if err := d.runningAppProcess.Start(); err != nil {
-			return err
-		}
+	d.runningAppProcess = device.NewCommand(IOS_DEPLOY_BIN, "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
+	if false {
+		d.runningAppProcess.Stdout = os.Stdout
+	}
+	d.runningAppProcess.Stderr = os.Stderr
+	if err := d.runningAppProcess.Start(); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
 	var err error
-	if reinstall {
-		if d.runningAppProcess != nil && d.runningAppProcess.Process != nil {
-			err = d.runningAppProcess.Process.Signal(os.Interrupt)
-			if err != nil {
-				logrus.Errorf("Stop Interrupt error: %v", err)
-			}
-			//err = d.runningAppProcess.Process.Kill()
-			//if err != nil {
-			//	logrus.Errorf("Stop Kill error: %v", err)
-			//}
-			if e := d.runningAppProcess.Wait(); e != nil {
-				logrus.Errorf("Stop Kill error: %v", e)
-			}
-			d.runningAppProcess = nil
+	if d.runningAppProcess != nil && d.runningAppProcess.Process != nil {
+		err = d.runningAppProcess.Process.Signal(os.Interrupt)
+		if err != nil {
+			logrus.Errorf("Stop Interrupt error: %v", err)
 		}
+		//err = d.runningAppProcess.Process.Kill()
+		//if err != nil {
+		//	logrus.Errorf("Stop Kill error: %v", err)
+		//}
+		if e := d.runningAppProcess.Wait(); e != nil {
+			logrus.Errorf("Stop Kill error: %v", e)
+		}
+		d.runningAppProcess = nil
 	}
 	return err
 }

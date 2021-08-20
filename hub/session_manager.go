@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	UnkownSessionError = fmt.Errorf("unkown session")
+	UnknownSessionError = fmt.Errorf("unknown session")
 )
 
 type SessionManager struct {
@@ -100,7 +100,7 @@ func (s *SessionManager) GetSession(sessionID string) (*Session, error) {
 	if session, ok := s.sessions[sessionID]; ok {
 		return session, nil
 	}
-	return nil, UnkownSessionError
+	return nil, UnknownSessionError
 }
 
 func (s *SessionManager) GetSessions() []manager.Session {

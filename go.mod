@@ -24,6 +24,7 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
+	google.golang.org/grpc v1.27.0
 	google.golang.org/protobuf v1.24.0
 	howett.net/plist v0.0.0-20200419221736-3b63eb3a43b5
 )

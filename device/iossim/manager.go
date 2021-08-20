@@ -36,7 +36,7 @@ func NewManager(deviceConfig config.Interface, ip net.IP) *Manager {
 }
 
 func (m *Manager) Name() string {
-	return "iossim"
+	return "ios_sim"
 }
 
 func (m *Manager) Init() error {

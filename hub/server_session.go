@@ -158,6 +158,71 @@ func (s *Service) getDevices(c *gin.Context) {
 	c.JSON(200, deviceList)
 }
 
+func (s *Service) ensureAppIsInstalled(session *Session, deviceProperties *device.Properties, appParameter *app.Parameter) error {
+	retryTimer := 500 * time.Millisecond
+	var err error
+	for counter := 0; counter < 5; counter++ {
+		var isInstalled bool
+		if _, err = s.deviceManager.LockDevice(session, deviceProperties); err != nil {
+			// wait to unlock
+			time.Sleep(retryTimer)
+			err = errors.WithMessage(err, "no available device found")
+			continue
+		}
+
+		if session.Lock.Device.DeviceState() != device.Booted {
+			if err := s.deviceManager.Start(session.Lock.Device); err != nil {
+				logrus.Errorf("DeviceState: %v", err)
+				s.deviceManager.UnlockDevice(session)
+				time.Sleep(retryTimer)
+				continue
+			}
+		}
+
+		isInstalled, err = session.Lock.Device.IsAppInstalled(appParameter)
+		if err != nil {
+			s.deviceManager.UnlockDevice(session)
+			err = errors.WithMessage(err, "could not check if app is installed on device")
+			time.Sleep(retryTimer)
+			continue
+		}
+		if !isInstalled {
+			logrus.Infof("InstallApp on device: %s", session.Lock.Device.DeviceName())
+			if err := session.Lock.Device.InstallApp(appParameter); err != nil {
+				logrus.Errorf("InstallApp: %v", err)
+				s.deviceManager.UnlockDevice(session)
+				err = errors.WithMessage(err, "could not install app on device")
+				time.Sleep(retryTimer)
+				continue
+			}
+		} else {
+			logrus.Infof("InstallApp is already installed on device: %s", session.Lock.Device.DeviceName())
+		}
+
+		if true {
+			logrus.Infof("Stop App on Device: %s", session.Lock.Device.DeviceName())
+			if err := session.Lock.Device.StopApp(appParameter); err != nil {
+				logrus.Errorf("Stop App failed: %v", err)
+			}
+		}
+
+		if viper.GetBool("screen_recording") {
+			session.Recorder = &Recorder{
+				Storage: session.Storage,
+				Device:  session.Lock.Device,
+			}
+
+			logrus.Infof("Start Recording of session for device: %s", session.Lock.Device.DeviceName())
+			if err := session.Recorder.Start(); err != nil {
+				logrus.Errorf("start recording failed: %v", err)
+			}
+		}
+		break
+	}
+
+	return err
+}
+
 func (s *Service) InitNewTestSession(c *gin.Context) {
 	type Capabilities struct {
 		DeviceID string `json:"device"`
@@ -180,82 +245,25 @@ func (s *Service) InitNewTestSession(c *gin.Context) {
 	var req Request
 	c.Bind(&req)
 
-	properties := &device.Properties{}
+	deviceProperties := &device.Properties{}
 
-	mapCapabilities(req.DesiredCapabilities, properties)
-	mapCapabilities(req.RequiredCapabilities, properties)
+	mapCapabilities(req.DesiredCapabilities, deviceProperties)
+	mapCapabilities(req.RequiredCapabilities, deviceProperties)
 
-	if !properties.AreValid() {
+	if !deviceProperties.AreValid() {
 		s.renderError(c, fmt.Errorf("session can't be created because of missing parameters"))
 		return
 	}
 
-	appParameter, err := extractAppRequirements(properties.App, properties)
+	appParameter, err := extractAppRequirements(deviceProperties.App, deviceProperties)
 	if err != nil {
 		s.renderError(c, errors.WithMessage(err, "unable to identify app requirements"))
+		return
 	}
 
-	session := s.sessionManager.CreateNewSession(s.logger, properties, appParameter)
+	session := s.sessionManager.CreateNewSession(s.logger, deviceProperties, appParameter)
 
-	retryTimer := 500 * time.Millisecond
-
-	for counter := 0; counter < 5; counter++ {
-		if err = s.deviceManager.LockDevice(session, properties); err != nil {
-			// wit to unlock
-			time.Sleep(retryTimer)
-			err = errors.WithMessage(err, "no available device found")
-			continue
-		}
-
-		if session.Lock.Device.DeviceState() != device.Booted {
-			if err := s.deviceManager.Start(session.Lock.Device); err != nil {
-				logrus.Errorf("DeviceState: %v", err)
-				s.deviceManager.UnlockDevice(session)
-				time.Sleep(retryTimer)
-				continue
-			}
-		}
-
-		isInstalled, err := session.Lock.Device.IsAppInstalled(appParameter)
-		if err != nil {
-			s.deviceManager.UnlockDevice(session)
-			err = errors.WithMessage(err, "could not check if app is installed on device")
-			time.Sleep(retryTimer)
-			continue
-		}
-		if !isInstalled {
-			logrus.Infof("InstallApp on device: %s", session.Lock.Device.DeviceName())
-			if err := session.Lock.Device.InstallApp(appParameter); err != nil {
-				logrus.Errorf("InstallApp: %v", err)
-				s.deviceManager.UnlockDevice(session)
-				err = errors.WithMessage(err, "could not install app on device")
-				time.Sleep(retryTimer)
-				continue
-			}
-		} else {
-			logrus.Infof("InstallApp is already installed on device: %s", session.Lock.Device.DeviceName())
-		}
-
-		logrus.Infof("Stop App on Device: %s", session.Lock.Device.DeviceName())
-		if true {
-			session.Lock.Device.StopApp(appParameter)
-		}
-
-		if viper.GetBool("screen_recording") {
-			session.Recorder = &Recorder{
-				Storage: session.Storage,
-				Device:  session.Lock.Device,
-			}
-
-			logrus.Infof("Start Recording of session for device: %s", session.Lock.Device.DeviceName())
-			if err := session.Recorder.Start(); err != nil {
-				logrus.Errorf("start recording failed: %v", err)
-			}
-		}
-		break
-	}
-
-	if err != nil {
+	if err := s.ensureAppIsInstalled(session, deviceProperties, appParameter); err != nil {
 		s.deviceManager.UnlockDevice(session)
 		s.renderError(c, err)
 		return

@@ -37,7 +37,19 @@ func (a *GetScreenshot) Deserialize(content []byte) error {
 }
 
 func (a *GetScreenshot) SceengraphXML() []byte {
-	return convertFlatToXml(a.screenshot.Sceengraph, true)
+	var content []byte
+	switch a.screenshot.ContentType {
+	case ContentType_Flatbuffer:
+		content = convertFlatToXml(a.screenshot.Sceengraph, true)
+		break
+	case ContentType_Json:
+		content = a.screenshot.Sceengraph
+		break
+	case ContentType_Xml:
+		content = a.screenshot.Sceengraph
+		break
+	}
+	return content
 }
 
 func (a *GetScreenshot) ScreenshotData() []byte {

@@ -1,4 +1,4 @@
-package macos
+package unityeditor
 
 import (
 	"net"
@@ -10,7 +10,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-const CONNECTION_TIMEOUT = 10 * time.Second
+const CONNECTION_TIMEOUT = 60 * time.Minute
 
 type Device struct {
 	deviceOSName    string
@@ -77,16 +77,21 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+/*
 	cmd := device.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+ */
 	return nil
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
+/*
 	cmd := device.NewCommand("killall", params.AppPath)
 	return cmd.Run()
+ */
+	return nil
 }
 
 func (d *Device) IsAppConnected() bool {

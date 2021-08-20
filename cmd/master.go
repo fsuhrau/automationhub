@@ -21,10 +21,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// serverCmd represents the run command
-var serverCmd = &cobra.Command{
-	Use:   "server",
-	Short: "start the automaton hub server",
+// masterCmd represents the run command
+var masterCmd = &cobra.Command{
+	Use:   "master",
+	Short: "start the automaton hub master server",
 	Long:  `automation hub server is a service which handle device connections and provides a device inspector gui`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sentryDns := viper.GetString("sentry_dsn")
@@ -34,18 +34,18 @@ var serverCmd = &cobra.Command{
 			})
 		}
 		server := hub.NewService()
-		return server.RunServer()
+		return server.RunMaster()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(masterCmd)
 
 	if false {
-		serverCmd.Flags().StringP("address", "a", "", "address to listen on")
+		masterCmd.Flags().StringP("address", "a", "", "address to listen on")
 	}
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// serverCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// masterCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

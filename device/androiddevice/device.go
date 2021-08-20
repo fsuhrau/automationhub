@@ -1,6 +1,7 @@
 package androiddevice
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"io/ioutil"
@@ -126,9 +127,13 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 	}
 
 	cmd := device.NewCommand("adb", parameter...)
-	cmd.Stdout = os.Stdout
+	//cmd.Stdout = os.Stdout
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+
 	if err := cmd.Run(); err != nil {
-		return err
+		return fmt.Errorf("installation failed: \"%s\" %v", errb.String(), err)
 	}
 
 	d.installedApps[params.Identifier] = params.Hash

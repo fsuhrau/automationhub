@@ -3,16 +3,17 @@ package hub
 import (
 	"context"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/androiddevice"
+	"github.com/fsuhrau/automationhub/device/macos"
+	"github.com/fsuhrau/automationhub/device/unityeditor"
 	"net"
 	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/iosdevice"
 	"github.com/fsuhrau/automationhub/device/iossim"
-	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/inspector"
 	"github.com/fsuhrau/automationhub/remlog"
 	"github.com/fsuhrau/automationhub/utils"
@@ -21,8 +22,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func (s *Service) RunServer() error {
-
+func (s *Service) RunMaster() error {
 	showRemlog := viper.GetBool("display_remlog")
 
 	var serviceConfig config.Service
@@ -66,16 +66,33 @@ func (s *Service) RunServer() error {
 	}
 
 	// start device observer thread
-	s.deviceManager.AddManager(iossim.NewManager(&serviceConfig, s.hostIP))
-	s.deviceManager.AddManager(macos.NewManager(&serviceConfig, s.hostIP))
-	s.deviceManager.AddManager(iosdevice.NewManager(&serviceConfig))
-	s.deviceManager.AddManager(androiddevice.NewManager(&serviceConfig))
+	if d, ok := serviceConfig.DeviceManager["android_device"]; ok && d.Enabled {
+		s.logger.Info("adding manager android_device")
+		s.deviceManager.AddManager(androiddevice.NewManager(&d))
+	}
+	if d, ok := serviceConfig.DeviceManager["ios_sim"]; ok && d.Enabled {
+		s.logger.Info("adding manager ios_sim")
+		s.deviceManager.AddManager(iossim.NewManager(&d, s.hostIP))
+	}
+	if d, ok := serviceConfig.DeviceManager["ios_device"]; ok && d.Enabled {
+		s.logger.Info("adding manager ios_device")
+		s.deviceManager.AddManager(iosdevice.NewManager(&d))
+	}
+	if d, ok := serviceConfig.DeviceManager["macos"]; ok && d.Enabled {
+		s.logger.Info("adding manager macos")
+		s.deviceManager.AddManager(macos.NewManager(&d, s.hostIP))
+	}
+	if d, ok := serviceConfig.DeviceManager["unity_editor"]; ok && d.Enabled {
+		s.logger.Info("adding manager unity_editor")
+		s.deviceManager.AddManager(unityeditor.NewManager(&d, s.hostIP))
+	}
 
 	// s.deviceManager.AddManager(remove.NewManager(&serviceConfig, s.hostIP))
 
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}
+	defer s.deviceManager.StopObserver()
 
 	s.sessionManager.Run(ctx)
 
@@ -131,7 +148,8 @@ func (s *Service) RunServer() error {
 	authGroup.POST("url", HandleWithSession(s.RestartApp))
 	authGroup.POST("back", HandleWithSession(s.NavigateBack))
 
-	// runOn := fmt.Sprintf("%s:8002", ip.String())
+//	go grpcConnect()
+
 	runOn := ":8002"
 	err := r.Run(runOn)
 	logrus.Infof("Stopping Server")
@@ -139,6 +157,77 @@ func (s *Service) RunServer() error {
 		return err
 	}
 
-	s.deviceManager.StopObserver()
 	return nil
 }
+/*
+func grpcConnect() {
+	l, err := net.Listen("tcp", ":8003")
+	if err != nil {
+		logrus.Errorf("listen: %w", err)
+	}
+	defer l.Close()
+	for {
+		slaveConnection, err := l.Accept()
+		if err != nil {
+			logrus.Errorf("accept: %v", err)
+			continue
+		}
+		go grpcHandler(slaveConnection)
+	}
+}
+
+func grpcHandler(outerConnection net.Conn) {
+	defer outerConnection.Close()
+
+	conn, err := grpc.Dial("", grpc.WithInsecure(), grpc.WithContextDialer(func(c context.Context, s string) (net.Conn, error) {
+		return outerConnection, nil
+	}))
+	if err != nil {
+		log.Fatalf("can not connect with server %v", err)
+	}
+
+	// create stream
+	client := action.NewRemoteDeviceClient(conn)
+	stream, err := client.DeviceList(context.Background())
+	if err != nil {
+		log.Fatalf("open stream error %v", err)
+	}
+
+	ctx := stream.Context()
+	done := make(chan bool)
+
+	req := action.DeviceRequest{}
+	if err := stream.Send(&req); err != nil {
+		log.Fatalf("can not send %v", err)
+	}
+
+	go func() {
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				close(done)
+				return
+			}
+			if err != nil {
+				log.Fatalf("can not receive %v", err)
+			}
+			devices := resp.Devices
+			logrus.Infof("devices: %s", devices)
+		}
+	}()
+
+	// third goroutine closes done channel
+	// if context is done
+	go func() {
+		<-ctx.Done()
+		if err := ctx.Err(); err != nil {
+			log.Println(err)
+		}
+		close(done)
+	}()
+
+	<-done
+}
+
+
+*/

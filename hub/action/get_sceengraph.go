@@ -11,6 +11,7 @@ import (
 
 type GetSceenGraph struct {
 	content []byte
+	contentType ContentType
 }
 
 type Node struct {
@@ -80,15 +81,31 @@ func (a *GetSceenGraph) Deserialize(content []byte) error {
 	}
 	if resp.GetScreenshot() != nil {
 		a.content = resp.GetScreenshot().Sceengraph
+		a.contentType = resp.GetScreenshot().ContentType
 	}
 	return nil
 }
 
 func (a *GetSceenGraph) Content() string {
+	result := ""
+
 	if len(a.content) == 0 {
-		return ""
+		return result
 	}
-	return string(convertFlatToXml(a.content, true))
+
+	switch a.contentType {
+	case ContentType_Flatbuffer:
+		result = string(convertFlatToXml(a.content, true))
+		break
+	case ContentType_Json:
+		result = string(a.content)
+		break
+	case ContentType_Xml:
+		result = string(a.content)
+		break
+	}
+
+	return result
 }
 
 func (a *GetSceenGraph) XML() (*xmlquery.Node, error) {

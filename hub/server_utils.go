@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,7 @@ func (s *Service) GetScreen(session *Session, c *gin.Context) {
 
 	var data *screen
 	var payload []byte
+	success := false
 	if viper.GetBool("use_os_screenshot") {
 		st := time.Now()
 		var wg sync.WaitGroup
@@ -60,6 +62,7 @@ func (s *Service) GetScreen(session *Session, c *gin.Context) {
 			a := &action.GetSceenGraph{}
 			if err := s.deviceManager.SendAction(log, session, a); err != nil {
 				s.renderError(c, err)
+				return
 			}
 			payload = []byte(a.Content())
 			log.Infof("GetGraph took: %d ms", time.Now().Sub(start).Milliseconds())
@@ -72,12 +75,14 @@ func (s *Service) GetScreen(session *Session, c *gin.Context) {
 			if err != nil {
 				s.logger.Errorf("Screenshot could not be created: %v", err)
 				s.renderError(c, err)
+				return
 			}
 			data = &screen{
 				Width:  width,
 				Height: height,
 				Data:   base64.StdEncoding.EncodeToString(rawData),
 			}
+			success = true
 			log.Infof("GetScreenshot took: %d ms", time.Now().Sub(start).Milliseconds())
 			wg.Done()
 		}()
@@ -91,24 +96,36 @@ func (s *Service) GetScreen(session *Session, c *gin.Context) {
 			s.renderError(c, err)
 			return
 		}
-		a.ScreenshotData()
-		data = &screen{
-			Width:  a.Width(),
-			Height: a.Height(),
-			Data:   base64.StdEncoding.EncodeToString(a.ScreenshotData()),
+		if a.Success {
+			a.ScreenshotData()
+			data = &screen{
+				Width:  a.Width(),
+				Height: a.Height(),
+				Data:   base64.StdEncoding.EncodeToString(a.ScreenshotData()),
+			}
+			payload = a.SceengraphXML()
+			success = true
 		}
-		payload = a.SceengraphXML()
 		log.Infof("Complete Action took: %d ms", time.Now().Sub(st).Milliseconds())
 	}
 
-	c.JSON(http.StatusOK, &ServerResponse{
-		SessionID: session.SessionID,
-		State:     "success",
-		HCode:     time.Now().UTC().Unix(),
-		Status:    0,
-		Value:     data,
-		Payload:   payload,
-	})
+	if success {
+		c.JSON(http.StatusOK, &ServerResponse{
+			SessionID: session.SessionID,
+			State:     "success",
+			HCode:     time.Now().UTC().Unix(),
+			Status:    0,
+			Value:     data,
+			Payload:   payload,
+		})
+	} else {
+		c.JSON(http.StatusBadRequest, &ServerResponse{
+			SessionID: session.SessionID,
+			State:     "failed",
+			HCode:     time.Now().UTC().Unix(),
+			Status:    0,
+		})
+	}
 }
 
 func (s *Service) TakeScreenshot(session *Session, c *gin.Context) {
@@ -218,8 +235,12 @@ func (s *Service) RestartApp(session *Session, c *gin.Context) {
 			Status:    0,
 		})
 	} else {
-		session.Lock.Device.StopApp(session.AppParameter)
-		session.Lock.Device.StartApp(session.AppParameter, "", s.hostIP)
+		if err := session.Lock.Device.StopApp(session.AppParameter); err != nil {
+			logrus.Errorf("Stop App failed: %v", err)
+		}
+		if err := session.Lock.Device.StartApp(session.AppParameter, "", s.hostIP); err != nil {
+			logrus.Errorf("Start App failed: %v", err)
+		}
 		session.WaitForConnection()
 
 		c.JSON(http.StatusOK, &ServerResponse{

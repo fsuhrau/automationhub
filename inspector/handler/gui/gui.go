@@ -18,7 +18,10 @@ func Index(m manager.DeviceManager) func(*gin.Context) {
 
 		files, _ := ioutil.ReadDir("./upload")
 		var pathes []string
+		pathes = append(pathes, "UnityEditor")
 		pathes = append(pathes, "/Users/fabian.suhrau/projects/game_foe_mobile1/proj.ios/build/Debug/foe_mobile_develop.app")
+		pathes = append(pathes, "/Users/fabian.suhrau/projects/game_mobilecity1/frontend/BuildPipeline/builds/android/Client.apk")
+
 		for _, f := range files {
 			pathes = append(pathes, filepath.Join("upload", f.Name()))
 		}

@@ -140,7 +140,7 @@ func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 	return true
 }
 
-func (dm *DeviceManager) LockDevice(session *Session, properties *device.Properties) error {
+func (dm *DeviceManager) LockDevice(session *Session, properties *device.Properties) (*DeviceLock, error) {
 	for _, manager := range dm.Managers {
 		devices, _ := manager.GetDevices()
 		for i := range devices {
@@ -154,11 +154,11 @@ func (dm *DeviceManager) LockDevice(session *Session, properties *device.Propert
 				}
 				dm.LockedDevices[session.SessionID] = lock
 				session.Lock = lock
-				return nil
+				return lock, nil
 			}
 		}
 	}
-	return device.ManagerNotFoundError
+	return nil, device.ManagerNotFoundError
 }
 
 func (dm *DeviceManager) UnlockDevice(session *Session) error {
@@ -169,7 +169,9 @@ func (dm *DeviceManager) UnlockDevice(session *Session) error {
 			dm.log.Debugf("Cose Connection for device %v from session %s", d, session.SessionID)
 			d.Connection.Close()
 		}
-		d.Device.StopApp(session.AppParameter)
+		if err := d.Device.StopApp(session.AppParameter); err != nil {
+			logrus.Errorf("Stop App failed: %v", err)
+		}
 
 		dm.Stop(d.Device)
 
@@ -311,6 +313,8 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		lock.ResponseChannel = make(chan ResponseData, 1)
 		//lock.ConnectionStateChannel = make(chan bool, 1)
 		go handleMessages(dm.log, lock)
+	} else {
+		dm.log.Errorf("no devide found for session: %s and device: %s", session.SessionID, session.DeviceID)
 	}
 }
 
@@ -411,6 +415,5 @@ func (dm *DeviceManager) SendAction(logger *logrus.Entry, session *Session, act 
 		return err
 	}
 	logger.Debugf("Deserialize Action")
-	//logger.Debugf("Deserialize Action %v", response)
 	return act.Deserialize(response)
 }

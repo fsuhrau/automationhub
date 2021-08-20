@@ -524,6 +524,7 @@ func (s *Service) MoveTo(session *Session, c *gin.Context) {
 		}
 		if err := s.deviceManager.SendAction(log, session, a); err != nil {
 			s.renderError(c, err)
+			return
 		}
 	} else {
 		if moveElementToElement == nil {
@@ -569,6 +570,7 @@ func (s *Service) ButtonUp(session *Session, c *gin.Context) {
 	err := s.deviceManager.SendAction(log, session, a)
 	if err != nil {
 		s.renderError(c, err)
+		return
 	}
 	moveElementToElement = nil
 	elementID = ""
