@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/inspector/handler/gui"
 	"github.com/fsuhrau/automationhub/inspector/handler/manager"
 	"github.com/fsuhrau/automationhub/inspector/handler/sessions"
+	"github.com/fsuhrau/automationhub/inspector/handler/testexecuter"
 	"github.com/fsuhrau/automationhub/inspector/renderer"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -27,6 +28,7 @@ func Init(router *gin.Engine, dm manager.DeviceManager, sm manager.SessionManage
 	router.POST("/inspector/upload", gui.UploadFile)
 	router.GET("/inspector/devices", devices.Index(dm))
 	router.GET("/inspector/sessions", sessions.Index(sm))
+	router.GET("/inspector/tests", testexecuter.Index(dm))
 	router.GET("/inspector/session/:sessionID/show", sessions.Show(sm))
 	router.GET("/ws", func (c *gin.Context) {
 		wshandler(c.Writer, c.Request)
@@ -39,6 +41,7 @@ var wsupgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 func wshandler(w http.ResponseWriter, r *http.Request) {
+	wsupgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logrus.Error("Socket upgrade failed: %v", err)
@@ -48,6 +51,7 @@ func wshandler(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		t, msg, err := conn.ReadMessage()
+		logrus.Info(msg)
 		if err != nil {
 			break
 		}

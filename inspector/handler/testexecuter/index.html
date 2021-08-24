@@ -1,0 +1,227 @@
+{{ define "title" }}
+Test Center
+{{ end }}
+{{ define "content" }}
+<style>
+    ul {
+        font-size: 12px;
+        line-height: 12px;
+        margin-left: 5px;
+    }
+
+    ul, menu, dir {
+        padding-inline-start: 10px;
+    }
+
+    li.mdl-list__item {
+        font-size: 12px;
+        min-height: 20px;
+        height: 20px;
+    }
+</style>
+<div class="mdl-grid" style="width: 100%">
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-grid" style="width: 100%">
+            <div class="mdl-cell mdl-cell--12-col">
+                <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">XPath</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <div class="mdl-textfield mdl-js-textfield">
+                            <input class="mdl-textfield__input" type="text" id="xpath" onkeyup="visualXPath()">
+                            <label class="mdl-textfield__label" for="xpath">//</label>
+                        </div>
+                        <button id="visualXPath" class="mdl-button mdl-js-button mdl-button--raised" onclick="visualXPath()">
+                            Show
+                        </button>
+                        <button id="clearAreaButton" class="mdl-button mdl-js-button mdl-button--raised" onclick="clearArea()">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="mdl-cell mdl-cell--12-col">
+                <div class="demo-card-wide mdl-card mdl-shadow--2dp" style="height: 300px;">
+                    <div class="mdl-card__supporting-text">
+                        <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect" style="height: 300px;">
+                            <div class="mdl-tabs__tab-bar">
+                                <a href="#graph-panel" class="mdl-tabs__tab is-active">Graph</a>
+                                <a href="#selection-panel" class="mdl-tabs__tab">Selection</a>
+                            </div>
+                            <div class="mdl-tabs__panel is-active" id="graph-panel" style="height: 230px; overflow: scroll">
+                                <div class="page-content" id="screenGraphView"></div>
+                            </div>
+                            <div class="mdl-tabs__panel" id="selection-panel" style="height: 230px; overflow: scroll">
+                                <div class="page-content" id="xpathSelection"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mdl-card__actions mdl-card--border">
+                    </div>
+                    {{/*                        <div class="mdl-card__menu">*/}}
+                    {{/*                            <button class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">*/}}
+                        {{/*                                <i class="material-icons">content_copy</i>*/}}
+                        {{/*                            </button>*/}}
+                    {{/*                        </div>*/}}
+                </div>
+            </div>
+            <div class="mdl-cell mdl-cell--12-col">
+                <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">Node Details</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text" id="elementDetails">
+                    </div>
+                    <div class="mdl-card__actions mdl-card--border">
+                        <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" onclick="hoverElement()">
+                            Hover
+                        </a>
+                        <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" onclick="clickElement()">
+                            Click
+                        </a>
+                    </div>
+                    <div class="mdl-card__menu">
+                        <button id="copyXPath" class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect" onclick="copyXPath()">
+                            <i class="material-icons">content_copy</i>
+                        </button>
+                        <div class="mdl-tooltip mdl-tooltip--large" for="copyXPath">
+                            Copy XPath
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mdl-cell mdl-cell--8-col">
+        <div class="mdl-grid--no-spacing" style="width: 100%">
+            <div class="mdl-cell mdl-cell--12-col">
+                <div class="snippet-demo-container demo-menu demo-menu__top-right">
+                    <style>
+                        .demo-menu.demo-menu__top-right .container {
+                            position: relative;
+                            width: 200px;
+                        }
+
+                        .demo-menu.demo-menu__top-right .background {
+                            background: white;
+                            height: 148px;
+                            width: 100%;
+                        }
+
+                        .demo-menu.demo-menu__top-right .bar {
+                            box-sizing: border-box;
+                            position: relative;
+                            background: #37474F;
+                            color: white;
+                            height: 64px;
+                            width: 100%;
+                            padding: 16px;
+                        }
+
+                        .demo-menu.demo-menu__top-right .wrapper {
+                            box-sizing: border-box;
+                            position: absolute;
+                            right: 16px;
+                        }
+
+                        #overlay {
+                            position: fixed; /* Sit on top of the page content */
+                            display: none; /* Hidden by default */
+                            width: 100%; /* Full width (cover the whole page) */
+                            height: 100%; /* Full height (cover the whole page) */
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+                            z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+                            cursor: pointer; /* Add a pointer on hover */
+                        }
+                    </style>
+
+                    <div class="container mdl-shadow--2dp" style="width: 100%; height: 100%;">
+                        <div id="overlay">
+                            <div id="activityIndicator" class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"
+                                 style="left:50%;top:50%;position: absolute"></div>
+                        </div>
+                        <div class="background" style="width: 100%; height: 100%;">
+                            <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
+                                <div class="mdl-tabs__tab-bar">
+                                    <a href="#deviceView" class="mdl-tabs__tab is-active">View</a>
+                                    <a href="#deviceGraph" class="mdl-tabs__tab">SceneGraph</a>
+                                    <a href="#deviceLog" class="mdl-tabs__tab">Log</a>
+                                </div>
+                                <div class="mdl-tabs__panel is-active" id="deviceView" style="height: 680px">
+                                    <div style="display:none;">
+                                        <img id="screenshot" src="">
+                                    </div>
+                                    <canvas id="deviceCanvas" width="100%" height="100%"></canvas>
+                                </div>
+                                <div class="mdl-tabs__panel" id="deviceGraph">
+                                    <textarea id="graph" style="width: 100%; height: 640px;" aria-multiline="true"></textarea>
+                                </div>
+                                <div class="mdl-tabs__panel" id="deviceLog">
+                                    <div id="log" style="width: 100%; height: 640px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bar">
+                            <div style="float:left; width: 200px;">
+                                <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="controlMode">
+                                    <input type="checkbox" id="controlMode" class="mdl-switch__input">
+                                    <span class="mdl-switch__label">Control Device</span>
+                                </label>
+                            </div>
+                            <div style="float:left; width: 400px; margin: -16px; color: white;">
+                                <div class="mdl-textfield mdl-js-textfield" >
+                                    <input class="mdl-textfield__input" type="text" id="sendTextInput">
+                                    <label class="mdl-textfield__label" for="sendTextInput">Send Text to Device</label>
+                                </div>
+                                <button id="sendTextButton" class="mdl-button mdl-js-button" onclick="sendText()">
+                                    Send
+                                </button>
+                            </div>
+                            <div class="wrapper">
+                                <button id="sessionStartButton" class="mdl-button mdl-js-button mdl-button--icon" onclick="showStartAppDialog()">
+                                    <i class="material-icons">play_arrow</i>
+                                </button>
+
+                                <button id="sessionStopButton" class="mdl-button mdl-js-button mdl-button--icon" onclick="sessionStop()">
+                                    <i class="material-icons">stop</i>
+                                </button>
+
+                                <button id="refresh" class="mdl-button mdl-js-button mdl-button--icon" onclick="refresh()">
+                                    <i class="material-icons">refresh</i>
+                                </button>
+
+                                <button id="tests" class="mdl-button mdl-js-button mdl-button--icon" onclick="getTests()">
+                                    <i class="material-icons">info</i>
+                                </button>
+
+                                <button id="deviceActionMenu" class="mdl-button mdl-js-button mdl-button--icon">
+                                    <i class="material-icons">more_vert</i>
+                                </button>
+
+                                <ul class="mdl-menu mdl-menu--top-right mdl-js-menu mdl-js-ripple-effect"
+                                    data-mdl-for="deviceActionMenu">
+                                    <li class="mdl-menu__item">Hover</li>
+                                    <li class="mdl-menu__item">Reset</li>
+                                    <li class="mdl-menu__item">Back</li>
+                                    <li class="mdl-menu__item">Record</li>
+                                    <li class="mdl-menu__item">Tests</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/dialog-polyfill.js"></script>
+<script src="/js/tree.js"></script>
+<script src="/js/treeitem.js"></script>
+<script src="/js/treeItemClick.js"></script>
+<script src="/js/inspector.js"></script>
+{{ end }}

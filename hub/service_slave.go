@@ -163,23 +163,23 @@ func (s *Service) RunSlave() error {
 	// start device observer thread
 	if d, ok := serviceConfig.DeviceManager["android_device"]; ok && d.Enabled {
 		s.logger.Info("adding manager android_device")
-		s.deviceManager.AddManager(androiddevice.NewManager(&d))
+		s.deviceManager.AddHandler(androiddevice.NewHandler(&d))
 	}
 	if d, ok := serviceConfig.DeviceManager["ios_sim"]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_sim")
-		s.deviceManager.AddManager(iossim.NewManager(&d, s.hostIP))
+		s.deviceManager.AddHandler(iossim.NewHandler(&d, s.hostIP))
 	}
 	if d, ok := serviceConfig.DeviceManager["ios_device"]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_device")
-		s.deviceManager.AddManager(iosdevice.NewManager(&d))
+		s.deviceManager.AddHandler(iosdevice.NewHandler(&d))
 	}
 	if d, ok := serviceConfig.DeviceManager["macos"]; ok && d.Enabled {
 		s.logger.Info("adding manager macos")
-		s.deviceManager.AddManager(macos.NewManager(&d, s.hostIP))
+		s.deviceManager.AddHandler(macos.NewHandler(&d, s.hostIP))
 	}
 	if d, ok := serviceConfig.DeviceManager["unity_editor"]; ok && d.Enabled {
 		s.logger.Info("adding manager unity_editor")
-		s.deviceManager.AddManager(unityeditor.NewManager(&d, s.hostIP))
+		s.deviceManager.AddHandler(unityeditor.NewHandler(&d, s.hostIP))
 	}
 
 	if err := s.deviceManager.Run(ctx); err != nil {

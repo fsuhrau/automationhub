@@ -78,19 +78,23 @@ message Touch {
 }
 
 enum ActionType {
-    Custom = 0;
-    GetSceneGraph = 1;
-    ElementIsDisplayed = 2;
-    ElementSetValue = 3;
-    ElementGetValue = 4;
-    Move = 5;
-    TouchDown = 6;
-    TouchMove = 7;
-    TouchUp = 8;
-    DragAndDrop = 9;
-    LongTouch = 10;
-    ElementTouch = 11;
-    GetScreenshot = 12;
+  Custom = 0;
+  GetSceneGraph = 1;
+  ElementIsDisplayed = 2;
+  ElementSetValue = 3;
+  ElementGetValue = 4;
+  Move = 5;
+  TouchDown = 6;
+  TouchMove = 7;
+  TouchUp = 8;
+  DragAndDrop = 9;
+  LongTouch = 10;
+  ElementTouch = 11;
+  GetScreenshot = 12;
+  GetTests = 13;
+  ExecuteTest = 14;
+  ExecutionStatus = 15;
+  Log = 16;
 }
 
 enum ContentType {
@@ -100,22 +104,24 @@ enum ContentType {
 }
 
 message Request {
-  ActionType actionType = 1;
+  string actionID = 1;
+  ActionType actionType = 2;
   oneof payload {
-      string id = 2;
-      string data = 3;
-      SetAttr setAttr = 4;
-      GetAttr getAttr = 5;
-      MoveOffset moveOffset = 6;
-      Touch touch = 7;
-      MoveElement moveElement = 8;
-    }
+    string id = 3;
+    string data = 4;
+    SetAttr setAttr = 5;
+    GetAttr getAttr = 6;
+    MoveOffset moveOffset = 7;
+    Touch touch = 8;
+    MoveElement moveElement = 9;
+    Test test = 10;
+  }
 }
 
 message Session {
-    string deviceID = 1;
-    string sessionID = 2;
-    string version = 3;
+  string deviceID = 1;
+  string sessionID = 2;
+  string version = 3;
 }
 
 message Screenshot {
@@ -124,15 +130,25 @@ message Screenshot {
   ContentType contentType = 3;
 }
 
+message Test {
+  string type = 1;
+  string method = 2;
+}
+
+message Tests {
+  repeated Test tests = 1;
+}
 
 message Response {
-  ActionType actionType = 1;
-  bool success = 2;
+  string actionID = 1;
+  ActionType actionType = 2;
+  bool success = 3;
   oneof payload {
-      bool visible = 3;
-      bytes data = 4;
-      string value = 5;
-      Screenshot screenshot = 6;
-      Session session = 7;
-    }
+    bool visible = 4;
+    bytes data = 5;
+    string value = 6;
+    Screenshot screenshot = 7;
+    Session session = 8;
+    Tests tests = 9;
+  }
 }

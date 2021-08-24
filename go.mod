@@ -10,6 +10,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/flatbuffers v1.12.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
@@ -26,5 +27,7 @@ require (
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
 	google.golang.org/grpc v1.27.0
 	google.golang.org/protobuf v1.24.0
+	gorm.io/driver/sqlite v1.1.4
+	gorm.io/gorm v1.21.13
 	howett.net/plist v0.0.0-20200419221736-3b63eb3a43b5
 )

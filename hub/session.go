@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/hub/manager"
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
@@ -33,27 +34,31 @@ func (r *Recorder) Stop() error {
 type Session struct {
 	SessionID        string
 	LastAccess       time.Time
-	Lock             *DeviceLock
+	Lock             *manager.DeviceLock
 	logger           *logrus.Entry
 	Recorder         *Recorder
 	DeviceProperties *device.Properties
 	AppParameter     *app.Parameter
 	XmlDocument      *xmlquery.Node
-	Storage          *SessionStorage
+	Storage          manager.Storage
 	actionTimeout    time.Duration
 	endSession       bool
+}
+
+func (s *Session) GetLogger() *logrus.Entry {
+	return s.logger.WithField("session", s.GetSessionID())
 }
 
 func (s *Session) GetSessionID() string {
 	return s.SessionID
 }
 
-func (s *Session) GetLastAccessTime() time.Time {
-	return s.LastAccess
+func (s *Session) SetDeviceLock(lock *manager.DeviceLock)  {
+	s.Lock = lock
 }
 
-func (s *Session) GetAppParameter() *app.Parameter {
-	return s.AppParameter
+func (s *Session) GetDeviceLock() *manager.DeviceLock {
+	return s.Lock
 }
 
 func (s *Session) GetDevice() device.Device {
@@ -77,6 +82,32 @@ func (s *Session) WaitForConnection() error {
 	return nil
 }
 
+func (s *Session) GetLastAccess() time.Time {
+	return s.LastAccess
+}
+
+func (s *Session) SetLastAccess(t time.Time)  {
+	s.LastAccess = t
+}
+
+func (s *Session) GetAppParameter() *app.Parameter {
+	return s.AppParameter
+}
+
+func (s *Session) Close() error {
+	s.endSession = true
+	if s.Recorder != nil {
+		if err := s.Recorder.Stop(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Session) GetStorage() manager.Storage {
+	return s.Storage
+}
+
 func (s *Session) SetActionTimeout(timeout time.Duration) {
 	s.actionTimeout = timeout
 }
@@ -91,18 +122,11 @@ func (s *Session) GetActionTimeout() time.Time {
 	return time.Now().Add(timeout)
 }
 
-func (s *Session) Close() error {
-	s.endSession = true
-	if s.Recorder != nil {
-		if err := s.Recorder.Stop(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *Session) DeviceDisconnected() {
 	if s.endSession != true {
 		s.logger.Errorln("Device Crashed!")
 	}
+}
+func (s *Session) HandleDisconnect() {
+
 }

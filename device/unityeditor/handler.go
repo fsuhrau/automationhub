@@ -8,41 +8,41 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-type Manager struct {
+type Handler struct {
 	devices      map[string]*Device
 	hostIP       net.IP
 	deviceConfig config.Interface
 }
 
-func NewManager(deviceConfig config.Interface, ip net.IP) *Manager {
-	return &Manager{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
+func NewHandler(deviceConfig config.Interface, ip net.IP) *Handler {
+	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
 }
 
-func (m *Manager) Name() string {
+func (m *Handler) Name() string {
 	return "unity_editor"
 }
 
-func (m *Manager) Init() error {
+func (m *Handler) Init() error {
 	return nil
 }
 
-func (m *Manager) Start() error {
+func (m *Handler) Start() error {
 	return nil
 }
 
-func (m *Manager) Stop() error {
+func (m *Handler) Stop() error {
 	return nil
 }
 
-func (m *Manager) StartDevice(deviceID string) error {
+func (m *Handler) StartDevice(deviceID string) error {
 	return nil
 }
 
-func (m *Manager) StopDevice(deviceID string) error {
+func (m *Handler) StopDevice(deviceID string) error {
 	return nil
 }
 
-func (m *Manager) GetDevices() ([]device.Device, error) {
+func (m *Handler) GetDevices() ([]device.Device, error) {
 	devices := make([]device.Device, 0, len(m.devices))
 	for _, d := range m.devices {
 		devices = append(devices, d)
@@ -50,7 +50,7 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Manager) RefreshDevices() error {
+func (m *Handler) RefreshDevices() error {
 	if len(m.devices) == 0 {
 		m.devices["dd7ace2f-07b8-4696-92b7-a856dc0c04b5"] = &Device{
 			deviceName:      "UnityEditor",
@@ -65,7 +65,7 @@ func (m *Manager) RefreshDevices() error {
 	return nil
 }
 
-func (m *Manager) HasDevice(dev device.Device) bool {
+func (m *Handler) HasDevice(dev device.Device) bool {
 	for _, device := range m.devices {
 		if device == dev {
 			return true

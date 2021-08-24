@@ -192,6 +192,37 @@ function sessionStart() {
     });
 }
 
+function getTests() {
+    if (actionRunning) {
+        return;
+    }
+    actionRunning = true;
+    activity(true);
+    $.ajax({
+        type: "POST",
+        url: getBaseURL() + "execute",
+        success: function (data) {
+            actionRunning = false;
+            activity(false);
+            if (data !== "" && data.payload !== "") {
+                console.log(data.payload)
+            } else {
+                notify("could not get tests")
+            }
+        },
+        error: function (request, status, error) {
+            actionRunning = false;
+            activity(false);
+            notify(request.responseJSON.message)
+        },
+        failure: function (errMsg) {
+            actionRunning = false;
+            activity(false);
+            notify(errMsg)
+        }
+    });
+}
+
 function refresh() {
     getScreenshot();
 }

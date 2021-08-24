@@ -13,20 +13,20 @@ import (
 
 var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`)
 
-type Manager struct {
+type Handler struct {
 	devices      map[string]*Device
 	deviceConfig config.Interface
 }
 
-func NewManager(deviceConfig config.Interface) *Manager {
-	return &Manager{devices: make(map[string]*Device), deviceConfig: deviceConfig}
+func NewHandler(deviceConfig config.Interface) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceConfig: deviceConfig}
 }
 
-func (m *Manager) Name() string {
+func (m *Handler) Name() string {
 	return "android_device"
 }
 
-func (m *Manager) Init() error {
+func (m *Handler) Init() error {
 	devices := m.deviceConfig.GetDevicesForManager(m.Name())
 	for i := range devices {
 		// connect all remote devices
@@ -57,19 +57,19 @@ func (m *Manager) Init() error {
 	return nil
 }
 
-func (m *Manager) Start() error {
+func (m *Handler) Start() error {
 	cmd := device.NewCommand("adb", "start-server")
 	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func (m *Manager) Stop() error {
+func (m *Handler) Stop() error {
 	cmd := device.NewCommand("adb", "kill-server")
 	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func (m *Manager) StartDevice(deviceID string) error {
+func (m *Handler) StartDevice(deviceID string) error {
 	found := false
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
@@ -92,7 +92,7 @@ func (m *Manager) StartDevice(deviceID string) error {
 	return device.DeviceNotFoundError
 }
 
-func (m *Manager) StopDevice(deviceID string) error {
+func (m *Handler) StopDevice(deviceID string) error {
 	found := false
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
@@ -115,7 +115,7 @@ func (m *Manager) StopDevice(deviceID string) error {
 	return device.DeviceNotFoundError
 }
 
-func (m *Manager) GetDevices() ([]device.Device, error) {
+func (m *Handler) GetDevices() ([]device.Device, error) {
 	devices := make([]device.Device, 0, len(m.devices))
 	for _, d := range m.devices {
 		devices = append(devices, d)
@@ -123,7 +123,7 @@ func (m *Manager) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Manager) RefreshDevices() error {
+func (m *Handler) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
@@ -193,7 +193,7 @@ func (m *Manager) RefreshDevices() error {
 	return nil
 }
 
-func (m *Manager) HasDevice(dev device.Device) bool {
+func (m *Handler) HasDevice(dev device.Device) bool {
 	for _, device := range m.devices {
 		if device == dev {
 			return true

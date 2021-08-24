@@ -1,6 +1,6 @@
-package hub
+package selenium
 
-type ServerResponse struct {
+type Response struct {
 	SessionID string      `json:"sessionId"`
 	State     string      `json:"state"`
 	Message   string      `json:"message"`

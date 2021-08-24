@@ -15,8 +15,10 @@
 package cmd
 
 import (
+	"github.com/fsuhrau/automationhub/endpoints/api"
 	"github.com/fsuhrau/automationhub/hub"
 	"github.com/getsentry/sentry-go"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,7 +35,16 @@ var masterCmd = &cobra.Command{
 				Dsn: sentryDns,
 			})
 		}
-		server := hub.NewService()
+
+		logger := logrus.New()
+		deviceManager := hub.NewManager(logger)
+		sessionManager := hub.NewSessionManager(logger, deviceManager)
+
+		server := hub.NewService(logger, deviceManager, sessionManager)
+		server.AddEndpoint(api.New(logger, deviceManager, sessionManager))
+		// server.AddEndpoint(&_selenium.SeleniumService{})
+		// server.AddEndpoint(&inspector.InspectorService{})
+
 		return server.RunMaster()
 	},
 }

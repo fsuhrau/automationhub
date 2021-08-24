@@ -70,6 +70,6 @@ func (s* SessionStorage) RemoteDeviceLog(line string) {
 	}
 }
 
-func (s* SessionStorage) Close() {
-	s.deviceLog.Close()
+func (s* SessionStorage) Close() error {
+	return s.deviceLog.Close()
 }

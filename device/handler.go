@@ -1,6 +1,6 @@
 package device
 
-type Manager interface {
+type Handler interface {
 	Name() string
 	Init() error
 	Start() error

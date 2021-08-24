@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/fsuhrau/automationhub/hub"
 	"github.com/spf13/cobra"
 )
 
@@ -25,8 +24,9 @@ var slaveCmd = &cobra.Command{
 	Short: "start an automaton hub slave and connect to the server",
 	Long:  `an automation hub slave will handle every connection on the local machine and will act as a proxy between local attached devices and the automation hub server`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		server := hub.NewService()
-		return server.RunSlave()
+//		server := hub.NewService()
+//		return server.RunSlave()
+		return nil
 	},
 }
 

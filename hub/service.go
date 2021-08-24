@@ -1,6 +1,9 @@
 package hub
 
 import (
+	"github.com/fsuhrau/automationhub/endpoints"
+	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
 
@@ -9,30 +12,18 @@ import (
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-type Selectable struct {
-	ID   string
-	Name string
-}
-type Selectables []*Selectable
-
-func (s Selectables) Len() int      { return len(s) }
-func (s Selectables) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-type ByName struct{ Selectables }
-
-func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
-
 type Service struct {
 	server         *http.Server
-	deviceManager  *DeviceManager
-	sessionManager *SessionManager
+	deviceManager  manager.Devices
+	sessionManager manager.Sessions
 	logger         *logrus.Logger
 	hostIP         net.IP
+	endpoints      []endpoints.ServiceEndpoint
+	router         *gin.Engine
 	// sessions       map[string]*Session
 }
 
-func NewService() *Service {
-	logger := logrus.New()
+func NewService(logger *logrus.Logger, devices manager.Devices, sessions manager.Sessions) *Service {
 	level, err := logrus.ParseLevel(viper.GetString("log"))
 	if err != nil {
 		logrus.Infof("Parse Log Level: %s", err)
@@ -42,7 +33,22 @@ func NewService() *Service {
 		logger.SetLevel(level)
 	}
 	logger.Formatter = new(prefixed.TextFormatter)
-	deviceManager := NewManager(logger)
-	sessionManager := NewSessionManager(logger, deviceManager)
-	return &Service{logger: logger, sessionManager: sessionManager, deviceManager: deviceManager}
+	router := newRouter(logger)
+	return &Service{logger: logger, sessionManager: sessions, deviceManager: devices, router: router}
+}
+
+func newRouter(logger *logrus.Logger) *gin.Engine {
+	r := gin.New()
+	r.Use(Recovery())
+	r.Use(Logger(logger.WithFields(logrus.Fields{"prefix": "service"})))
+	return r
+}
+
+func (s *Service) AddEndpoint(endpoint endpoints.ServiceEndpoint) error {
+	if err := endpoint.RegisterRoutes(s.router); err != nil {
+		return err
+	}
+
+	s.endpoints = append(s.endpoints, endpoint)
+	return nil
 }
