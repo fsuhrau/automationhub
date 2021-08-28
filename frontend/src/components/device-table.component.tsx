@@ -41,8 +41,8 @@ function DeviceTable(props: DeviceProps) {
                     <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell align="right">Identifier</TableCell>
-                        <TableCell align="right">Type</TableCell>
                         <TableCell align="right">OS</TableCell>
+                        <TableCell align="right">Version</TableCell>
                         <TableCell align="right">Status</TableCell>
                     </TableRow>
                 </TableHead>
@@ -52,7 +52,7 @@ function DeviceTable(props: DeviceProps) {
                             {device.Name}
                         </TableCell>
                         <TableCell align="right">{device.DeviceIdentifier}</TableCell>
-                        <TableCell align="right">{device.DeviceType}</TableCell>
+                        <TableCell align="right">{device.OS}</TableCell>
                         <TableCell align="right">{device.OSVersion}</TableCell>
                         <TableCell align="right">{device.Status}</TableCell>
                     </TableRow>)}

@@ -16,12 +16,14 @@ import Hidden from '@material-ui/core/Hidden';
 import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
 import Navigator from './components/navigator';
+
 import Content from './Content';
 import Header from './Header';
 
 import TestHeader from './pages/tests/Header'
 import TestContent from './pages/tests/Content'
 import DevicesContent from './pages/devices/device.content'
+import DeviceHeader from './pages/devices/device.header'
 
 function Copyright() {
   return (
@@ -224,7 +226,7 @@ function App(props: AppProps) {
                 <Header onDrawerToggle={handleDrawerToggle} />
               </Route>
               <Route path="/devices">
-                <Header onDrawerToggle={handleDrawerToggle} />
+                <DeviceHeader onDrawerToggle={handleDrawerToggle} />
               </Route>
             </Switch>
             <main className={classes.main}>

@@ -7,6 +7,7 @@ export default interface IDeviceData {
     SoC: string,
     DisplaySize: string,
     DPI: number,
+    OS: string,
     OSVersion: string,
     GPU: string,
     ABI: string,

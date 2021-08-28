@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -44,7 +43,13 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 		devices, _ := s.devicesManager.Devices()
 		list := Selectables{}
 		for i := range devices {
-			list = append(list, &Selectable{devices[i].DeviceID(), fmt.Sprintf("%s(%s) %s", devices[i].DeviceOSName(), devices[i].DeviceOSVersion(), devices[i].DeviceName())})
+			list = append(list, &Selectable{
+				devices[i].DeviceID(),
+				devices[i].DeviceName(),
+				devices[i].DeviceOSName(),
+				devices[i].DeviceOSVersion(),
+				"",
+			})
 		}
 		sort.Sort(ByName{list})
 		c.Header("Access-Control-Allow-Origin", "*")
