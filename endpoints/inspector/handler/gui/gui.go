@@ -1,19 +1,21 @@
-package testexecuter
+package gui
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/endpoints/inspector/handler/visitor"
+	"github.com/fsuhrau/automationhub/hub/manager"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/fsuhrau/automationhub/inspector/handler/manager"
 	"github.com/gin-gonic/gin"
 )
 
-func Index(m manager.DeviceManager) func(*gin.Context) {
+// List all articles
+func Index(m manager.Devices) func(*gin.Context) {
 	return func(c *gin.Context) {
-		deviceList := manager.DeviceList(m)
+		deviceList := visitor.DeviceList(m)
 
 		files, _ := ioutil.ReadDir("./upload")
 		var pathes []string
@@ -24,7 +26,7 @@ func Index(m manager.DeviceManager) func(*gin.Context) {
 		for _, f := range files {
 			pathes = append(pathes, filepath.Join("upload", f.Name()))
 		}
-		c.HTML(http.StatusOK, "testexecuter/index", gin.H{
+		c.HTML(http.StatusOK, "gui/index", gin.H{
 			"apps":    pathes,
 			"devices": deviceList,
 		})

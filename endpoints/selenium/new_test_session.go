@@ -301,7 +301,7 @@ func (s *SeleniumService) ensureAppIsInstalled(session manager.Session, devicePr
 	return err
 }
 
-func (s *SeleniumService) StopTestingSession(session manager.Session, c *gin.Context) {
+func (s *SeleniumService) StopTestingSession(session *Session, c *gin.Context) {
 	type SessionResponse struct {
 		SessionID string `json:"sessionId"`
 		State     string `json:"state"`

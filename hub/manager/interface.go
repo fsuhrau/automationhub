@@ -21,10 +21,12 @@ type Devices interface {
 
 type Sessions interface {
 	GetSession(sessionID string) (Session, error)
-	CreateNewSession(logger *logrus.Logger, properties *device.Properties, parameter *app.Parameter) Session
+	CreateNewSession(logger *logrus.Entry, properties *device.Properties, parameter *app.Parameter) Session
 	AddSession(s Session)
 	StopSession(s Session) error
 	Run(ctx context.Context)
+	GetSessions() []Session
+	GetSessionDetails(sessionID string) Session
 }
 
 type Storage interface {

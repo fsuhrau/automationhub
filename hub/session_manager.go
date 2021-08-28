@@ -64,7 +64,7 @@ func (s *SessionManager) Run(ctx context.Context) {
 	}()
 }
 
-func (s *SessionManager) CreateNewSession(log *logrus.Logger, properties *device.Properties, appParameter *app.Parameter) manager.Session {
+func (s *SessionManager) CreateNewSession(log *logrus.Entry, properties *device.Properties, appParameter *app.Parameter) manager.Session {
 	u, _ := uuid.NewV4()
 	sessionID := fmt.Sprintf("%s", u)
 	sess := &Session{

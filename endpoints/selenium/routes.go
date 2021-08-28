@@ -9,15 +9,22 @@ import (
 )
 
 type SeleniumService struct {
+	logger          *logrus.Entry
+	hostIP          net.IP
 	devicesManager  manager.Devices
 	sessionsManager manager.Sessions
-	logger          *logrus.Entry
-	hostIP         net.IP
 }
 
-func (s *SeleniumService) RegisterRoutes(r *gin.Engine, dm manager.Devices, sm manager.Sessions) error {
-	s.devicesManager = dm
-	s.sessionsManager = sm
+func New(logger *logrus.Logger, hostIP net.IP, devices manager.Devices, sessions manager.Sessions) *SeleniumService {
+	return &SeleniumService{
+		logger:          logger.WithField("service", "selenium"),
+		hostIP:          hostIP,
+		devicesManager:  devices,
+		sessionsManager: sessions,
+	}
+}
+
+func (s *SeleniumService) RegisterRoutes(r *gin.Engine) error {
 
 	r.POST("/wd/hub/session", s.InitNewTestSession)
 	authGroup := r.Group("/wd/hub/session/:sessionID")

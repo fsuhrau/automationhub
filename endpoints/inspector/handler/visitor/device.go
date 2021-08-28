@@ -1,4 +1,4 @@
-package manager
+package visitor
 
 import (
 	"sort"

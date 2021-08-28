@@ -1,13 +1,13 @@
 package sessions
 
 import (
+	"github.com/fsuhrau/automationhub/hub/manager"
 	"net/http"
 
-	"github.com/fsuhrau/automationhub/inspector/handler/manager"
 	"github.com/gin-gonic/gin"
 )
 
-func Index(sessionManager manager.SessionManager) func(*gin.Context) {
+func Index(sessionManager manager.Sessions) func(*gin.Context) {
 	return func(c *gin.Context) {
 		sessionManager.GetSessions()
 		sessions := sessionManager.GetSessions()
@@ -17,7 +17,7 @@ func Index(sessionManager manager.SessionManager) func(*gin.Context) {
 	}
 }
 
-func Show(sessionManager manager.SessionManager) func(*gin.Context) {
+func Show(sessionManager manager.Sessions) func(*gin.Context) {
 	return func(c *gin.Context) {
 		sessionID := c.Param("sessionID")
 		c.SetCookie("session_id", sessionID, 356, "/", "", true, false)

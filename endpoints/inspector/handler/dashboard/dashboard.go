@@ -1,19 +1,20 @@
 package dashboard
 
 import (
+	"github.com/fsuhrau/automationhub/endpoints/inspector/handler/visitor"
+	"github.com/fsuhrau/automationhub/hub/manager"
 	"net/http"
 
-	"github.com/fsuhrau/automationhub/inspector/handler/manager"
 	"github.com/gin-gonic/gin"
 )
 
-func Index(dm manager.DeviceManager, sm manager.SessionManager) func(*gin.Context) {
+func Index(dm manager.Devices, sm manager.Sessions) func(*gin.Context) {
 	return func(c *gin.Context) {
-		deviceList := manager.DeviceList(dm)
-		var byOs map[string][]*manager.Dev
-		byOs = make(map[string][]*manager.Dev)
+		deviceList := visitor.DeviceList(dm)
+		var byOs map[string][]*visitor.Dev
+		byOs = make(map[string][]*visitor.Dev)
 		for _, device := range deviceList {
-			var list []*manager.Dev
+			var list []*visitor.Dev
 			var ok bool
 			if list, ok = byOs[device.OperationSystem]; ok {
 				list = append(list, device)
