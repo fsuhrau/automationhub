@@ -31,6 +31,7 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 		}
 		session := s.(*Session)
 		// session.LastAccess = time.Now()
+		c.Header("Access-Control-Allow-Origin", "*")
 		f(session, c)
 	}
 }
@@ -46,6 +47,7 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 			list = append(list, &Selectable{devices[i].DeviceID(), fmt.Sprintf("%s(%s) %s", devices[i].DeviceOSName(), devices[i].DeviceOSVersion(), devices[i].DeviceName())})
 		}
 		sort.Sort(ByName{list})
+		c.Header("Access-Control-Allow-Origin", "*")
 		c.JSON(http.StatusOK, list)
 	})
 
