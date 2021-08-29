@@ -4,19 +4,22 @@ import (
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"sort"
 )
 
 type ApiService struct {
 	logger          *logrus.Entry
+	db              *gorm.DB
 	devicesManager  manager.Devices
 	sessionsManager manager.Sessions
 }
 
-func New(logger *logrus.Logger, dm manager.Devices, sm manager.Sessions) *ApiService {
+func New(logger *logrus.Logger, db *gorm.DB, dm manager.Devices, sm manager.Sessions) *ApiService {
 	return &ApiService{
-		logger: logger.WithField("Service", "Api"),
+		logger:          logger.WithField("Service", "Api"),
+		db:              db,
 		devicesManager:  dm,
 		sessionsManager: sm,
 	}
@@ -37,8 +40,8 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 
 func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api := r.Group("/api", func(context *gin.Context) {
-
 	})
+
 	api.GET("/devices", func(c *gin.Context) {
 		devices, _ := s.devicesManager.Devices()
 		list := Selectables{}
@@ -56,8 +59,13 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 		c.JSON(http.StatusOK, list)
 	})
 
-	api.GET("tests", HandleWithSession(s.getTests))
-	api.POST("execute", HandleWithSession(s.startTest))
-	api.GET("status", HandleWithSession(s.getStatus))
+	api.GET("/tests", HandleWithSession(s.getTests))
+	api.POST("/test", HandleWithSession(s.newTest))
+	api.GET("/test/:test_id", HandleWithSession(s.getTest))
+	api.GET("/test/:test_id/runs", HandleWithSession(s.getTestRuns))
+	api.GET("/test/:test_id/runs/:run_id", HandleWithSession(s.getTestRun))
+
+	api.POST("/execute", HandleWithSession(s.startTest))
+	api.GET("/status", HandleWithSession(s.getStatus))
 	return nil
 }

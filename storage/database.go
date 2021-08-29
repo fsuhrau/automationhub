@@ -1,4 +1,4 @@
-package persistence
+package storage
 
 import (
 	"gorm.io/driver/sqlite"
@@ -7,7 +7,7 @@ import (
 
 var db *gorm.DB
 
-func Get() (*gorm.DB, error) {
+func GetDB() (*gorm.DB, error) {
 	if db != nil {
 		return db, nil
 	}

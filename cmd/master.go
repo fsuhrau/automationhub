@@ -19,6 +19,7 @@ import (
 	"github.com/fsuhrau/automationhub/endpoints/inspector"
 	"github.com/fsuhrau/automationhub/endpoints/selenium"
 	"github.com/fsuhrau/automationhub/hub"
+	"github.com/fsuhrau/automationhub/storage"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,12 +39,16 @@ var masterCmd = &cobra.Command{
 			})
 		}
 
+		db, err := storage.GetDB()
+		if err != nil {
+			return err
+		}
+
 		logger := logrus.New()
 		deviceManager := hub.NewManager(logger)
 		sessionManager := hub.NewSessionManager(logger, deviceManager)
-
 		server := hub.NewService(logger, deviceManager, sessionManager)
-		server.AddEndpoint(api.New(logger, deviceManager, sessionManager))
+		server.AddEndpoint(api.New(logger, db, deviceManager, sessionManager))
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
 		server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
 

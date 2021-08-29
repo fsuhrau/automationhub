@@ -1,11 +1,9 @@
 import React from 'react';
-import {
-    Link
-} from "react-router-dom";
+import {Link} from "react-router-dom";
 import clsx from 'clsx';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
 import Divider from '@material-ui/core/Divider';
-import Drawer, { DrawerProps } from '@material-ui/core/Drawer';
+import Drawer, {DrawerProps} from '@material-ui/core/Drawer';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -14,30 +12,28 @@ import HomeIcon from '@material-ui/icons/Home';
 import PeopleIcon from '@material-ui/icons/People';
 import DnsRoundedIcon from '@material-ui/icons/DnsRounded';
 import PermMediaOutlinedIcon from '@material-ui/icons/PhotoSizeSelectActual';
-import PublicIcon from '@material-ui/icons/Public';
 import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
-import SettingsInputComponentIcon from '@material-ui/icons/SettingsInputComponent';
 import TimerIcon from '@material-ui/icons/Timer';
 import SettingsIcon from '@material-ui/icons/Settings';
 import PhonelinkSetupIcon from '@material-ui/icons/PhonelinkSetup';
-import { Omit } from '@material-ui/types';
+import {Omit} from '@material-ui/types';
 
 const categories = [
     {
         id: 'Test Center',
         children: [
-            { id: 'Tests', ref: "/tests", icon: <PermMediaOutlinedIcon />, active: true },
-            { id: 'Results', ref: "/results", icon: <SettingsEthernetIcon /> },
-            { id: 'Performance', ref: "/performance", icon: <TimerIcon /> },
+            {id: 'Tests', ref: "/tests", icon: <PermMediaOutlinedIcon/>, active: true},
+            {id: 'Results', ref: "/results", icon: <SettingsEthernetIcon/>},
+            {id: 'Performance', ref: "/performance", icon: <TimerIcon/>},
         ],
     },
     {
         id: 'Management',
         children: [
-            { id: 'Settings', ref: "/settings", icon: <SettingsIcon /> },
-            { id: 'Apps', ref: "/apps", icon: <DnsRoundedIcon /> },
-            { id: 'User', ref: "/users", icon: <PeopleIcon /> },
-            { id: 'Devices', ref: "/devices", icon: <PhonelinkSetupIcon /> },
+            {id: 'Settings', ref: "/settings", icon: <SettingsIcon/>},
+            {id: 'Apps', ref: "/apps", icon: <DnsRoundedIcon/>},
+            {id: 'User', ref: "/users", icon: <PeopleIcon/>},
+            {id: 'Devices', ref: "/devices", icon: <PhonelinkSetupIcon/>},
         ],
     },
 ];
@@ -84,10 +80,11 @@ const styles = (theme: Theme) =>
         },
     });
 
-export interface NavigatorProps extends Omit<DrawerProps, 'classes'>, WithStyles<typeof styles> { }
+export interface NavigatorProps extends Omit<DrawerProps, 'classes'>, WithStyles<typeof styles> {
+}
 
 function Navigator(props: NavigatorProps) {
-    const { classes, ...other } = props;
+    const {classes, ...other} = props;
 
     return (
         <Drawer variant="permanent" {...other}>
@@ -97,7 +94,7 @@ function Navigator(props: NavigatorProps) {
                 </ListItem>
                 <ListItem className={clsx(classes.item, classes.itemCategory)}>
                     <ListItemIcon className={classes.itemIcon}>
-                        <HomeIcon />
+                        <HomeIcon/>
                     </ListItemIcon>
                     <ListItemText
                         classes={{
@@ -107,7 +104,7 @@ function Navigator(props: NavigatorProps) {
                         Project Overview
                     </ListItemText>
                 </ListItem>
-                {categories.map(({ id, children }) => (
+                {categories.map(({id, children}) => (
                     <React.Fragment key={id}>
                         <ListItem className={classes.categoryHeader}>
                             <ListItemText
@@ -118,7 +115,7 @@ function Navigator(props: NavigatorProps) {
                                 {id}
                             </ListItemText>
                         </ListItem>
-                        {children.map(({ id: childId, ref, icon, active }) => (
+                        {children.map(({id: childId, ref, icon, active}) => (
                             <Link to={ref}>
                                 <ListItem
                                     key={childId}
@@ -136,7 +133,7 @@ function Navigator(props: NavigatorProps) {
                                 </ListItem>
                             </Link>
                         ))}
-                        <Divider className={classes.divider} />
+                        <Divider className={classes.divider}/>
                     </React.Fragment>
                 ))}
             </List>
