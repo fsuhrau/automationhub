@@ -18,6 +18,6 @@ func migrate(db *gorm.DB) error {
 	db.AutoMigrate(&models.TestRun{})
 	db.AutoMigrate(&models.User{})
 	db.AutoMigrate(&models.UserAuth{})
-	db.AutoMigrate(&models.UserCompany{})
+	db.AutoMigrate(&models.DeviceLog{})
 	return nil
 }
