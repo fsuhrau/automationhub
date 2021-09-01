@@ -1,4 +1,4 @@
 export default interface IAppData {
-    id?: any | null,
+    ID?: any | null,
     name: string,
 }

@@ -4,6 +4,7 @@ import "gorm.io/gorm"
 
 type Company struct {
 	gorm.Model
-	Name string
+	Token string
+	Name  string
 	Users []*User `gorm:"many2many:user_companies;"`
 }

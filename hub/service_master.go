@@ -5,40 +5,21 @@ import (
 	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/device/unityeditor"
-	"net"
 	"net/http"
-	//"strings"
 
-	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/iosdevice"
 	"github.com/fsuhrau/automationhub/device/iossim"
-	//"github.com/fsuhrau/automationhub/remlog"
-	"github.com/fsuhrau/automationhub/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 func (s *Service) RunMaster() error {
 	//showRemlog := viper.GetBool("display_remlog")
 
-	var serviceConfig config.Service
-
-	if err := viper.Unmarshal(&serviceConfig); err != nil {
-		return err
-	}
-
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	if len(serviceConfig.HostIP) > 0 {
-		s.hostIP = net.ParseIP(serviceConfig.HostIP)
-	}
-
-	if s.hostIP == nil {
-		s.hostIP = utils.GetOutboundIP()
-	}
 
 	go ZeroConfServer(ctx, "", s.hostIP.String())
 /*
@@ -63,23 +44,23 @@ func (s *Service) RunMaster() error {
 	}
 */
 	// start device observer thread
-	if d, ok := serviceConfig.DeviceManager["android_device"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager["android_device"]; ok && d.Enabled {
 		s.logger.Info("adding manager android_device")
 		s.deviceManager.AddHandler(androiddevice.NewHandler(&d))
 	}
-	if d, ok := serviceConfig.DeviceManager["ios_sim"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager["ios_sim"]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_sim")
 		s.deviceManager.AddHandler(iossim.NewHandler(&d, s.hostIP))
 	}
-	if d, ok := serviceConfig.DeviceManager["ios_device"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager["ios_device"]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_device")
 		s.deviceManager.AddHandler(iosdevice.NewHandler(&d))
 	}
-	if d, ok := serviceConfig.DeviceManager["macos"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager["macos"]; ok && d.Enabled {
 		s.logger.Info("adding manager macos")
 		s.deviceManager.AddHandler(macos.NewHandler(&d, s.hostIP))
 	}
-	if d, ok := serviceConfig.DeviceManager["unity_editor"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager["unity_editor"]; ok && d.Enabled {
 		s.logger.Info("adding manager unity_editor")
 		s.deviceManager.AddHandler(unityeditor.NewHandler(&d, s.hostIP))
 	}

@@ -61,7 +61,7 @@ func (s *SeleniumService) InitNewTestSession(c *gin.Context) {
 	session := s.sessionsManager.CreateNewSession(s.logger, deviceProperties, appParameter)
 
 	if err := s.ensureAppIsInstalled(session, deviceProperties, appParameter); err != nil {
-		s.devicesManager.UnlockDevice(session)
+		//s.devicesManager.UnlockDevice(session)
 		s.renderError(c, err)
 		return
 	}
@@ -69,7 +69,7 @@ func (s *SeleniumService) InitNewTestSession(c *gin.Context) {
 	logrus.Infof("Start App on device: %s", session.GetDevice().DeviceName())
 	if err := session.GetDevice().StartApp(appParameter, session.GetSessionID(), s.hostIP); err != nil {
 		logrus.Errorf("StartApp: %v", err)
-		s.devicesManager.UnlockDevice(session)
+		//s.devicesManager.UnlockDevice(session)
 		s.renderError(c, errors.WithMessage(err, "could not start app on device"))
 		return
 	}
@@ -77,7 +77,7 @@ func (s *SeleniumService) InitNewTestSession(c *gin.Context) {
 	logrus.Infof("Wait for app to be started and connected for device: %s", session.GetDevice().DeviceName())
 	if err := session.WaitForConnection(); err != nil {
 		logrus.Errorf("StartApp: %v", err)
-		s.devicesManager.UnlockDevice(session)
+		//s.devicesManager.UnlockDevice(session)
 		s.renderError(c, errors.WithMessage(err, "app not connected"))
 		return
 	}
@@ -239,17 +239,18 @@ func (s *SeleniumService) ensureAppIsInstalled(session manager.Session, devicePr
 	var err error
 	for counter := 0; counter < 5; counter++ {
 		var isInstalled bool
+/*
 		if _, err = s.devicesManager.LockDevice(session, deviceProperties); err != nil {
 			// wait to unlock
 			time.Sleep(retryTimer)
 			err = errors.WithMessage(err, "no available device found")
 			continue
 		}
-
-		if session.GetDevice().DeviceState() != device.Booted {
+*/
+		if session.GetDevice().DeviceState() != device.StateBooted {
 			if err := s.devicesManager.Start(session.GetDevice()); err != nil {
 				logrus.Errorf("DeviceState: %v", err)
-				s.devicesManager.UnlockDevice(session)
+				// s.devicesManager.UnlockDevice(session)
 				time.Sleep(retryTimer)
 				continue
 			}
@@ -257,7 +258,7 @@ func (s *SeleniumService) ensureAppIsInstalled(session manager.Session, devicePr
 
 		isInstalled, err = session.GetDevice().IsAppInstalled(appParameter)
 		if err != nil {
-			s.devicesManager.UnlockDevice(session)
+			// s.devicesManager.UnlockDevice(session)
 			err = errors.WithMessage(err, "could not check if app is installed on device")
 			time.Sleep(retryTimer)
 			continue
@@ -266,7 +267,7 @@ func (s *SeleniumService) ensureAppIsInstalled(session manager.Session, devicePr
 			logrus.Infof("InstallApp on device: %s", session.GetDevice().DeviceName())
 			if err := session.GetDevice().InstallApp(appParameter); err != nil {
 				logrus.Errorf("InstallApp: %v", err)
-				s.devicesManager.UnlockDevice(session)
+				// s.devicesManager.UnlockDevice(session)
 				err = errors.WithMessage(err, "could not install app on device")
 				time.Sleep(retryTimer)
 				continue

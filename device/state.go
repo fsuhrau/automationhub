@@ -1,40 +1,33 @@
 package device
 
 type State uint8
-
 const (
-	Unknown State = iota
-	Shutdown
-	RemoteDisconnected
-	Booted
+	StateUnknown State = iota
+	StateShutdown
+	StateRemoteDisconnected
+	StateBooted
+	StateLocked
 )
 
 func StateToString(state State) string {
 	switch state {
-	case Unknown:
+	case StateUnknown:
 		return "unknown"
-	case Shutdown:
+	case StateShutdown:
 		return "shutdown"
-	case Booted:
+	case StateBooted:
 		return "booted"
-	case RemoteDisconnected:
+	case StateRemoteDisconnected:
 		return "remote disconnected"
+	case StateLocked:
+		return "locked"
 	}
 	return ""
 }
 
 type ConnectionState uint8
-
 const (
 	Disconnected ConnectionState = iota
 	Connected
 )
 
-type ApplicationType uint8
-
-const (
-	iOS ApplicationType = iota
-	iOSSim
-	MacOS
-	Android
-)

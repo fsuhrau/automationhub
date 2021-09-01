@@ -64,7 +64,7 @@ func (s *SeleniumService) getElements(session *Session) error {
 	log := session.GetLogger().WithField("prefix", "action")
 
 	a := &action.GetSceenGraph{}
-	if err := s.devicesManager.SendAction(log, session, a); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 		return err
 	}
 	var err error
@@ -171,7 +171,7 @@ func (s *SeleniumService) ElementIsDisplayed(session *Session, c *gin.Context) {
 	a := &action.IsDisplayed{
 		ElementID: elementID,
 	}
-	err := s.devicesManager.SendAction(log, session, a)
+	err := s.devicesManager.SendAction(session.lock.Device, a)
 	if err != nil {
 		s.renderError(c, err)
 		return
@@ -209,7 +209,7 @@ func (s *SeleniumService) ElementClick(session *Session, c *gin.Context) {
 		}
 
 		a := &action.TouchElement{ElementID: elementID}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -232,7 +232,6 @@ func (s *SeleniumService) ElementClick(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) ElementSetValue(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
 
 	type ActionRequest struct {
 		ID    string   `json:"id"`
@@ -250,7 +249,7 @@ func (s *SeleniumService) ElementSetValue(session *Session, c *gin.Context) {
 		Value:     strings.Join(req.Value, ""),
 	}
 
-	if err := s.devicesManager.SendAction(log, session, a); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -272,7 +271,6 @@ func (s *SeleniumService) ElementSetValue(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) ElementGetValue(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
 	attr := c.Param("attribute")
 	elementID := c.Param("elementID")
 
@@ -281,7 +279,7 @@ func (s *SeleniumService) ElementGetValue(session *Session, c *gin.Context) {
 		Attr:      attr,
 	}
 
-	if err := s.devicesManager.SendAction(log, session, a); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -438,7 +436,7 @@ func (s *SeleniumService) MoveTo(session *Session, c *gin.Context) {
 			OffsetX: move.XOffset,
 			OffsetY: move.YOffset,
 		}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -477,13 +475,11 @@ func (s *SeleniumService) ButtonDown(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) ButtonUp(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
-
 	a := &action.DragAndDrop{
 		From: moveElementToElement.From,
 		To:   elementID,
 	}
-	err := s.devicesManager.SendAction(log, session, a)
+	err := s.devicesManager.SendAction(session.lock.Device, a)
 	if err != nil {
 		s.renderError(c, err)
 		return
@@ -503,8 +499,6 @@ func (s *SeleniumService) ButtonUp(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) TouchPosition(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
-
 	type Request struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
@@ -517,13 +511,13 @@ func (s *SeleniumService) TouchPosition(session *Session, c *gin.Context) {
 		device.Tap(int64(req.X), int64(req.Y))
 	} else {
 		downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
-		if err := s.devicesManager.SendAction(log, session, downAction); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, downAction); err != nil {
 			s.renderError(c, err)
 			return
 		}
 
 		upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
-		if err := s.devicesManager.SendAction(log, session, upAction); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, upAction); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -540,8 +534,6 @@ func (s *SeleniumService) TouchPosition(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) TouchDown(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
-
 	type Request struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
@@ -551,7 +543,7 @@ func (s *SeleniumService) TouchDown(session *Session, c *gin.Context) {
 	c.Bind(req)
 
 	downAction := &action.TouchDownPosition{int64(req.X), int64(req.Y), false}
-	if err := s.devicesManager.SendAction(log, session, downAction); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, downAction); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -567,8 +559,6 @@ func (s *SeleniumService) TouchDown(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) TouchMove(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
-
 	type Request struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
@@ -578,7 +568,7 @@ func (s *SeleniumService) TouchMove(session *Session, c *gin.Context) {
 	c.Bind(req)
 
 	downAction := &action.TouchMovePosition{int64(req.X), int64(req.Y), false}
-	if err := s.devicesManager.SendAction(log, session, downAction); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, downAction); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -594,8 +584,6 @@ func (s *SeleniumService) TouchMove(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) TouchUp(session *Session, c *gin.Context) {
-	log := session.GetLogger().WithField("prefix", "action")
-
 	type Request struct {
 		X float64 `json:"x"`
 		Y float64 `json:"y"`
@@ -605,7 +593,7 @@ func (s *SeleniumService) TouchUp(session *Session, c *gin.Context) {
 	c.Bind(req)
 
 	upAction := &action.TouchUpPosition{int64(req.X), int64(req.Y), false}
-	if err := s.devicesManager.SendAction(log, session, upAction); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, upAction); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -646,7 +634,7 @@ func (s *SeleniumService) LongClickElement(session *Session, c *gin.Context) {
 			ElementID: req.ElementID,
 		}
 
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -686,10 +674,8 @@ func (s *SeleniumService) renderError(c *gin.Context, err error) {
 }
 
 func (s *SeleniumService) GetGraph(session *Session, c *gin.Context) {
-	log := session.logger.WithField("prefix", "action")
-
 	a := &action.GetSceenGraph{}
-	if err := s.devicesManager.SendAction(log, session, a); err != nil {
+	if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 		s.renderError(c, err)
 		return
 	}
@@ -716,7 +702,7 @@ func (s *SeleniumService) GetScreen(session *Session, c *gin.Context) {
 		go func() {
 			start := time.Now()
 			a := &action.GetSceenGraph{}
-			if err := s.devicesManager.SendAction(log, session, a); err != nil {
+			if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 				s.renderError(c, err)
 				return
 			}
@@ -748,7 +734,7 @@ func (s *SeleniumService) GetScreen(session *Session, c *gin.Context) {
 	} else {
 		st := time.Now()
 		a := &action.GetScreenshot{}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -791,7 +777,7 @@ func (s *SeleniumService) TakeScreenshot(session *Session, c *gin.Context) {
 
 	if viper.GetBool("use_os_screenshot") {
 		a := &action.GetSceenGraph{}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -814,7 +800,7 @@ func (s *SeleniumService) TakeScreenshot(session *Session, c *gin.Context) {
 	} else {
 		st := time.Now()
 		a := &action.GetScreenshot{}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -879,7 +865,7 @@ func (s *SeleniumService) RestartApp(session *Session, c *gin.Context) {
 		a := &action.Custom{
 			RequestData: req.Url,
 		}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}
@@ -909,14 +895,13 @@ func (s *SeleniumService) RestartApp(session *Session, c *gin.Context) {
 }
 
 func (s *SeleniumService) NavigateBack(session *Session, c *gin.Context) {
-	log := session.logger.WithField("prefix", "action")
 	if session.GetDevice().HasFeature("back") {
 		session.GetDevice().Execute("back")
 	} else {
 		a := &action.Custom{
 			RequestData: "back",
 		}
-		if err := s.devicesManager.SendAction(log, session, a); err != nil {
+		if err := s.devicesManager.SendAction(session.lock.Device, a); err != nil {
 			s.renderError(c, err)
 			return
 		}

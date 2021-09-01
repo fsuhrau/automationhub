@@ -1,4 +1,3 @@
-
 import React, {useState} from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -6,8 +5,9 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
 import Select, { SelectChangeEvent } from '@material-ui/core/Select';
-import {FormControl, InputLabel, MenuItem, Step, StepLabel, Stepper} from "@material-ui/core";
+import {Box, FormControl, InputLabel, MenuItem, Step, StepLabel, Stepper, TextField} from "@material-ui/core";
 import ITestData from "../../types/test";
+import Divider from "@material-ui/core/Divider";
 
 const styles = (theme: Theme) =>
     createStyles({
@@ -36,7 +36,8 @@ const styles = (theme: Theme) =>
 const steps = ['Test', 'Upload App', 'Scenario'];
 const types = [{id: 1, name: 'Selecnium'}, {id: 2, name: 'Cocos'}, {id: 3, name: 'Unity'}];
 
-export interface AddTestProps extends WithStyles<typeof styles> {}
+export interface AddTestProps extends WithStyles<typeof styles> {
+}
 
 function AddTestPage(props: AddTestProps) {
     const {classes} = props;
@@ -66,20 +67,35 @@ function AddTestPage(props: AddTestProps) {
                     </Step>
                 ))}
             </Stepper>
-            Type: <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Age</InputLabel>
-            <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={type}
-                label="Type"
-                onChange={handleChange}
+            <Divider variant="middle"/>
+            <Box
+                component="form"
+                sx={{
+                    '& .MuiTextField-root': {m: 1, width: '25ch'},
+                }}
+                noValidate
+                autoComplete="off"
             >
-                {types.map((label) => (
-                    <MenuItem value={label.id}>{label.name}</MenuItem>
-                ))}
-            </Select>
-        </FormControl>
+                <FormControl>
+                    <InputLabel id="test-name-input-label">Name</InputLabel>
+                    <TextField id="test-name-input" label="test-name-input-label" variant="standard"/>
+                </FormControl>
+                <br />
+                <FormControl>
+                    <InputLabel id="select-test-type-label">Type</InputLabel>
+                    <Select
+                        labelId="select-test-type-label"
+                        id="select-test-type"
+                        value={type}
+                        label="Type"
+                        onChange={handleChange}
+                    >
+                        {types.map((label) => (
+                            <MenuItem value={label.id}>{label.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
         </Paper>
     );
 }

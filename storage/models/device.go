@@ -1,26 +1,17 @@
 package models
 
 import (
+	"github.com/fsuhrau/automationhub/device"
 	"gorm.io/gorm"
 )
 
 type DeviceType int
-const (
-	DeviceType_Phone DeviceType = iota
-	DeviceType_Tablet
-	DeviceType_MacOS
-	DeviceType_Windows
-	DeviceType_Unity
-)
 
-type DeviceStatus int
 const (
-	DeviceStatus_Unknown            DeviceStatus = iota
-	DeviceStatus_Shutdown
-	DeviceStatus_RemoteDisconnected
-	DeviceStatus_Booted
-	DeviceStatus_Locked
-	DeviceStatus_Unlocked
+	DeviceTypePhone DeviceType = iota
+	DeviceTypeTablet
+	DeviceTypeDesktop
+	DeviceTypeUnityEditor
 )
 
 type Device struct {
@@ -33,11 +24,12 @@ type Device struct {
 	SOC              string
 	DisplaySize      string
 	DPI              float32
+	OS               string
 	OSVersion        string
 	GPU              string
 	ABI              string
 	OpenGLESVersion  float32
-	Status           DeviceStatus
+	Status           device.State
 	Manager          string
 	StatusLog        []DeviceLog
 }

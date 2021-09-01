@@ -5,8 +5,9 @@ import (
 )
 
 type TestStart struct {
-	TestClass string
-	TestMethod string
+	Assembly string
+	Class string
+	Method string
 	Success bool
 }
 
@@ -14,8 +15,9 @@ func (a *TestStart) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ExecuteTest,
 		Payload: &Request_Test{&Test{
-			Type: a.TestClass,
-			Method: a.TestMethod,
+			Assembly: a.Assembly,
+			Class: a.Class,
+			Method: a.Method,
 		}},
 	}
 	return proto.Marshal(req)

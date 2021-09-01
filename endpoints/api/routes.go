@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -28,11 +29,11 @@ func New(logger *logrus.Logger, db *gorm.DB, dm manager.Devices, sm manager.Sess
 func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		s, _ := c.Get("session")
-		if s == nil {
-			return
+		var session *Session
+		if s != nil {
+			session = s.(*Session)
+			// session.LastAccess = time.Now()
 		}
-		session := s.(*Session)
-		// session.LastAccess = time.Now()
 		c.Header("Access-Control-Allow-Origin", "*")
 		f(session, c)
 	}
@@ -46,12 +47,17 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 		devices, _ := s.devicesManager.Devices()
 		list := Selectables{}
 		for i := range devices {
+			connectionStatus := "Disconnected"
+			if devices[i].Connection() != nil {
+				connectionStatus = "Connected"
+			}
 			list = append(list, &Selectable{
 				devices[i].DeviceID(),
 				devices[i].DeviceName(),
 				devices[i].DeviceOSName(),
 				devices[i].DeviceOSVersion(),
-				"",
+				device.StateToString(devices[i].DeviceState()),
+				connectionStatus,
 			})
 		}
 		sort.Sort(ByName{list})
@@ -62,6 +68,7 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api.GET("/tests", HandleWithSession(s.getTests))
 	api.POST("/test", HandleWithSession(s.newTest))
 	api.GET("/test/:test_id", HandleWithSession(s.getTest))
+	api.POST("/test/:test_id/run", HandleWithSession(s.runTest))
 	api.GET("/test/:test_id/runs", HandleWithSession(s.getTestRuns))
 	api.GET("/test/:test_id/runs/:run_id", HandleWithSession(s.getTestRun))
 

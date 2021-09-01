@@ -118,10 +118,18 @@ message Request {
   }
 }
 
-message Session {
-  string deviceID = 1;
-  string sessionID = 2;
-  string version = 3;
+enum AppType {
+  Cocos = 0;
+  Unity = 1;
+}
+
+message Connect {
+  string customerId = 1;
+  string appID = 2;
+  AppType appType = 3;
+  string deviceID = 4;
+  string sessionID = 5;
+  string version = 6;
 }
 
 message Screenshot {
@@ -131,8 +139,9 @@ message Screenshot {
 }
 
 message Test {
-  string type = 1;
-  string method = 2;
+  string assembly = 1;
+  string class = 2;
+  string method = 3;
 }
 
 message Tests {
@@ -148,7 +157,7 @@ message Response {
     bytes data = 5;
     string value = 6;
     Screenshot screenshot = 7;
-    Session session = 8;
+    Connect connect = 8;
     Tests tests = 9;
   }
 }

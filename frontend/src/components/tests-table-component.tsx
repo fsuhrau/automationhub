@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, MouseEvent} from 'react';
 import {createStyles, styled, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -10,6 +10,8 @@ import Paper from '@material-ui/core/Paper';
 
 import ITestData from "../types/test";
 import TestDataService from "../services/test.service";
+import {Button} from "@material-ui/core";
+import {PlayArrow} from "@material-ui/icons";
 
 const styles = (theme: Theme) =>
     createStyles({
@@ -34,6 +36,33 @@ function TestsTable(props: TestProps) {
         })
     }, [])
 
+    function typeString(type: number) {
+        switch (type) {
+            case 0: return "Unity";
+            case 1: return "Cocos";
+            case 2: return "Serenity";
+            case 3: return "Scenario";
+        }
+        return "";
+    }
+
+    function executionString(type: number) {
+        switch (type) {
+            case 0: return "Parallel";
+            case 1: return "Synchronous";
+        }
+        return "";
+    }
+
+    function handleRunTest(id: number | null | undefined, appid: number, devices: Array<number>, e: MouseEvent<HTMLButtonElement>) {
+        e.preventDefault()
+        TestDataService.executeTest(id, appid, devices).then(response => {
+            console.log(response.data);
+        }).catch(e => {
+            console.log(e);
+        })
+    }
+
     return (
         <TableContainer component={Paper}>
             <Table className={classes.table} size="small" aria-label="a dense table">
@@ -41,9 +70,10 @@ function TestsTable(props: TestProps) {
                     <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell align="right">Typ</TableCell>
-                        <TableCell align="right">Started</TableCell>
+                        <TableCell align="right">Execution</TableCell>
                         <TableCell align="right">Devices</TableCell>
                         <TableCell align="right">Status</TableCell>
+                        <TableCell align="right"></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -51,10 +81,15 @@ function TestsTable(props: TestProps) {
                         <TableCell component="th" scope="row">
                             {test.Name}
                         </TableCell>
-                        <TableCell align="right">{test.TestConfig.Type}</TableCell>
-                        <TableCell align="right">{test.Last.Log.StartedAt}</TableCell>
+                        <TableCell align="right">{typeString(test.TestConfig.Type)}</TableCell>
+                        <TableCell align="right">{executionString(test.TestConfig.ExecutionType)}</TableCell>
                         <TableCell align="right">0</TableCell>
-                        <TableCell align="right">{test.Last.Result.Status}</TableCell>
+                        <TableCell align="right"></TableCell>
+                        <TableCell align="right">
+                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [1], e)}>
+                                Run
+                            </Button>
+                        </TableCell>
                     </TableRow>)}
                 </TableBody>
             </Table>

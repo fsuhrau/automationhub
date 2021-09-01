@@ -1,11 +1,12 @@
 package api
 
 type Selectable struct {
-	Name    string
-	DeviceIdentifier      string
-	OS      string
-	OSVersion string
-	Status string
+	Name             string
+	DeviceIdentifier string
+	OS               string
+	OSVersion        string
+	Status           string
+	Connected        string
 }
 type Selectables []*Selectable
 

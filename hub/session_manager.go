@@ -89,7 +89,7 @@ func (s *SessionManager) StopSession(session manager.Session) error {
 		if err := session.Close(); err != nil {
 			s.log.Errorf("Session can't be cleaned: %v", err)
 		}
-		s.dm.UnlockDevice(session)
+		// s.dm.UnlockDevice(session)
 		session.GetStorage().Close()
 		delete(s.sessions, session.GetSessionID())
 	}

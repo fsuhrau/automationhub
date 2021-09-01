@@ -15,15 +15,18 @@
 package cmd
 
 import (
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints/api"
 	"github.com/fsuhrau/automationhub/endpoints/inspector"
 	"github.com/fsuhrau/automationhub/endpoints/selenium"
 	"github.com/fsuhrau/automationhub/hub"
 	"github.com/fsuhrau/automationhub/storage"
+	"github.com/fsuhrau/automationhub/utils"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"net"
 )
 
 // masterCmd represents the run command
@@ -39,21 +42,40 @@ var masterCmd = &cobra.Command{
 			})
 		}
 
+		var serviceConfig config.Service
+		if err := viper.Unmarshal(&serviceConfig); err != nil {
+			return err
+		}
+
+		hostIP := getHostIP(serviceConfig)
+
 		db, err := storage.GetDB()
 		if err != nil {
 			return err
 		}
 
 		logger := logrus.New()
-		deviceManager := hub.NewManager(logger)
+		deviceManager := hub.NewDeviceManager(logger, hostIP, db)
 		sessionManager := hub.NewSessionManager(logger, deviceManager)
-		server := hub.NewService(logger, deviceManager, sessionManager)
+		server := hub.NewService(logger, hostIP, deviceManager, sessionManager, serviceConfig)
 		server.AddEndpoint(api.New(logger, db, deviceManager, sessionManager))
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
 		server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
 
 		return server.RunMaster()
 	},
+}
+
+func getHostIP(cfg config.Service) net.IP {
+	var hostIP net.IP
+	if len(cfg.HostIP) > 0 {
+		hostIP = net.ParseIP(cfg.HostIP)
+	}
+
+	if hostIP == nil {
+		hostIP = utils.GetOutboundIP()
+	}
+	return hostIP
 }
 
 func init() {

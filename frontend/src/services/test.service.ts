@@ -25,6 +25,13 @@ class TestDataService {
     findByName(name: string) {
         return http.get(`/tests?name=${name}`);
     }
+
+    executeTest(id: number | null | undefined, appid: number, devices: Array<number>) {
+        return http.post(`/test/${id}/run`, {
+            AppID: appid,
+            Devices: devices,
+        });
+    }
 }
 
 export default new TestDataService();

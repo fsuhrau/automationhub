@@ -17,7 +17,7 @@ export default class AddDevice extends Component<Props, State> {
 
         this.state = {
             OS: "",
-            id: null,
+            ID: null,
             DeviceIdentifier: "",
             DeviceType: 0,
             Name: "",
@@ -62,7 +62,7 @@ export default class AddDevice extends Component<Props, State> {
         DeviceDataService.create(data)
             .then(response => {
                 this.setState({
-                    id: response.data.id,
+                    ID: response.data.ID,
                 });
                 console.log(response.data);
             }).catch(e => {
@@ -72,7 +72,7 @@ export default class AddDevice extends Component<Props, State> {
 
     newDevice() {
         this.setState({
-            id: null,
+            ID: null,
             Name: this.state.Name,
             DeviceIdentifier: this.state.DeviceIdentifier,
             ABI: "",

@@ -20,8 +20,10 @@ type Device interface {
 	UpdateDeviceInfos() error
 
 	ConnectionTimeout() time.Duration
-	SetConnectionState(ConnectionState)
+	SetConnection(connection *Connection)
+	Connection() *Connection
 	IsAppConnected() bool
+
 	StartApp(*app.Parameter, string, net.IP) error
 	StopApp(*app.Parameter) error
 
@@ -32,4 +34,7 @@ type Device interface {
 
 	HasFeature(string) bool
 	Execute(string)
+	Lock() error
+	Unlock() error
+	IsLocker() bool
 }

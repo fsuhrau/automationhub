@@ -6,9 +6,13 @@ import (
 
 type App struct {
 	gorm.Model
-	AppID string
-	Name string
-	Filename string
-	Platform string
-	Version string
+	AppID          string
+	Name           string
+	Platform       string
+	Version        string
+	AppPath        string
+	Identifier     string
+	LaunchActivity string
+	Additional     string
+	Hash           [20]byte
 }

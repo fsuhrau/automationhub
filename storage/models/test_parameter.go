@@ -6,4 +6,5 @@ type TestParameter struct {
 	gorm.Model
 	TestRunID uint
 	AppID     uint
+	DeviceID  uint
 }

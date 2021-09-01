@@ -50,7 +50,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	if len(m.devices) == 0 {
 		m.devices["dd7ace2f-07b8-4696-92b7-a856dc0c04b5"] = &Device{
 			deviceName:      "UnityEditor",
@@ -60,7 +60,8 @@ func (m *Handler) RefreshDevices() error {
 			deviceIP:        m.hostIP,
 			lastUpdateAt:    time.Now().UTC(),
 		}
-		m.devices["dd7ace2f-07b8-4696-92b7-a856dc0c04b5"].SetDeviceState("Booted")
+		m.devices["dd7ace2f-07b8-4696-92b7-a856dc0c04b5"].SetDeviceState("StateBooted")
+		updateFunc(m.devices["dd7ace2f-07b8-4696-92b7-a856dc0c04b5"])
 	}
 	return nil
 }

@@ -1,5 +1,5 @@
 export default interface IDeviceData {
-    id?: number | null,
+    ID?: number | null,
     DeviceIdentifier: string,
     DeviceType: number,
     Name: string,

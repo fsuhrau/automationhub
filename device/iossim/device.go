@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/device/generic"
 	"image"
 	"image/png"
 	"net"
@@ -20,13 +21,13 @@ var restart bool = true
 const CONNECTION_TIMEOUT = 10 * time.Second
 
 type Device struct {
+	generic.Device
 	deviceOSName     string
 	deviceOSVersion  string
 	deviceName       string
 	deviceID         string
 	deviceIP         net.IP
 	deviceState      device.State
-	connectionState  device.ConnectionState
 	recordingSession *exec.Cmd
 	cfg              *config.Device
 	lastUpdateAt     time.Time
@@ -58,12 +59,12 @@ func (d *Device) DeviceState() device.State {
 
 func (d *Device) SetDeviceState(state string) {
 	switch state {
-	case "Booted":
-		d.deviceState = device.Booted
-	case "Shutdown":
-		d.deviceState = device.Shutdown
+	case "StateBooted":
+		d.deviceState = device.StateBooted
+	case "StateShutdown":
+		d.deviceState = device.StateShutdown
 	default:
-		d.deviceState = device.Unknown
+		d.deviceState = device.StateUnknown
 	}
 }
 
@@ -106,11 +107,7 @@ func (d *Device) StopApp(params *app.Parameter) error {
 }
 
 func (d *Device) IsAppConnected() bool {
-	return d.connectionState == device.Connected
-}
-
-func (d *Device) SetConnectionState(state device.ConnectionState) {
-	d.connectionState = state
+	return d.Connection() == nil
 }
 
 func (d *Device) StartRecording(path string) error {

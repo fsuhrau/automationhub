@@ -1,17 +1,13 @@
 package hub
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"io"
+	"github.com/fsuhrau/automationhub/storage/models"
+	"gorm.io/gorm"
 	"net"
 	"reflect"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -21,37 +17,37 @@ import (
 )
 
 const (
-	ReceiveBufferSize       = 20 * 1024
 	DeviceConnectionTimeout = 5 * time.Second
-	DefaultSocketTimeout    = 60 * time.Second
-)
-
-var (
-	DeviceDisconnectedError = fmt.Errorf("device disconnected")
 )
 
 type DeviceManager struct {
-	Managers      map[string]device.Handler
-	LockedDevices map[string]*manager.DeviceLock
-	stop          bool
-	log           *logrus.Entry
+	ip             net.IP
+	db             *gorm.DB
+	deviceHandlers map[string]device.Handler
+	stop           bool
+	log            *logrus.Entry
 }
 
-func NewManager(logger *logrus.Logger) *DeviceManager {
+func NewDeviceManager(logger *logrus.Logger, ip net.IP, db *gorm.DB) *DeviceManager {
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
-		Managers:      make(map[string]device.Handler),
-		LockedDevices: make(map[string]*manager.DeviceLock),
+		ip:             ip,
+		db:             db,
+		deviceHandlers: make(map[string]device.Handler),
 	}
 }
 
+func (dm *DeviceManager) GetHostIP() net.IP {
+	return dm.ip
+}
+
 func (dm *DeviceManager) AddHandler(manager device.Handler) {
-	dm.Managers[manager.Name()] = manager
+	dm.deviceHandlers[manager.Name()] = manager
 }
 
 func (dm *DeviceManager) ListDevices() {
-	for _, m := range dm.Managers {
+	for _, m := range dm.deviceHandlers {
 		dm.log.Infof("Manager: %s", m.Name())
 		devices, err := m.GetDevices()
 		if err != nil {
@@ -65,7 +61,7 @@ func (dm *DeviceManager) ListDevices() {
 
 func (dm *DeviceManager) Devices() ([]device.Device, error) {
 	var devices []device.Device
-	for _, m := range dm.Managers {
+	for _, m := range dm.deviceHandlers {
 		d, err := m.GetDevices()
 		if err != nil {
 			dm.log.Errorf("failed: %v", err)
@@ -75,8 +71,26 @@ func (dm *DeviceManager) Devices() ([]device.Device, error) {
 	return devices, nil
 }
 
+/*
+func (dm *DeviceManager) GetDevice(id uint) (device.Device, error) {
+	var dev models.Device
+	if err := dm.db.First(&dev, dev).Error; err != nil {
+		return nil, err
+	}
+	for _, m := range dm.deviceHandlers {
+		devices, _ := m.GetDevices()
+		for _, i := range devices {
+			if i.DeviceID() == dev.DeviceIdentifier {
+				return i, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("device not found")
+}
+*/
+
 func (dm *DeviceManager) Start(dev device.Device) error {
-	for _, m := range dm.Managers {
+	for _, m := range dm.deviceHandlers {
 		if m.HasDevice(dev) {
 			return m.StartDevice(dev.DeviceID())
 		}
@@ -85,7 +99,7 @@ func (dm *DeviceManager) Start(dev device.Device) error {
 }
 
 func (dm *DeviceManager) Stop(dev device.Device) error {
-	for _, m := range dm.Managers {
+	for _, m := range dm.deviceHandlers {
 		if m.HasDevice(dev) {
 			return m.StopDevice(dev.DeviceID())
 		}
@@ -93,15 +107,7 @@ func (dm *DeviceManager) Stop(dev device.Device) error {
 	return device.DeviceNotFoundError
 }
 
-func (dm *DeviceManager) isLocked(dev device.Device) bool {
-	for _, v := range dm.LockedDevices {
-		if v.Device == dev {
-			return true
-		}
-	}
-	return false
-}
-
+/*
 func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 	if properties == nil {
 		return true
@@ -125,9 +131,10 @@ func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 
 	return true
 }
-
+*/
+/*
 func (dm *DeviceManager) LockDevice(session manager.Session, properties *device.Properties) (*manager.DeviceLock, error) {
-	for _, mng := range dm.Managers {
+	for _, mng := range dm.deviceHandlers {
 		devices, _ := mng.GetDevices()
 		for i := range devices {
 
@@ -151,9 +158,9 @@ func (dm *DeviceManager) UnlockDevice(session manager.Session) error {
 
 	if d, ok := dm.LockedDevices[session.GetSessionID()]; ok {
 		dm.log.Debugf("UnockDevice %v from session %s", d, session.GetSessionID())
-		if d.Connection != nil {
+		if d.Device.Connection() != nil  {
 			dm.log.Debugf("Cose Connection for device %v from session %s", d, session.GetSessionID())
-			d.Connection.Close()
+			d.Device.Connection().Close()
 		}
 		if err := d.Device.StopApp(session.GetAppParameter()); err != nil {
 			logrus.Errorf("Stop App failed: %v", err)
@@ -166,11 +173,12 @@ func (dm *DeviceManager) UnlockDevice(session manager.Session) error {
 	}
 	return fmt.Errorf("no locked device found for session")
 }
+*/
 
 func (dm *DeviceManager) Run(ctx context.Context) error {
 	dm.log.Debug("Starting device manager")
 
-	for _, v := range dm.Managers {
+	for _, v := range dm.deviceHandlers {
 		v.Init()
 		v.Start()
 	}
@@ -188,8 +196,8 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 			default:
 			}
 			// dm.log.Debugf("refreshing device lists...")
-			for _, m := range dm.Managers {
-				if err := m.RefreshDevices(); err != nil {
+			for _, m := range dm.deviceHandlers {
+				if err := m.RefreshDevices(dm.updateDeviceState); err != nil {
 					dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
 				}
 			}
@@ -197,6 +205,45 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 		}
 	}()
 	return nil
+}
+
+func (dm *DeviceManager) updateDeviceState(dev device.Device) {
+	deviceData := models.Device{
+		DeviceIdentifier: dev.DeviceID(),
+	}
+	dm.db.FirstOrCreate(&deviceData)
+	needsUpdate := false
+	if deviceData.Name != dev.DeviceName() {
+		deviceData.Name = dev.DeviceName()
+		needsUpdate = true
+	}
+	if deviceData.OS != dev.DeviceOSName() {
+		deviceData.OS = dev.DeviceOSName()
+		needsUpdate = true
+	}
+	if deviceData.OSVersion != dev.DeviceOSVersion() {
+		deviceData.OSVersion = dev.DeviceOSVersion()
+		needsUpdate = true
+	}
+
+	statusUpdate := false
+	if deviceData.Status != dev.DeviceState() {
+		deviceData.Status = dev.DeviceState()
+		statusUpdate = true
+	}
+
+	if needsUpdate || statusUpdate {
+		dm.db.Updates(deviceData)
+	}
+
+	if statusUpdate {
+		log := models.DeviceLog{
+			DeviceID: deviceData.ID,
+			Status:   dev.DeviceState(),
+			Payload:  "",
+		}
+		dm.db.Create(&log)
+	}
 }
 
 func (dm *DeviceManager) SocketListener() error {
@@ -221,24 +268,25 @@ func (dm *DeviceManager) SocketListener() error {
 	return nil
 }
 
-func (dm *DeviceManager) lookupDevice(session *action.Session, remoteAddress string) *manager.DeviceLock {
+/*
+func (dm *DeviceManager) lookupDevice(connect *action.Connect, remoteAddress string) *manager.DeviceLock {
 
-	if session == nil {
+	if connect == nil {
 		return nil
 	}
 
 	// by DEVICE_ID
-	if len(session.DeviceID) > 0 {
+	if len(connect.DeviceID) > 0 {
 		for _, dev := range dm.LockedDevices {
-			if dev.Device.DeviceID() == session.DeviceID {
+			if dev.Device.DeviceID() == connect.DeviceID {
 				return dev
 			}
 		}
 	}
 
 	// by SESSION_ID
-	if len(session.SessionID) > 0 {
-		if dev, ok := dm.LockedDevices[session.SessionID]; ok {
+	if len(connect.SessionID) > 0 {
+		if dev, ok := dm.LockedDevices[connect.SessionID]; ok {
 			return dev
 		}
 	}
@@ -253,26 +301,26 @@ func (dm *DeviceManager) lookupDevice(session *action.Session, remoteAddress str
 	// not found ...
 	return nil
 }
+*/
 
 func (dm *DeviceManager) handleConnection(c net.Conn) {
-	if err := c.SetDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
+	if err := c.SetDeadline(time.Now().Add(DeviceConnectionTimeout)); err != nil {
 		dm.log.Errorf("SocketAccept SetDeadline: %v", err)
 		return
 	}
 
 	remoteAddress := c.RemoteAddr().String()
 	dm.log.Infof("SocketAccept established: %v", remoteAddress)
-	var content string
+
 	chunkBuffer := make([]byte, 4)
 	_, err := c.Read(chunkBuffer)
 	if err != nil {
 		dm.log.Errorf("SocketAccept ReadError: %v", err)
 		return
 	}
-	r := bytes.NewReader(chunkBuffer)
-	var messageSize uint32
-	binary.Read(r, binary.LittleEndian, &messageSize)
+	messageSize := device.GetMessageSize(chunkBuffer)
 	dm.log.Infof("waiting for %d bytes", messageSize)
+
 	buffer := make([]byte, 0, messageSize)
 	for uint32(len(buffer)) < messageSize {
 		n, err := c.Read(chunkBuffer)
@@ -282,135 +330,114 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		}
 		buffer = append(buffer, chunkBuffer[:n]...)
 	}
+
 	resp := &action.Response{}
 	if err := proto.Unmarshal(buffer, resp); err != nil {
 		dm.log.Errorf("SocketAccept ReadError: %v", err)
 		return
 	}
-	session := resp.GetSession()
+	connectRequest := resp.GetConnect()
 
-	content = string(buffer)
-	dm.log.Debugf("SocketAccept content: %s", content)
-	if lock := dm.lookupDevice(session, remoteAddress); lock != nil {
+	dev := dm.GetDevice(connectRequest.GetDeviceID())
+	if dev != nil {
 		dm.log.Infof("Received Handshake from %v", remoteAddress)
-		dm.log.Debugf("Device with ID %s connected", lock.Device.DeviceID())
-		lock.Connection = c
-		lock.Device.SetConnectionState(device.Connected)
-		lock.ResponseChannel = make(chan manager.ResponseData, 1)
-		//lock.ConnectionStateChannel = make(chan bool, 1)
-		go handleMessages(dm.log, lock)
-	} else {
-		dm.log.Errorf("no devide found for session: %s and device: %s", session.SessionID, session.DeviceID)
+		dm.log.Debugf("Device with ID %s connected", dev.DeviceID())
+		connection := &device.Connection{
+			Logger:                 dm.log,
+			Connection:             c,
+			ResponseChannel:        make(chan device.ResponseData, 100),
+			ConnectionStateChannel: make(chan device.ConnectionState, 1),
+		}
+		dev.SetConnection(connection)
+		go connection.HandleMessages()
+		go dm.handleActions(dev)
 	}
-}
-
-func handleMessages(log *logrus.Entry, dev *manager.DeviceLock) {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Error(err)
+	/*
+		dm.log.Debugf("SocketAccept content: %s", content)
+		if lock := dm.lookupDevice(session, remoteAddress); lock != nil {
+			dm.log.Infof("Received Handshake from %v", remoteAddress)
+			dm.log.Debugf("Device with ID %s connected", lock.Device.DeviceID())
+		} else {
+			dm.log.Errorf("no devide found for session: %s and device: %s", session.SessionID, session.DeviceID)
 		}
-	}()
-
-	for {
-		if err := dev.Connection.SetDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
-			log.Errorf("SocketAccept SetDeadline: %v", err)
-			return
-		}
-		var responseData manager.ResponseData
-		chunkBuffer := make([]byte, 4)
-		_, err := dev.Connection.Read(chunkBuffer)
-		if err != nil {
-			if io.EOF != err {
-				log.Info("Device disconnected: %v", err)
-			} else {
-				log.Info("Device disconnected")
-			}
-			responseData.Err = DeviceDisconnectedError
-			// dev.ConnectionStateChannel <- true
-
-			if dev.Connection != nil {
-				dev.Connection.Close()
-			}
-			if dev.ResponseChannel != nil {
-				dev.ResponseChannel <- responseData
-			}
-			dev.Device.SetConnectionState(device.Disconnected)
-			if dev.WaitingGroup != nil {
-				dev.WaitingGroup.Done()
-			}
-			close(dev.ResponseChannel)
-			dev.Connection = nil
-			dev.WaitingGroup = nil
-			return
-		}
-
-		r := bytes.NewReader(chunkBuffer)
-		var messageSize uint32
-		binary.Read(r, binary.LittleEndian, &messageSize)
-		responseData.Data = make([]byte, 0, messageSize)
-		chunkBuffer = make([]byte, ReceiveBufferSize)
-		for uint32(len(responseData.Data)) < messageSize {
-			n, err := dev.Connection.Read(chunkBuffer)
-			if err != nil {
-				responseData.Err = err
-				log.Errorf("Chunk ReadError: %v", err)
-				break
-			}
-			responseData.Data = append(responseData.Data, chunkBuffer[:n]...)
-		}
-
-		dev.ResponseChannel <- responseData
-		if dev.WaitingGroup != nil {
-			dev.WaitingGroup.Done()
-		}
-	}
+	*/
 }
 
 func (dm *DeviceManager) StopObserver() {
 	dm.stop = true
 }
 
-func (dm *DeviceManager) SendBytes(session manager.Session, content []byte) ([]byte, error) {
+func (dm *DeviceManager) SendBytes(dev device.Device, content []byte) ([]byte, error) {
 	start := time.Now()
-	var size []byte
-	size = make([]byte, 4)
-	binary.LittleEndian.PutUint32(size, uint32(len(content)))
 	defer func() {
 		elapsed := time.Since(start)
-		session.GetLogger().WithField("prefix", "dm").Debugf("send message took %s content: %s", elapsed.String(), content)
+		dm.log.WithField("prefix", "dm").Debugf("send message took %s content: %s", elapsed.String(), content)
 	}()
 
-	if session.GetDeviceLock().Connection != nil {
-		session.GetDeviceLock().WaitingGroup = &sync.WaitGroup{}
-		session.GetDeviceLock().WaitingGroup.Add(1)
-		session.GetDeviceLock().Connection.Write(size)
-		session.GetDeviceLock().Connection.Write(content)
-		session.GetDeviceLock().WaitingGroup.Wait()
-		session.GetDeviceLock().WaitingGroup = nil
-		data := <-session.GetDeviceLock().ResponseChannel
-		if data.Err == DeviceDisconnectedError {
-			session.HandleDisconnect()
-		}
+	if dev.Connection() != nil {
+		dev.Connection().Send(content)
+		data := <-dev.Connection().ResponseChannel
+		/*
+			if data.Err == DeviceDisconnectedError {
+				session.HandleDisconnect()
+			}
+		*/
 		return data.Data, data.Err
 	}
 
 	return []byte{}, fmt.Errorf("device not connected")
 }
 
-func (dm *DeviceManager) Send(session manager.Session, content string) ([]byte, error) {
-	return dm.SendBytes(session, []byte(content))
-}
-
-func (dm *DeviceManager) SendAction(logger *logrus.Entry, session manager.Session, act action.Interface) error {
-	logger.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
+func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) error {
+	dm.log.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
 	buf, err := act.Serialize()
 	if err != nil {
 		return fmt.Errorf("Could not marshal Action: %v", err)
 	}
-	response, err := dm.SendBytes(session, buf)
+	response, err := dm.SendBytes(dev, buf)
 	if err != nil {
 		return err
 	}
-	logger.Debugf("Deserialize Action")
+	dm.log.Debugf("Deserialize Action")
 	return act.Deserialize(response)
+}
+
+func (dm *DeviceManager) handleActions(d device.Device) {
+	dm.log.Info("handleActions")
+
+	defer func() {
+		dm.log.Info("handleActions finished")
+		d.Connection().Close()
+		d.SetConnection(nil)
+	}()
+
+	for {
+		select {
+		case data := <-d.Connection().ResponseChannel:
+			if data.Err == nil {
+				resp := &action.Response{}
+				_ = proto.Unmarshal(data.Data, resp)
+				if resp.ActionID != "" {
+
+				}
+			}
+		case status := <-d.Connection().ConnectionStateChannel:
+			if status == device.Disconnected {
+				dm.log.Info("handleActions disconnect")
+				return
+			}
+		}
+	}
+}
+
+func (dm *DeviceManager) GetDevice(id string) device.Device {
+	for _, mng := range dm.deviceHandlers {
+		devices, _ := mng.GetDevices()
+		for i := range devices {
+			if devices[i].DeviceID() == id {
+				return devices[i]
+			}
+		}
+	}
+	return nil
 }

@@ -39,7 +39,8 @@ func (m *Handler) Init() error {
 		}
 	}
 
-	if err := m.RefreshDevices(); err != nil {
+	if err := m.RefreshDevices(func(dev device.Device) {
+	}); err != nil {
 		return err
 	}
 
@@ -73,7 +74,7 @@ func (m *Handler) StartDevice(deviceID string) error {
 	found := false
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
-			if v.deviceState == device.RemoteDisconnected {
+			if v.deviceState == device.StateRemoteDisconnected {
 				cmd := device.NewCommand("adb", "connect", v.cfg.Connection.IP)
 				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
@@ -123,7 +124,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
@@ -151,13 +152,13 @@ func (m *Handler) RefreshDevices() error {
 		if _, ok := m.devices[deviceID]; ok {
 			m.devices[deviceID].deviceName = name
 			m.devices[deviceID].deviceID = deviceID
-			m.devices[deviceID].SetDeviceState("Booted")
+			m.devices[deviceID].SetDeviceState("StateBooted")
 			m.devices[deviceID].product = product
 			m.devices[deviceID].deviceUSB = deviceUSB
 			m.devices[deviceID].deviceModel = model
 			m.devices[deviceID].transportID = transportID
 			m.devices[deviceID].lastUpdateAt = lastUpdate
-
+			updateFunc(m.devices[deviceID])
 		} else {
 			var cfg *config.Device
 			if m.deviceConfig != nil {
@@ -176,16 +177,17 @@ func (m *Handler) RefreshDevices() error {
 				installedApps: make(map[string][20]byte),
 			}
 			m.devices[deviceID].UpdateDeviceInfos()
-			m.devices[deviceID].SetDeviceState("Booted")
+			m.devices[deviceID].SetDeviceState("StateBooted")
+			updateFunc(m.devices[deviceID])
 		}
 	}
 
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
 			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
-				m.devices[i].SetDeviceState("RemoteDisconnected")
+				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 			} else {
-				m.devices[i].SetDeviceState("Unknown")
+				m.devices[i].SetDeviceState("StateUnknown")
 			}
 		}
 	}

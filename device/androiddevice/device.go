@@ -3,6 +3,7 @@ package androiddevice
 import (
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
 	"image"
 	"io/ioutil"
 	"net"
@@ -30,6 +31,7 @@ var (
 const CONNECTION_TIMEOUT = 2 * time.Minute
 
 type Device struct {
+	generic.Device
 	deviceOSName        string
 	deviceOSVersion     string
 	deviceName          string
@@ -39,7 +41,6 @@ type Device struct {
 	product             string
 	deviceModel         string
 	transportID         string
-	connectionState     device.ConnectionState
 	deviceIP            net.IP
 	deviceSupportedABIS []string
 	deviceAPILevel      int64
@@ -76,16 +77,16 @@ func (d *Device) DeviceState() device.State {
 
 func (d *Device) SetDeviceState(state string) {
 	switch state {
-	case "Booted":
-		d.deviceState = device.Booted
-	case "Shutdown":
-		d.deviceState = device.Shutdown
-	case "RemoteDisconnected":
-		d.deviceState = device.RemoteDisconnected
-	case "Unknown":
-		d.deviceState = device.Unknown
+	case "StateBooted":
+		d.deviceState = device.StateBooted
+	case "StateShutdown":
+		d.deviceState = device.StateShutdown
+	case "StateRemoteDisconnected":
+		d.deviceState = device.StateRemoteDisconnected
+	case "StateUnknown":
+		d.deviceState = device.StateUnknown
 	default:
-		d.deviceState = device.Unknown
+		d.deviceState = device.StateUnknown
 	}
 }
 
@@ -197,11 +198,7 @@ func (d *Device) StopApp(params *app.Parameter) error {
 }
 
 func (d *Device) IsAppConnected() bool {
-	return d.connectionState == device.Connected
-}
-
-func (d *Device) SetConnectionState(state device.ConnectionState) {
-	d.connectionState = state
+	return d.Connection() != nil
 }
 
 func (d *Device) StartRecording(path string) error {

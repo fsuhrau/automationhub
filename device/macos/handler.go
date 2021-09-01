@@ -50,7 +50,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	if len(m.devices) == 0 {
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
 			deviceName:      "MacOS",
@@ -60,7 +60,8 @@ func (m *Handler) RefreshDevices() error {
 			deviceIP:        m.hostIP,
 			lastUpdateAt:    time.Now().UTC(),
 		}
-		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("Booted")
+		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")
+		updateFunc(m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
 	}
 	return nil
 }

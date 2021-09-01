@@ -10,9 +10,11 @@ import (
 
 type Devices interface {
 	Devices() ([]device.Device, error)
-	SendAction(log *logrus.Entry, session Session, a action.Interface) error
-	UnlockDevice(s Session) error
-	LockDevice(s Session, properties *device.Properties) (*DeviceLock, error)
+	SendAction(dev device.Device, a action.Interface) error
+	// UnlockDevice(s Session) error
+	// LockDevice(s Session, properties *device.Properties) (*DeviceLock, error)
+	//GetDevice(id uint) (device.Device, error)
+	GetDevice(id string) device.Device
 	Start(getDevice device.Device) error
 	AddHandler(handler device.Handler)
 	Run(ctx context.Context) error

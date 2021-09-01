@@ -1,5 +1,5 @@
 export default interface ILogEntryData {
-    id?: number | null,
+    ID?: number | null,
     TestLogID: number,
     Timestamp: number,
     Source: string,

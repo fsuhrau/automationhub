@@ -95,7 +95,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand("xcrun", "simctl", "list", "devices", "--json")
 	output, err := cmd.Output()
@@ -124,7 +124,7 @@ func (m *Handler) RefreshDevices() error {
 				m.devices[device.UDID].deviceIP = m.hostIP
 				m.devices[device.UDID].lastUpdateAt = lastUpdate
 				m.devices[device.UDID].SetDeviceState(device.State)
-
+				updateFunc(m.devices[device.UDID])
 			} else {
 				var cfg *config.Device
 				if m.deviceConfig != nil {
@@ -141,6 +141,7 @@ func (m *Handler) RefreshDevices() error {
 					lastUpdateAt:    lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
+				updateFunc(m.devices[device.UDID])
 			}
 		}
 	}
@@ -148,10 +149,11 @@ func (m *Handler) RefreshDevices() error {
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
 			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
-				m.devices[i].SetDeviceState("RemoteDisconnected")
+				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 			} else {
-				m.devices[i].SetDeviceState("Unknown")
+				m.devices[i].SetDeviceState("StateUnknown")
 			}
+			updateFunc(m.devices[i])
 		}
 	}
 
@@ -160,7 +162,7 @@ func (m *Handler) RefreshDevices() error {
 
 func (m *Handler) isSimulationRunning(deviceID string) bool {
 	if d, ok := m.devices[deviceID]; ok {
-		return d.DeviceState() == device.Booted
+		return d.DeviceState() == device.StateBooted
 	}
 	return false
 }

@@ -98,7 +98,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	lastUpdate := time.Now().UTC()
 	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
 	// cmd.Stderr = os.Stderr
@@ -121,8 +121,8 @@ func (m *Handler) RefreshDevices() error {
 			m.devices[device.Device.DeviceIdentifier].deviceOSName = device.Device.ModelSDK
 			m.devices[device.Device.DeviceIdentifier].deviceOSVersion = device.Device.ProductVersion
 			m.devices[device.Device.DeviceIdentifier].lastUpdateAt = lastUpdate
-			m.devices[device.Device.DeviceIdentifier].SetDeviceState("Booted")
-
+			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
+			updateFunc(m.devices[device.Device.DeviceIdentifier])
 		} else {
 			var cfg *config.Device
 			if m.deviceConfig != nil {
@@ -136,17 +136,19 @@ func (m *Handler) RefreshDevices() error {
 				cfg:             cfg,
 				lastUpdateAt:    lastUpdate,
 			}
-			m.devices[device.Device.DeviceIdentifier].SetDeviceState("Booted")
+			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
+			updateFunc(m.devices[device.Device.DeviceIdentifier])
 		}
 	}
 
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
 			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
-				m.devices[i].SetDeviceState("RemoteDisconnected")
+				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 			} else {
-				m.devices[i].SetDeviceState("Unknown")
+				m.devices[i].SetDeviceState("StateUnknown")
 			}
+			updateFunc(m.devices[i])
 		}
 	}
 

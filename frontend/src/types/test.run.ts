@@ -3,7 +3,7 @@ import ITestLogData from "./test.log";
 import ITestResultData from "./test.result";
 
 export default interface ITestRunData {
-    id?: number | null,
+    ID?: number | null,
     TestID: number,
     Parameter: ITestParameterData,
     Log: ITestLogData,
