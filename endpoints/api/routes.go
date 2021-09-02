@@ -3,11 +3,13 @@ package api
 import (
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
 	"sort"
+	"time"
 )
 
 type ApiService struct {
@@ -34,7 +36,6 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 			session = s.(*Session)
 			// session.LastAccess = time.Now()
 		}
-		c.Header("Access-Control-Allow-Origin", "*")
 		f(session, c)
 	}
 }
@@ -42,6 +43,18 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api := r.Group("/api", func(context *gin.Context) {
 	})
+	if true {
+		api.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"http://localhost:3000", "https://automationhub.com"},
+			AllowMethods:     []string{"PUT", "POST", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
+			ExposeHeaders:    []string{"Content-Length", "Content-Type"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}))
+	} else {
+		api.Use(cors.Default())
+	}
 
 	api.GET("/devices", func(c *gin.Context) {
 		devices, _ := s.devicesManager.Devices()

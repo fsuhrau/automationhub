@@ -6,6 +6,7 @@ require (
 	github.com/antchfx/xmlquery v1.2.4
 	github.com/disintegration/imaging v1.6.2
 	github.com/getsentry/sentry-go v0.7.0
+	github.com/gin-contrib/cors v1.3.1 // indirect
 	github.com/gin-gonic/gin v1.6.3
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2

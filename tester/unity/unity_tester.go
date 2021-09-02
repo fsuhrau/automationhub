@@ -90,10 +90,10 @@ func (tr *TestRunner) Run(devs []device.Device, appData models.App) error {
 		switch d.DeviceState() {
 		case device.StateShutdown:
 			deviceWg.Add(1)
-			go func() {
-				tr.deviceManager.Start(d)
-				deviceWg.Done()
-			}()
+			go func(dm *hub.DeviceManager, d device.Device, group *sync.WaitGroup) {
+				dm.Start(d)
+				group.Done()
+			}(tr.deviceManager, d, &deviceWg)
 		case device.StateBooted:
 		}
 	}
@@ -108,10 +108,10 @@ func (tr *TestRunner) Run(devs []device.Device, appData models.App) error {
 
 		if !installed {
 			deviceWg.Add(1)
-			go func() {
-				d.InstallApp(&appParams)
-				deviceWg.Done()
-			}()
+			go func(appp app.Parameter, d device.Device, group *sync.WaitGroup) {
+				d.InstallApp(&appp)
+				group.Done()
+			}(appParams, d, &deviceWg)
 		}
 	}
 	deviceWg.Wait()
@@ -119,10 +119,10 @@ func (tr *TestRunner) Run(devs []device.Device, appData models.App) error {
 	for _, d := range devices {
 		if !d.IsAppConnected() {
 			deviceWg.Add(1)
-			go func() {
-				d.StartApp(&appParams, sessionID, tr.deviceManager.GetHostIP())
-				deviceWg.Done()
-			}()
+			go func(dm *hub.DeviceManager, appp app.Parameter, d device.Device, sessionId string, group *sync.WaitGroup) {
+				d.StartApp(&appp, sessionID, dm.GetHostIP())
+				group.Done()
+			}(tr.deviceManager, appParams, d, sessionID, &deviceWg)
 		}
 	}
 	deviceWg.Wait()
