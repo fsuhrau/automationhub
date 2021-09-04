@@ -1,5 +1,5 @@
 export default interface ITestParameterData {
-    ID?: number | null,
+    ID?: number,
     TestRunID: number,
     AppID: number,
 }

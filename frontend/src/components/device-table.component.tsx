@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
+import { FC, useEffect, useState } from 'react';
+import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -8,21 +8,20 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
-import IDeviceData from "../types/device";
-import DeviceDataService from "../services/device.service";
+import IDeviceData from '../types/device';
+import DeviceDataService from '../services/device.service';
 
-const styles = (theme: Theme) =>
+const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
         table: {
             minWidth: 650,
         },
     });
 
-export interface DeviceProps extends WithStyles<typeof styles> {
-}
+export type DeviceProps = WithStyles<typeof styles>;
 
-function DeviceTable(props: DeviceProps) {
-    const {classes} = props;
+const DeviceTable: FC<DeviceProps> = (props) => {
+    const { classes } = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     useEffect(() => {
@@ -31,8 +30,8 @@ function DeviceTable(props: DeviceProps) {
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
-        })
-    }, [])
+        });
+    }, []);
 
     return (
         <TableContainer component={Paper}>
@@ -60,6 +59,6 @@ function DeviceTable(props: DeviceProps) {
             </Table>
         </TableContainer>
     );
-}
+};
 
 export default withStyles(styles)(DeviceTable);

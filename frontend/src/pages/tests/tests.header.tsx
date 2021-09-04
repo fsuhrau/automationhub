@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Grid from '@material-ui/core/Grid';
 import Hidden from '@material-ui/core/Hidden';
@@ -8,11 +8,11 @@ import NotificationsIcon from '@material-ui/icons/Notifications';
 import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         secondaryBar: {
             zIndex: 0,
@@ -39,16 +39,16 @@ interface HeaderProps extends WithStyles<typeof styles> {
     onDrawerToggle: () => void;
 }
 
-function TestsHeader(props: HeaderProps) {
-    const {classes, onDrawerToggle} = props;
+const TestsHeader: FC<HeaderProps> = (props) => {
+    const { classes, onDrawerToggle } = props;
 
     return (
         <React.Fragment>
             <AppBar color="primary" position="sticky" elevation={0}>
                 <Toolbar>
-                    <Grid container spacing={1} alignItems="center">
-                        <Hidden smUp>
-                            <Grid item>
+                    <Grid container={true} spacing={1} alignItems="center">
+                        <Hidden smUp={true}>
+                            <Grid item={true}>
                                 <IconButton
                                     color="inherit"
                                     aria-label="open drawer"
@@ -59,8 +59,8 @@ function TestsHeader(props: HeaderProps) {
                                 </IconButton>
                             </Grid>
                         </Hidden>
-                        <Grid item xs/>
-                        <Grid item>
+                        <Grid item={true} xs={true}/>
+                        <Grid item={true}>
                             <Tooltip title="Alerts • No alerts">
                                 <IconButton color="inherit">
                                     <NotificationsIcon/>
@@ -78,8 +78,8 @@ function TestsHeader(props: HeaderProps) {
                 elevation={0}
             >
                 <Toolbar>
-                    <Grid container alignItems="center" spacing={1}>
-                        <Grid item xs>
+                    <Grid container={true} alignItems="center" spacing={1}>
+                        <Grid item={true} xs={true}>
                             <Typography color="inherit" variant="h5" component="h1">
                                 Tests
                             </Typography>
@@ -89,6 +89,6 @@ function TestsHeader(props: HeaderProps) {
             </AppBar>
         </React.Fragment>
     );
-}
+};
 
 export default withStyles(styles)(TestsHeader);

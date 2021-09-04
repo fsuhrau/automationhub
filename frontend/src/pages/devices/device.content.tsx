@@ -1,19 +1,9 @@
-import React from 'react';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
+import { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import Tooltip from '@material-ui/core/Tooltip';
-import IconButton from '@material-ui/core/IconButton';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import SearchIcon from '@material-ui/icons/Search';
-import RefreshIcon from '@material-ui/icons/Refresh';
-import DeviceTableComponent from "../../components/device-table.component";
+import DeviceTableComponent from '../../components/device-table.component';
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
             maxWidth: 936,
@@ -37,16 +27,16 @@ const styles = (theme: Theme) =>
         },
     });
 
-export interface DevicesProps extends WithStyles<typeof styles> {}
+export type DevicesProps = WithStyles<typeof styles>;
 
-function Devices(props: DevicesProps) {
+const Devices: FC<DevicesProps> = props => {
     const { classes } = props;
 
     return (
         <Paper className={classes.paper}>
-            <DeviceTableComponent></DeviceTableComponent>
+            <DeviceTableComponent/>
         </Paper>
     );
-}
+};
 
 export default withStyles(styles)(Devices);

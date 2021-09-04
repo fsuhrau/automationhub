@@ -1,7 +1,7 @@
-import ITestConfigUnityData from "./test.config.unity";
+import ITestConfigUnityData from './test.config.unity';
 
 export default interface ITestConfigData {
-    ID?: number | null,
+    ID?: number,
     TestID: number,
     Type: number,
     ExecutionType: number,

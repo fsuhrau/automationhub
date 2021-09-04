@@ -1,28 +1,29 @@
-import http from "../http-common";
-import IDeviceData from "../types/device"
+import http from '../http-common';
+import IDeviceData from '../types/device';
+import { AxiosResponse } from 'axios';
 
 class DeviceDataService {
-    getAll() {
-        return http.get("/devices");
+    getAll(): Promise<AxiosResponse<IDeviceData[]>> {
+        return http.get('/devices');
     }
 
-    get(id: string) {
+    get(id: string): Promise<AxiosResponse<IDeviceData | undefined>> {
         return http.get(`/device/${id}`);
     }
 
-    create(data: IDeviceData) {
-        return http.post("/device", data);
+    create(data: IDeviceData): Promise<AxiosResponse<IDeviceData>> {
+        return http.post('/device', data);
     }
 
-    update(data: IDeviceData, id: any) {
+    update(data: IDeviceData, id: number): Promise<AxiosResponse<IDeviceData>> {
         return http.put(`/device/${id}`, data);
     }
 
-    delete(id: any) {
+    delete(id: number): Promise<AxiosResponse<void>> {
         return http.delete(`/device/${id}`);
     }
 
-    findByName(name: string) {
+    findByName(name: string): Promise<AxiosResponse<IDeviceData[]>> {
         return http.get(`/devices?name=${name}`);
     }
 }

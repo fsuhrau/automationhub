@@ -1,9 +1,9 @@
-import React from 'react';
-import {Link} from "react-router-dom";
+import React, { FC } from 'react';
+import { Link } from 'react-router-dom';
 import clsx from 'clsx';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import Divider from '@material-ui/core/Divider';
-import Drawer, {DrawerProps} from '@material-ui/core/Drawer';
+import Drawer, { DrawerProps } from '@material-ui/core/Drawer';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -16,29 +16,29 @@ import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
 import TimerIcon from '@material-ui/icons/Timer';
 import SettingsIcon from '@material-ui/icons/Settings';
 import PhonelinkSetupIcon from '@material-ui/icons/PhonelinkSetup';
-import {Omit} from '@material-ui/types';
+import { Omit } from '@material-ui/types';
 
 const categories = [
     {
         id: 'Test Center',
         children: [
-            {id: 'Tests', ref: "/tests", icon: <PermMediaOutlinedIcon/>, active: true},
-            {id: 'Results', ref: "/results", icon: <SettingsEthernetIcon/>},
-            {id: 'Performance', ref: "/performance", icon: <TimerIcon/>},
+            { id: 'Tests', ref: '/tests', icon: <PermMediaOutlinedIcon/>, active: true },
+            { id: 'Results', ref: '/results', icon: <SettingsEthernetIcon/> },
+            { id: 'Performance', ref: '/performance', icon: <TimerIcon/> },
         ],
     },
     {
         id: 'Management',
         children: [
-            {id: 'Settings', ref: "/settings", icon: <SettingsIcon/>},
-            {id: 'Apps', ref: "/apps", icon: <DnsRoundedIcon/>},
-            {id: 'User', ref: "/users", icon: <PeopleIcon/>},
-            {id: 'Devices', ref: "/devices", icon: <PhonelinkSetupIcon/>},
+            { id: 'Settings', ref: '/settings', icon: <SettingsIcon/> },
+            { id: 'Apps', ref: '/apps', icon: <DnsRoundedIcon/> },
+            { id: 'User', ref: '/users', icon: <PeopleIcon/> },
+            { id: 'Devices', ref: '/devices', icon: <PhonelinkSetupIcon/> },
         ],
     },
 ];
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         categoryHeader: {
             paddingTop: theme.spacing(2),
@@ -83,12 +83,12 @@ const styles = (theme: Theme) =>
 export interface NavigatorProps extends Omit<DrawerProps, 'classes'>, WithStyles<typeof styles> {
 }
 
-function Navigator(props: NavigatorProps) {
-    const {classes, ...other} = props;
+const Navigator: FC<NavigatorProps> = (props) => {
+    const { classes, ...other } = props;
 
     return (
         <Drawer variant="permanent" {...other}>
-            <List disablePadding>
+            <List disablePadding={true}>
                 <ListItem className={clsx(classes.firebase, classes.item, classes.itemCategory)}>
                     Automation Hub
                 </ListItem>
@@ -104,7 +104,7 @@ function Navigator(props: NavigatorProps) {
                         Project Overview
                     </ListItemText>
                 </ListItem>
-                {categories.map(({id, children}) => (
+                {categories.map(({ id, children }) => (
                     <React.Fragment key={id}>
                         <ListItem className={classes.categoryHeader}>
                             <ListItemText
@@ -115,11 +115,11 @@ function Navigator(props: NavigatorProps) {
                                 {id}
                             </ListItemText>
                         </ListItem>
-                        {children.map(({id: childId, ref, icon, active}) => (
+                        {children.map(({ id: childId, ref, icon, active }) => (
                             <Link to={ref}>
                                 <ListItem
                                     key={childId}
-                                    button
+                                    button={true}
                                     className={clsx(classes.item, active && classes.itemActiveItem)}
                                 >
                                     <ListItemIcon className={classes.itemIcon}>{icon}</ListItemIcon>
@@ -139,6 +139,6 @@ function Navigator(props: NavigatorProps) {
             </List>
         </Drawer>
     );
-}
+};
 
 export default withStyles(styles)(Navigator);

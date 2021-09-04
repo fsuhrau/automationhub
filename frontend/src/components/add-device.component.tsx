@@ -1,8 +1,8 @@
-import {ChangeEvent, Component} from "react";
-import IDeviceData from "../types/device";
-import DeviceDataService from "../services/device.service";
+import { ChangeEvent, Component, ReactElement } from 'react';
+import IDeviceData from '../types/device';
+import DeviceDataService from '../services/device.service';
 
-type Props = {};
+type Props = Record<string, never>;
 
 type State = IDeviceData & {
     submitted: boolean
@@ -16,48 +16,48 @@ export default class AddDevice extends Component<Props, State> {
         this.newDevice = this.newDevice.bind(this);
 
         this.state = {
-            OS: "",
+            OS: '',
             ID: null,
-            DeviceIdentifier: "",
+            DeviceIdentifier: '',
             DeviceType: 0,
-            Name: "",
+            Name: '',
             RAM: 0,
-            SoC: "",
-            DisplaySize: "",
+            SoC: '',
+            DisplaySize: '',
             DPI: 0,
-            OSVersion: "",
-            GPU: "",
-            ABI: "",
+            OSVersion: '',
+            GPU: '',
+            ABI: '',
             OpenGL_ES_Version: 0,
             Status: 0,
-            Manager: "",
-            submitted: false
+            Manager: '',
+            submitted: false,
         };
     }
 
-    onChangeName(e: ChangeEvent<HTMLInputElement>) {
+    onChangeName(e: ChangeEvent<HTMLInputElement>): void {
         this.setState({
-            Name: e.target.value
-        })
+            Name: e.target.value,
+        });
     }
 
-    saveDevice() {
+    saveDevice(): void {
         const data: IDeviceData = {
-            OS: "",
+            OS: '',
             Name: this.state.Name,
             DeviceIdentifier: this.state.DeviceIdentifier,
-            ABI: "",
+            ABI: '',
             DPI: 0,
             DeviceType: 0,
-            DisplaySize: "",
-            GPU: "",
-            Manager: "",
-            OSVersion: "",
+            DisplaySize: '',
+            GPU: '',
+            Manager: '',
+            OSVersion: '',
             OpenGL_ES_Version: 0,
             RAM: 0,
-            SoC: "",
-            Status: 0
-        }
+            SoC: '',
+            Status: 0,
+        };
 
         DeviceDataService.create(data)
             .then(response => {
@@ -66,32 +66,32 @@ export default class AddDevice extends Component<Props, State> {
                 });
                 console.log(response.data);
             }).catch(e => {
-            console.log(e);
-        });
+                console.log(e);
+            });
     }
 
-    newDevice() {
-        this.setState({
+    newDevice(): void {
+        this.setState((prevState) => ({
             ID: null,
-            Name: this.state.Name,
-            DeviceIdentifier: this.state.DeviceIdentifier,
-            ABI: "",
+            Name: prevState.Name,
+            DeviceIdentifier: prevState.DeviceIdentifier,
+            ABI: '',
             DPI: 0,
             DeviceType: 0,
-            DisplaySize: "",
-            GPU: "",
-            Manager: "",
-            OS: "",
-            OSVersion: "",
+            DisplaySize: '',
+            GPU: '',
+            Manager: '',
+            OS: '',
+            OSVersion: '',
             OpenGL_ES_Version: 0,
             RAM: 0,
-            SoC: "",
+            SoC: '',
             Status: 0,
-        })
+        }));
     }
 
-    render() {
-        const {submitted, Name} = this.state;
+    render(): ReactElement {
+        const { submitted, Name } = this.state;
         return (
             <div className="submit-form">
                 {submitted ? (
@@ -109,7 +109,7 @@ export default class AddDevice extends Component<Props, State> {
                                 type="text"
                                 className="form-control"
                                 id="title"
-                                required
+                                required={true}
                                 value={Name}
                                 onChange={this.onChangeName}
                                 name="title"
