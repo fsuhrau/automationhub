@@ -1,6 +1,5 @@
-
 export default interface IUnityTestFunctionData {
-    ID?: number | null,
+    ID?: number,
     TestConfigUnityID: number,
     Assembly: string,
     Class: string,

@@ -1,28 +1,29 @@
-import http from "../http-common";
-import IAppData from "../types/app"
+import http from '../http-common';
+import IAppData from '../types/app';
+import { AxiosResponse } from 'axios';
 
 class AppDataService {
-    getAll() {
-        return http.get("/apps");
+    getAll(): Promise<AxiosResponse<IAppData[]>> {
+        return http.get('/apps');
     }
 
-    get(id: string) {
+    get(id: string): Promise<AxiosResponse<IAppData | undefined>> {
         return http.get(`/app/${id}`);
     }
 
-    create(data: IAppData) {
-        return http.post("/app", data);
+    create(data: IAppData): Promise<AxiosResponse<IAppData>> {
+        return http.post('/app', data);
     }
 
-    update(data: IAppData, id: any) {
+    update(data: IAppData, id: number): Promise<AxiosResponse<IAppData>> {
         return http.put(`/app/${id}`, data);
     }
 
-    delete(id: any) {
+    delete(id: number): Promise<AxiosResponse<void>> {
         return http.delete(`/app/${id}`);
     }
 
-    findByName(name: string) {
+    findByName(name: string): Promise<AxiosResponse<IAppData[]>> {
         return http.get(`/apps?name=${name}`);
     }
 }

@@ -1,15 +1,14 @@
-import React, {useState} from 'react';
+import { ChangeEvent, FC, useState } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
-import Select, { SelectChangeEvent } from '@material-ui/core/Select';
-import {Box, FormControl, InputLabel, MenuItem, Step, StepLabel, Stepper, TextField} from "@material-ui/core";
-import ITestData from "../../types/test";
-import Divider from "@material-ui/core/Divider";
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import Select from '@material-ui/core/Select';
+import { Box, FormControl, InputLabel, MenuItem, Step, StepLabel, Stepper, TextField } from '@material-ui/core';
+import Divider from '@material-ui/core/Divider';
 
-const styles = (theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
             maxWidth: 936,
@@ -34,20 +33,16 @@ const styles = (theme: Theme) =>
     });
 
 const steps = ['Test', 'Upload App', 'Scenario'];
-const types = [{id: 1, name: 'Selecnium'}, {id: 2, name: 'Cocos'}, {id: 3, name: 'Unity'}];
+const types = [{ id: 1, name: 'Selecnium' }, { id: 2, name: 'Cocos' }, { id: 3, name: 'Unity' }];
 
-export interface AddTestProps extends WithStyles<typeof styles> {
-}
+export type AddTestProps = WithStyles<typeof styles>;
 
-function AddTestPage(props: AddTestProps) {
-    const {classes} = props;
+const AddTestPage: FC<AddTestProps> = (props) => {
+    const { classes } = props;
 
-    const [test, setTest] = useState<ITestData>();
     const [type, setType] = useState('');
 
-    const [age, setAge] = React.useState('');
-
-    const handleChange = (event: SelectChangeEvent) => {
+    const handleChange = (event: ChangeEvent<{ value: unknown }>): void => {
         setType(event.target.value as string);
     };
 
@@ -55,12 +50,12 @@ function AddTestPage(props: AddTestProps) {
         <Paper className={classes.paper}>
             <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
                 <Toolbar>
-                    <Grid container spacing={2} alignItems="center">
+                    <Grid container={true} spacing={2} alignItems="center">
                         Create New Test
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Stepper activeStep={1} alternativeLabel>
+            <Stepper activeStep={1} alternativeLabel={true}>
                 {steps.map((label) => (
                     <Step key={label}>
                         <StepLabel>{label}</StepLabel>
@@ -70,11 +65,6 @@ function AddTestPage(props: AddTestProps) {
             <Divider variant="middle"/>
             <Box
                 component="form"
-                sx={{
-                    '& .MuiTextField-root': {m: 1, width: '25ch'},
-                }}
-                noValidate
-                autoComplete="off"
             >
                 <FormControl>
                     <InputLabel id="test-name-input-label">Name</InputLabel>
@@ -98,6 +88,6 @@ function AddTestPage(props: AddTestProps) {
             </Box>
         </Paper>
     );
-}
+};
 
 export default withStyles(styles)(AddTestPage);

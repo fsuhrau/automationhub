@@ -1,5 +1,5 @@
 export default interface ITestResultData {
-    ID?: number | null,
+    ID?: number,
     TestRunID: number,
     Status: number,
 }

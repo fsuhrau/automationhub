@@ -1,4 +1,4 @@
-import IUnityTestFunctionData from "./unity.test.function";
+import IUnityTestFunctionData from './unity.test.function';
 
 export default interface ITestConfigUnityData {
     ID?: number | null,

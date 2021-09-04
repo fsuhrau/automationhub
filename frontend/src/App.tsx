@@ -1,35 +1,29 @@
-import React from 'react';
-import {createStyles, createTheme, ThemeProvider, withStyles, WithStyles,} from '@material-ui/core/styles';
+import { FC, useState } from 'react';
+import { createStyles, createTheme, ThemeProvider, withStyles, WithStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
-import {BrowserRouter as Router, Route, Switch} from "react-router-dom";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import Hidden from "@material-ui/core/Hidden";
-import Navigator from "./components/navigator";
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import Hidden from '@material-ui/core/Hidden';
+import Navigator from './components/navigator';
+import TestHeader from './pages/tests/tests.header';
+import TestContent from './pages/tests/tests.content';
+import DeviceHeader from './pages/devices/device.header';
+import DevicesContent from './pages/devices/device.content';
+import Header from './Header';
+import Content from './Content';
+import AddTestPage from './pages/tests/add.test.content';
 
-import TestHeader from "./pages/tests/tests.header";
-import TestContent from "./pages/tests/tests.content";
-
-import DeviceHeader from "./pages/devices/device.header";
-import DevicesContent from "./pages/devices/device.content";
-
-import Header from "./Header";
-import Content from "./Content";
-import AddTestPage from "./pages/tests/add.test.content";
-
-
-function Copyright() {
-    return (
-        <Typography variant="body2" color="textSecondary" align="center">
-            {'Copyright © '}
-            <Link color="inherit" href="https://www.automation-hub.com/">
-                AutomationHUB
-            </Link>{' '}
-            {new Date().getFullYear()}
-            {'.'}
-        </Typography>
-    );
-}
+const Copyright: FC = () => (
+    <Typography variant="body2" color="textSecondary" align="center">
+        {'Copyright © '}
+        <Link color="inherit" href="https://www.automation-hub.com/">
+            AutomationHUB
+        </Link>{' '}
+        {new Date().getFullYear()}
+        {'.'}
+    </Typography>
+);
 
 let theme = createTheme({
     palette: {
@@ -169,14 +163,14 @@ const styles = createStyles({
         background: '#eaeff1',
     },
 });
-export interface AppProps extends WithStyles<typeof styles> {
-}
 
-function App(props: AppProps) {
-    const {classes} = props;
-    const [mobileOpen, setMobileOpen] = React.useState(false);
+export type AppProps = WithStyles<typeof styles>;
 
-    const handleDrawerToggle = () => {
+const App: FC<AppProps> = (props) => {
+    const { classes } = props;
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    const handleDrawerToggle = (): void => {
         setMobileOpen(!mobileOpen);
     };
 
@@ -185,16 +179,16 @@ function App(props: AppProps) {
             <div className={classes.root}>
                 <CssBaseline/>
                 <nav className={classes.drawer}>
-                    <Hidden smUp implementation="js">
+                    <Hidden smUp={true} implementation="js">
                         <Navigator
-                            PaperProps={{style: {width: drawerWidth}}}
+                            PaperProps={{ style: { width: drawerWidth } }}
                             variant="temporary"
                             open={mobileOpen}
                             onClose={handleDrawerToggle}
                         />
                     </Hidden>
-                    <Hidden xsDown implementation="css">
-                        <Navigator PaperProps={{style: {width: drawerWidth}}}/>
+                    <Hidden xsDown={true} implementation="css">
+                        <Navigator PaperProps={{ style: { width: drawerWidth } }}/>
                     </Hidden>
                 </nav>
                 <div className={classes.app}>
@@ -256,6 +250,6 @@ function App(props: AppProps) {
             </div>
         </ThemeProvider>
     </Router>;
-}
+};
 
 export default withStyles(styles)(App);

@@ -1,4 +1,4 @@
-import ILogEntryData from "./log.entry";
+import ILogEntryData from './log.entry';
 
 export default interface ITestLogData {
     ID?: number | null,
