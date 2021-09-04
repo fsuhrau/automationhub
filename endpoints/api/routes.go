@@ -1,15 +1,11 @@
 package api
 
 import (
-	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"net/http"
-	"sort"
-	"time"
+	"net"
 )
 
 type ApiService struct {
@@ -17,11 +13,13 @@ type ApiService struct {
 	db              *gorm.DB
 	devicesManager  manager.Devices
 	sessionsManager manager.Sessions
+	hostIP          net.IP
 }
 
-func New(logger *logrus.Logger, db *gorm.DB, dm manager.Devices, sm manager.Sessions) *ApiService {
+func New(logger *logrus.Logger, db *gorm.DB, ip net.IP, dm manager.Devices, sm manager.Sessions) *ApiService {
 	return &ApiService{
 		logger:          logger.WithField("Service", "Api"),
+		hostIP:          ip,
 		db:              db,
 		devicesManager:  dm,
 		sessionsManager: sm,
@@ -41,47 +39,16 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 }
 
 func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
-	api := r.Group("/api", func(context *gin.Context) {
-	})
-	if true {
-		api.Use(cors.New(cors.Config{
-			AllowOrigins:     []string{"http://localhost:3000", "https://automationhub.com"},
-			AllowMethods:     []string{"PUT", "POST", "OPTIONS"},
-			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
-			ExposeHeaders:    []string{"Content-Length", "Content-Type"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}))
-	} else {
-		api.Use(cors.Default())
-	}
+	api := r.Group("/api")
 
-	api.GET("/devices", func(c *gin.Context) {
-		devices, _ := s.devicesManager.Devices()
-		list := Selectables{}
-		for i := range devices {
-			connectionStatus := "Disconnected"
-			if devices[i].Connection() != nil {
-				connectionStatus = "Connected"
-			}
-			list = append(list, &Selectable{
-				devices[i].DeviceID(),
-				devices[i].DeviceName(),
-				devices[i].DeviceOSName(),
-				devices[i].DeviceOSVersion(),
-				device.StateToString(devices[i].DeviceState()),
-				connectionStatus,
-			})
-		}
-		sort.Sort(ByName{list})
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.JSON(http.StatusOK, list)
-	})
+	api.GET("/devices", HandleWithSession(s.getDevices))
+	api.GET("/device/:device_id", HandleWithSession(s.getDeviceStatus))
+	api.POST("/device/:device_id/tests", HandleWithSession(s.runTests))
 
 	api.GET("/tests", HandleWithSession(s.getTests))
 	api.POST("/test", HandleWithSession(s.newTest))
 	api.GET("/test/:test_id", HandleWithSession(s.getTest))
-	api.POST("/test/:test_id/run", HandleWithSession(s.runTest))
+	api.POST("/test/:test_id/run", s.runTest)
 	api.GET("/test/:test_id/runs", HandleWithSession(s.getTestRuns))
 	api.GET("/test/:test_id/runs/:run_id", HandleWithSession(s.getTestRun))
 

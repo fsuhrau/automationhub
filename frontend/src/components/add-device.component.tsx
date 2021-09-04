@@ -16,19 +16,21 @@ export default class AddDevice extends Component<Props, State> {
         this.newDevice = this.newDevice.bind(this);
 
         this.state = {
+            CompanyID: 0,
+            Dev: undefined,
             OS: '',
             ID: null,
             DeviceIdentifier: '',
             DeviceType: 0,
             Name: '',
             RAM: 0,
-            SoC: '',
+            SOC: '',
             DisplaySize: '',
             DPI: 0,
             OSVersion: '',
             GPU: '',
             ABI: '',
-            OpenGL_ES_Version: 0,
+            OpenGLESVersion: 0,
             Status: 0,
             Manager: '',
             submitted: false,
@@ -43,6 +45,8 @@ export default class AddDevice extends Component<Props, State> {
 
     saveDevice(): void {
         const data: IDeviceData = {
+            CompanyID: 0,
+            OpenGLESVersion: 0,
             OS: '',
             Name: this.state.Name,
             DeviceIdentifier: this.state.DeviceIdentifier,
@@ -53,11 +57,10 @@ export default class AddDevice extends Component<Props, State> {
             GPU: '',
             Manager: '',
             OSVersion: '',
-            OpenGL_ES_Version: 0,
             RAM: 0,
-            SoC: '',
-            Status: 0,
-        };
+            SOC: '',
+            Status: 0
+        }
 
         DeviceDataService.create(data)
             .then(response => {
@@ -83,9 +86,7 @@ export default class AddDevice extends Component<Props, State> {
             Manager: '',
             OS: '',
             OSVersion: '',
-            OpenGL_ES_Version: 0,
             RAM: 0,
-            SoC: '',
             Status: 0,
         }));
     }

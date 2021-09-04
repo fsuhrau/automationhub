@@ -186,8 +186,10 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 		if m.devices[i].lastUpdateAt != lastUpdate {
 			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
 				m.devices[i].SetDeviceState("StateRemoteDisconnected")
+				updateFunc(m.devices[i])
 			} else {
 				m.devices[i].SetDeviceState("StateUnknown")
+				updateFunc(m.devices[i])
 			}
 		}
 	}

@@ -1,5 +1,5 @@
-import { FC, useEffect, useState } from 'react';
-import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { FC, MouseEvent, useEffect, useState } from 'react';
+import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -10,6 +10,9 @@ import Paper from '@material-ui/core/Paper';
 
 import IDeviceData from '../types/device';
 import DeviceDataService from '../services/device.service';
+import { Button } from '@material-ui/core';
+import { PlayArrow } from '@material-ui/icons';
+import TestDataService from '../services/test.service';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -33,6 +36,31 @@ const DeviceTable: FC<DeviceProps> = (props) => {
         });
     }, []);
 
+    function deviceState(state: number) {
+        switch (state) {
+            case 0:
+                return "unknown"
+            case 1:
+                return "shutdown"
+            case 2:
+                return "remote disconnected"
+            case 3:
+                return "booted"
+            case 4:
+                return "locked"
+        }
+        return ""
+    }
+
+    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>) {
+        e.preventDefault()
+        DeviceDataService.runTests(id).then(response => {
+            console.log(response.data);
+        }).catch(e => {
+            console.log(e);
+        })
+    }
+
     return (
         <TableContainer component={Paper}>
             <Table className={classes.table} aria-label="simple table">
@@ -43,6 +71,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                         <TableCell align="right">OS</TableCell>
                         <TableCell align="right">Version</TableCell>
                         <TableCell align="right">Status</TableCell>
+                        <TableCell align="right"></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -53,7 +82,12 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                         <TableCell align="right">{device.DeviceIdentifier}</TableCell>
                         <TableCell align="right">{device.OS}</TableCell>
                         <TableCell align="right">{device.OSVersion}</TableCell>
-                        <TableCell align="right">{device.Status}</TableCell>
+                        <TableCell align="right">{deviceState(device.Status)}</TableCell>
+                        <TableCell align="right">
+                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTests(device.ID, e)}>
+                                Run
+                            </Button>
+                        </TableCell>
                     </TableRow>)}
                 </TableBody>
             </Table>

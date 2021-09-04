@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
@@ -29,6 +30,8 @@ type Connection struct {
 	Connection             net.Conn
 	ResponseChannel        chan ResponseData
 	ConnectionStateChannel chan ConnectionState
+	ActionChannel          chan action.Response
+	ConnectionParameter    *action.Connect
 }
 
 func GetMessageSize(buffer []byte) uint32 {

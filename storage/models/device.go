@@ -32,4 +32,5 @@ type Device struct {
 	Status           device.State
 	Manager          string
 	StatusLog        []DeviceLog
+	Dev              interface{} `gorm:"-"`
 }

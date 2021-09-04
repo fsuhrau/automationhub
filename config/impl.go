@@ -12,9 +12,7 @@ func (m Manager) GetDeviceConfig(id string) *Device {
 func (m *Manager) GetDevicesForManager(manager string) []Device {
 	var devices []Device
 	for i := range m.Devices {
-		if m.Devices[i].Manager == manager {
-			devices = append(devices, m.Devices[i])
-		}
+		devices = append(devices, m.Devices[i])
 	}
 	return devices
 }

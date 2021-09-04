@@ -183,7 +183,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 		return err
 	}
 	if viper.GetBool("restart") {
-		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String())
+		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
 		return cmd.Run()
 	}
 	return nil

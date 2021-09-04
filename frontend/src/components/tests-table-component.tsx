@@ -85,7 +85,7 @@ const TestsTable: FC<TestProps> = (props) => {
                         <TableCell align="right">0</TableCell>
                         <TableCell align="right"/>
                         <TableCell align="right">
-                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [1], e)}>
+                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [3], e)}>
                                 Run
                             </Button>
                         </TableCell>

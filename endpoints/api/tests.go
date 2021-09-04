@@ -92,7 +92,7 @@ func (s *ApiService) getTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
-func (s *ApiService) runTest(session *Session, c *gin.Context) {
+func (s *ApiService) runTest(c *gin.Context) {
 	type Request struct {
 		AppID   uint
 		Devices []uint
@@ -131,9 +131,15 @@ func (s *ApiService) runTest(session *Session, c *gin.Context) {
 	}
 
 	if test.TestConfig.Type == models.TestTypeUnity {
-		tr := unity.New(s.db)
-		tr.Initialize(test)
-		tr.Run(devs, app)
+		tr := unity.New(s.db, s.hostIP, s.devicesManager)
+		if err := tr.Initialize(test); err != nil {
+			s.error(c, http.StatusInternalServerError, err) // Todo status code
+			return
+		}
+		if err := tr.Run(devs, app); err != nil {
+			s.error(c, http.StatusInternalServerError, err) // Todo status code
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, test)

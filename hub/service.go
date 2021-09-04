@@ -4,9 +4,11 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -36,6 +38,16 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessi
 	}
 	logger.Formatter = new(prefixed.TextFormatter)
 	router := newRouter(logger)
+
+	router.Use(cors.New(cors.Config{
+		AllowCredentials: true,
+		AllowMethods:     []string{"POST, OPTIONS, GET, PUT"},
+		AllowOrigins:     []string{"http://10.35.111.51:3000", "http://localhost:3000", "http://localhost:8002", "https://automationhub.com"},
+		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},
+		MaxAge:           12 * time.Hour,
+	}))
+
 	return &Service{logger: logger, hostIP: ip, sessionManager: sessions, deviceManager: devices, router: router, cfg: cfg}
 }
 

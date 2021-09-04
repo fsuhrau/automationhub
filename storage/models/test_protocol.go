@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type TestLog struct {
+type TestProtocol struct {
 	gorm.Model
 	TestRunID uint
 	StartedAt time.Time
 	EndedAt   *time.Time
-	Entries []LogEntry
+	Entries   []ProtocolEntry
 }

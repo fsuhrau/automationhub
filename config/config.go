@@ -22,7 +22,6 @@ type Device struct {
 	ID         string     `mapstructure:"id"`
 	IsTablet   bool       `mapstructure:"table"`
 	Name       string     `mapstructure:"name"`
-	Manager    string     `mapstructure:"manager"`
 	PIN        string     `mapstructure:"pin"`
 	Connection Connection `mapstructure:"connection"`
 }

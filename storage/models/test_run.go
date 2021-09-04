@@ -4,8 +4,9 @@ import "gorm.io/gorm"
 
 type TestRun struct {
 	gorm.Model
-	TestID uint
+	TestID    uint
+	SessionID string
 	Parameter TestParameter
-	Log TestLog
-	Result TestResult
+	Log       TestProtocol
+	Result    TestResult
 }

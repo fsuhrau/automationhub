@@ -26,6 +26,10 @@ class DeviceDataService {
     findByName(name: string): Promise<AxiosResponse<IDeviceData[]>> {
         return http.get(`/devices?name=${name}`);
     }
+
+    runTests(id: number | null | undefined) {
+        return http.post(`/device/${id}/tests`, null);
+    }
 }
 
 export default new DeviceDataService();

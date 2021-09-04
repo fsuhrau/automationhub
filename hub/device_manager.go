@@ -17,29 +17,23 @@ import (
 )
 
 const (
-	DeviceConnectionTimeout = 5 * time.Second
+	DeviceConnectionTimeout = 30 * time.Minute
 )
 
 type DeviceManager struct {
-	ip             net.IP
 	db             *gorm.DB
 	deviceHandlers map[string]device.Handler
 	stop           bool
 	log            *logrus.Entry
 }
 
-func NewDeviceManager(logger *logrus.Logger, ip net.IP, db *gorm.DB) *DeviceManager {
+func NewDeviceManager(logger *logrus.Logger, db *gorm.DB) *DeviceManager {
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
-		ip:             ip,
 		db:             db,
 		deviceHandlers: make(map[string]device.Handler),
 	}
-}
-
-func (dm *DeviceManager) GetHostIP() net.IP {
-	return dm.ip
 }
 
 func (dm *DeviceManager) AddHandler(manager device.Handler) {
@@ -211,7 +205,10 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 	deviceData := models.Device{
 		DeviceIdentifier: dev.DeviceID(),
 	}
-	dm.db.FirstOrCreate(&deviceData)
+	if err:= dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", dev.DeviceID()).Error; err != nil {
+		logrus.Errorf("%v", err)
+		return
+	}
 	needsUpdate := false
 	if deviceData.Name != dev.DeviceName() {
 		deviceData.Name = dev.DeviceName()
@@ -343,9 +340,11 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		dm.log.Infof("Received Handshake from %v", remoteAddress)
 		dm.log.Debugf("Device with ID %s connected", dev.DeviceID())
 		connection := &device.Connection{
+			ConnectionParameter:    connectRequest,
 			Logger:                 dm.log,
 			Connection:             c,
 			ResponseChannel:        make(chan device.ResponseData, 100),
+			ActionChannel:        make(chan action.Response, 1),
 			ConnectionStateChannel: make(chan device.ConnectionState, 1),
 		}
 		dev.SetConnection(connection)
@@ -377,6 +376,12 @@ func (dm *DeviceManager) SendBytes(dev device.Device, content []byte) ([]byte, e
 	if dev.Connection() != nil {
 		dev.Connection().Send(content)
 		data := <-dev.Connection().ResponseChannel
+		resp := &action.Response{}
+		if err := proto.Unmarshal(data.Data, resp); err != nil {
+			dm.log.Errorf("SocketAccept ReadError: %v", err)
+		}
+		logrus.Infof("send bytes response: %v", resp)
+
 		/*
 			if data.Err == DeviceDisconnectedError {
 				session.HandleDisconnect()
