@@ -38,7 +38,8 @@ rules:
   no-prototype-builtins: off
   operator-linebreak: off
   implicit-arrow-linebreak: off
-  no-shadow: warn
+  no-shadow: off
+  "@typescript-eslint/no-shadow": warn
   import/no-extraneous-dependencies: off
   import/prefer-default-export: off
   max-len:
