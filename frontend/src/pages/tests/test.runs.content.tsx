@@ -39,9 +39,11 @@ type TestRunsProps = WithStyles<typeof styles>;
 
 const TestRuns: FC<TestRunsProps> = (props) => {
     const { classes } = props;
+
+    const { testId } = useParams<number>();
+
     const [testRuns, setTestRuns] = useState<ITestRunData[]>([]);
 
-    const testId = useParams<string>();
 
     useEffect(() => {
         TestRunDataService.getAll(testId).then(response => {

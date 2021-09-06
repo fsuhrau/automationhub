@@ -15,6 +15,7 @@ import Content from './Content';
 import AddTestPage from './pages/tests/add.test.content';
 import TestRunsPage from './pages/tests/test.runs.content';
 import TestRunPage from './pages/tests/test.run.content';
+import TestProtocolPage from './pages/tests/test.protocol.content';
 
 const Copyright: FC = () => (
     <Typography variant="body2" color="textSecondary" align="center">
@@ -198,6 +199,9 @@ const App: FC<AppProps> = (props) => {
                         <Route path="/tests">
                             <TestHeader onDrawerToggle={handleDrawerToggle}/>
                         </Route>
+                        <Route path={'/test/:testId/run/:runId/:protocolId'}>
+                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
+                        </Route>
                         <Route path="/test/:testId/runs">
                             <TestHeader onDrawerToggle={handleDrawerToggle}/>
                         </Route>
@@ -228,8 +232,11 @@ const App: FC<AppProps> = (props) => {
                             <Route path="/tests">
                                 <TestContent/>
                             </Route>
-                            <Route path="/test/:testId/runs/last">
-                                <TestRunPage />
+                            <Route path={'/test/:testId/run/:runId/:protocolId'}>
+                                <TestProtocolPage/>
+                            </Route>
+                            <Route path={'/test/:testId/runs/last'}>
+                                <TestRunPage/>
                             </Route>
                             <Route path={'/test/:testId/runs'}>
                                 <TestRunsPage/>

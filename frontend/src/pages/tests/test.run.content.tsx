@@ -8,7 +8,7 @@ import {
     Button,
     Card,
     CardActions,
-    CardContent,
+    CardContent, Link,
     Table,
     TableBody,
     TableCell,
@@ -51,6 +51,9 @@ type TestRunProps = WithStyles<typeof styles>;
 
 const TestRun: FC<TestRunProps> = (props) => {
     const { } = props;
+
+    const { testId } = useParams<number>();
+
     const [testRun, setTestRun] = useState<ITestRunData>();
 
     const [runsOpen, setRunsOpen] = useState<number>();
@@ -58,7 +61,6 @@ const TestRun: FC<TestRunProps> = (props) => {
     const [runsFailed, setRunsFailed] = useState<number>();
     const [runsSuccess, setRunsSuccess] = useState<number>();
 
-    const testId = useParams<string>();
 
     function getStatus(protocol: ITestProtocolData) : string {
         return TestResultState[protocol.TestResult];
@@ -162,7 +164,9 @@ const TestRun: FC<TestRunProps> = (props) => {
                             {testRun?.Protocols.map((protocol) => (
                                 <TableRow key={protocol.ID} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                     <TableCell component="th" scope="row">
-                                        {protocol.Device.Name}
+                                        <Link href={`/test/${testRun?.TestID}/run/${testRun?.ID}/${protocol.ID}` } underline="none">
+                                            {protocol.Device.Name}
+                                        </Link>
                                     </TableCell>
                                     <TableCell align="right">{protocol.Device.OS} {protocol.Device.OSVersion}</TableCell>
                                     <TableCell align="right">{getStatus(protocol)}</TableCell>
