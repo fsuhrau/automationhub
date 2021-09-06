@@ -16,13 +16,14 @@ import TimerIcon from '@material-ui/icons/Timer';
 import SettingsIcon from '@material-ui/icons/Settings';
 import PhonelinkSetupIcon from '@material-ui/icons/PhonelinkSetup';
 import { Omit } from '@material-ui/types';
+import { NavLink } from 'react-router-dom';
 import { Link } from '@material-ui/core';
 
 const categories = [
     {
         id: 'Test Center',
         children: [
-            { id: 'Tests', ref: '/tests', icon: <PermMediaOutlinedIcon/>, active: true },
+            { id: 'Tests', ref: '/tests', icon: <PermMediaOutlinedIcon/> },
             { id: 'Results', ref: '/results', icon: <SettingsEthernetIcon/> },
             { id: 'Performance', ref: '/performance', icon: <TimerIcon/> },
         ],
@@ -51,6 +52,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
             paddingTop: 1,
             paddingBottom: 1,
             color: 'rgba(255, 255, 255, 0.7)',
+            textDecoration: 'none',
             '&:hover,&:focus': {
                 backgroundColor: 'rgba(255, 255, 255, 0.08)',
             },
@@ -65,8 +67,10 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
             fontSize: 24,
             color: theme.palette.common.white,
         },
-        itemActiveItem: {
-            color: '#4fc3f7',
+        activeLink: {
+            '& $item': {
+                color: '#4fc3f7',
+            },
         },
         itemPrimary: {
             fontSize: 'inherit',
@@ -115,12 +119,18 @@ const Navigator: FC<NavigatorProps> = (props) => {
                                 {id}
                             </ListItemText>
                         </ListItem>
-                        {children.map(({ id: childId, ref, icon, active }) => (
-                            <Link underline="none" href={ref}>
+                        {children.map(({ id: childId, ref, icon }) => (
+                            <Link
+                                key={childId}
+                                component={NavLink}
+                                to={ref}
+                                activeClassName={classes.activeLink}
+                                underline="none"
+                            >
                                 <ListItem
                                     key={childId}
                                     button={true}
-                                    className={clsx(classes.item, active && classes.itemActiveItem)}
+                                    className={classes.item}
                                 >
                                     <ListItemIcon className={classes.itemIcon}>{icon}</ListItemIcon>
                                     <ListItemText
