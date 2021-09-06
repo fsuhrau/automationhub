@@ -1,5 +1,5 @@
 import { FC, MouseEvent, useEffect, useState } from 'react';
-import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -12,7 +12,6 @@ import IDeviceData from '../types/device';
 import DeviceDataService from '../services/device.service';
 import { Button } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
-import TestDataService from '../services/test.service';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -36,34 +35,34 @@ const DeviceTable: FC<DeviceProps> = (props) => {
         });
     }, []);
 
-    function deviceState(state: number) {
+    function deviceState(state: number) : string {
         switch (state) {
             case 0:
-                return "unknown"
+                return 'unknown';
             case 1:
-                return "shutdown"
+                return 'shutdown';
             case 2:
-                return "remote disconnected"
+                return 'remote disconnected';
             case 3:
-                return "booted"
+                return 'booted';
             case 4:
-                return "locked"
+                return 'locked';
         }
-        return ""
+        return '';
     }
 
-    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>) {
-        e.preventDefault()
+    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>) : void {
+        e.preventDefault();
         DeviceDataService.runTests(id).then(response => {
             console.log(response.data);
-        }).catch(e => {
-            console.log(e);
-        })
+        }).catch(ex => {
+            console.log(ex);
+        });
     }
 
     return (
         <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="simple table">
+            <Table className={classes.table} size="small" aria-label="a dense table">
                 <TableHead>
                     <TableRow>
                         <TableCell>Name</TableCell>

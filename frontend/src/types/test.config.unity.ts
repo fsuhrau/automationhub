@@ -5,4 +5,7 @@ export default interface ITestConfigUnityData {
     TestConfigID: number,
     RunAllTests: boolean,
     UnityTestFunctions: Array<IUnityTestFunctionData>,
+    CreatedAt: Date,
+    UpdatedAt: Date,
+    DeletedAt: Date,
 }

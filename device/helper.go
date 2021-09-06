@@ -1,23 +1,22 @@
 package device
 
 import (
+	"github.com/sirupsen/logrus"
 	"os/exec"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
-type LogWriter struct {
+type CommandLogWriter struct {
 	Tag string
 }
 
-func (w *LogWriter) Write(p []byte) (n int, err error) {
+func (w *CommandLogWriter) Write(p []byte) (n int, err error) {
 	logrus.WithField("tag", w.Tag).Errorf("%s", string(p))
 	return len(p), nil
 }
 
 func NewCommand(executable string, params ...string) *exec.Cmd {
-	writer := &LogWriter{
+	writer := &CommandLogWriter{
 		Tag: executable + " " + strings.Join(params, " "),
 	}
 	logrus.Debugf("New Command: %s %v", executable, params)

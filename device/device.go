@@ -37,4 +37,6 @@ type Device interface {
 	Lock() error
 	Unlock() error
 	IsLocker() bool
+
+	SetLogWriter(writer LogWriter)
 }

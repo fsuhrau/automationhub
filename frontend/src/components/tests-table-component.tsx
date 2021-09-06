@@ -10,7 +10,7 @@ import Paper from '@material-ui/core/Paper';
 
 import ITestData from '../types/test';
 import TestDataService from '../services/test.service';
-import { Button } from '@material-ui/core';
+import { Button, Link } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 
 const styles = (): ReturnType<typeof createStyles> =>
@@ -78,14 +78,16 @@ const TestsTable: FC<TestProps> = (props) => {
                 <TableBody>
                     {tests.map((test) => <TableRow key={test.Name}>
                         <TableCell component="th" scope="row">
-                            {test.Name}
+                            <Link href={`test/${test.ID}/runs/last` } underline="none">
+                                {test.Name}
+                            </Link>
                         </TableCell>
                         <TableCell align="right">{typeString(test.TestConfig.Type)}</TableCell>
                         <TableCell align="right">{executionString(test.TestConfig.ExecutionType)}</TableCell>
                         <TableCell align="right">0</TableCell>
                         <TableCell align="right"/>
                         <TableCell align="right">
-                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [3], e)}>
+                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [2], e)}>
                                 Run
                             </Button>
                         </TableCell>

@@ -1,11 +1,13 @@
-import ITestParameterData from './test.parameter';
-import ITestLogData from './test.log';
-import ITestResultData from './test.result';
+import ITestProtocolData from './test.protocol';
+import ITesRunLogEntryData from './test.run.log.entry';
 
 export default interface ITestRunData {
     ID?: number,
     TestID: number,
-    Parameter: ITestParameterData,
-    Log: ITestLogData,
-    Result: ITestResultData
+    SessionID: string,
+    Protocols: Array<ITestProtocolData>,
+    Log: Array<ITesRunLogEntryData>,
+    CreatedAt: Date,
+    UpdatedAt: Date,
+    DeletedAt: Date,
 }

@@ -1,6 +1,7 @@
 import http from '../http-common';
 import IDeviceData from '../types/device';
 import { AxiosResponse } from 'axios';
+import ITestRunData from '../types/test.run';
 
 class DeviceDataService {
     getAll(): Promise<AxiosResponse<IDeviceData[]>> {
@@ -27,7 +28,7 @@ class DeviceDataService {
         return http.get(`/devices?name=${name}`);
     }
 
-    runTests(id: number | null | undefined) {
+    runTests(id: number | null | undefined): Promise<AxiosResponse<ITestRunData>>  {
         return http.post(`/device/${id}/tests`, null);
     }
 }

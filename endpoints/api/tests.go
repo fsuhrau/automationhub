@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
@@ -123,11 +122,8 @@ func (s *ApiService) runTest(c *gin.Context) {
 		return
 	}
 
-	var devs []device.Device
-	for _, d := range devices {
-		if dev := s.devicesManager.GetDevice(d.DeviceIdentifier); dev != nil {
-			devs = append(devs, dev)
-		}
+	for i := range devices {
+		devices[i].Dev = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 	}
 
 	if test.TestConfig.Type == models.TestTypeUnity {
@@ -136,7 +132,7 @@ func (s *ApiService) runTest(c *gin.Context) {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
-		if err := tr.Run(devs, app); err != nil {
+		if err := tr.Run(devices, app); err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
@@ -149,7 +145,7 @@ func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var testRuns []models.TestRun
-	if err := s.db.Find(&testRuns, "testId = ?", testId).Error; err != nil {
+	if err := s.db.Preload("Protocols").Find(&testRuns, "test_id = ?", testId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -157,13 +153,27 @@ func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, testRuns)
 }
 
+func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
+	testId := c.Param("test_id")
+	_ = testId
+
+	var run models.TestRun
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Log").Where("test_id = ?", testId).Order("id desc").First(&run).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, run)
+}
+
+
 func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
 	testId := c.Param("test_id")
 	_ = testId
 	runId := c.Param("run_id")
 
 	var run models.TestRun
-	if err := s.db.Find(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Log").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

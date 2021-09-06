@@ -59,8 +59,8 @@ export default class AddDevice extends Component<Props, State> {
             OSVersion: '',
             RAM: 0,
             SOC: '',
-            Status: 0
-        }
+            Status: 0,
+        };
 
         DeviceDataService.create(data)
             .then(response => {

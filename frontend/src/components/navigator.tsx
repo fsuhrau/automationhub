@@ -1,5 +1,4 @@
 import React, { FC } from 'react';
-import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import Divider from '@material-ui/core/Divider';
@@ -17,6 +16,7 @@ import TimerIcon from '@material-ui/icons/Timer';
 import SettingsIcon from '@material-ui/icons/Settings';
 import PhonelinkSetupIcon from '@material-ui/icons/PhonelinkSetup';
 import { Omit } from '@material-ui/types';
+import { Link } from '@material-ui/core';
 
 const categories = [
     {
@@ -116,7 +116,7 @@ const Navigator: FC<NavigatorProps> = (props) => {
                             </ListItemText>
                         </ListItem>
                         {children.map(({ id: childId, ref, icon, active }) => (
-                            <Link to={ref}>
+                            <Link underline="none" href={ref}>
                                 <ListItem
                                     key={childId}
                                     button={true}

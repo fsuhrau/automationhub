@@ -6,12 +6,13 @@ import (
 )
 
 var (
-	DeviceLockedError = fmt.Errorf("can't lock device, device is already locked")
+	DeviceLockedError   = fmt.Errorf("can't lock device, device is already locked")
 	DeviceUnlockedError = fmt.Errorf("can't unlock device, device was not locked")
 )
 
 type Device struct {
-	con *device.Connection
+	con    *device.Connection
+	writer device.LogWriter
 	locked bool
 }
 
@@ -41,4 +42,8 @@ func (d *Device) Unlock() error {
 
 func (d *Device) IsLocker() bool {
 	return d.locked
+}
+
+func (d *Device) SetLogWriter(writer device.LogWriter) {
+	d.writer = writer
 }

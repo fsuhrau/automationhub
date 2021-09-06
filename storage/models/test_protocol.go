@@ -7,8 +7,12 @@ import (
 
 type TestProtocol struct {
 	gorm.Model
-	TestRunID uint
-	StartedAt time.Time
-	EndedAt   *time.Time
-	Entries   []ProtocolEntry
+	TestRunID  uint
+	AppID      uint
+	DeviceID   *uint
+	Device     *Device
+	StartedAt  time.Time
+	EndedAt    *time.Time
+	Entries    []ProtocolEntry
+	TestResult TestResultState
 }

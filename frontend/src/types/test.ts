@@ -8,4 +8,7 @@ export default interface ITestData {
     TestConfig: ITestConfigData,
     TestRuns: ITestRunData[],
     Last?: ITestRunData | null,
+    CreatedAt: Date,
+    UpdatedAt: Date,
+    DeletedAt: Date,
 }

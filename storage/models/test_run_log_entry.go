@@ -2,9 +2,9 @@ package models
 
 import "gorm.io/gorm"
 
-type TestParameter struct {
+type TestRunLogEntry struct {
 	gorm.Model
 	TestRunID uint
-	AppID     uint
-	DeviceID  uint
+	Level     string
+	Log       string
 }
