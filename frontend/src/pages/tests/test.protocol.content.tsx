@@ -1,25 +1,24 @@
-import {FC, SyntheticEvent, useEffect, useState} from 'react';
+import { FC, SyntheticEvent, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import TestRunDataService from '../../services/test.run.service';
-import {useParams} from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
-import {TestResultState} from '../../types/test.result.state.enum';
+import { TestResultState } from '../../types/test.result.state.enum';
 import ITestProtocolData from '../../types/test.protocol';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import {AvTimer, Cancel, CheckCircle, DateRange, PlayArrow} from '@material-ui/icons';
-import {pink} from "@material-ui/core/colors";
-import {Box, Button, Link, Tab, Tabs} from "@material-ui/core";
-import Table from "@material-ui/core/Table";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import TableCell from "@material-ui/core/TableCell";
-import TableBody from "@material-ui/core/TableBody";
+import { AvTimer, Cancel, CheckCircle, DateRange } from '@material-ui/icons';
+import { pink } from '@material-ui/core/colors';
+import { Box, Tab, Tabs } from '@material-ui/core';
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
 import Moment from 'react-moment';
-import {Console} from "inspector";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -28,7 +27,7 @@ interface TabPanelProps {
 }
 
 function TabPanel(props: TabPanelProps) {
-    const {children, value, index, ...other} = props;
+    const { children, value, index, ...other } = props;
 
     return (
         <div
@@ -39,7 +38,7 @@ function TabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-                <Box sx={{p: 3}}>
+                <Box sx={{ p: 3 }}>
                     <Typography>{children}</Typography>
                 </Box>
             )}
@@ -85,10 +84,10 @@ function a11yProps(index: number) {
 type TestProtocolProps = WithStyles<typeof styles>;
 
 const TestProtocol: FC<TestProtocolProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
 
-    const {testId} = useParams<number>();
-    const {protocolId} = useParams<number>();
+    const { testId } = useParams<number>();
+    const { protocolId } = useParams<number>();
 
     const [run, setRun] = useState<ITestRunData>();
     const [protocol, setProtocol] = useState<ITestProtocolData>();
@@ -110,18 +109,18 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
     }, [testId, protocolId]);
 
     function getDuration(p: ITestProtocolData): string {
-        return "running";
+        return 'running';
         if (p.EndedAt !== null && p.EndedAt !== undefined) {
             const end = p?.EndedAt?.valueOf();
             const start = p?.StartedAt?.valueOf();
             const duration = end - start;
-            console.log(start)
-            console.log(end)
-            console.log(duration)
-            var date = new Date(duration);
+            console.log(start);
+            console.log(end);
+            console.log(duration);
+            const date = new Date(duration);
             return date.toTimeString().split(' ')[0];
         }
-        return "running";
+        return 'running';
     }
 
     const [value, setValue] = useState(0);
@@ -138,10 +137,10 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                         <Grid item={true}>
                             {protocol?.TestResult == TestResultState.TestResultSuccess ?
                                 <CheckCircle className={classes.block} color="success"/> :
-                                <Cancel className={classes.block} sx={{color: pink[500]}}/>}
+                                <Cancel className={classes.block} sx={{ color: pink[500] }}/>}
                         </Grid>
                         <Grid item={true}>
-                            {protocol?.TestResult == TestResultState.TestResultSuccess ? "Success" : "Failed"}
+                            {protocol?.TestResult == TestResultState.TestResultSuccess ? 'Success' : 'Failed'}
                         </Grid>
 
                         <Grid item={true}>
@@ -160,9 +159,9 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={{width: '100%'}}>
+            <Box sx={{ width: '100%' }}>
                 <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
-                    <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs
                             value={value}
                             onChange={handleChange}

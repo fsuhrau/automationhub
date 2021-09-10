@@ -1,12 +1,12 @@
-import {FC, useEffect, useState} from 'react';
+import { FC, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import TestRunDataService from '../../services/test.run.service';
-import {useParams} from 'react-router-dom';
-import {Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,} from '@material-ui/core';
+import { useParams } from 'react-router-dom';
+import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
-import {TestResultState} from '../../types/test.result.state.enum';
+import { TestResultState } from '../../types/test.result.state.enum';
 import ITestProtocolData from '../../types/test.protocol';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
@@ -41,7 +41,7 @@ type TestRunProps = WithStyles<typeof styles>;
 const TestRun: FC<TestRunProps> = (props) => {
     const {} = props;
 
-    const {testId} = useParams<number>();
+    const { testId } = useParams<number>();
 
     const [testRun, setTestRun] = useState<ITestRunData>();
 
@@ -103,7 +103,7 @@ const TestRun: FC<TestRunProps> = (props) => {
             <Grid item={true} xs={8}>
             </Grid>
             <Grid item={true} xs={4}>
-                <Box component={Paper} sx={{p: 2, m: 2}}>
+                <Box component={Paper} sx={{ p: 2, m: 2 }}>
                     <Grid container={true} spacing={12}>
                         <Grid item={true} xs={3}>
                             Open
@@ -133,9 +133,9 @@ const TestRun: FC<TestRunProps> = (props) => {
                 </Box>
             </Grid>
             <Grid item={true} xs={12}>
-                <Box component={Paper} sx={{m: 2}}>
+                <Box component={Paper} sx={{ m: 2 }}>
                     <TableContainer>
-                        <Table sx={{minWidth: 650}} size="small" aria-label="a dense table">
+                        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Device</TableCell>
@@ -146,7 +146,7 @@ const TestRun: FC<TestRunProps> = (props) => {
                             <TableBody>
                                 {testRun?.Protocols.map((protocol) => (
                                     <TableRow key={protocol.ID}
-                                              sx={{'&:last-child td, &:last-child th': {border: 0}}}>
+                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                         <TableCell component="th" scope="row">
                                             <Link
                                                 href={`/test/${testRun?.TestID}/run/${testRun?.ID}/${protocol.ID}`}
