@@ -1,4 +1,4 @@
-import { FC, SyntheticEvent, useEffect, useState } from 'react';
+import { FC, ReactElement, SyntheticEvent, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -26,7 +26,7 @@ interface TabPanelProps {
     value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
+function TabPanel(props: TabPanelProps): ReactElement {
     const { children, value, index, ...other } = props;
 
     return (
@@ -74,7 +74,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
         },
     });
 
-function a11yProps(index: number) {
+function a11yProps(index: number): Map<string, string> {
     return {
         id: `simple-tab-${index}`,
         'aria-controls': `simple-tabpanel-${index}`,
@@ -125,7 +125,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
 
     const [value, setValue] = useState(0);
 
-    const handleChange = (event: SyntheticEvent, newValue: number) => {
+    const handleChange = (event: SyntheticEvent, newValue: number): void => {
         setValue(newValue);
     };
 
