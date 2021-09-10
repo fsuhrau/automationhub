@@ -73,18 +73,25 @@ func (s *ApiService) runTests(session *Session, c *gin.Context) {
 		s.error(c, http.StatusNotFound, fmt.Errorf("no app connected"))
 		return
 	}
+	if false {
+		var testsAction action.TestsGet
+		s.devicesManager.SendAction(dev, &testsAction)
+		logrus.Info("tests %v", testsAction)
+		time.Sleep(2 * time.Minute)
+		for _, test := range testsAction.Tests {
+			runTestAction := action.TestStart{
+				Assembly: test.Assembly,
+				Class:    test.Class,
+				Method:   test.Method,
+			}
+			s.devicesManager.SendAction(dev, &runTestAction)
+			time.Sleep(3 * time.Minute)
+		}
+	} else {
 
-	var testsAction action.TestsGet
-	s.devicesManager.SendAction(dev, &testsAction)
-	logrus.Info("tests %v", testsAction)
-	time.Sleep(2 * time.Minute)
-	for _, test := range testsAction.Tests {
 		runTestAction := action.TestStart{
-			Assembly: test.Assembly,
-			Class: test.Class,
-			Method: test.Method,
+			Class: "Innium.IntegrationTests.SmokeTests",
 		}
 		s.devicesManager.SendAction(dev, &runTestAction)
-		time.Sleep(3 * time.Minute)
 	}
 }

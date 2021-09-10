@@ -1,23 +1,53 @@
-import { FC, useEffect, useState } from 'react';
+import {FC, SyntheticEvent, useEffect, useState} from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
 import TestRunDataService from '../../services/test.run.service';
-import { useParams } from 'react-router-dom';
-import {
-    Button,
-} from '@material-ui/core';
+import {useParams} from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
-import { TestResultState } from '../../types/test.result.state.enum';
+import {TestResultState} from '../../types/test.result.state.enum';
 import ITestProtocolData from '../../types/test.protocol';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
-import SearchIcon from '@material-ui/icons/Search';
-import TextField from '@material-ui/core/TextField';
-import Tooltip from '@material-ui/core/Tooltip';
-import IconButton from '@material-ui/core/IconButton';
-import RefreshIcon from '@material-ui/icons/Refresh';
 import Typography from '@material-ui/core/Typography';
+import {AvTimer, Cancel, CheckCircle, DateRange, PlayArrow} from '@material-ui/icons';
+import {pink} from "@material-ui/core/colors";
+import {Box, Button, Link, Tab, Tabs} from "@material-ui/core";
+import Table from "@material-ui/core/Table";
+import TableHead from "@material-ui/core/TableHead";
+import TableRow from "@material-ui/core/TableRow";
+import TableCell from "@material-ui/core/TableCell";
+import TableBody from "@material-ui/core/TableBody";
+import Moment from 'react-moment';
+import {Console} from "inspector";
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const {children, value, index, ...other} = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{p: 3}}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
@@ -45,13 +75,20 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
         },
     });
 
+function a11yProps(index: number) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
+
 type TestProtocolProps = WithStyles<typeof styles>;
 
 const TestProtocol: FC<TestProtocolProps> = (props) => {
-    const { classes } = props;
+    const {classes} = props;
 
-    const { testId } = useParams<number>();
-    const { protocolId } = useParams<number>();
+    const {testId} = useParams<number>();
+    const {protocolId} = useParams<number>();
 
     const [run, setRun] = useState<ITestRunData>();
     const [protocol, setProtocol] = useState<ITestProtocolData>();
@@ -72,43 +109,107 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
         });
     }, [testId, protocolId]);
 
+    function getDuration(p: ITestProtocolData): string {
+        return "running";
+        if (p.EndedAt !== null && p.EndedAt !== undefined) {
+            const end = p?.EndedAt?.valueOf();
+            const start = p?.StartedAt?.valueOf();
+            const duration = end - start;
+            console.log(start)
+            console.log(end)
+            console.log(duration)
+            var date = new Date(duration);
+            return date.toTimeString().split(' ')[0];
+        }
+        return "running";
+    }
+
+    const [value, setValue] = useState(0);
+
+    const handleChange = (event: SyntheticEvent, newValue: number) => {
+        setValue(newValue);
+    };
+
     return (
         <Paper className={classes.paper}>
             <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
                 <Toolbar>
                     <Grid container={true} spacing={2} alignItems="center">
                         <Grid item={true}>
-                            <SearchIcon className={classes.block} color="inherit"/>
-                        </Grid>
-                        <Grid item={true} xs={true}>
-                            <TextField
-                                fullWidth={true}
-                                placeholder="Search by email address, phone number, or user UID your mam"
-                                InputProps={{
-                                    disableUnderline: true,
-                                    className: classes.searchInput,
-                                }}
-                            />
+                            {protocol?.TestResult == TestResultState.TestResultSuccess ?
+                                <CheckCircle className={classes.block} color="success"/> :
+                                <Cancel className={classes.block} sx={{color: pink[500]}}/>}
                         </Grid>
                         <Grid item={true}>
-                            <Button variant="contained" color="primary" className={classes.addUser}>
-                                Add user
-                            </Button>
-                            <Tooltip title="Reload">
-                                <IconButton>
-                                    <RefreshIcon className={classes.block} color="inherit"/>
-                                </IconButton>
-                            </Tooltip>
+                            {protocol?.TestResult == TestResultState.TestResultSuccess ? "Success" : "Failed"}
+                        </Grid>
+
+                        <Grid item={true}>
+                            <DateRange className={classes.block} color="inherit"/>
+                        </Grid>
+                        <Grid item={true}>
+                            <Moment format="YYYY/MM/DD HH:mm:ss">{protocol?.StartedAt}</Moment>
+                        </Grid>
+
+                        <Grid item={true}>
+                            <AvTimer className={classes.block} color="inherit"/>
+                        </Grid>
+                        <Grid item={true} xs={true}>
+                            {getDuration(protocol)}
                         </Grid>
                     </Grid>
                 </Toolbar>
             </AppBar>
-
-            <div className={classes.contentWrapper}>
-                <Typography color="textSecondary" align="center">
-                    No users for this project yet
-                </Typography>
-            </div>
+            <Box sx={{width: '100%'}}>
+                <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
+                    <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                        <Tabs
+                            value={value}
+                            onChange={handleChange}
+                        >
+                            <Tab label="Status" {...a11yProps(0)} />
+                            <Tab label="Logs" {...a11yProps(1)} />
+                            <Tab label="Screenshots" {...a11yProps(2)} />
+                            <Tab label="Video" {...a11yProps(3)} />
+                            <Tab label="Performance" {...a11yProps(4)} />
+                        </Tabs>
+                    </Box>
+                </AppBar>
+                <TabPanel value={value} index={0}>
+                    Status
+                </TabPanel>
+                <TabPanel value={value} index={1}>
+                    <Table className={classes.table} size="small" aria-label="a dense table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Date</TableCell>
+                                <TableCell>Source</TableCell>
+                                <TableCell>Level</TableCell>
+                                <TableCell>Info</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {protocol?.Entries?.map((entry) => <TableRow key={entry.ID}>
+                                <TableCell component="th" scope="row">
+                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
+                                </TableCell>
+                                <TableCell>{entry.Source}</TableCell>
+                                <TableCell>{entry.Level}</TableCell>
+                                <TableCell>{entry.Message}</TableCell>
+                            </TableRow>)}
+                        </TableBody>
+                    </Table>
+                </TabPanel>
+                <TabPanel value={value} index={2}>
+                    Screenshots
+                </TabPanel>
+                <TabPanel value={value} index={3}>
+                    Video
+                </TabPanel>
+                <TabPanel value={value} index={4}>
+                    Performance
+                </TabPanel>
+            </Box>
         </Paper>
     );
 };

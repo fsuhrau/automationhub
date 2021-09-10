@@ -16,6 +16,9 @@ import AddTestPage from './pages/tests/add.test.content';
 import TestRunsPage from './pages/tests/test.runs.content';
 import TestRunPage from './pages/tests/test.run.content';
 import TestProtocolPage from './pages/tests/test.protocol.content';
+import Moment from 'react-moment';
+
+Moment.globalLocale = 'de';
 
 const Copyright: FC = () => (
     <Typography variant="body2" color="textSecondary" align="center">

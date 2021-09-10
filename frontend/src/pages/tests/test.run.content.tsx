@@ -1,23 +1,12 @@
-import { FC, useEffect, useState } from 'react';
+import {FC, useEffect, useState} from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import {createStyles, Theme, withStyles, WithStyles} from '@material-ui/core/styles';
 import TestRunDataService from '../../services/test.run.service';
-import { useParams } from 'react-router-dom';
-import {
-    Button,
-    Card,
-    CardActions,
-    CardContent, Link,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-} from '@material-ui/core';
+import {useParams} from 'react-router-dom';
+import {Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,} from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
-import { TestResultState } from '../../types/test.result.state.enum';
+import {TestResultState} from '../../types/test.result.state.enum';
 import ITestProtocolData from '../../types/test.protocol';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
@@ -50,9 +39,9 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 type TestRunProps = WithStyles<typeof styles>;
 
 const TestRun: FC<TestRunProps> = (props) => {
-    const { } = props;
+    const {} = props;
 
-    const { testId } = useParams<number>();
+    const {testId} = useParams<number>();
 
     const [testRun, setTestRun] = useState<ITestRunData>();
 
@@ -62,11 +51,11 @@ const TestRun: FC<TestRunProps> = (props) => {
     const [runsSuccess, setRunsSuccess] = useState<number>();
 
 
-    function getStatus(protocol: ITestProtocolData) : string {
+    function getStatus(protocol: ITestProtocolData): string {
         return TestResultState[protocol.TestResult];
     }
 
-    function rebuildStatistics(run: ITestRunData) : void {
+    function rebuildStatistics(run: ITestRunData): void {
         let ro: number;
         let ru: number;
         let rf: number;
@@ -114,67 +103,66 @@ const TestRun: FC<TestRunProps> = (props) => {
             <Grid item={true} xs={8}>
             </Grid>
             <Grid item={true} xs={4}>
-                <Card sx={{ minWidth: 275 }}>
-                    <CardContent>
-                        <Grid container={true} spacing={2}>
-                            <Grid item={true} xs={2}>
-                                Open
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                Unstable
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                Failed
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                Success
-                            </Grid>
+                <Box component={Paper} sx={{p: 2, m: 2}}>
+                    <Grid container={true} spacing={12}>
+                        <Grid item={true} xs={3}>
+                            Open
                         </Grid>
-                        <Grid container={true} spacing={2}>
-                            <Grid item={true} xs={2}>
-                                {runsOpen}
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                {runsUnstable}
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                {runsFailed}
-                            </Grid>
-                            <Grid item={true} xs={2}>
-                                {runsSuccess}
-                            </Grid>
+                        <Grid item={true} xs={3}>
+                            Unstable
                         </Grid>
-                    </CardContent>
-                    <CardActions>
-                        <Button size="small">Learn More</Button>
-                    </CardActions>
-                </Card>
+                        <Grid item={true} xs={3}>
+                            Failed
+                        </Grid>
+                        <Grid item={true} xs={3}>
+                            Success
+                        </Grid>
+                        <Grid item={true} xs={3}>
+                            {runsOpen}
+                        </Grid>
+                        <Grid item={true} xs={3}>
+                            {runsUnstable}
+                        </Grid>
+                        <Grid item={true} xs={3}>
+                            {runsFailed}
+                        </Grid>
+                        <Grid item={true} xs={3}>
+                            {runsSuccess}
+                        </Grid>
+                    </Grid>
+                </Box>
             </Grid>
             <Grid item={true} xs={12}>
-                <TableContainer component={Paper}>
-                    <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Device</TableCell>
-                                <TableCell align="right">OS</TableCell>
-                                <TableCell align="right">Status</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {testRun?.Protocols.map((protocol) => (
-                                <TableRow key={protocol.ID} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell component="th" scope="row">
-                                        <Link href={`/test/${testRun?.TestID}/run/${testRun?.ID}/${protocol.ID}` } underline="none">
-                                            {protocol.Device.Name}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell align="right">{protocol.Device.OS} {protocol.Device.OSVersion}</TableCell>
-                                    <TableCell align="right">{getStatus(protocol)}</TableCell>
+                <Box component={Paper} sx={{m: 2}}>
+                    <TableContainer>
+                        <Table sx={{minWidth: 650}} size="small" aria-label="a dense table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Device</TableCell>
+                                    <TableCell align="right">OS</TableCell>
+                                    <TableCell align="right">Status</TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                            </TableHead>
+                            <TableBody>
+                                {testRun?.Protocols.map((protocol) => (
+                                    <TableRow key={protocol.ID}
+                                              sx={{'&:last-child td, &:last-child th': {border: 0}}}>
+                                        <TableCell component="th" scope="row">
+                                            <Link
+                                                href={`/test/${testRun?.TestID}/run/${testRun?.ID}/${protocol.ID}`}
+                                                underline="none">
+                                                {protocol.Device.Name}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell
+                                            align="right">{protocol.Device.OS} {protocol.Device.OSVersion}</TableCell>
+                                        <TableCell align="right">{getStatus(protocol)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
             </Grid>
         </Grid>
     );

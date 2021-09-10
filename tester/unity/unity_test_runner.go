@@ -24,6 +24,7 @@ type UnityTestRunner struct {
 	test           models.Test
 	config         models.TestConfig
 	protocolWriter *protocol.ProtocolWriter
+	fin            chan bool
 }
 
 func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *UnityTestRunner {
@@ -31,6 +32,7 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *UnityTestRunner
 		ip:            ip,
 		db:            db,
 		deviceManager: deviceManager,
+		fin:           make(chan bool, 1),
 	}
 }
 
@@ -84,7 +86,9 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		dev := d.Dev.(device.Device)
 		tr.logInfo("locking device: %s", dev.DeviceID())
 		if err := dev.Lock(); err == nil {
+			dev.SetActionHandler(tr)
 			defer func(dev device.Device) {
+				dev.SetActionHandler(nil)
 				_ = dev.Unlock()
 			}(dev)
 			devices = append(devices, dev)
@@ -202,6 +206,8 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 				Method:   t.Method,
 			})
 		}
+	} else {
+		tr.db.Where("test_config_unity_id = ?", tr.config.Unity.ID).Find(&testList)
 	}
 
 	// TestClass: "Innium.IntegrationTests.SmokeTests",
@@ -237,9 +243,35 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		}
 	}
 
-	// TODO wait for results
+	for {
+		select {
+		case blah := <-tr.fin:
+			{
+				if blah {
+					logrus.Debug("blubb")
+					break
+				}
+			}
+		}
+	}
 
 	return nil
+}
+
+func (tr *UnityTestRunner) OnActionResponse(d interface{}, response *action.Response) {
+	dev := d.(device.Device)
+	if response == nil {
+		tr.fin <- true
+		dev.Log("UnityTestRunner Device Disconnected")
+		return
+	}
+
+	dev.Log("UnityTestRunner Action Response: %v", response)
+	if response.ActionType == action.ActionType_Log {
+		if response.GetValue() == "End" {
+			tr.fin <- true
+		}
+	}
 }
 
 func (tr *UnityTestRunner) testSessionFinished() {

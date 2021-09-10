@@ -158,7 +158,7 @@ func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
 	_ = testId
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Log").Where("test_id = ?", testId).Order("id desc").First(&run).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Where("test_id = ?", testId).Order("id desc").First(&run).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

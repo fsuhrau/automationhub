@@ -2,6 +2,7 @@ package device
 
 import (
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/hub/action"
 	"net"
 	"time"
 )
@@ -16,11 +17,11 @@ type Device interface {
 
 	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error
-	UninstallApp(params *app.Parameter) error
+	UninstallApp(*app.Parameter) error
 	UpdateDeviceInfos() error
 
 	ConnectionTimeout() time.Duration
-	SetConnection(connection *Connection)
+	SetConnection(*Connection)
 	Connection() *Connection
 	IsAppConnected() bool
 
@@ -38,5 +39,9 @@ type Device interface {
 	Unlock() error
 	IsLocker() bool
 
-	SetLogWriter(writer LogWriter)
+	SetLogWriter(LogWriter)
+	Log(string, ...interface{})
+	Error(string, ...interface{})
+	ActionHandler() action.ActionHandler
+	SetActionHandler(action.ActionHandler)
 }

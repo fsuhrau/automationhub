@@ -366,45 +366,26 @@ func (dm *DeviceManager) StopObserver() {
 	dm.stop = true
 }
 
-func (dm *DeviceManager) SendBytes(dev device.Device, content []byte) ([]byte, error) {
+func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) error {
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
-		dm.log.WithField("prefix", "dm").Debugf("send message took %s content: %s", elapsed.String(), content)
+		dm.log.WithField("prefix", "dm").Debugf("send message took %s", elapsed.String())
 	}()
 
-	if dev.Connection() != nil {
-		dev.Connection().Send(content)
-		data := <-dev.Connection().ResponseChannel
-		resp := &action.Response{}
-		if err := proto.Unmarshal(data.Data, resp); err != nil {
-			dm.log.Errorf("SocketAccept ReadError: %v", err)
-		}
-		logrus.Infof("send bytes response: %v", resp)
-
-		/*
-			if data.Err == DeviceDisconnectedError {
-				session.HandleDisconnect()
-			}
-		*/
-		return data.Data, data.Err
-	}
-
-	return []byte{}, fmt.Errorf("device not connected")
-}
-
-func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) error {
 	dm.log.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
+
 	buf, err := act.Serialize()
 	if err != nil {
 		return fmt.Errorf("Could not marshal Action: %v", err)
 	}
-	response, err := dm.SendBytes(dev, buf)
-	if err != nil {
-		return err
-	}
-	dm.log.Debugf("Deserialize Action")
-	return act.Deserialize(response)
+
+	if dev.Connection() == nil {
+	return fmt.Errorf("device not connected")
+}
+
+	dev.Log("send action: %v", act)
+	return dev.Connection().Send(buf)
 }
 
 func (dm *DeviceManager) handleActions(d device.Device) {
@@ -420,15 +401,24 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 		select {
 		case data := <-d.Connection().ResponseChannel:
 			if data.Err == nil {
-				resp := &action.Response{}
-				_ = proto.Unmarshal(data.Data, resp)
-				if resp.ActionID != "" {
-
+				resp := action.Response{}
+				_ = proto.Unmarshal(data.Data, &resp)
+				if d.ActionHandler() != nil {
+					d.ActionHandler().OnActionResponse(d, &resp)
+				} else {
+					if resp.ActionID != "" {
+						d.Connection().ActionChannel <- resp
+					} else {
+						d.Log("Received: %v", resp.Payload)
+					}
 				}
 			}
 		case status := <-d.Connection().ConnectionStateChannel:
 			if status == device.Disconnected {
 				dm.log.Info("handleActions disconnect")
+				if d.ActionHandler() != nil {
+					d.ActionHandler().OnActionResponse(d, nil)
+				}
 				return
 			}
 		}

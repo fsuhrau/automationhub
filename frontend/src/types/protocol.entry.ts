@@ -3,7 +3,7 @@ export default interface IProtocolEntryData {
     TestProtocolID: number,
     Source: string,
     Level: string,
-    Info: string,
+    Message: string,
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,
