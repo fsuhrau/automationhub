@@ -384,8 +384,28 @@ func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) err
 	return fmt.Errorf("device not connected")
 }
 
-	dev.Log("send action: %v", act)
+	dev.Log("action", "send action: %v", act)
 	return dev.Connection().Send(buf)
+}
+
+func getTypeOfLog(logType action.LogType) string {
+	switch logType {
+	case action.LogType_Info:
+		return "info"
+	case action.LogType_Warning:
+		return "warn"
+	case action.LogType_Error:
+		return "error"
+	case action.LogType_Step:
+		return "step"
+	case action.LogType_Status:
+		return "status"
+	case action.LogType_Checkpoint:
+		return "checkpoint"
+	case action.LogType_Performance:
+		return "performance"
+	}
+	return ""
 }
 
 func (dm *DeviceManager) handleActions(d device.Device) {
@@ -404,12 +424,19 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 				resp := action.Response{}
 				_ = proto.Unmarshal(data.Data, &resp)
 				if d.ActionHandler() != nil {
+					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil{
+						if resp.GetLog().Type == action.LogType_Error {
+							d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
+						} else {
+							d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
+						}
+					}
 					d.ActionHandler().OnActionResponse(d, &resp)
 				} else {
 					if resp.ActionID != "" {
 						d.Connection().ActionChannel <- resp
 					} else {
-						d.Log("Received: %v", resp.Payload)
+						d.Log("action", "Received: %v", resp.Payload)
 					}
 				}
 			}

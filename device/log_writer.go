@@ -1,6 +1,6 @@
 package device
 
 type LogWriter interface {
-	Log(format string, params ...interface{})
-	Error(format string, params ...interface{})
+	Log(source, format string, params ...interface{})
+	Error(source, format string, params ...interface{})
 }

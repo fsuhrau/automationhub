@@ -39,12 +39,12 @@ func (e *testExecuter) Execute(dev device.Device, test action.TestStart, timeout
 		}
 	}(&finishWaitingGroup)
 	if err := e.devicesManager.SendAction(dev, &test); err != nil {
-		dev.Error(err.Error())
+		dev.Error("testrunner", err.Error())
 		return err
 	}
 
 	if err := finishWaitingGroup.WaitWithTimeout(timeout); err != nil {
-		dev.Error(err.Error())
+		dev.Error("testrunner", err.Error())
 		return err
 	}
 	return nil
@@ -54,11 +54,10 @@ func (tr *testExecuter) OnActionResponse(d interface{}, response *action.Respons
 	dev := d.(device.Device)
 	if response == nil {
 		tr.fin <- true
-		dev.Log("testsRunner Device Disconnected")
+		dev.Log("testrunner", "Device Disconnected")
 		return
 	}
 
-	dev.Log("testsRunner Action Response: %v", response)
 	if response.ActionType == action.ActionType_Log {
 		if response.GetValue() == "End" {
 			tr.fin <- true

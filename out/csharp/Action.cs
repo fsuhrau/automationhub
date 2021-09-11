@@ -50,37 +50,41 @@ namespace Com.AutomationHub {
             "EgoKc2NlZW5ncmFwaBgBIAEoDBISCgpzY3JlZW5zaG90GAIgASgMEigKC2Nv",
             "bnRlbnRUeXBlGAMgASgOMhMuYWN0aW9uLkNvbnRlbnRUeXBlIjcKBFRlc3QS",
             "EAoIYXNzZW1ibHkYASABKAkSDQoFY2xhc3MYAiABKAkSDgoGbWV0aG9kGAMg",
-            "ASgJIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9uLlRlc3QiggIK",
-            "CFJlc3BvbnNlEhAKCGFjdGlvbklEGAEgASgJEiYKCmFjdGlvblR5cGUYAiAB",
-            "KA4yEi5hY3Rpb24uQWN0aW9uVHlwZRIPCgdzdWNjZXNzGAMgASgIEhEKB3Zp",
-            "c2libGUYBCABKAhIABIOCgRkYXRhGAUgASgMSAASDwoFdmFsdWUYBiABKAlI",
-            "ABIoCgpzY3JlZW5zaG90GAcgASgLMhIuYWN0aW9uLlNjcmVlbnNob3RIABIi",
-            "Cgdjb25uZWN0GAggASgLMg8uYWN0aW9uLkNvbm5lY3RIABIeCgV0ZXN0cxgJ",
-            "IAEoCzINLmFjdGlvbi5UZXN0c0gAQgkKB3BheWxvYWQqkAIKFURldmljZUlu",
-            "dGVyYWN0aW9uVHlwZRIOCgpMb2NrRGV2aWNlEAASEAoMVW5sb2NrRGV2aWNl",
-            "EAESEgoOR2V0RGV2aWNlU3RhdGUQAhISCg5Jc0FwcEluc3RhbGxlZBADEg4K",
-            "Ckluc3RhbGxBcHAQBBIQCgxVbmluc3RhbGxBcHAQBRIMCghTdGFydEFwcBAG",
-            "EgsKB1N0b3BBcHAQBxISCg5Jc0FwcENvbm5lY3RlZBAIEhIKDlN0YXJ0UmVj",
-            "b3JkaW5nEAkSEQoNU3RvcFJlY29yZGluZxAKEg4KCkhhc0ZlYXR1cmUQCxIS",
-            "Cg5FeGVjdXRlRmVhdHVyZRAMEhEKDUdldFNjcmVlblNob3QQDSq0AgoKQWN0",
-            "aW9uVHlwZRIKCgZDdXN0b20QABIRCg1HZXRTY2VuZUdyYXBoEAESFgoSRWxl",
-            "bWVudElzRGlzcGxheWVkEAISEwoPRWxlbWVudFNldFZhbHVlEAMSEwoPRWxl",
-            "bWVudEdldFZhbHVlEAQSCAoETW92ZRAFEg0KCVRvdWNoRG93bhAGEg0KCVRv",
-            "dWNoTW92ZRAHEgsKB1RvdWNoVXAQCBIPCgtEcmFnQW5kRHJvcBAJEg0KCUxv",
-            "bmdUb3VjaBAKEhAKDEVsZW1lbnRUb3VjaBALEhEKDUdldFNjcmVlbnNob3QQ",
-            "DBIMCghHZXRUZXN0cxANEg8KC0V4ZWN1dGVUZXN0EA4SEwoPRXhlY3V0aW9u",
-            "U3RhdHVzEA8SBwoDTG9nEBASDgoKVW5pdHlSZXNldBARKjAKC0NvbnRlbnRU",
-            "eXBlEg4KCkZsYXRidWZmZXIQABIICgRKc29uEAESBwoDWG1sEAIqHwoHQXBw",
-            "VHlwZRIJCgVDb2NvcxAAEgkKBVVuaXR5EAEy3wEKDFJlbW90ZURldmljZRJB",
-            "CgpEZXZpY2VMaXN0EhUuYWN0aW9uLkRldmljZVJlcXVlc3QaFi5hY3Rpb24u",
-            "RGV2aWNlUmVzcG9uc2UiACgBMAESUgoRRGV2aWNlSW50ZXJhY3Rpb24SGi5h",
-            "Y3Rpb24uSW50ZXJhY3Rpb25SZXF1ZXN0GhsuYWN0aW9uLkludGVyYWN0aW9u",
-            "UmVzcG9uc2UiACgBMAESOAoNQWN0aW9uRXhlY3V0ZRIPLmFjdGlvbi5SZXF1",
-            "ZXN0GhAuYWN0aW9uLlJlc3BvbnNlIgAoATABQiBaCmh1Yi9hY3Rpb26qAhFD",
-            "b20uQXV0b21hdGlvbkh1YmIGcHJvdG8z"));
+            "ASgJIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9uLlRlc3QiOQoH",
+            "TG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5cGUSDwoHbWVz",
+            "c2FnZRgCIAEoCSKiAgoIUmVzcG9uc2USEAoIYWN0aW9uSUQYASABKAkSJgoK",
+            "YWN0aW9uVHlwZRgCIAEoDjISLmFjdGlvbi5BY3Rpb25UeXBlEg8KB3N1Y2Nl",
+            "c3MYAyABKAgSEQoHdmlzaWJsZRgEIAEoCEgAEg4KBGRhdGEYBSABKAxIABIP",
+            "CgV2YWx1ZRgGIAEoCUgAEigKCnNjcmVlbnNob3QYByABKAsyEi5hY3Rpb24u",
+            "U2NyZWVuc2hvdEgAEiIKB2Nvbm5lY3QYCCABKAsyDy5hY3Rpb24uQ29ubmVj",
+            "dEgAEh4KBXRlc3RzGAkgASgLMg0uYWN0aW9uLlRlc3RzSAASHgoDbG9nGAog",
+            "ASgLMg8uYWN0aW9uLkxvZ0RhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJ",
+            "bnRlcmFjdGlvblR5cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0Rldmlj",
+            "ZRABEhIKDkdldERldmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIO",
+            "CgpJbnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQ",
+            "BhILCgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJl",
+            "Y29yZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsS",
+            "EgoORXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIKCkFj",
+            "dGlvblR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVs",
+            "ZW1lbnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0Vs",
+            "ZW1lbnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglU",
+            "b3VjaE1vdmUQBxILCgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglM",
+            "b25nVG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90",
+            "EAwSDAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlv",
+            "blN0YXR1cxAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQESpiCgdMb2dUeXBl",
+            "EggKBEluZm8QABILCgdXYXJuaW5nEAESCQoFRXJyb3IQAhIICgRTdGVwEAMS",
+            "CgoGU3RhdHVzEAQSDgoKQ2hlY2twb2ludBAFEg8KC1BlcmZvcm1hbmNlEAYq",
+            "MAoLQ29udGVudFR5cGUSDgoKRmxhdGJ1ZmZlchAAEggKBEpzb24QARIHCgNY",
+            "bWwQAiofCgdBcHBUeXBlEgkKBUNvY29zEAASCQoFVW5pdHkQATLfAQoMUmVt",
+            "b3RlRGV2aWNlEkEKCkRldmljZUxpc3QSFS5hY3Rpb24uRGV2aWNlUmVxdWVz",
+            "dBoWLmFjdGlvbi5EZXZpY2VSZXNwb25zZSIAKAEwARJSChFEZXZpY2VJbnRl",
+            "cmFjdGlvbhIaLmFjdGlvbi5JbnRlcmFjdGlvblJlcXVlc3QaGy5hY3Rpb24u",
+            "SW50ZXJhY3Rpb25SZXNwb25zZSIAKAEwARI4Cg1BY3Rpb25FeGVjdXRlEg8u",
+            "YWN0aW9uLlJlcXVlc3QaEC5hY3Rpb24uUmVzcG9uc2UiACgBMAFCIFoKaHVi",
+            "L2FjdGlvbqoCEUNvbS5BdXRvbWF0aW9uSHViYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Device), global::Com.AutomationHub.Device.Parser, new[]{ "Manager", "DeviceId", "Name", "OperationSystem", "SupportedArchitectures", "Status" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.DeviceRequest), global::Com.AutomationHub.DeviceRequest.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.DeviceResponse), global::Com.AutomationHub.DeviceResponse.Parser, new[]{ "Devices" }, null, null, null),
@@ -96,7 +100,8 @@ namespace Com.AutomationHub {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Screenshot), global::Com.AutomationHub.Screenshot.Parser, new[]{ "Sceengraph", "Screenshot_", "ContentType" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Test), global::Com.AutomationHub.Test.Parser, new[]{ "Assembly", "Class", "Method" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Tests), global::Com.AutomationHub.Tests.Parser, new[]{ "Tests_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests" }, new[]{ "Payload" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.LogData), global::Com.AutomationHub.LogData.Parser, new[]{ "Type", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests", "Log" }, new[]{ "Payload" }, null, null)
           }));
     }
     #endregion
@@ -139,6 +144,16 @@ namespace Com.AutomationHub {
     [pbr::OriginalName("ExecutionStatus")] ExecutionStatus = 15,
     [pbr::OriginalName("Log")] Log = 16,
     [pbr::OriginalName("UnityReset")] UnityReset = 17,
+  }
+
+  public enum LogType {
+    [pbr::OriginalName("Info")] Info = 0,
+    [pbr::OriginalName("Warning")] Warning = 1,
+    [pbr::OriginalName("Error")] Error = 2,
+    [pbr::OriginalName("Step")] Step = 3,
+    [pbr::OriginalName("Status")] Status = 4,
+    [pbr::OriginalName("Checkpoint")] Checkpoint = 5,
+    [pbr::OriginalName("Performance")] Performance = 6,
   }
 
   public enum ContentType {
@@ -2983,6 +2998,163 @@ namespace Com.AutomationHub {
 
   }
 
+  public sealed partial class LogData : pb::IMessage<LogData> {
+    private static readonly pb::MessageParser<LogData> _parser = new pb::MessageParser<LogData>(() => new LogData());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<LogData> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[15]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LogData() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LogData(LogData other) : this() {
+      type_ = other.type_;
+      message_ = other.message_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public LogData Clone() {
+      return new LogData(this);
+    }
+
+    /// <summary>Field number for the "type" field.</summary>
+    public const int TypeFieldNumber = 1;
+    private global::Com.AutomationHub.LogType type_ = global::Com.AutomationHub.LogType.Info;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Com.AutomationHub.LogType Type {
+      get { return type_; }
+      set {
+        type_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "message" field.</summary>
+    public const int MessageFieldNumber = 2;
+    private string message_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Message {
+      get { return message_; }
+      set {
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as LogData);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(LogData other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Type != other.Type) return false;
+      if (Message != other.Message) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Type != global::Com.AutomationHub.LogType.Info) hash ^= Type.GetHashCode();
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Type != global::Com.AutomationHub.LogType.Info) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Type);
+      }
+      if (Message.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Message);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Type != global::Com.AutomationHub.LogType.Info) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
+      }
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(LogData other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Type != global::Com.AutomationHub.LogType.Info) {
+        Type = other.Type;
+      }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Type = (global::Com.AutomationHub.LogType) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            Message = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class Response : pb::IMessage<Response> {
     private static readonly pb::MessageParser<Response> _parser = new pb::MessageParser<Response>(() => new Response());
     private pb::UnknownFieldSet _unknownFields;
@@ -2991,7 +3163,7 @@ namespace Com.AutomationHub {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3029,6 +3201,9 @@ namespace Com.AutomationHub {
           break;
         case PayloadOneofCase.Tests:
           Tests = other.Tests.Clone();
+          break;
+        case PayloadOneofCase.Log:
+          Log = other.Log.Clone();
           break;
       }
 
@@ -3139,6 +3314,17 @@ namespace Com.AutomationHub {
       }
     }
 
+    /// <summary>Field number for the "log" field.</summary>
+    public const int LogFieldNumber = 10;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Com.AutomationHub.LogData Log {
+      get { return payloadCase_ == PayloadOneofCase.Log ? (global::Com.AutomationHub.LogData) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.Log;
+      }
+    }
+
     private object payload_;
     /// <summary>Enum of possible cases for the "payload" oneof.</summary>
     public enum PayloadOneofCase {
@@ -3149,6 +3335,7 @@ namespace Com.AutomationHub {
       Screenshot = 7,
       Connect = 8,
       Tests = 9,
+      Log = 10,
     }
     private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3184,6 +3371,7 @@ namespace Com.AutomationHub {
       if (!object.Equals(Screenshot, other.Screenshot)) return false;
       if (!object.Equals(Connect, other.Connect)) return false;
       if (!object.Equals(Tests, other.Tests)) return false;
+      if (!object.Equals(Log, other.Log)) return false;
       if (PayloadCase != other.PayloadCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -3200,6 +3388,7 @@ namespace Com.AutomationHub {
       if (payloadCase_ == PayloadOneofCase.Screenshot) hash ^= Screenshot.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Connect) hash ^= Connect.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Tests) hash ^= Tests.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.Log) hash ^= Log.GetHashCode();
       hash ^= (int) payloadCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -3250,6 +3439,10 @@ namespace Com.AutomationHub {
         output.WriteRawTag(74);
         output.WriteMessage(Tests);
       }
+      if (payloadCase_ == PayloadOneofCase.Log) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Log);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3284,6 +3477,9 @@ namespace Com.AutomationHub {
       }
       if (payloadCase_ == PayloadOneofCase.Tests) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Tests);
+      }
+      if (payloadCase_ == PayloadOneofCase.Log) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Log);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3332,6 +3528,12 @@ namespace Com.AutomationHub {
             Tests = new global::Com.AutomationHub.Tests();
           }
           Tests.MergeFrom(other.Tests);
+          break;
+        case PayloadOneofCase.Log:
+          if (Log == null) {
+            Log = new global::Com.AutomationHub.LogData();
+          }
+          Log.MergeFrom(other.Log);
           break;
       }
 
@@ -3395,6 +3597,15 @@ namespace Com.AutomationHub {
             }
             input.ReadMessage(subBuilder);
             Tests = subBuilder;
+            break;
+          }
+          case 82: {
+            global::Com.AutomationHub.LogData subBuilder = new global::Com.AutomationHub.LogData();
+            if (payloadCase_ == PayloadOneofCase.Log) {
+              subBuilder.MergeFrom(Log);
+            }
+            input.ReadMessage(subBuilder);
+            Log = subBuilder;
             break;
           }
         }

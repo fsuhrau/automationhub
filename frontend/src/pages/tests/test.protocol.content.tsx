@@ -151,10 +151,10 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                 <Toolbar>
                     <Grid container={true} spacing={2} alignItems="center">
                         <Grid item={true}>
-                            <TestStatusIconComponent classes={classes} status={protocol?.TestResult} />
+                            <TestStatusIconComponent status={protocol?.TestResult} />
                         </Grid>
                         <Grid item={true}>
-                            <TestStatusTextComponent classes={classes} status={protocol?.TestResult} />
+                            <TestStatusTextComponent status={protocol?.TestResult} />
                         </Grid>
                         <Grid item={true}>
                             <DateRange className={classes.block} color="inherit"/>

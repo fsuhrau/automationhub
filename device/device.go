@@ -40,8 +40,8 @@ type Device interface {
 	IsLocker() bool
 
 	SetLogWriter(LogWriter)
-	Log(string, ...interface{})
-	Error(string, ...interface{})
+	Log(string, string, ...interface{})
+	Error(string, string, ...interface{})
 	ActionHandler() action.ActionHandler
 	SetActionHandler(action.ActionHandler)
 }

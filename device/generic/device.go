@@ -21,9 +21,9 @@ type Device struct {
 
 func (d *Device) SetConnection(connection *device.Connection) {
 	if connection != nil {
-		d.Log("Device Connected: DeviceID: %s SessionID: %v AppType: %v, Version: %s", connection.ConnectionParameter.DeviceID, connection.ConnectionParameter.SessionID, connection.ConnectionParameter.AppType, connection.ConnectionParameter.Version)
+		d.Log("device", "Device Connected: DeviceID: %s SessionID: %v AppType: %v, Version: %s", connection.ConnectionParameter.DeviceID, connection.ConnectionParameter.SessionID, connection.ConnectionParameter.AppType, connection.ConnectionParameter.Version)
 	} else {
-		d.Log("Device Disconnected")
+		d.Log("device", "Device Disconnected")
 	}
 	d.con = connection
 }
@@ -56,17 +56,17 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
-func (d *Device) Log(format string, params ...interface{}) {
+func (d *Device) Log(source, format string, params ...interface{}) {
 	logrus.Infof(format, params...)
 	if d.writer != nil {
-		d.writer.Log(format, params...)
+		d.writer.Log(source, format, params...)
 	}
 }
 
-func (d *Device) Error(format string, params ...interface{}) {
+func (d *Device) Error(source, format string, params ...interface{}) {
 	logrus.Errorf(format, params...)
 	if d.writer != nil {
-		d.writer.Error(format, params...)
+		d.writer.Error(source, format, params...)
 	}
 }
 

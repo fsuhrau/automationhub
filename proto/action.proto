@@ -98,6 +98,16 @@ enum ActionType {
   UnityReset = 17;
 }
 
+enum LogType {
+  Info = 0;
+  Warning = 1;
+  Error = 2;
+  Step = 3;
+  Status = 4;
+  Checkpoint = 5;
+  Performance = 6;
+}
+
 enum ContentType {
   Flatbuffer = 0;
   Json = 1;
@@ -149,6 +159,11 @@ message Tests {
   repeated Test tests = 1;
 }
 
+message LogData {
+  LogType type = 1;
+  string message = 2;
+}
+
 message Response {
   string actionID = 1;
   ActionType actionType = 2;
@@ -160,5 +175,6 @@ message Response {
     Screenshot screenshot = 7;
     Connect connect = 8;
     Tests tests = 9;
+    LogData log = 10;
   }
 }

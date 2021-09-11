@@ -33,7 +33,7 @@ func (w *ProtocolWriter) NewProtocol(deviceID uint, appID uint) (*LogWriter, err
 		return nil, err
 	}
 
-	writer := NewLogWriter(w.db, "device", protocol.ID)
+	writer := NewLogWriter(w.db, protocol.ID)
 
 	w.protocols = append(w.protocols, logProtocol{protocol, writer})
 

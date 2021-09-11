@@ -97,7 +97,7 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 		isAppInstalled = hash == params.Hash
 	}
 	installed, err := android.IsAppInstalled(d.deviceID, params)
-	d.Log("App '%s' is installed: %t", params.Identifier, installed)
+	d.Log("device","App '%s' is installed: %t", params.Identifier, installed)
 	return installed && isAppInstalled, err
 }
 
@@ -112,7 +112,7 @@ func (d *Device) UpdateDeviceInfos() error {
 
 func (d *Device) InstallApp(params *app.Parameter) error {
 
-	d.Log("Install App '%s'", params.Identifier)
+	d.Log("device","Install App '%s'", params.Identifier)
 
 	isApkDebuggable := isDebuggablePackage(params.AppPath)
 
@@ -146,7 +146,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	d.Log("Uninstall App '%s'", params.Identifier)
+	d.Log("device","Uninstall App '%s'", params.Identifier)
 
 	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "uninstall", params.Identifier)
 	if err := cmd.Run(); err != nil {
@@ -157,7 +157,7 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) unlockScreen() error {
-	d.Log("Unlock Screen")
+	d.Log("device", "Unlock Screen")
 
 	isAwake, err := d.IsAwake()
 	if err != nil {
@@ -186,7 +186,7 @@ func (d *Device) unlockScreen() error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	d.Log("Start App '%s' with Session: '%s'", params.Identifier, sessionId)
+	d.Log("device","Start App '%s' with Session: '%s'", params.Identifier, sessionId)
 
 	if err := d.unlockScreen(); err != nil {
 		return err
@@ -199,7 +199,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	d.Log("Stop App '%s'", params.Identifier)
+	d.Log("device","Stop App '%s'", params.Identifier)
 
 	if viper.GetBool("restart") {
 		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
@@ -213,7 +213,7 @@ func (d *Device) IsAppConnected() bool {
 }
 
 func (d *Device) StartRecording(path string) error {
-	d.Log("Start Recording Session")
+	d.Log("device","Start Recording Session")
 	d.testRecordingPath = fmt.Sprintf("./%s.mp4", path)
 	d.recordingSession = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screenrecord", "--verbose", "/data/local/tmp/automation_hub_record.mp4")
 	if err := d.recordingSession.Start(); err != nil {
@@ -223,7 +223,7 @@ func (d *Device) StartRecording(path string) error {
 }
 
 func (d *Device) StopRecording() error {
-	d.Log("Stop Recording Session")
+	d.Log("device","Stop Recording Session")
 	if d.recordingSession != nil && d.recordingSession.Process != nil {
 		if err := d.recordingSession.Process.Signal(os.Interrupt); err != nil {
 			return err
@@ -269,7 +269,7 @@ func (d *Device) IsAwake() (bool, error) {
 }
 
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
-	d.Log("Get Native Screenshot")
+	d.Log("device","Get Native Screenshot")
 	fileName := fmt.Sprintf("%s.png", d.deviceID)
 	var width int
 	var height int
@@ -320,7 +320,7 @@ func (d *Device) HasFeature(feature string) bool {
 }
 
 func (d *Device) Execute(feature string) {
-	d.Log("Execute Feature: '%s'", feature)
+	d.Log("device","Execute Feature: '%s'", feature)
 	features := map[string]func(d *Device){
 		"back": func(d *Device) {
 			d.pressKey(KEYCODE_BACK)
@@ -332,7 +332,7 @@ func (d *Device) Execute(feature string) {
 }
 
 func (d *Device) Tap(x, y int64) error {
-	d.Log("Execute Tap: %d,%d", x, y)
+	d.Log("device","Execute Tap: %d,%d", x, y)
 	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
 	return cmd.Run()
 }

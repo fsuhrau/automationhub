@@ -225,7 +225,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		case models.SynchronousExecutionType:
 			for _, d := range devices {
 				executer := NewExecuter(tr.deviceManager)
-				tr.logInfo("Run test '%s/%s' on device '%s'", t.Class, t.Method, d.DeviceID())
+				tr.logInfo("Run test '%s' on device '%s'", t.Class, d.DeviceID())
 				if err := executer.Execute(d, a, 5 * time.Minute); err != nil {
 					tr.logError("sync send action failed: %v", err)
 					return fmt.Errorf("sync send action failed: %v", err)

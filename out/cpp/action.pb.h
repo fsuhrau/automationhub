@@ -48,7 +48,7 @@ struct TableStruct_action_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[16]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[17]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -77,6 +77,9 @@ extern InteractionRequestDefaultTypeInternal _InteractionRequest_default_instanc
 class InteractionResponse;
 class InteractionResponseDefaultTypeInternal;
 extern InteractionResponseDefaultTypeInternal _InteractionResponse_default_instance_;
+class LogData;
+class LogDataDefaultTypeInternal;
+extern LogDataDefaultTypeInternal _LogData_default_instance_;
 class MoveElement;
 class MoveElementDefaultTypeInternal;
 extern MoveElementDefaultTypeInternal _MoveElement_default_instance_;
@@ -113,6 +116,7 @@ template<> ::action::DeviceResponse* Arena::CreateMaybeMessage<::action::DeviceR
 template<> ::action::GetAttr* Arena::CreateMaybeMessage<::action::GetAttr>(Arena*);
 template<> ::action::InteractionRequest* Arena::CreateMaybeMessage<::action::InteractionRequest>(Arena*);
 template<> ::action::InteractionResponse* Arena::CreateMaybeMessage<::action::InteractionResponse>(Arena*);
+template<> ::action::LogData* Arena::CreateMaybeMessage<::action::LogData>(Arena*);
 template<> ::action::MoveElement* Arena::CreateMaybeMessage<::action::MoveElement>(Arena*);
 template<> ::action::MoveOffset* Arena::CreateMaybeMessage<::action::MoveOffset>(Arena*);
 template<> ::action::Request* Arena::CreateMaybeMessage<::action::Request>(Arena*);
@@ -202,6 +206,36 @@ inline bool ActionType_Parse(
     const std::string& name, ActionType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<ActionType>(
     ActionType_descriptor(), name, value);
+}
+enum LogType : int {
+  Info = 0,
+  Warning = 1,
+  Error = 2,
+  Step = 3,
+  Status = 4,
+  Checkpoint = 5,
+  Performance = 6,
+  LogType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
+  LogType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
+};
+bool LogType_IsValid(int value);
+constexpr LogType LogType_MIN = Info;
+constexpr LogType LogType_MAX = Performance;
+constexpr int LogType_ARRAYSIZE = LogType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* LogType_descriptor();
+template<typename T>
+inline const std::string& LogType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, LogType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function LogType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    LogType_descriptor(), enum_t_value);
+}
+inline bool LogType_Parse(
+    const std::string& name, LogType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<LogType>(
+    LogType_descriptor(), name, value);
 }
 enum ContentType : int {
   Flatbuffer = 0,
@@ -2777,6 +2811,152 @@ class Tests :
 };
 // -------------------------------------------------------------------
 
+class LogData :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.LogData) */ {
+ public:
+  LogData();
+  virtual ~LogData();
+
+  LogData(const LogData& from);
+  LogData(LogData&& from) noexcept
+    : LogData() {
+    *this = ::std::move(from);
+  }
+
+  inline LogData& operator=(const LogData& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline LogData& operator=(LogData&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const LogData& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const LogData* internal_default_instance() {
+    return reinterpret_cast<const LogData*>(
+               &_LogData_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    15;
+
+  friend void swap(LogData& a, LogData& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(LogData* other) {
+    if (other == this) return;
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline LogData* New() const final {
+    return CreateMaybeMessage<LogData>(nullptr);
+  }
+
+  LogData* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<LogData>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const LogData& from);
+  void MergeFrom(const LogData& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* InternalSerializeWithCachedSizesToArray(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(LogData* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "action.LogData";
+  }
+  private:
+  inline ::PROTOBUF_NAMESPACE_ID::Arena* GetArenaNoVirtual() const {
+    return nullptr;
+  }
+  inline void* MaybeArenaPtr() const {
+    return nullptr;
+  }
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_action_2eproto);
+    return ::descriptor_table_action_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 2,
+    kTypeFieldNumber = 1,
+  };
+  // string message = 2;
+  void clear_message();
+  const std::string& message() const;
+  void set_message(const std::string& value);
+  void set_message(std::string&& value);
+  void set_message(const char* value);
+  void set_message(const char* value, size_t size);
+  std::string* mutable_message();
+  std::string* release_message();
+  void set_allocated_message(std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // .action.LogType type = 1;
+  void clear_type();
+  ::action::LogType type() const;
+  void set_type(::action::LogType value);
+  private:
+  ::action::LogType _internal_type() const;
+  void _internal_set_type(::action::LogType value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:action.LogData)
+ private:
+  class _Internal;
+
+  ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  int type_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_action_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Response :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.Response) */ {
  public:
@@ -2820,6 +3000,7 @@ class Response :
     kScreenshot = 7,
     kConnect = 8,
     kTests = 9,
+    kLog = 10,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -2829,7 +3010,7 @@ class Response :
                &_Response_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    16;
 
   friend void swap(Response& a, Response& b) {
     a.Swap(&b);
@@ -2902,6 +3083,7 @@ class Response :
     kScreenshotFieldNumber = 7,
     kConnectFieldNumber = 8,
     kTestsFieldNumber = 9,
+    kLogFieldNumber = 10,
   };
   // string actionID = 1;
   void clear_actionid();
@@ -3032,6 +3214,21 @@ class Response :
   ::action::Tests* _internal_mutable_tests();
   public:
 
+  // .action.LogData log = 10;
+  bool has_log() const;
+  private:
+  bool _internal_has_log() const;
+  public:
+  void clear_log();
+  const ::action::LogData& log() const;
+  ::action::LogData* release_log();
+  ::action::LogData* mutable_log();
+  void set_allocated_log(::action::LogData* log);
+  private:
+  const ::action::LogData& _internal_log() const;
+  ::action::LogData* _internal_mutable_log();
+  public:
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:action.Response)
@@ -3043,6 +3240,7 @@ class Response :
   void set_has_screenshot();
   void set_has_connect();
   void set_has_tests();
+  void set_has_log();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -3059,6 +3257,7 @@ class Response :
     ::action::Screenshot* screenshot_;
     ::action::Connect* connect_;
     ::action::Tests* tests_;
+    ::action::LogData* log_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   ::PROTOBUF_NAMESPACE_ID::uint32 _oneof_case_[1];
@@ -5437,6 +5636,90 @@ Tests::tests() const {
 
 // -------------------------------------------------------------------
 
+// LogData
+
+// .action.LogType type = 1;
+inline void LogData::clear_type() {
+  type_ = 0;
+}
+inline ::action::LogType LogData::_internal_type() const {
+  return static_cast< ::action::LogType >(type_);
+}
+inline ::action::LogType LogData::type() const {
+  // @@protoc_insertion_point(field_get:action.LogData.type)
+  return _internal_type();
+}
+inline void LogData::_internal_set_type(::action::LogType value) {
+  
+  type_ = value;
+}
+inline void LogData::set_type(::action::LogType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:action.LogData.type)
+}
+
+// string message = 2;
+inline void LogData::clear_message() {
+  message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& LogData::message() const {
+  // @@protoc_insertion_point(field_get:action.LogData.message)
+  return _internal_message();
+}
+inline void LogData::set_message(const std::string& value) {
+  _internal_set_message(value);
+  // @@protoc_insertion_point(field_set:action.LogData.message)
+}
+inline std::string* LogData::mutable_message() {
+  // @@protoc_insertion_point(field_mutable:action.LogData.message)
+  return _internal_mutable_message();
+}
+inline const std::string& LogData::_internal_message() const {
+  return message_.GetNoArena();
+}
+inline void LogData::_internal_set_message(const std::string& value) {
+  
+  message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void LogData::set_message(std::string&& value) {
+  
+  message_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:action.LogData.message)
+}
+inline void LogData::set_message(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:action.LogData.message)
+}
+inline void LogData::set_message(const char* value, size_t size) {
+  
+  message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:action.LogData.message)
+}
+inline std::string* LogData::_internal_mutable_message() {
+  
+  return message_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* LogData::release_message() {
+  // @@protoc_insertion_point(field_release:action.LogData.message)
+  
+  return message_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void LogData::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    
+  } else {
+    
+  }
+  message_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), message);
+  // @@protoc_insertion_point(field_set_allocated:action.LogData.message)
+}
+
+// -------------------------------------------------------------------
+
 // Response
 
 // string actionID = 1;
@@ -5920,6 +6203,56 @@ inline ::action::Tests* Response::mutable_tests() {
   return _internal_mutable_tests();
 }
 
+// .action.LogData log = 10;
+inline bool Response::_internal_has_log() const {
+  return payload_case() == kLog;
+}
+inline bool Response::has_log() const {
+  return _internal_has_log();
+}
+inline void Response::set_has_log() {
+  _oneof_case_[0] = kLog;
+}
+inline void Response::clear_log() {
+  if (_internal_has_log()) {
+    delete payload_.log_;
+    clear_has_payload();
+  }
+}
+inline ::action::LogData* Response::release_log() {
+  // @@protoc_insertion_point(field_release:action.Response.log)
+  if (has_log()) {
+    clear_has_payload();
+      ::action::LogData* temp = payload_.log_;
+    payload_.log_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::action::LogData& Response::_internal_log() const {
+  return _internal_has_log()
+      ? *payload_.log_
+      : *reinterpret_cast< ::action::LogData*>(&::action::_LogData_default_instance_);
+}
+inline const ::action::LogData& Response::log() const {
+  // @@protoc_insertion_point(field_get:action.Response.log)
+  return _internal_log();
+}
+inline ::action::LogData* Response::_internal_mutable_log() {
+  if (!_internal_has_log()) {
+    clear_payload();
+    set_has_log();
+    payload_.log_ = CreateMaybeMessage< ::action::LogData >(
+        GetArenaNoVirtual());
+  }
+  return payload_.log_;
+}
+inline ::action::LogData* Response::mutable_log() {
+  // @@protoc_insertion_point(field_mutable:action.Response.log)
+  return _internal_mutable_log();
+}
+
 inline bool Response::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -5932,6 +6265,8 @@ inline Response::PayloadCase Response::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
@@ -5978,6 +6313,11 @@ template <> struct is_proto_enum< ::action::ActionType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::action::ActionType>() {
   return ::action::ActionType_descriptor();
+}
+template <> struct is_proto_enum< ::action::LogType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::action::LogType>() {
+  return ::action::LogType_descriptor();
 }
 template <> struct is_proto_enum< ::action::ContentType> : ::std::true_type {};
 template <>
