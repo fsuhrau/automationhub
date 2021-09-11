@@ -10,7 +10,7 @@ import ITestProtocolData from '../../types/test.protocol';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { AvTimer, Cancel, CheckCircle, DateRange } from '@material-ui/icons';
+import { AvTimer, DateRange } from '@material-ui/icons';
 import { Box, Button, Tab, Tabs } from '@material-ui/core';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
@@ -20,6 +20,8 @@ import TableBody from '@material-ui/core/TableBody';
 import Moment from 'react-moment';
 import moment from 'moment';
 import IProtocolEntryData from '../../types/protocol.entry';
+import TestStatusIconComponent from '../../components/test-status-icon-component';
+import TestStatusTextComponent from '../../components/test-status-text-component';
 
 
 interface TabPanelProps {
@@ -149,16 +151,11 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                 <Toolbar>
                     <Grid container={true} spacing={2} alignItems="center">
                         <Grid item={true}>
-                            {protocol?.TestResult == TestResultState.TestResultSuccess ?
-                                <CheckCircle className={classes.block} htmlColor="green"/> :
-                                <Cancel className={classes.block} color="error"/>}
+                            <TestStatusIconComponent classes={classes} status={protocol?.TestResult} />
                         </Grid>
                         <Grid item={true}>
-                            {protocol?.TestResult == TestResultState.TestResultSuccess ?
-                                <Typography color="primary">Success</Typography> :
-                                <Typography color="error">Failed</Typography>}
+                            <TestStatusTextComponent classes={classes} status={protocol?.TestResult} />
                         </Grid>
-
                         <Grid item={true}>
                             <DateRange className={classes.block} color="inherit"/>
                         </Grid>

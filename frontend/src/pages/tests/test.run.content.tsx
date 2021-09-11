@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
-import ITestProtocolData from '../../types/test.protocol';
+import TestStatusIconComponent from '../../components/test-status-icon-component';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -49,11 +49,6 @@ const TestRun: FC<TestRunProps> = (props) => {
     const [runsUnstable, setRunsUnstable] = useState<number>();
     const [runsFailed, setRunsFailed] = useState<number>();
     const [runsSuccess, setRunsSuccess] = useState<number>();
-
-
-    function getStatus(protocol: ITestProtocolData): string {
-        return TestResultState[protocol.TestResult];
-    }
 
     function rebuildStatistics(run: ITestRunData): void {
         let ro: number;
@@ -156,7 +151,9 @@ const TestRun: FC<TestRunProps> = (props) => {
                                         </TableCell>
                                         <TableCell
                                             align="right">{protocol.Device.OS} {protocol.Device.OSVersion}</TableCell>
-                                        <TableCell align="right">{getStatus(protocol)}</TableCell>
+                                        <TableCell align="right">
+                                            <TestStatusIconComponent status={protocol.TestResult} />
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
