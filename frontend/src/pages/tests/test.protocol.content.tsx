@@ -180,10 +180,11 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                             onChange={handleChange}
                         >
                             <Tab label="Status" {...a11yProps(0)} />
-                            <Tab label="Logs" {...a11yProps(1)} />
-                            <Tab label="Screenshots" {...a11yProps(2)} />
-                            <Tab label="Video/Replay" {...a11yProps(3)} />
-                            <Tab label="Performance" {...a11yProps(4)} />
+                            <Tab label="Executer" {...a11yProps(1)} />
+                            <Tab label="Logs" {...a11yProps(2)} />
+                            <Tab label="Screenshots" {...a11yProps(3)} />
+                            <Tab label="Video/Replay" {...a11yProps(4)} />
+                            <Tab label="Performance" {...a11yProps(5)} />
                         </Tabs>
                     </Box>
                 </AppBar>
@@ -281,6 +282,26 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                     </Grid>
                 </TabPanel>
                 <TabPanel value={value} index={1}>
+                    <Table className={classes.table} size="small" aria-label="a dense table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Date</TableCell>
+                                <TableCell>Level</TableCell>
+                                <TableCell>Log</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {run?.Log?.map((entry) => <TableRow key={entry.ID}>
+                                <TableCell component="th" scope="row">
+                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
+                                </TableCell>
+                                <TableCell>{entry.Level}</TableCell>
+                                <TableCell>{entry.Log}</TableCell>
+                            </TableRow>)}
+                        </TableBody>
+                    </Table>
+                </TabPanel>
+                <TabPanel value={value} index={2}>
                     missing filter options
                     <Table className={classes.table} size="small" aria-label="a dense table">
                         <TableHead>
@@ -303,13 +324,13 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                         </TableBody>
                     </Table>
                 </TabPanel>
-                <TabPanel value={value} index={2}>
+                <TabPanel value={value} index={3}>
                     screenshots?
                 </TabPanel>
-                <TabPanel value={value} index={3}>
+                <TabPanel value={value} index={4}>
                     Video
                 </TabPanel>
-                <TabPanel value={value} index={4}>
+                <TabPanel value={value} index={5}>
                     Performance
                 </TabPanel>
             </Box>
