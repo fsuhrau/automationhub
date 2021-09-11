@@ -12,6 +12,8 @@ import ITestData from '../types/test';
 import TestDataService from '../services/test.service';
 import { Button, Link } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
+import TestStatusIconComponent from './test-status-icon-component';
+import { TestResultState } from '../types/test.result.state.enum';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -62,6 +64,35 @@ const TestsTable: FC<TestProps> = (props) => {
         });
     };
 
+    const getTestStatus = (test: ITestData): TestResultState => {
+        if (test.TestRuns == null) {
+            return TestResultState.TestResultOpen;
+        }
+
+        const lastRun = test.TestRuns[test.TestRuns.length - 1];
+        return lastRun.TestResult;
+    };
+
+    const getDevices = (test: ITestData): number => {
+        // todo number of devices from test configuration
+        if (test.TestRuns == null) {
+            return 0;
+        }
+
+        const lastRun = test.TestRuns[test.TestRuns.length - 1];
+        return lastRun.Protocols.length;
+    };
+
+    const getNumberOfTests = (test: ITestData): number => {
+        // todo number of devices from test configuration
+        if (test.TestRuns == null) {
+            return 0;
+        }
+
+        const lastRun = test.TestRuns[test.TestRuns.length - 1];
+        return lastRun.Protocols.length;
+    };
+
     return (
         <TableContainer component={Paper}>
             <Table className={classes.table} size="small" aria-label="a dense table">
@@ -84,8 +115,8 @@ const TestsTable: FC<TestProps> = (props) => {
                         </TableCell>
                         <TableCell align="right">{typeString(test.TestConfig.Type)}</TableCell>
                         <TableCell align="right">{executionString(test.TestConfig.ExecutionType)}</TableCell>
-                        <TableCell align="right">0</TableCell>
-                        <TableCell align="right"/>
+                        <TableCell align="right">{getDevices(test)}</TableCell>
+                        <TableCell align="right"><TestStatusIconComponent status={getTestStatus(test)}/></TableCell>
                         <TableCell align="right">
                             <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [2], e)}>
                                 Run
