@@ -222,7 +222,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                                             <Typography gutterBottom={true} variant="body2" color="textSecondary">
                                                 Execution
                                             </Typography>
-                                            <Typography variant="h5" component="h5">
+                                            <Typography variant="h5" component="h5" style={{whiteSpace: "nowrap"}}>
                                                 {getDuration(protocol)}
                                             </Typography>
                                         </Grid>
@@ -292,7 +292,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                         </TableHead>
                         <TableBody>
                             {run?.Log?.map((entry) => <TableRow key={entry.ID}>
-                                <TableCell component="th" scope="row">
+                                <TableCell component="th" scope="row" style={{whiteSpace: "nowrap"}}>
                                     <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
                                 </TableCell>
                                 <TableCell>{entry.Level}</TableCell>
@@ -314,7 +314,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                         </TableHead>
                         <TableBody>
                             {protocol?.Entries?.map((entry) => <TableRow key={entry.ID}>
-                                <TableCell component="th" scope="row">
+                                <TableCell component="th" scope="row" style={{whiteSpace: "nowrap"}}>
                                     <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
                                 </TableCell>
                                 <TableCell>{entry.Source}</TableCell>
