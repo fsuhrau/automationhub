@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-type UnityTestRunner struct {
+type testsRunner struct {
 	base.TestRunner
 	deviceManager  manager.Devices
 	ip             net.IP
@@ -27,8 +27,8 @@ type UnityTestRunner struct {
 	fin            chan bool
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *UnityTestRunner {
-	return &UnityTestRunner{
+func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *testsRunner {
+	return &testsRunner{
 		ip:            ip,
 		db:            db,
 		deviceManager: deviceManager,
@@ -36,7 +36,7 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *UnityTestRunner
 	}
 }
 
-func (tr *UnityTestRunner) Initialize(test models.Test) error {
+func (tr *testsRunner) Initialize(test models.Test) error {
 	if test.TestConfig.Type != models.TestTypeUnity {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
@@ -45,7 +45,7 @@ func (tr *UnityTestRunner) Initialize(test models.Test) error {
 	return nil
 }
 
-func (tr *UnityTestRunner) newTestSession() error {
+func (tr *testsRunner) newTestSession() error {
 	sessionID := tr.NewSessionID()
 	run := &models.TestRun{
 		TestID:    tr.test.ID,
@@ -59,7 +59,7 @@ func (tr *UnityTestRunner) newTestSession() error {
 	return nil
 }
 
-func (tr *UnityTestRunner) logInfo(format string, params ...interface{}) {
+func (tr *testsRunner) logInfo(format string, params ...interface{}) {
 	tr.db.Create(&models.TestRunLogEntry{
 		TestRunID: tr.protocolWriter.RunID(),
 		Level:     "log",
@@ -67,7 +67,7 @@ func (tr *UnityTestRunner) logInfo(format string, params ...interface{}) {
 	})
 }
 
-func (tr *UnityTestRunner) logError(format string, params ...interface{}) {
+func (tr *testsRunner) logError(format string, params ...interface{}) {
 	tr.db.Create(&models.TestRunLogEntry{
 		TestRunID: tr.protocolWriter.RunID(),
 		Level:     "error",
@@ -75,7 +75,7 @@ func (tr *UnityTestRunner) logError(format string, params ...interface{}) {
 	})
 }
 
-func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
+func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	if err := tr.newTestSession(); err != nil {
 		return err
 	}
@@ -86,9 +86,7 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		dev := d.Dev.(device.Device)
 		tr.logInfo("locking device: %s", dev.DeviceID())
 		if err := dev.Lock(); err == nil {
-			dev.SetActionHandler(tr)
 			defer func(dev device.Device) {
-				dev.SetActionHandler(nil)
 				_ = dev.Unlock()
 			}(dev)
 			devices = append(devices, dev)
@@ -187,7 +185,7 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 			}(tr.deviceManager, appParams, d, tr.protocolWriter.SessionID(), &deviceWg)
 		}
 	}
-	if err := deviceWg.WaitWithTimeout(30 * time.Second); err == sync.TimeoutError {
+	if err := deviceWg.WaitWithTimeout(15 * time.Second); err == sync.TimeoutError {
 		tr.logError("one or more apps didn't connect")
 		return fmt.Errorf("timout reached")
 	}
@@ -216,7 +214,7 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 	deviceIndex := 0
 	tr.logInfo("Execute Tests")
 	for _, t := range testList {
-		a := &action.TestStart{
+		a := action.TestStart{
 			Assembly: t.Assembly,
 			Class:    t.Class,
 			Method:   t.Method,
@@ -226,8 +224,9 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		switch tr.config.ExecutionType {
 		case models.SynchronousExecutionType:
 			for _, d := range devices {
+				executer := NewExecuter(tr.deviceManager)
 				tr.logInfo("Run test '%s/%s' on device '%s'", t.Class, t.Method, d.DeviceID())
-				if err := tr.deviceManager.SendAction(d, a); err != nil {
+				if err := executer.Execute(d, a, 5 * time.Minute); err != nil {
 					tr.logError("sync send action failed: %v", err)
 					return fmt.Errorf("sync send action failed: %v", err)
 				}
@@ -235,7 +234,8 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		case models.ParallelExecutionType:
 			// need to check ranges
 			tr.logInfo("Run test '%s/%s' on device '%s'", t.Class, t.Method, devices[deviceIndex])
-			if err := tr.deviceManager.SendAction(devices[deviceIndex], a); err != nil {
+			executer := NewExecuter(tr.deviceManager)
+			if err := executer.Execute(devices[deviceIndex], a, 5 * time.Minute); err != nil {
 				tr.logError("parallel send action failed: %v", err)
 				return fmt.Errorf("parallel send action failed: %v", err)
 			}
@@ -243,37 +243,9 @@ func (tr *UnityTestRunner) Run(devs []models.Device, appData models.App) error {
 		}
 	}
 
-	for {
-		select {
-		case blah := <-tr.fin:
-			{
-				if blah {
-					logrus.Debug("blubb")
-					break
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
-func (tr *UnityTestRunner) OnActionResponse(d interface{}, response *action.Response) {
-	dev := d.(device.Device)
-	if response == nil {
-		tr.fin <- true
-		dev.Log("UnityTestRunner Device Disconnected")
-		return
-	}
-
-	dev.Log("UnityTestRunner Action Response: %v", response)
-	if response.ActionType == action.ActionType_Log {
-		if response.GetValue() == "End" {
-			tr.fin <- true
-		}
-	}
-}
-
-func (tr *UnityTestRunner) testSessionFinished() {
+func (tr *testsRunner) testSessionFinished() {
 	tr.protocolWriter.Close()
 }

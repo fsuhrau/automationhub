@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
+	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -46,6 +47,10 @@ func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {
 }
 
 func (s *ApiService) runTests(session *Session, c *gin.Context) {
+	type Response struct {
+		Success bool
+		Message string
+	}
 	deviceID := c.Param("device_id")
 	_ = deviceID
 	var device models.Device
@@ -64,7 +69,6 @@ func (s *ApiService) runTests(session *Session, c *gin.Context) {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
-
 	defer func() {
 		_ = dev.Unlock()
 	}()
@@ -87,11 +91,22 @@ func (s *ApiService) runTests(session *Session, c *gin.Context) {
 			s.devicesManager.SendAction(dev, &runTestAction)
 			time.Sleep(3 * time.Minute)
 		}
-	} else {
-
-		runTestAction := action.TestStart{
-			Class: "Innium.IntegrationTests.SmokeTests",
-		}
-		s.devicesManager.SendAction(dev, &runTestAction)
+		return
 	}
+
+	reset := action.UnityReset{}
+	s.devicesManager.SendAction(dev, &reset)
+
+	runTestAction := action.TestStart{
+		Class: "Innium.IntegrationTests.SmokeTests",
+	}
+
+	executer := unity.NewExecuter(s.devicesManager)
+	if err := executer.Execute(dev, runTestAction, 5*time.Minute); err != nil {
+		logrus.Errorf("Execute failed: %v", err)
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+	logrus.Debug("Execution Finished")
+	c.JSON(http.StatusOK, &Response{true, "Execution Finished"})
 }

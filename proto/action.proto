@@ -95,6 +95,7 @@ enum ActionType {
   ExecuteTest = 14;
   ExecutionStatus = 15;
   Log = 16;
+  UnityReset = 17;
 }
 
 enum ContentType {

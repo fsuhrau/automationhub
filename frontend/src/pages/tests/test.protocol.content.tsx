@@ -11,14 +11,16 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { AvTimer, Cancel, CheckCircle, DateRange } from '@material-ui/icons';
-import { pink } from '@material-ui/core/colors';
-import { Box, Tab, Tabs } from '@material-ui/core';
+import { Box, Button, Tab, Tabs } from '@material-ui/core';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 import Moment from 'react-moment';
+import moment from 'moment';
+import IProtocolEntryData from '../../types/protocol.entry';
+
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -95,7 +97,6 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
 
     useEffect(() => {
         TestRunDataService.getLast(testId).then(response => {
-            console.log(response.data);
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
                 if (response.data.Protocols[i].ID == +protocolId) {
@@ -108,19 +109,32 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
         });
     }, [testId, protocolId]);
 
-    function getDuration(p: ITestProtocolData): string {
-        return 'running';
+    function getDuration(p: ITestProtocolData | undefined): string {
+        if (p === undefined) {
+            return '';
+        }
         if (p.EndedAt !== null && p.EndedAt !== undefined) {
-            const end = p?.EndedAt?.valueOf();
-            const start = p?.StartedAt?.valueOf();
-            const duration = end - start;
-            console.log(start);
-            console.log(end);
-            console.log(duration);
-            const date = new Date(duration);
-            return date.toTimeString().split(' ')[0];
+            const duration = (new Date(p.EndedAt)).valueOf() - (new Date(p.StartedAt)).valueOf();
+            const m = moment.utc(duration);
+            const secs = duration / 1000;
+            if (secs > 60 * 60) {
+                return m.format('h') + 'Std ' + m.format('m') + 'Min ' + m.format('s') + 'Sec';
+            }
+            if (secs > 60) {
+                return m.format('m') + 'Min ' + m.format('s') + 'Sec';
+            }
+            return m.format('s') + 'Sec';
         }
         return 'running';
+    }
+
+    function lastEntries(): Array<IProtocolEntryData> {
+        const lastE = Array<IProtocolEntryData>();
+        const length = protocol?.Entries?.length;
+        for (let i = length - 1; i > Math.max(length - 3, 0); i--) {
+            lastE.push(protocol?.Entries[i]);
+        }
+        return lastE;
     }
 
     const [value, setValue] = useState(0);
@@ -136,11 +150,13 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                     <Grid container={true} spacing={2} alignItems="center">
                         <Grid item={true}>
                             {protocol?.TestResult == TestResultState.TestResultSuccess ?
-                                <CheckCircle className={classes.block} color="success"/> :
-                                <Cancel className={classes.block} sx={{ color: pink[500] }}/>}
+                                <CheckCircle className={classes.block} htmlColor="green"/> :
+                                <Cancel className={classes.block} color="error"/>}
                         </Grid>
                         <Grid item={true}>
-                            {protocol?.TestResult == TestResultState.TestResultSuccess ? 'Success' : 'Failed'}
+                            {protocol?.TestResult == TestResultState.TestResultSuccess ?
+                                <Typography color="primary">Success</Typography> :
+                                <Typography color="error">Failed</Typography>}
                         </Grid>
 
                         <Grid item={true}>
@@ -169,15 +185,106 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                             <Tab label="Status" {...a11yProps(0)} />
                             <Tab label="Logs" {...a11yProps(1)} />
                             <Tab label="Screenshots" {...a11yProps(2)} />
-                            <Tab label="Video" {...a11yProps(3)} />
+                            <Tab label="Video/Replay" {...a11yProps(3)} />
                             <Tab label="Performance" {...a11yProps(4)} />
                         </Tabs>
                     </Box>
                 </AppBar>
                 <TabPanel value={value} index={0}>
-                    Status
+                    <Grid container={true} direction="column" spacing={6}>
+                        <Grid item={true}>
+                            <Grid container={true} spacing={6}>
+                                {protocol?.TestResult == TestResultState.TestResultFailed &&
+                                <Box width='100%' height='100%' color="white" bgcolor="palevioletred" padding={2}>
+                                    <Grid container={true} spacing={6} justifyContent="center"
+                                        alignItems="center">
+                                        <Grid item={true}>
+                                            {lastEntries().map((data) => <Typography>
+                                                <Moment
+                                                    format="YYYY/MM/DD HH:mm:ss">{data.CreatedAt}</Moment>: {data.Message}
+                                            </Typography>,
+                                            )}
+                                        </Grid>
+                                        <Grid item={true} sx={2}>
+                                            <Button variant="contained">Show</Button>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                                }
+                            </Grid>
+                        </Grid>
+                        <Grid item={true}>
+                            <Grid container={true} spacing={6}>
+                                <Grid item={true}>
+                                    <Grid item={true} xs={true} container={true} direction="column" spacing={4}>
+                                        <Grid item={true} xs={true}>
+                                            <Typography gutterBottom={true} variant="subtitle1">
+                                                Time
+                                            </Typography>
+                                            <Typography gutterBottom={true} variant="body2" color="textSecondary">
+                                                Execution
+                                            </Typography>
+                                            <Typography variant="h5" component="h5">
+                                                {getDuration(protocol)}
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                                <Grid item={true} xs={12} sm={true} container={true}>
+                                    <Grid item={true} xs={true} container={true} direction="column" spacing={2}>
+                                        <Grid item={true} xs={true}>
+                                            <Typography gutterBottom={true} variant="subtitle1">
+                                                Details
+                                            </Typography>
+                                            <Typography gutterBottom={true} variant="gutterBottom">
+                                                <Grid container={true} spacing={2}>
+                                                    <Grid item={true} xs={2}>
+                                                        <Typography gutterBottom={true} variant="body2"
+                                                            color="textSecondary">
+                                                            Actions
+                                                        </Typography>
+                                                        <Typography variant="h5" component="h5">
+                                                            {protocol?.Entries.length}
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item={true} xs={2}>
+                                                        <Typography gutterBottom={true} variant="body2"
+                                                            color="textSecondary">
+                                                            StartupTime
+                                                        </Typography>
+                                                        <Typography variant="h5" component="h5">
+                                                            10 sec
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item={true} xs={2}>
+                                                        <Typography gutterBottom={true} variant="body2"
+                                                            color="textSecondary">
+                                                            FPS
+                                                        </Typography>
+                                                        <Typography variant="h5" component="h5">
+                                                            12
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item={true} xs={2}>
+                                                        <Typography gutterBottom={true} variant="body2"
+                                                            color="textSecondary">
+                                                            Memory
+                                                        </Typography>
+                                                        <Typography variant="h5" component="h5">
+                                                            400MB
+                                                        </Typography>
+                                                    </Grid>
+                                                </Grid>
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
                 </TabPanel>
                 <TabPanel value={value} index={1}>
+                    missing filter options
                     <Table className={classes.table} size="small" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
@@ -200,7 +307,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                     </Table>
                 </TabPanel>
                 <TabPanel value={value} index={2}>
-                    Screenshots
+                    screenshots?
                 </TabPanel>
                 <TabPanel value={value} index={3}>
                     Video
