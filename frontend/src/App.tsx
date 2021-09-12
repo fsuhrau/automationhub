@@ -202,6 +202,9 @@ const App: FC<AppProps> = (props) => {
                         <Route path="/tests">
                             <TestHeader onDrawerToggle={handleDrawerToggle}/>
                         </Route>
+                        <Route path={'/test/new'}>
+                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
+                        </Route>
                         <Route path={'/test/:testId/run/:runId/:protocolId'}>
                             <TestHeader onDrawerToggle={handleDrawerToggle}/>
                         </Route>
@@ -234,6 +237,9 @@ const App: FC<AppProps> = (props) => {
                         <Switch>
                             <Route path="/tests">
                                 <TestContent/>
+                            </Route>
+                            <Route path={'/test/new'}>
+                                <AddTestPage/>
                             </Route>
                             <Route path={'/test/:testId/run/:runId/:protocolId'}>
                                 <TestProtocolPage/>

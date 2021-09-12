@@ -1,6 +1,7 @@
 import http from '../http-common';
 import ITestData from '../types/test';
 import { AxiosResponse } from 'axios';
+import ICreateTestData from "../types/request.create.test";
 
 class TestDataService {
     getAll(): Promise<AxiosResponse<ITestData[]>> {
@@ -11,7 +12,7 @@ class TestDataService {
         return http.get(`/test/${id}`);
     }
 
-    create(data: ITestData): Promise<AxiosResponse<ITestData>> {
+    create(data: ICreateTestData): Promise<AxiosResponse<ITestData>> {
         return http.post('/test', data);
     }
 
@@ -27,10 +28,9 @@ class TestDataService {
         return http.get(`/tests?name=${name}`);
     }
 
-    executeTest(id: number | null | undefined, appid: number, devices: Array<number>): Promise<AxiosResponse<unknown>> {
+    executeTest(id: number | null | undefined, appid: number): Promise<AxiosResponse<unknown>> {
         return http.post(`/test/${id}/run`, {
             AppID: appid,
-            Devices: devices,
         });
     }
 }

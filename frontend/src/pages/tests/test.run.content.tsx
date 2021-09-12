@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
-import TestStatusIconComponent from '../../components/test-status-icon-component';
+import TestStatusIconComponent from '../../components/test-status-icon.component';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({

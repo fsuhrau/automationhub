@@ -12,7 +12,7 @@ import ITestData from '../types/test';
 import TestDataService from '../services/test.service';
 import { Button, Link } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
-import TestStatusIconComponent from './test-status-icon-component';
+import TestStatusIconComponent from './test-status-icon.component';
 import { TestResultState } from '../types/test.result.state.enum';
 
 const styles = (): ReturnType<typeof createStyles> =>
@@ -55,9 +55,9 @@ const TestsTable: FC<TestProps> = (props) => {
         return '';
     };
 
-    const handleRunTest = (id: number | null | undefined, appid: number, devices: Array<number>, event: MouseEvent<HTMLButtonElement>): void => {
+    const handleRunTest = (id: number | null | undefined, appid: number, event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
-        TestDataService.executeTest(id, appid, devices).then(response => {
+        TestDataService.executeTest(id, appid).then(response => {
             console.log(response.data);
         }).catch(error => {
             console.log(error);
@@ -73,24 +73,29 @@ const TestsTable: FC<TestProps> = (props) => {
         return lastRun.TestResult;
     };
 
-    const getDevices = (test: ITestData): number => {
-        // todo number of devices from test configuration
-        if (test.TestRuns == null) {
-            return 0;
+    const getDevices = (test: ITestData): string => {
+        if (test.TestConfig.AllDevices) {
+            return "all";
         }
-
-        const lastRun = test.TestRuns[test.TestRuns.length - 1];
-        return lastRun.Protocols.length;
+        if (test.TestConfig.Devices !== null)
+        {
+            return test.TestConfig.Devices.length.toString();
+        }
+        return "n/a";
     };
 
-    const getNumberOfTests = (test: ITestData): number => {
-        // todo number of devices from test configuration
-        if (test.TestRuns == null) {
-            return 0;
+    const getTests = (test: ITestData): string => {
+        if (test.TestConfig.Unity !== undefined && test.TestConfig.Unity !== null) {
+            if (test.TestConfig.Unity?.RunAllTests)
+            {
+                return "all";
+            }
+            if (test.TestConfig.Unity.UnityTestFunctions !== null) {
+                return test.TestConfig.Unity.UnityTestFunctions.length.toString();
+            }
         }
 
-        const lastRun = test.TestRuns[test.TestRuns.length - 1];
-        return lastRun.Protocols.length;
+        return "n/a";
     };
 
     return (
@@ -102,6 +107,7 @@ const TestsTable: FC<TestProps> = (props) => {
                         <TableCell align="right">Typ</TableCell>
                         <TableCell align="right">Execution</TableCell>
                         <TableCell align="right">Devices</TableCell>
+                        <TableCell align="right">Tests</TableCell>
                         <TableCell align="right">Status</TableCell>
                         <TableCell align="right"/>
                     </TableRow>
@@ -116,9 +122,10 @@ const TestsTable: FC<TestProps> = (props) => {
                         <TableCell align="right">{typeString(test.TestConfig.Type)}</TableCell>
                         <TableCell align="right">{executionString(test.TestConfig.ExecutionType)}</TableCell>
                         <TableCell align="right">{getDevices(test)}</TableCell>
+                        <TableCell align="right">{getTests(test)}</TableCell>
                         <TableCell align="right"><TestStatusIconComponent status={getTestStatus(test)}/></TableCell>
                         <TableCell align="right">
-                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, [2], e)}>
+                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTest(test.ID, 1, e)}>
                                 Run
                             </Button>
                         </TableCell>

@@ -25,6 +25,7 @@ type testsRunner struct {
 	config         models.TestConfig
 	protocolWriter *protocol.ProtocolWriter
 	fin            chan bool
+	err            error
 }
 
 func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *testsRunner {
@@ -68,6 +69,7 @@ func (tr *testsRunner) logInfo(format string, params ...interface{}) {
 }
 
 func (tr *testsRunner) logError(format string, params ...interface{}) {
+	tr.err = fmt.Errorf(format, params)
 	tr.db.Create(&models.TestRunLogEntry{
 		TestRunID: tr.protocolWriter.RunID(),
 		Level:     "error",
@@ -185,7 +187,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			}(tr.deviceManager, appParams, d, tr.protocolWriter.SessionID(), &deviceWg)
 		}
 	}
-	if err := deviceWg.WaitWithTimeout(15 * time.Second); err == sync.TimeoutError {
+	if err := deviceWg.WaitWithTimeout(30 * time.Second); err == sync.TimeoutError {
 		tr.logError("one or more apps didn't connect")
 		return fmt.Errorf("timout reached")
 	}
@@ -208,9 +210,6 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		tr.db.Where("test_config_unity_id = ?", tr.config.Unity.ID).Find(&testList)
 	}
 
-	// TestClass: "Innium.IntegrationTests.SmokeTests",
-	// TestMethod: "System.Collections.IEnumerator ShortSanityTest()",
-
 	deviceIndex := 0
 	tr.logInfo("Execute Tests")
 	for _, t := range testList {
@@ -226,7 +225,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			for _, d := range devices {
 				executer := NewExecuter(tr.deviceManager)
 				tr.logInfo("Run test '%s' on device '%s'", t.Class, d.DeviceID())
-				if err := executer.Execute(d, a, 5 * time.Minute); err != nil {
+				if err := executer.Execute(d, a, 5*time.Minute); err != nil {
 					tr.logError("sync send action failed: %v", err)
 					return fmt.Errorf("sync send action failed: %v", err)
 				}
@@ -235,7 +234,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			// need to check ranges
 			tr.logInfo("Run test '%s/%s' on device '%s'", t.Class, t.Method, devices[deviceIndex])
 			executer := NewExecuter(tr.deviceManager)
-			if err := executer.Execute(devices[deviceIndex], a, 5 * time.Minute); err != nil {
+			if err := executer.Execute(devices[deviceIndex], a, 5*time.Minute); err != nil {
 				tr.logError("parallel send action failed: %v", err)
 				return fmt.Errorf("parallel send action failed: %v", err)
 			}
