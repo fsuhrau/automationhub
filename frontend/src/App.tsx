@@ -17,6 +17,8 @@ import TestRunsPage from './pages/tests/test.runs.content';
 import TestRunPage from './pages/tests/test.run.content';
 import TestProtocolPage from './pages/tests/test.protocol.content';
 import Moment from 'react-moment';
+import AppsPage from "./pages/apps/apps.content";
+import AppsHeader from "./pages/apps/apps.header";
 
 Moment.globalLocale = 'de';
 
@@ -224,7 +226,7 @@ const App: FC<AppProps> = (props) => {
                             <Header onDrawerToggle={handleDrawerToggle}/>
                         </Route>
                         <Route path="/apps">
-                            <Header onDrawerToggle={handleDrawerToggle}/>
+                            <AppsHeader onDrawerToggle={handleDrawerToggle}/>
                         </Route>
                         <Route path="/users">
                             <Header onDrawerToggle={handleDrawerToggle}/>
@@ -263,7 +265,7 @@ const App: FC<AppProps> = (props) => {
                                 <Content/>
                             </Route>
                             <Route path="/apps">
-                                <Content/>
+                                <AppsPage/>
                             </Route>
                             <Route path="/users">
                                 <Content/>

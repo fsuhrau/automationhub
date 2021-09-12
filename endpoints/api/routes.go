@@ -41,6 +41,11 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api := r.Group("/api")
 
+	api.GET("/apps", HandleWithSession(s.getApps))
+	api.GET("/apps/:app_id", HandleWithSession(s.getApp))
+	api.POST("/app", HandleWithSession(s.createApp))
+
+
 	api.GET("/devices", HandleWithSession(s.getDevices))
 	api.GET("/device/:device_id", HandleWithSession(s.getDeviceStatus))
 	api.POST("/device/:device_id/tests", HandleWithSession(s.runTests))
