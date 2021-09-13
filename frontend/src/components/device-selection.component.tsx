@@ -65,13 +65,11 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
 
     const handleAllRight = () => {
         setRight(right.concat(left));
-        onSelectionChanged(right.concat(left))
         setLeft([]);
     };
 
     const handleCheckedRight = () => {
         setRight(right.concat(leftChecked));
-        onSelectionChanged(right.concat(leftChecked))
         setLeft(not(left, leftChecked));
         setChecked(not(checked, leftChecked));
     };
@@ -79,14 +77,12 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
     const handleCheckedLeft = () => {
         setLeft(left.concat(rightChecked));
         setRight(not(right, rightChecked));
-        onSelectionChanged(not(right, rightChecked))
         setChecked(not(checked, rightChecked));
     };
 
     const handleAllLeft = () => {
         setLeft(left.concat(right));
         setRight([]);
-        onSelectionChanged([])
     };
 
     useEffect(() => {
@@ -95,6 +91,10 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
         }).catch(e => {
         });
     }, []);
+
+    useEffect(() => {
+        onSelectionChanged(right);
+    }, [right])
 
     const customList = (items: IDeviceData[]) => (
         <Paper className={classes.paper}>
