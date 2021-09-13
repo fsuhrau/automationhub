@@ -105,14 +105,16 @@ const AddTestPage: FC = (props) => {
 
     const unityTestExecutionTypes = getUnityTestsConfig();
     const [unityTestExecution, setUnityTestExecution] = React.useState<number>(0);
-    const handleUnityTestExecutionChange = (event: React.ChangeEvent<{ name?: string; value: number }>): void => {
-        setUnityTestExecution(event.target.value);
+    const handleUnityTestExecutionChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
+        console.log(event.target.value);
+        setUnityTestExecution(+event.target.value);
     };
 
     const deviceTypes = getDeviceOption();
     const [deviceType, setDeviceType] = React.useState<number>(0);
-    const handleDeviceTypeChange = (event: React.ChangeEvent<{ name?: string; value: number }>): void => {
-        setDeviceType(event.target.value);
+    const handleDeviceTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
+        console.log(event.target.value);
+        setDeviceType(+event.target.value);
     };
 
     const [selectedDevices, setSelectedDevices] = React.useState<IDeviceData[]>([]);
@@ -225,14 +227,14 @@ const AddTestPage: FC = (props) => {
                                                                 <RadioGroup
                                                                     name="execution-type-selection"
                                                                     aria-label="spacing"
-                                                                    value={ executionType }
+                                                                    value={ executionType.toString() }
                                                                     onChange={ handleExecutionTypeChange }
                                                                     row={ true }
                                                                 >
                                                                     { executionTypes.map((value) => (
                                                                         <FormControlLabel
-                                                                            key={ value.id }
-                                                                            value={ value.id }
+                                                                            key={ "exec_" + value.id }
+                                                                            value={ value.id.toString() }
                                                                             control={ <Radio/> }
                                                                             label={ value.name }
                                                                         />
@@ -250,16 +252,16 @@ const AddTestPage: FC = (props) => {
                                                         <div>
                                                             <Grid item={ true }>
                                                                 <RadioGroup
-                                                                    name="unit-test-execution-selection"
+                                                                    name="unity-test-execution-selection"
                                                                     aria-label="spacing"
-                                                                    value={ unityTestExecution }
+                                                                    value={ unityTestExecution.toString() }
                                                                     onChange={ handleUnityTestExecutionChange }
                                                                     row={ true }
                                                                 >
                                                                     { unityTestExecutionTypes.map((value) => (
                                                                         <FormControlLabel
-                                                                            key={ value.id }
-                                                                            value={ value.id }
+                                                                            key={ "unityt_" + value.id }
+                                                                            value={ value.id.toString() }
                                                                             control={ <Radio/> }
                                                                             label={ value.name }
                                                                         />
@@ -301,14 +303,14 @@ const AddTestPage: FC = (props) => {
                                                         <RadioGroup
                                                             name="device-selection"
                                                             aria-label="spacing"
-                                                            value={ deviceType }
+                                                            value={ deviceType.toString() }
                                                             onChange={ handleDeviceTypeChange }
                                                             row={ true }
                                                         >
                                                             { deviceTypes.map((value) => (
                                                                 <FormControlLabel
-                                                                    key={ value.id }
-                                                                    value={ value.id }
+                                                                    key={ "device_" + value.id }
+                                                                    value={ value.id.toString() }
                                                                     control={ <Radio/> }
                                                                     label={ value.name }
                                                                 />
@@ -317,7 +319,7 @@ const AddTestPage: FC = (props) => {
                                                     </Grid>
                                                 </Grid>
                                             ) }
-                                            { activeStep === 2 && deviceType === 0 && (
+                                            { activeStep === 2 && deviceType === 1 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
                                                       alignItems={ 'center' } direction={ 'column' }>
                                                     <Grid item={ true }>
