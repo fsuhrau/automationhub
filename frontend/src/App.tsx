@@ -17,8 +17,8 @@ import TestRunsPage from './pages/tests/test.runs.content';
 import TestRunPage from './pages/tests/test.run.content';
 import TestProtocolPage from './pages/tests/test.protocol.content';
 import Moment from 'react-moment';
-import AppsPage from "./pages/apps/apps.content";
-import AppsHeader from "./pages/apps/apps.header";
+import AppsPage from './pages/apps/apps.content';
+import AppsHeader from './pages/apps/apps.header';
 
 Moment.globalLocale = 'de';
 

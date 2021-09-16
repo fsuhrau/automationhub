@@ -1,7 +1,7 @@
 import http from '../http-common';
 import ITestData from '../types/test';
 import { AxiosResponse } from 'axios';
-import ICreateTestData from "../types/request.create.test";
+import ICreateTestData from '../types/request.create.test';
 
 class TestDataService {
     getAll(): Promise<AxiosResponse<ITestData[]>> {

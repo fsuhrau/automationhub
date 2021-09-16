@@ -1,7 +1,7 @@
 import ITestConfigUnityData from './test.config.unity';
 import { TestExecutionType } from './test.execution.type.enum';
 import { TestType } from './test.type.enum';
-import ITestConfigDeviceData from "./test.config.device";
+import ITestConfigDeviceData from './test.config.device';
 
 export default interface ITestConfigData {
     ID?: number,

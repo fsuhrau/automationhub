@@ -1,4 +1,4 @@
-import { TestType } from "./test.type.enum";
+import { TestType } from './test.type.enum';
 
 export default interface ICreateTestData {
     Name: string,

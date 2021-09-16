@@ -75,27 +75,25 @@ const TestsTable: FC<TestProps> = (props) => {
 
     const getDevices = (test: ITestData): string => {
         if (test.TestConfig.AllDevices) {
-            return "all";
+            return 'all';
         }
-        if (test.TestConfig.Devices !== null)
-        {
+        if (test.TestConfig.Devices !== null) {
             return test.TestConfig.Devices.length.toString();
         }
-        return "n/a";
+        return 'n/a';
     };
 
     const getTests = (test: ITestData): string => {
         if (test.TestConfig.Unity !== undefined && test.TestConfig.Unity !== null) {
-            if (test.TestConfig.Unity?.RunAllTests)
-            {
-                return "all";
+            if (test.TestConfig.Unity?.RunAllTests) {
+                return 'all';
             }
             if (test.TestConfig.Unity.UnityTestFunctions !== null) {
                 return test.TestConfig.Unity.UnityTestFunctions.length.toString();
             }
         }
 
-        return "n/a";
+        return 'n/a';
     };
 
     return (

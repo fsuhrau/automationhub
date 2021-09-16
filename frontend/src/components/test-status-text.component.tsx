@@ -1,7 +1,6 @@
 import { FC } from 'react';
 import { TestResultState } from '../types/test.result.state.enum';
 import { Typography } from '@material-ui/core';
-import { createStyles, Theme, WithStyles } from '@material-ui/core/styles';
 
 export interface TestStatusTextProps {
     status: TestResultState

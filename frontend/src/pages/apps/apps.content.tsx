@@ -7,14 +7,14 @@ import Button from '@material-ui/core/Button';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import SearchIcon from '@material-ui/icons/Search';
 import { useHistory } from 'react-router-dom';
-import TableContainer from "@material-ui/core/TableContainer";
-import Table from "@material-ui/core/Table";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import TableCell from "@material-ui/core/TableCell";
-import TableBody from "@material-ui/core/TableBody";
-import AppDataService from "../../services/app.service";
-import IAppData from "../../types/app";
+import TableContainer from '@material-ui/core/TableContainer';
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
+import AppDataService from '../../services/app.service';
+import IAppData from '../../types/app';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
