@@ -9,7 +9,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
 import ITestData from '../types/test';
-import TestDataService from '../services/test.service';
+import { executeTest, getAllTests } from '../services/test.service';
 import { Button, Link } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 import TestStatusIconComponent from './test-status-icon.component';
@@ -29,7 +29,7 @@ const TestsTable: FC<TestProps> = (props) => {
     const [tests, setTests] = useState<ITestData[]>([]);
 
     useEffect(() => {
-        TestDataService.getAll().then(response => {
+        getAllTests().then(response => {
             console.log(response.data);
             setTests(response.data);
         }).catch(e => {
@@ -57,7 +57,7 @@ const TestsTable: FC<TestProps> = (props) => {
 
     const handleRunTest = (id: number | null | undefined, appid: number, event: MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault();
-        TestDataService.executeTest(id, appid).then(response => {
+        executeTest(id, appid).then(response => {
             console.log(response.data);
         }).catch(error => {
             console.log(error);

@@ -23,10 +23,10 @@ import DeviceSelection from '../../components/device-selection.component';
 import IDeviceData from '../../types/device';
 import { useHistory } from 'react-router-dom';
 import ICreateTestData from '../../types/request.create.test';
-import TestDataService from '../../services/test.service';
+import { createTest } from '../../services/test.service';
 import AppSelection from '../../components/app-selection.component';
 import IAppData from '../../types/app';
-import AppDataService from '../../services/app.service';
+import { getAllApps } from '../../services/app.service';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -126,7 +126,7 @@ const AddTestPage: FC = () => {
         console.log(app);
     };
 
-    const createTest = (): void => {
+    const createNewTest = (): void => {
         const deviceIds: number[] = selectedDevices.map(value => value.ID) as number[];
 
         const requestData: ICreateTestData = {
@@ -138,7 +138,7 @@ const AddTestPage: FC = () => {
             SelectedDevices: deviceIds,
         };
 
-        TestDataService.create(requestData).then(response => {
+        createTest(requestData).then(response => {
             console.log(response.data);
             history.push('/tests');
         }).catch(ex => {
@@ -148,7 +148,7 @@ const AddTestPage: FC = () => {
 
     const handleNext = (): void => {
         if (activeStep === 2) {
-            createTest();
+            createNewTest();
         }
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
     };
@@ -159,7 +159,7 @@ const AddTestPage: FC = () => {
 
     const [apps, setApps] = React.useState<IAppData[]>([]);
     useEffect(() => {
-        AppDataService.getAll().then(response => {
+        getAllApps().then(response => {
             setApps(response.data);
         }).catch(e => {
         });

@@ -32,9 +32,7 @@ settings:
         - src
 
 rules:
-  arrow-body-style:
-    - warn
-    - as-needed
+  arrow-body-style: off
   no-prototype-builtins: off
   operator-linebreak: off
   implicit-arrow-linebreak: off

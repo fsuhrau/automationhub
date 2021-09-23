@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import TestRunDataService from '../../services/test.run.service';
+import { getAllRuns } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
 import { Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
@@ -46,7 +46,7 @@ const TestRuns: FC<TestRunsProps> = (props) => {
 
 
     useEffect(() => {
-        TestRunDataService.getAll(testId).then(response => {
+        getAllRuns(testId).then(response => {
             console.log(response.data);
             setTestRuns(response.data);
         }).catch(e => {

@@ -2,18 +2,14 @@ import http from '../http-common';
 import { AxiosResponse } from 'axios';
 import ITestRunData from '../types/test.run';
 
-class TestRunDataService {
-    getAll(test_id: string): Promise<AxiosResponse<ITestRunData[]>> {
-        return http.get(`/test/${test_id}/runs`);
-    }
+export const getAllRuns = (testId: string): Promise<AxiosResponse<ITestRunData[]>> => {
+    return http.get(`/test/${testId}/runs`);
+};
 
-    getLast(test_id: string): Promise<AxiosResponse<ITestRunData>> {
-        return http.get(`/test/${test_id}/runs/last`);
-    }
+export const getLastRun = (testId: string): Promise<AxiosResponse<ITestRunData>> => {
+    return http.get(`/test/${testId}/runs/last`);
+};
 
-    getRun(test_id: string, id: string): Promise<AxiosResponse<ITestRunData>> {
-        return http.get(`/test/${test_id}/run/${id}`);
-    }
-}
-
-export default new TestRunDataService();
+export const getRun = (testId: string, id: string): Promise<AxiosResponse<ITestRunData>> => {
+    return http.get(`/test/${testId}/run/${id}`);
+};

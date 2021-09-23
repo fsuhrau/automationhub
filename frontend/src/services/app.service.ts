@@ -2,30 +2,30 @@ import http from '../http-common';
 import IAppData from '../types/app';
 import { AxiosResponse } from 'axios';
 
-class AppDataService {
-    getAll(): Promise<AxiosResponse<IAppData[]>> {
-        return http.get('/apps');
-    }
+export const getAllApps = (): Promise<AxiosResponse<IAppData[]>> => {
+    return http.get('/apps');
+};
 
-    get(id: string): Promise<AxiosResponse<IAppData | undefined>> {
-        return http.get(`/app/${id}`);
-    }
+export const getApp = (id: string): Promise<AxiosResponse<IAppData | undefined>> => {
+    return http.get(`/app/${id}`);
+};
 
-    create(data: IAppData): Promise<AxiosResponse<IAppData>> {
-        return http.post('/app', data);
-    }
+export const createApp = (data: IAppData): Promise<AxiosResponse<IAppData>> => {
+    return http.post('/app', data);
+};
 
-    update(data: IAppData, id: number): Promise<AxiosResponse<IAppData>> {
-        return http.put(`/app/${id}`, data);
-    }
+export const updateApp = (data: IAppData, id: number): Promise<AxiosResponse<IAppData>> => {
+    return http.put(`/app/${id}`, data);
+};
 
-    delete(id: number): Promise<AxiosResponse<void>> {
-        return http.delete(`/app/${id}`);
-    }
+export const deleteApp = (id: number): Promise<AxiosResponse<void>> => {
+    return http.delete(`/app/${id}`);
+};
 
-    findByName(name: string): Promise<AxiosResponse<IAppData[]>> {
-        return http.get(`/apps?name=${name}`);
-    }
-}
+export type AppFilter = {
+    name?: string;
+};
 
-export default new AppDataService();
+export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppData[]>> => {
+    return http.get('/apps', { params: filter });
+};

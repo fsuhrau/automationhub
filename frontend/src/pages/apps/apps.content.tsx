@@ -13,7 +13,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
-import AppDataService from '../../services/app.service';
+import { getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
@@ -54,7 +54,7 @@ const AppsPage: FC<AppsProps> = (props) => {
     const [apps, setApps] = useState<IAppData[]>([]);
 
     useEffect(() => {
-        AppDataService.getAll().then(response => {
+        getAllApps().then(response => {
             console.log(response.data);
             setApps(response.data);
         }).catch(e => {

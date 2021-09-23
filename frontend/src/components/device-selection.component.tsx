@@ -9,7 +9,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 import IDeviceData from '../types/device';
-import DeviceDataService from '../services/device.service';
+import { getAllDevices } from '../services/device.service';
 import { Typography } from '@material-ui/core';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
@@ -86,7 +86,7 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
     };
 
     useEffect(() => {
-        DeviceDataService.getAll().then(response => {
+        getAllDevices().then(response => {
             setLeft(response.data);
         }).catch(e => {
         });

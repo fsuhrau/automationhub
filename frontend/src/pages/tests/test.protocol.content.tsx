@@ -2,7 +2,7 @@ import { FC, ReactElement, SyntheticEvent, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import TestRunDataService from '../../services/test.run.service';
+import { getLastRun } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
@@ -97,7 +97,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
 
 
     useEffect(() => {
-        TestRunDataService.getLast(testId).then(response => {
+        getLastRun(testId).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
                 if (response.data.Protocols[i].ID == +protocolId) {

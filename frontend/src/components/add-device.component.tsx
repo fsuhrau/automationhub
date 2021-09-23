@@ -1,6 +1,6 @@
 import { ChangeEvent, Component, ReactElement } from 'react';
 import IDeviceData from '../types/device';
-import DeviceDataService from '../services/device.service';
+import { createDevice } from '../services/device.service';
 
 type Props = Record<string, never>;
 
@@ -62,7 +62,7 @@ export default class AddDevice extends Component<Props, State> {
             Status: 0,
         };
 
-        DeviceDataService.create(data)
+        createDevice(data)
             .then(response => {
                 this.setState({
                     ID: response.data.ID,

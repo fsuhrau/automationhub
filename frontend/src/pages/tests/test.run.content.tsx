@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import TestRunDataService from '../../services/test.run.service';
+import { getLastRun } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
 import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
@@ -84,7 +84,7 @@ const TestRun: FC<TestRunProps> = (props) => {
     }
 
     useEffect(() => {
-        TestRunDataService.getLast(testId).then(response => {
+        getLastRun(testId).then(response => {
             console.log(response.data);
             setTestRun(response.data);
             rebuildStatistics(response.data);

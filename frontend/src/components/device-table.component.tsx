@@ -9,7 +9,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
 import IDeviceData from '../types/device';
-import DeviceDataService from '../services/device.service';
+import { getAllDevices, runTests } from '../services/device.service';
 import { Button } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 
@@ -27,7 +27,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     useEffect(() => {
-        DeviceDataService.getAll().then(response => {
+        getAllDevices().then(response => {
             console.log(response.data);
             setDevices(response.data);
         }).catch(e => {
@@ -53,7 +53,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
 
     function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>) : void {
         e.preventDefault();
-        DeviceDataService.runTests(id).then(response => {
+        runTests(id).then(response => {
             console.log(response.data);
         }).catch(ex => {
             console.log(ex);

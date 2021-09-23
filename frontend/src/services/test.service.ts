@@ -3,36 +3,36 @@ import ITestData from '../types/test';
 import { AxiosResponse } from 'axios';
 import ICreateTestData from '../types/request.create.test';
 
-class TestDataService {
-    getAll(): Promise<AxiosResponse<ITestData[]>> {
-        return http.get('/tests');
-    }
+export const getAllTests = (): Promise<AxiosResponse<ITestData[]>> => {
+    return http.get('/tests');
+};
 
-    get(id: string): Promise<AxiosResponse<ITestData>> {
-        return http.get(`/test/${id}`);
-    }
+export const getTest = (id: string): Promise<AxiosResponse<ITestData>> => {
+    return http.get(`/test/${id}`);
+};
 
-    create(data: ICreateTestData): Promise<AxiosResponse<ITestData>> {
-        return http.post('/test', data);
-    }
+export const createTest = (data: ICreateTestData): Promise<AxiosResponse<ITestData>> => {
+    return http.post('/test', data);
+};
 
-    update(data: ITestData, id: string): Promise<AxiosResponse<ITestData>> {
-        return http.put(`/test/${id}`, data);
-    }
+export const updateTest = (data: ITestData, id: string): Promise<AxiosResponse<ITestData>> => {
+    return http.put(`/test/${id}`, data);
+};
 
-    delete(id: string): Promise<AxiosResponse<void>> {
-        return http.delete(`/test/${id}`);
-    }
+export const deleteTest = (id: string): Promise<AxiosResponse<void>> => {
+    return http.delete(`/test/${id}`);
+};
 
-    findByName(name: string): Promise<AxiosResponse<ITestData[]>> {
-        return http.get(`/tests?name=${name}`);
-    }
+export type TestFilter = {
+    name?: string;
+};
 
-    executeTest(id: number | null | undefined, appid: number): Promise<AxiosResponse<unknown>> {
-        return http.post(`/test/${id}/run`, {
-            AppID: appid,
-        });
-    }
-}
+export const findTest = (filter?: TestFilter): Promise<AxiosResponse<ITestData[]>> => {
+    return http.get('/tests', { params: filter });
+};
 
-export default new TestDataService();
+export const executeTest = (id: number | null | undefined, appid: number): Promise<AxiosResponse<unknown>> => {
+    return http.post(`/test/${id}/run`, {
+        AppID: appid,
+    });
+};
