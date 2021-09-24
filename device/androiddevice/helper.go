@@ -1,13 +1,12 @@
 package androiddevice
 
 import (
+	"github.com/fsuhrau/automationhub/tools/exec"
 	"strings"
-
-	"github.com/fsuhrau/automationhub/device"
 )
 
 func isDebuggablePackage(apkPath string) bool {
-	cmd := device.NewCommand("aapt", "dump", "badging", apkPath)
+	cmd := exec.NewCommand("aapt", "dump", "badging", apkPath)
 	output, err := cmd.Output()
 	if err != nil {
 		return false

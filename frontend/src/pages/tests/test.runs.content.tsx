@@ -11,7 +11,7 @@ import { TestResultState } from '../../types/test.result.state.enum';
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
-            maxWidth: 936,
+            maxWidth: 1200,
             margin: 'auto',
             overflow: 'hidden',
         },

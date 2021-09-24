@@ -29,3 +29,27 @@ export type AppFilter = {
 export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppData[]>> => {
     return http.get('/apps', { params: filter });
 };
+
+export const uploadNewApp = (file: File,
+    uploadProgress: (progressEvent: number) => void,
+    finished: (finished: AxiosResponse<IAppData>) => void): void => {
+
+    const formData = new FormData();
+    formData.append('test_target', file);
+
+    http.request({
+        method: 'post',
+        url: 'app/upload',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: progressEvent => {
+            uploadProgress((progressEvent.loaded / progressEvent.total) * 100);
+        },
+    }).then(data => {
+        console.log(data);
+        uploadProgress(100);
+        finished(data);
+    });
+};

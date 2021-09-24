@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/fsuhrau/automationhub/events"
 	"gorm.io/gorm"
 )
 
@@ -14,5 +15,14 @@ type App struct {
 	Identifier     string
 	LaunchActivity string
 	Additional     string
-	Hash           [20]byte
+	Hash           string
+	AppFunctions   []AppFunction
+}
+
+func (a *App) AfterCreate(tx *gorm.DB) (err error) {
+	events.AppCreated.Trigger(events.AppCreatedPayload{
+		AppID: a.ID,
+		App:   a,
+	})
+	return nil
 }

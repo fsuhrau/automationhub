@@ -17,7 +17,7 @@ type testExecuter struct {
 func NewExecuter(devices manager.Devices) *testExecuter {
 	return &testExecuter{
 		devicesManager: devices,
-		fin: make(chan bool, 1),
+		fin:            make(chan bool, 1),
 	}
 }
 
@@ -59,8 +59,15 @@ func (tr *testExecuter) OnActionResponse(d interface{}, response *action.Respons
 	}
 
 	if response.ActionType == action.ActionType_Log {
-		if response.GetValue() == "End" {
-			tr.fin <- true
+		if response.GetLog().GetType() == action.LogType_StatusLog {
+			if response.GetLog().Message == "End" {
+				if !response.Success {
+					dev.Error("testrunner_status", "test finished with errors")
+				} else {
+					dev.Log("testrunner_status", "test finished")
+				}
+				tr.fin <- true
+			}
 		}
 	}
 }

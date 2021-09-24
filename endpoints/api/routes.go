@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ type ApiService struct {
 	devicesManager  manager.Devices
 	sessionsManager manager.Sessions
 	hostIP          net.IP
+	sseBroker       *sse.Broker
 }
 
 func New(logger *logrus.Logger, db *gorm.DB, ip net.IP, dm manager.Devices, sm manager.Sessions) *ApiService {
@@ -23,6 +25,7 @@ func New(logger *logrus.Logger, db *gorm.DB, ip net.IP, dm manager.Devices, sm m
 		db:              db,
 		devicesManager:  dm,
 		sessionsManager: sm,
+		sseBroker:       sse.NewBroker(),
 	}
 }
 
@@ -41,22 +44,26 @@ func HandleWithSession(f func(*Session, *gin.Context)) func(c *gin.Context) {
 func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api := r.Group("/api")
 
-	api.GET("/apps", HandleWithSession(s.getApps))
-	api.GET("/apps/:app_id", HandleWithSession(s.getApp))
+	s.initSSE(api)
+
 	api.POST("/app", HandleWithSession(s.createApp))
+	api.GET("/app/:app_id", HandleWithSession(s.getApp))
+	api.DELETE("/app/:app_id", HandleWithSession(s.deleteApp))
+	api.GET("/app/:app_id/functions", HandleWithSession(s.getAppFunctions))
+	api.POST("/app/upload", HandleWithSession(s.uploadApp))
+	api.GET("/apps", HandleWithSession(s.getApps))
 
-
-	api.GET("/devices", HandleWithSession(s.getDevices))
 	api.GET("/device/:device_id", HandleWithSession(s.getDeviceStatus))
-	api.POST("/device/:device_id/tests", HandleWithSession(s.runTests))
+	api.POST("/device/:device_id/tests", HandleWithSession(s.deviceRunTests))
+	api.GET("/devices", HandleWithSession(s.getDevices))
 
-	api.GET("/tests", HandleWithSession(s.getTests))
 	api.POST("/test", HandleWithSession(s.newTest))
 	api.GET("/test/:test_id", HandleWithSession(s.getTest))
 	api.POST("/test/:test_id/run", s.runTest)
 	api.GET("/test/:test_id/runs", HandleWithSession(s.getTestRuns))
 	api.GET("/test/:test_id/runs/last", HandleWithSession(s.getLastTestRun))
 	api.GET("/test/:test_id/run/:run_id", HandleWithSession(s.getTestRun))
+	api.GET("/tests", HandleWithSession(s.getTests))
 
 	api.POST("/execute", HandleWithSession(s.startTest))
 	api.GET("/status", HandleWithSession(s.getStatus))

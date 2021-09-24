@@ -208,19 +208,17 @@ inline bool ActionType_Parse(
     ActionType_descriptor(), name, value);
 }
 enum LogType : int {
-  Info = 0,
-  Warning = 1,
-  Error = 2,
-  Step = 3,
-  Status = 4,
-  Checkpoint = 5,
-  Performance = 6,
+  DeviceLog = 0,
+  StepLog = 1,
+  StatusLog = 2,
+  CheckpointLog = 3,
+  PerformanceLog = 4,
   LogType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   LogType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool LogType_IsValid(int value);
-constexpr LogType LogType_MIN = Info;
-constexpr LogType LogType_MAX = Performance;
+constexpr LogType LogType_MIN = DeviceLog;
+constexpr LogType LogType_MAX = PerformanceLog;
 constexpr int LogType_ARRAYSIZE = LogType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* LogType_descriptor();
@@ -236,6 +234,34 @@ inline bool LogType_Parse(
     const std::string& name, LogType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<LogType>(
     LogType_descriptor(), name, value);
+}
+enum LogLevel : int {
+  Debug = 0,
+  Info = 1,
+  Warning = 2,
+  Error = 3,
+  Exception = 4,
+  LogLevel_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
+  LogLevel_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
+};
+bool LogLevel_IsValid(int value);
+constexpr LogLevel LogLevel_MIN = Debug;
+constexpr LogLevel LogLevel_MAX = Exception;
+constexpr int LogLevel_ARRAYSIZE = LogLevel_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* LogLevel_descriptor();
+template<typename T>
+inline const std::string& LogLevel_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, LogLevel>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function LogLevel_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    LogLevel_descriptor(), enum_t_value);
+}
+inline bool LogLevel_Parse(
+    const std::string& name, LogLevel* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<LogLevel>(
+    LogLevel_descriptor(), name, value);
 }
 enum ContentType : int {
   Flatbuffer = 0,
@@ -2917,10 +2943,11 @@ class LogData :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kMessageFieldNumber = 2,
+    kMessageFieldNumber = 3,
     kTypeFieldNumber = 1,
+    kLevelFieldNumber = 2,
   };
-  // string message = 2;
+  // string message = 3;
   void clear_message();
   const std::string& message() const;
   void set_message(const std::string& value);
@@ -2945,6 +2972,15 @@ class LogData :
   void _internal_set_type(::action::LogType value);
   public:
 
+  // .action.LogLevel level = 2;
+  void clear_level();
+  ::action::LogLevel level() const;
+  void set_level(::action::LogLevel value);
+  private:
+  ::action::LogLevel _internal_level() const;
+  void _internal_set_level(::action::LogLevel value);
+  public:
+
   // @@protoc_insertion_point(class_scope:action.LogData)
  private:
   class _Internal;
@@ -2952,6 +2988,7 @@ class LogData :
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
   int type_;
+  int level_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_action_2eproto;
 };
@@ -5658,7 +5695,27 @@ inline void LogData::set_type(::action::LogType value) {
   // @@protoc_insertion_point(field_set:action.LogData.type)
 }
 
-// string message = 2;
+// .action.LogLevel level = 2;
+inline void LogData::clear_level() {
+  level_ = 0;
+}
+inline ::action::LogLevel LogData::_internal_level() const {
+  return static_cast< ::action::LogLevel >(level_);
+}
+inline ::action::LogLevel LogData::level() const {
+  // @@protoc_insertion_point(field_get:action.LogData.level)
+  return _internal_level();
+}
+inline void LogData::_internal_set_level(::action::LogLevel value) {
+  
+  level_ = value;
+}
+inline void LogData::set_level(::action::LogLevel value) {
+  _internal_set_level(value);
+  // @@protoc_insertion_point(field_set:action.LogData.level)
+}
+
+// string message = 3;
 inline void LogData::clear_message() {
   message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
@@ -6318,6 +6375,11 @@ template <> struct is_proto_enum< ::action::LogType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::action::LogType>() {
   return ::action::LogType_descriptor();
+}
+template <> struct is_proto_enum< ::action::LogLevel> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::action::LogLevel>() {
+  return ::action::LogLevel_descriptor();
 }
 template <> struct is_proto_enum< ::action::ContentType> : ::std::true_type {};
 template <>

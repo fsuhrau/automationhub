@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/tester/protocol"
@@ -13,8 +15,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net"
+	"strings"
 	"time"
 )
+
+type workerChannel chan action.TestStart
+type cancelChannel chan bool
 
 type testsRunner struct {
 	base.TestRunner
@@ -26,14 +32,16 @@ type testsRunner struct {
 	protocolWriter *protocol.ProtocolWriter
 	fin            chan bool
 	err            error
+	publisher      sse.Publisher
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices) *testsRunner {
+func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
 	return &testsRunner{
 		ip:            ip,
 		db:            db,
 		deviceManager: deviceManager,
 		fin:           make(chan bool, 1),
+		publisher:     publisher,
 	}
 }
 
@@ -61,19 +69,30 @@ func (tr *testsRunner) newTestSession() error {
 }
 
 func (tr *testsRunner) logInfo(format string, params ...interface{}) {
-	tr.db.Create(&models.TestRunLogEntry{
+	logEntry := &models.TestRunLogEntry{
 		TestRunID: tr.protocolWriter.RunID(),
 		Level:     "log",
 		Log:       fmt.Sprintf(format, params...),
+	}
+	tr.db.Create(logEntry)
+	events.NewTestLogEntry.Trigger(events.NewTestLogEntryPayload{
+		logEntry.TestRunID,
+		logEntry,
 	})
 }
 
 func (tr *testsRunner) logError(format string, params ...interface{}) {
 	tr.err = fmt.Errorf(format, params)
-	tr.db.Create(&models.TestRunLogEntry{
+	logEntry := &models.TestRunLogEntry{
 		TestRunID: tr.protocolWriter.RunID(),
 		Level:     "error",
 		Log:       fmt.Sprintf(format, params...),
+	}
+	tr.db.Create(logEntry)
+
+	events.NewTestLogEntry.Trigger(events.NewTestLogEntryPayload{
+		logEntry.TestRunID,
+		logEntry,
 	})
 }
 
@@ -139,6 +158,19 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		Hash:           appData.Hash,
 	}
 
+	// stop app
+	tr.logInfo("stop apps if running")
+	for _, d := range devices {
+		deviceWg.Add(1)
+		go func(dm manager.Devices, appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
+			if err := d.StopApp(&appp); err != nil {
+				tr.logError("unable to stop app: %v", err)
+			}
+			group.Done()
+		}(tr.deviceManager, appParams, d, &deviceWg)
+	}
+	deviceWg.Wait()
+
 	tr.logInfo("install app on devices")
 	for _, d := range devices {
 		installed, err := d.IsAppInstalled(&appParams)
@@ -154,20 +186,6 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 				}
 				group.Done()
 			}(appParams, d, &deviceWg)
-		}
-	}
-	deviceWg.Wait()
-
-	tr.logInfo("stop app on devices")
-	for _, d := range devices {
-		if d.IsAppConnected() {
-			deviceWg.Add(1)
-			go func(dm manager.Devices, appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
-				if err := d.StopApp(&appp); err != nil {
-					tr.logError("unable to stop app: %v", err)
-				}
-				group.Done()
-			}(tr.deviceManager, appParams, d, &deviceWg)
 		}
 	}
 	deviceWg.Wait()
@@ -210,39 +228,89 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		tr.db.Where("test_config_unity_id = ?", tr.config.Unity.ID).Find(&testList)
 	}
 
-	deviceIndex := 0
 	tr.logInfo("Execute Tests")
-	for _, t := range testList {
-		a := action.TestStart{
-			Assembly: t.Assembly,
-			Class:    t.Class,
-			Method:   t.Method,
+
+	switch tr.config.ExecutionType {
+	case models.SynchronousExecutionType:
+		cancel := make(cancelChannel, len(devices))
+		group := sync.ExtendedWaitGroup{}
+
+		var workers []workerChannel
+		for _, d := range devices {
+			channel := make(workerChannel, len(testList))
+			workers = append(workers, channel)
+			go tr.WorkerFunction(channel, d, cancel, &group)
 		}
 
-		// run all tests on all devices
-		switch tr.config.ExecutionType {
-		case models.SynchronousExecutionType:
-			for _, d := range devices {
-				executer := NewExecuter(tr.deviceManager)
-				tr.logInfo("Run test '%s' on device '%s'", t.Class, d.DeviceID())
-				if err := executer.Execute(d, a, 5*time.Minute); err != nil {
-					tr.logError("sync send action failed: %v", err)
-					return fmt.Errorf("sync send action failed: %v", err)
-				}
+		for _, t := range testList {
+			a := action.TestStart{
+				Assembly: t.Assembly,
+				Class:    t.Class,
+				Method:   t.Method,
 			}
-		case models.ParallelExecutionType:
-			// need to check ranges
-			tr.logInfo("Run test '%s/%s' on device '%s'", t.Class, t.Method, devices[deviceIndex])
-			executer := NewExecuter(tr.deviceManager)
-			if err := executer.Execute(devices[deviceIndex], a, 5*time.Minute); err != nil {
-				tr.logError("parallel send action failed: %v", err)
-				return fmt.Errorf("parallel send action failed: %v", err)
+			for i := range workers {
+				group.Add(1)
+				workers[i] <- a
 			}
-			deviceIndex++
 		}
+		group.Wait()
+		for i := 0; i < len(devices); i++ {
+			cancel <- true
+		}
+		close(cancel)
+		for i := range workers {
+			close(workers[i])
+		}
+
+	case models.ParallelExecutionType:
+		cancel := make(cancelChannel, len(devices))
+		group := sync.ExtendedWaitGroup{}
+
+		parallelWorker := make(workerChannel, len(testList))
+		for _, d := range devices {
+			go tr.WorkerFunction(parallelWorker, d, cancel, &group)
+		}
+		for _, t := range testList {
+			a := action.TestStart{
+				Assembly: t.Assembly,
+				Class:    t.Class,
+				Method:   t.Method,
+			}
+			group.Add(1)
+			parallelWorker <- a
+		}
+		group.Wait()
+		for i := 0; i < len(devices); i++ {
+			cancel <- true
+		}
+		close(cancel)
+		close(parallelWorker)
 	}
 
 	return nil
+}
+
+func (tr *testsRunner) WorkerFunction(channel workerChannel, dev device.Device, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
+	for {
+		select {
+		case task := <-channel:
+			method := task.Method
+			methodParts := strings.Split(method, " ")
+			if len(methodParts) > 1 {
+				method = methodParts[1]
+			}
+			tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.DeviceID())
+			executer := NewExecuter(tr.deviceManager)
+			if err := executer.Execute(dev, task, 2*time.Minute); err != nil {
+				tr.logError("test execution failed: %v", err)
+			} else {
+				tr.logInfo("test execution finished")
+			}
+			group.Done()
+		case <-cancel:
+			return
+		}
+	}
 }
 
 func (tr *testsRunner) testSessionFinished() {

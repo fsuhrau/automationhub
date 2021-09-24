@@ -37,7 +37,7 @@ type Device interface {
 	Execute(string)
 	Lock() error
 	Unlock() error
-	IsLocker() bool
+	IsLocked() bool
 
 	SetLogWriter(LogWriter)
 	Log(string, string, ...interface{})

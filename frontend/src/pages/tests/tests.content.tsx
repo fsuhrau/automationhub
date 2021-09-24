@@ -13,7 +13,7 @@ import { useHistory } from 'react-router-dom';
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
-            maxWidth: 936,
+            maxWidth: 1200,
             margin: 'auto',
             overflow: 'hidden',
         },

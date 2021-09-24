@@ -13,13 +13,14 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
-import { getAllApps } from '../../services/app.service';
+import { getAllApps, deleteApp } from '../../services/app.service';
 import IAppData from '../../types/app';
+import Moment from 'react-moment';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
-            maxWidth: 936,
+            maxWidth: 1200,
             margin: 'auto',
             overflow: 'hidden',
         },
@@ -55,12 +56,24 @@ const AppsPage: FC<AppsProps> = (props) => {
 
     useEffect(() => {
         getAllApps().then(response => {
-            console.log(response.data);
             setApps(response.data);
         }).catch(e => {
             console.log(e);
         });
     }, []);
+
+    const handleDeleteApp = (appId: number): void => {
+        deleteApp(appId).then(value => {
+            setApps(prevState => {
+                const newState = [...prevState];
+                const index = newState.findIndex(value1 => value1.ID == appId);
+                if (index > -1) {
+                    newState.splice(index, 1);
+                }
+                return newState;
+            });
+        });
+    };
 
     return (
         <Paper className={ classes.paper }>
@@ -86,11 +99,13 @@ const AppsPage: FC<AppsProps> = (props) => {
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
+                            <TableCell>Created</TableCell>
                             <TableCell>Name</TableCell>
                             <TableCell>Platform</TableCell>
                             <TableCell>Bundle Identifier</TableCell>
                             <TableCell align="right">Version</TableCell>
                             <TableCell>Activity</TableCell>
+                            <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -98,11 +113,19 @@ const AppsPage: FC<AppsProps> = (props) => {
                             <TableCell component="th" scope="row">
                                 {app.ID}
                             </TableCell>
+                            <TableCell><Moment format="YYYY/MM/DD HH:mm:ss">{app.CreatedAt}</Moment></TableCell>
                             <TableCell>{app.Name}</TableCell>
                             <TableCell>{app.Platform}</TableCell>
                             <TableCell>{app.Identifier}</TableCell>
                             <TableCell align="right">{app.Version}</TableCell>
                             <TableCell>{app.LaunchActivity}</TableCell>
+                            <TableCell>
+                                <Button variant="contained" color="secondary" size="small" onClick={ () => {
+                                    handleDeleteApp(app.ID as number);
+                                }}>
+                                    Delete
+                                </Button>
+                            </TableCell>
                         </TableRow>)}
                     </TableBody>
                 </Table>

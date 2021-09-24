@@ -3,6 +3,7 @@ package iosdevice
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/tools/exec"
 	"strings"
 	"time"
 
@@ -100,7 +101,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 
 func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	lastUpdate := time.Now().UTC()
-	cmd := device.NewCommand(IOS_DEPLOY_BIN, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
+	cmd := exec.NewCommand(IOS_DEPLOY_BIN, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
 	// cmd.Stderr = os.Stderr
 	output, err := cmd.Output()
 	if err != nil {

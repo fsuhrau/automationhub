@@ -1,9 +1,6 @@
 package selenium
 
 import (
-	"bufio"
-	"bytes"
-	"crypto/sha1"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
@@ -11,12 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"howett.net/plist"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
-	"regexp"
 	"time"
 )
 
@@ -98,100 +90,13 @@ func (s *SeleniumService) InitNewTestSession(c *gin.Context) {
 	})
 }
 
-var (
-	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='(.*)' versionCode='(.*)' versionName='(.*)' compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)'`)
-	LaunchActivityRegex  = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
-)
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
 func extractAppRequirements(applicationPath string, properties *device.Properties) (*app.Parameter, error) {
-	params := &app.Parameter{}
-	params.AppPath = applicationPath
-	extension := filepath.Ext(applicationPath)
-	if extension == ".app" {
-		// apple app
-		iosAppInfoPlist := filepath.Join(applicationPath, "Info.plist")
-
-		if fileExists(iosAppInfoPlist) {
-			plistData, err := ioutil.ReadFile(iosAppInfoPlist)
-			if err != nil {
-				return params, err
-			}
-
-			plistContent := map[string]interface{}{}
-			_, err = plist.Unmarshal(plistData, &plistContent)
-			if err != nil {
-				return params, err
-			}
-
-			if val, ok := plistContent["DTPlatformName"]; ok {
-				properties.OS = val.(string)
-			}
-			if val, ok := plistContent["CFBundleVersion"]; ok {
-				params.Version = val.(string)
-			}
-			if val, ok := plistContent["CFBundleIdentifier"]; ok {
-				params.Identifier = val.(string)
-			}
-		}
-		macAppInfoPlist := filepath.Join(applicationPath, "Contents/Info.plist")
-		if fileExists(macAppInfoPlist) {
-			plistData, err := ioutil.ReadFile(macAppInfoPlist)
-			if err != nil {
-				return params, err
-			}
-
-			plistContent := map[string]interface{}{}
-			_, err = plist.Unmarshal(plistData, &plistContent)
-			if err != nil {
-				return params, err
-			}
-
-			if val, ok := plistContent["DTSDKName"]; ok {
-				properties.OS = val.(string)
-			}
-			if val, ok := plistContent["CFBundleVersion"]; ok {
-				params.Version = val.(string)
-			}
-			if val, ok := plistContent["CFBundleIdentifier"]; ok {
-				params.Identifier = val.(string)
-			}
-		}
-
-	} else if extension == ".apk" {
-		// android app
-		properties.OS = "android"
-		cmd := device.NewCommand("aapt", "dump", "badging", applicationPath)
-		output, err := cmd.Output()
-		if err != nil {
-			return params, err
-		}
-		scanner := bufio.NewScanner(bytes.NewReader(output))
-		for scanner.Scan() {
-			line := scanner.Text()
-			if matches := AndroidAPKInfosRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
-				params.Identifier = matches[0][1]
-				params.Version = matches[0][3]
-				params.Additional = fmt.Sprintf("versionCode: %s compileSdkVersion %s", matches[0][2], matches[0][4])
-				continue
-			}
-			if matches := LaunchActivityRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
-				params.LaunchActivity = matches[0][1]
-				params.Name = matches[0][2]
-				continue
-			}
-		}
-		data, err := ioutil.ReadFile(applicationPath)
-		params.Hash = sha1.Sum(data)
-
+	analyser := app.NewAnalyser(applicationPath)
+	if err := analyser.AnalyseFile(); err != nil {
+		return nil, err
 	}
+	params := analyser.GetParameter()
+	properties.OS = params.Platform
 	return params, nil
 }
 

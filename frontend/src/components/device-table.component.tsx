@@ -12,6 +12,7 @@ import IDeviceData from '../types/device';
 import { getAllDevices, runTests } from '../services/device.service';
 import { Button } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
+import { useSSE } from 'react-hooks-sse';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -22,36 +23,51 @@ const styles = (): ReturnType<typeof createStyles> =>
 
 export type DeviceProps = WithStyles<typeof styles>;
 
+interface DeviceChangePayload {
+    DeviceID: number,
+    DeviceState: number
+}
+
 const DeviceTable: FC<DeviceProps> = (props) => {
     const { classes } = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
+    const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
+
+    useEffect(() => {
+        if (deviceStateChange === null)
+            return;
+        console.log(deviceStateChange);
+        setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? { ...device, Status: deviceStateChange.DeviceState } : device));
+    }, [deviceStateChange]);
+
     useEffect(() => {
         getAllDevices().then(response => {
-            console.log(response.data);
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
         });
     }, []);
 
-    function deviceState(state: number) : string {
+    function deviceState(state: number): string {
         switch (state) {
             case 0:
-                return 'unknown';
+                return 'null';
             case 1:
-                return 'shutdown';
+                return 'unknown';
             case 2:
-                return 'remote disconnected';
+                return 'shutdown';
             case 3:
-                return 'booted';
+                return 'remote disconnected';
             case 4:
+                return 'booted';
+            case 5:
                 return 'locked';
         }
         return '';
     }
 
-    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>) : void {
+    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>): void {
         e.preventDefault();
         runTests(id).then(response => {
             console.log(response.data);
@@ -61,33 +77,38 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     }
 
     return (
-        <TableContainer component={Paper}>
-            <Table className={classes.table} size="small" aria-label="a dense table">
+        <TableContainer component={ Paper }>
+            <Table className={ classes.table } size="small" aria-label="a dense table">
                 <TableHead>
                     <TableRow>
+                        <TableCell>ID</TableCell>
                         <TableCell>Name</TableCell>
-                        <TableCell align="right">Identifier</TableCell>
-                        <TableCell align="right">OS</TableCell>
+                        <TableCell>Identifier</TableCell>
+                        <TableCell>OS</TableCell>
                         <TableCell align="right">Version</TableCell>
-                        <TableCell align="right">Status</TableCell>
-                        <TableCell align="right"></TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {devices.map((device) => <TableRow key={device.Name}>
+                    { devices.map((device) => <TableRow key={ device.Name }>
                         <TableCell component="th" scope="row">
-                            {device.Name}
+                            { device.ID }
                         </TableCell>
-                        <TableCell align="right">{device.DeviceIdentifier}</TableCell>
-                        <TableCell align="right">{device.OS}</TableCell>
-                        <TableCell align="right">{device.OSVersion}</TableCell>
-                        <TableCell align="right">{deviceState(device.Status)}</TableCell>
+                        <TableCell>
+                            { device.Name }
+                        </TableCell>
+                        <TableCell>{ device.DeviceIdentifier }</TableCell>
+                        <TableCell>{ device.OS }</TableCell>
+                        <TableCell align="right">{ device.OSVersion }</TableCell>
+                        <TableCell>{ deviceState(device.Status) }</TableCell>
                         <TableCell align="right">
-                            <Button color="primary" size="small" variant="outlined" endIcon={<PlayArrow />} onClick={(e) => handleRunTests(device.ID, e)}>
+                            <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
+                                onClick={ (e) => handleRunTests(device.ID, e) }>
                                 Run
                             </Button>
                         </TableCell>
-                    </TableRow>)}
+                    </TableRow>) }
                 </TableBody>
             </Table>
         </TableContainer>

@@ -19,6 +19,7 @@ type Devices interface {
 	AddHandler(handler device.Handler)
 	Run(ctx context.Context) error
 	StopObserver()
+	FindDevice(params *app.Parameter) device.Device
 }
 
 type Sessions interface {

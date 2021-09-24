@@ -11,7 +11,7 @@ import (
 
 func (s *ApiService) getTests(session *Session, c *gin.Context) {
 	var tests []models.Test
-	if err := s.db.Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
+	if err := s.db.Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -19,11 +19,16 @@ func (s *ApiService) getTests(session *Session, c *gin.Context) {
 }
 
 func (s *ApiService) newTest(session *Session, c *gin.Context) {
+	type TestFunc struct {
+		Assembly string
+		Class string
+		Method string
+	}
 	type Request struct {
 		Name string
 		TestType models.TestType
 		UnityAllTests bool
-		UnitySelectedTests []string
+		UnitySelectedTests []TestFunc
 		AllDevices bool
 		SelectedDevices []uint
 	}
@@ -90,9 +95,12 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 			return
 		}
 		for _, r := range request.UnitySelectedTests {
+
 			function := models.UnityTestFunction{
 				TestConfigUnityID: unityConfig.ID,
-				Class: r,
+				Assembly: r.Assembly,
+				Class: r.Class,
+				Method: r.Method,
 			}
 			if err := tx.Create(&function).Error; err != nil {
 				s.error(c, http.StatusInternalServerError, err)
@@ -170,7 +178,7 @@ func (s *ApiService) runTest(c *gin.Context) {
 	}
 
 	if test.TestConfig.Type == models.TestTypeUnity {
-		tr := unity.New(s.db, s.hostIP, s.devicesManager)
+		tr := unity.New(s.db, s.hostIP, s.devicesManager, s)
 		if err := tr.Initialize(test); err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return

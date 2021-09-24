@@ -2,6 +2,7 @@ package macos
 
 import (
 	"github.com/fsuhrau/automationhub/device/generic"
+	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"os/exec"
 	"time"
@@ -77,7 +78,7 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	cmd := device.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
+	cmd := exec2.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	cmd := device.NewCommand("killall", params.AppPath)
+	cmd := exec2.NewCommand("killall", params.AppPath)
 	return cmd.Run()
 }
 

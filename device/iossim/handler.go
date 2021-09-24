@@ -2,6 +2,7 @@ package iossim
 
 import (
 	"encoding/json"
+	"github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"regexp"
 	"strings"
@@ -44,12 +45,12 @@ func (m *Handler) Init() error {
 }
 
 func (m *Handler) Start() error {
-	cmd := device.NewCommand("open", "-a", "/Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/Contents/MacOS/Simulator")
+	cmd := exec.NewCommand("open", "-a", "/Applications/Xcode.app/Contents/Developer/Applications/Simulator.app/Contents/MacOS/Simulator")
 	return cmd.Run()
 }
 
 func (m *Handler) Stop() error {
-	cmd := device.NewCommand("killall", "Simulator")
+	cmd := exec.NewCommand("killall", "Simulator")
 	return cmd.Run()
 }
 
@@ -63,7 +64,7 @@ func (m *Handler) StartDevice(deviceID string) error {
 	}
 
 	if found {
-		cmd := device.NewCommand("xcrun", "simctl", "boot", deviceID)
+		cmd := exec.NewCommand("xcrun", "simctl", "boot", deviceID)
 		return cmd.Run()
 	}
 
@@ -80,7 +81,7 @@ func (m *Handler) StopDevice(deviceID string) error {
 	}
 
 	if found {
-		cmd := device.NewCommand("xcrun", "simctl", "shutdown", deviceID)
+		cmd := exec.NewCommand("xcrun", "simctl", "shutdown", deviceID)
 		return cmd.Run()
 	}
 
@@ -97,7 +98,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 
 func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 	lastUpdate := time.Now().UTC()
-	cmd := device.NewCommand("xcrun", "simctl", "list", "devices", "--json")
+	cmd := exec.NewCommand("xcrun", "simctl", "list", "devices", "--json")
 	output, err := cmd.Output()
 	if err != nil {
 		return err

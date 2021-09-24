@@ -8,11 +8,14 @@ import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, Tabl
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
 import TestStatusIconComponent from '../../components/test-status-icon.component';
+import Moment from 'react-moment';
+import { useSSE } from 'react-hooks-sse';
+import ITesRunLogEntryData from '../../types/test.run.log.entry';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
-            maxWidth: 936,
+            maxWidth: 1200,
             margin: 'auto',
             overflow: 'hidden',
         },
@@ -38,13 +41,33 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 
 type TestRunProps = WithStyles<typeof styles>;
 
+interface NewTestRunPayload {
+    TestRunID: number,
+    Entry: ITesRunLogEntryData,
+}
+
 const TestRun: FC<TestRunProps> = (props) => {
     const {} = props;
 
     const { testId } = useParams<number>();
 
     const [testRun, setTestRun] = useState<ITestRunData>();
+    const [log, setLog] = useState<Array<ITesRunLogEntryData>>([]);
 
+    const testRunEntry = useSSE<NewTestRunPayload | null>('testlog', null);
+    useEffect(() => {
+        if (testRunEntry === null)
+            return;
+        if (testRun?.ID !== testRunEntry.TestRunID) {
+            return;
+        }
+        setLog(prevState => {
+            const newState = [...prevState];
+            newState.push(testRunEntry.Entry);
+            return newState;
+        });
+    }, [testRunEntry, testRun?.ID]);
+    
     const [runsOpen, setRunsOpen] = useState<number>();
     const [runsUnstable, setRunsUnstable] = useState<number>();
     const [runsFailed, setRunsFailed] = useState<number>();
@@ -93,44 +116,50 @@ const TestRun: FC<TestRunProps> = (props) => {
         });
     }, [testId]);
 
+    useEffect(() => {
+        if (testRun !== undefined) {
+            setLog(testRun.Log);
+        }
+    }, [testRun]);
+
     return (
-        <Grid container={true} spacing={12}>
-            <Grid item={true} xs={8}>
+        <Grid container={ true } spacing={ 12 }>
+            <Grid item={ true } xs={ 8 }>
             </Grid>
-            <Grid item={true} xs={4}>
-                <Box component={Paper} sx={{ p: 2, m: 2 }}>
-                    <Grid container={true} spacing={12}>
-                        <Grid item={true} xs={3}>
+            <Grid item={ true } xs={ 4 }>
+                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Grid container={ true } spacing={ 12 }>
+                        <Grid item={ true } xs={ 3 }>
                             Open
                         </Grid>
-                        <Grid item={true} xs={3}>
+                        <Grid item={ true } xs={ 3 }>
                             Unstable
                         </Grid>
-                        <Grid item={true} xs={3}>
+                        <Grid item={ true } xs={ 3 }>
                             Failed
                         </Grid>
-                        <Grid item={true} xs={3}>
+                        <Grid item={ true } xs={ 3 }>
                             Success
                         </Grid>
-                        <Grid item={true} xs={3}>
-                            {runsOpen}
+                        <Grid item={ true } xs={ 3 }>
+                            { runsOpen }
                         </Grid>
-                        <Grid item={true} xs={3}>
-                            {runsUnstable}
+                        <Grid item={ true } xs={ 3 }>
+                            { runsUnstable }
                         </Grid>
-                        <Grid item={true} xs={3}>
-                            {runsFailed}
+                        <Grid item={ true } xs={ 3 }>
+                            { runsFailed }
                         </Grid>
-                        <Grid item={true} xs={3}>
-                            {runsSuccess}
+                        <Grid item={ true } xs={ 3 }>
+                            { runsSuccess }
                         </Grid>
                     </Grid>
                 </Box>
             </Grid>
-            <Grid item={true} xs={12}>
-                <Box component={Paper} sx={{ m: 2 }}>
+            <Grid item={ true } xs={ 12 }>
+                <Box component={ Paper } sx={ { m: 2 } }>
                     <TableContainer>
-                        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+                        <Table sx={ { minWidth: 650 } } size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Device</TableCell>
@@ -139,23 +168,47 @@ const TestRun: FC<TestRunProps> = (props) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {testRun?.Protocols.map((protocol) => (
-                                    <TableRow key={protocol.ID}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                { testRun?.Protocols.map((protocol) => (
+                                    <TableRow key={ protocol.ID }
+                                        sx={ { '&:last-child td, &:last-child th': { border: 0 } } }>
                                         <TableCell component="th" scope="row">
                                             <Link
-                                                href={`/test/${testRun?.TestID}/run/${testRun?.ID}/${protocol.ID}`}
+                                                href={ `/test/${ testRun?.TestID }/run/${ testRun?.ID }/${ protocol.ID }` }
                                                 underline="none">
-                                                {protocol.Device.Name}
+                                                { protocol.Device.Name }
                                             </Link>
                                         </TableCell>
                                         <TableCell
-                                            align="right">{protocol.Device.OS} {protocol.Device.OSVersion}</TableCell>
+                                            align="right">{ protocol.Device.OS } { protocol.Device.OSVersion }</TableCell>
                                         <TableCell align="right">
-                                            <TestStatusIconComponent status={protocol.TestResult} />
+                                            <TestStatusIconComponent status={ protocol.TestResult }/>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )) }
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
+            </Grid>
+            <Grid item={ true } xs={ 12 }>
+                <Box component={ Paper } sx={ { m: 2 } }>
+                    <TableContainer>
+                        <Table sx={ { minWidth: 650 } } size="small" aria-label="a dense table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Date</TableCell>
+                                    <TableCell>Level</TableCell>
+                                    <TableCell>Log</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                { log.map((entry) => <TableRow key={ entry.ID }>
+                                    <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
+                                        <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
+                                    </TableCell>
+                                    <TableCell>{ entry.Level }</TableCell>
+                                    <TableCell>{ entry.Log }</TableCell>
+                                </TableRow>) }
                             </TableBody>
                         </Table>
                     </TableContainer>

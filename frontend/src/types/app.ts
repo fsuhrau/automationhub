@@ -1,5 +1,7 @@
+import IAppFunctionData from './app.function';
+
 export default interface IAppData {
-    ID?: number,
+    ID: number,
     Name: string,
     Platform: string,
     Version: string,
@@ -8,6 +10,7 @@ export default interface IAppData {
     LaunchActivity: string,
     Additional: string,
     Hash: string,
+    AppFunctions: IAppFunctionData[],
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

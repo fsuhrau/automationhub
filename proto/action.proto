@@ -99,14 +99,21 @@ enum ActionType {
 }
 
 enum LogType {
-  Info = 0;
-  Warning = 1;
-  Error = 2;
-  Step = 3;
-  Status = 4;
-  Checkpoint = 5;
-  Performance = 6;
+  DeviceLog = 0;
+  StepLog = 1;
+  StatusLog = 2;
+  CheckpointLog = 3;
+  PerformanceLog = 4;
 }
+
+enum LogLevel {
+  Debug = 0;
+  Info = 1;
+  Warning = 2;
+  Error = 3;
+  Exception = 4;
+}
+
 
 enum ContentType {
   Flatbuffer = 0;
@@ -161,7 +168,8 @@ message Tests {
 
 message LogData {
   LogType type = 1;
-  string message = 2;
+  LogLevel level = 2;
+  string message = 3;
 }
 
 message Response {

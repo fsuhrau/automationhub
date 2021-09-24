@@ -46,7 +46,7 @@ func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {
 
 }
 
-func (s *ApiService) runTests(session *Session, c *gin.Context) {
+func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	type Response struct {
 		Success bool
 		Message string
@@ -99,6 +99,7 @@ func (s *ApiService) runTests(session *Session, c *gin.Context) {
 
 	runTestAction := action.TestStart{
 		Class: "Innium.IntegrationTests.SmokeTests",
+		Method: "MainTutorialTest",
 	}
 
 	executer := unity.NewExecuter(s.devicesManager)

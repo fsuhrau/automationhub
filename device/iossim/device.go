@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/generic"
+	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
 	"image/png"
 	"net"
@@ -73,24 +74,24 @@ func (d *Device) UpdateDeviceInfos() error {
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
-	cmd := device.NewCommand("xcrun", "simctl", "get_app_container", d.DeviceID(), params.Identifier)
+	cmd := exec2.NewCommand("xcrun", "simctl", "get_app_container", d.DeviceID(), params.Identifier)
 	err := cmd.Run()
 	return err == nil, err
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
-	cmd := device.NewCommand("xcrun", "simctl", "install", d.DeviceID(), params.AppPath)
+	cmd := exec2.NewCommand("xcrun", "simctl", "install", d.DeviceID(), params.AppPath)
 	return cmd.Run()
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	cmd := device.NewCommand("xcrun", "simctl", "uninstall", d.DeviceID(), params.Identifier)
+	cmd := exec2.NewCommand("xcrun", "simctl", "uninstall", d.DeviceID(), params.Identifier)
 	return cmd.Run()
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
 	if restart {
-		cmd := device.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "HOST", hostIP.String())
+		cmd := exec2.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "HOST", hostIP.String())
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -100,7 +101,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 
 func (d *Device) StopApp(params *app.Parameter) error {
 	if restart {
-		cmd := device.NewCommand("xcrun", "simctl", "terminate", d.DeviceID(), params.Identifier)
+		cmd := exec2.NewCommand("xcrun", "simctl", "terminate", d.DeviceID(), params.Identifier)
 		return cmd.Run()
 	}
 	return nil
@@ -111,7 +112,7 @@ func (d *Device) IsAppConnected() bool {
 }
 
 func (d *Device) StartRecording(path string) error {
-	d.recordingSession = device.NewCommand("xcrun", "simctl", "io", d.DeviceID(), "recordVideo", fmt.Sprintf("./%s.mp4", path))
+	d.recordingSession = exec2.NewCommand("xcrun", "simctl", "io", d.DeviceID(), "recordVideo", fmt.Sprintf("./%s.mp4", path))
 	if err := d.recordingSession.Start(); err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	var width int
 	var height int
 	fileName := fmt.Sprintf("%s.png", d.deviceID)
-	cmd := device.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
+	cmd := exec2.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
 	if err := cmd.Run(); err != nil {
 		return nil, 0, 0, err
 	}

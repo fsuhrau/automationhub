@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles } from '@material-ui/core/styles';
 import {
@@ -26,12 +26,14 @@ import ICreateTestData from '../../types/request.create.test';
 import { createTest } from '../../services/test.service';
 import AppSelection from '../../components/app-selection.component';
 import IAppData from '../../types/app';
-import { getAllApps } from '../../services/app.service';
+import TestMethodSelection from '../../components/testmethod-selection.component';
+import IAppFunctionData from '../../types/app.function';
+import IUnityTestFunctionData from '../../types/unity.test.function';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         paper: {
-            maxWidth: 936,
+            maxWidth: 1200,
             padding: '10px',
             overflow: 'hidden',
         },
@@ -54,29 +56,29 @@ const useStyles = makeStyles((theme: Theme) =>
         },
     }),
 );
-const StringIsNumber = (value): boolean => isNaN(Number(value)) === false;
+const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
-function ToArray(en): Array {
+function ToArray(en: any): Array<Object> {
     return Object.keys(en).filter(StringIsNumber).map(key => ({ id: key, name: en[ key ] }));
 }
 
-function getExecutionTypes(): Array {
+function getExecutionTypes(): Array<Object> {
     return ToArray(TestExecutionType);
 }
 
-function getTestTypes(): Array {
+function getTestTypes(): Array<Object> {
     return ToArray(TestType);
 }
 
-function getSteps(): Array {
+function getSteps(): Array<string> {
     return ['Select Test Type', 'Test Configuration', 'Device Selection'];
 }
 
-function getUnityTestsConfig(): Array {
+function getUnityTestsConfig(): Array<Object> {
     return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
 }
 
-function getDeviceOption(): Array {
+function getDeviceOption(): Array<Object> {
     return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
@@ -86,10 +88,12 @@ const AddTestPage: FC = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
 
+    const [appId, setAppId] = React.useState<number>(0);
+
     const testTypes = getTestTypes();
     const [testType, setTestType] = React.useState<TestType>(TestType.Unity);
     const handleTestTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
-        const type = (event.target.value as TestType);
+        const type = (+event.target.value as TestType);
         console.log(type);
         setTestType(type);
     };
@@ -122,9 +126,7 @@ const AddTestPage: FC = () => {
         setSelectedDevices(devices);
     };
 
-    const handleAppSelection = (app: IAppData): void => {
-        console.log(app);
-    };
+    const [unityTestFunctions, setUnityTestFunctions] = React.useState<IAppFunctionData[]>([]);
 
     const createNewTest = (): void => {
         const deviceIds: number[] = selectedDevices.map(value => value.ID) as number[];
@@ -133,7 +135,7 @@ const AddTestPage: FC = () => {
             Name: testName,
             TestType: testType,
             UnityAllTests: unityTestExecution === 0,
-            UnitySelectedTests: [],
+            UnitySelectedTests: unityTestFunctions,
             AllDevices: deviceType === 0,
             SelectedDevices: deviceIds,
         };
@@ -157,14 +159,9 @@ const AddTestPage: FC = () => {
         setActiveStep((prevActiveStep) => prevActiveStep - 1);
     };
 
-    const [apps, setApps] = React.useState<IAppData[]>([]);
-    useEffect(() => {
-        getAllApps().then(response => {
-            setApps(response.data);
-        }).catch(e => {
-        });
-    }, []);
-
+    const handleFunctionSelection = (funcs: IAppFunctionData[]): void => {
+        setUnityTestFunctions(funcs);
+    };
 
     return (
         <Paper className={ classes.paper }>
@@ -267,14 +264,9 @@ const AddTestPage: FC = () => {
                                                             </Grid>
                                                             <Grid item={ true }>
                                                                 { unityTestExecution === 1 && (
-                                                                    <Grid container={ true } justifyContent="center"
-                                                                        spacing={ 2 } alignItems={ 'center' }
-                                                                        direction={ 'column' }>
-                                                                        <Grid item={ true }>
-                                                                            <AppSelection apps={ apps } upload={ true }
-                                                                                onSelectionChanged={ handleAppSelection }/>
-                                                                        </Grid>
-                                                                    </Grid>
+                                                                    <div>
+                                                                        <TestMethodSelection classes={ classes } onSelectionChanged={ handleFunctionSelection }/>
+                                                                    </div>
                                                                 ) }
                                                             </Grid>
                                                         </div>

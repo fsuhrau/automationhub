@@ -1,4 +1,4 @@
-package device
+package exec
 
 import (
 	"github.com/sirupsen/logrus"

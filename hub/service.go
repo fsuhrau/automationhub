@@ -41,7 +41,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessi
 
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
-		AllowMethods:     []string{"POST, OPTIONS, GET, PUT"},
+		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
 		AllowOrigins:     []string{"http://10.35.111.51:3000", "http://localhost:3000", "http://localhost:8002", "https://automationhub.com"},
 		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},

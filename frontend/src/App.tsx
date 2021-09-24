@@ -19,17 +19,18 @@ import TestProtocolPage from './pages/tests/test.protocol.content';
 import Moment from 'react-moment';
 import AppsPage from './pages/apps/apps.content';
 import AppsHeader from './pages/apps/apps.header';
+import { SSEProvider } from 'react-hooks-sse';
 
 Moment.globalLocale = 'de';
 
 const Copyright: FC = () => (
     <Typography variant="body2" color="textSecondary" align="center">
-        {'Copyright © '}
+        { 'Copyright © ' }
         <Link color="inherit" href="https://www.automation-hub.com/">
             AutomationHUB
-        </Link>{' '}
-        {new Date().getFullYear()}
-        {'.'}
+        </Link>{ ' ' }
+        { new Date().getFullYear() }
+        { '.' }
     </Typography>
 );
 
@@ -99,7 +100,7 @@ theme = {
                 margin: '0 16px',
                 minWidth: 0,
                 padding: 0,
-                [theme.breakpoints.up('md')]: {
+                [ theme.breakpoints.up('md') ]: {
                     padding: 0,
                     minWidth: 0,
                 },
@@ -151,7 +152,7 @@ const styles = createStyles({
         minHeight: '100vh',
     },
     drawer: {
-        [theme.breakpoints.up('sm')]: {
+        [ theme.breakpoints.up('sm') ]: {
             width: drawerWidth,
             flexShrink: 0,
         },
@@ -182,106 +183,108 @@ const App: FC<AppProps> = (props) => {
         setMobileOpen(!mobileOpen);
     };
 
-    return <Router>
-        <ThemeProvider theme={theme}>
-            <div className={classes.root}>
-                <CssBaseline/>
-                <nav className={classes.drawer}>
-                    <Hidden smUp={true} implementation="js">
-                        <Navigator
-                            PaperProps={{ style: { width: drawerWidth } }}
-                            variant="temporary"
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                        />
-                    </Hidden>
-                    <Hidden xsDown={true} implementation="css">
-                        <Navigator PaperProps={{ style: { width: drawerWidth } }}/>
-                    </Hidden>
-                </nav>
-                <div className={classes.app}>
-                    <Switch>
-                        <Route path="/tests">
-                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path={'/test/new'}>
-                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path={'/test/:testId/run/:runId/:protocolId'}>
-                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/test/:testId/runs">
-                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/test/:testId/runs/last">
-                            <TestHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/results">
-                            <Header onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/performance">
-                            <Header onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/settings">
-                            <Header onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/apps">
-                            <AppsHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/users">
-                            <Header onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                        <Route path="/devices">
-                            <DeviceHeader onDrawerToggle={handleDrawerToggle}/>
-                        </Route>
-                    </Switch>
-                    <main className={classes.main}>
+    return <SSEProvider endpoint="http://localhost:8002/api/sse/">
+        <Router>
+            <ThemeProvider theme={ theme }>
+                <div className={ classes.root }>
+                    <CssBaseline/>
+                    <nav className={ classes.drawer }>
+                        <Hidden smUp={ true } implementation="js">
+                            <Navigator
+                                PaperProps={ { style: { width: drawerWidth } } }
+                                variant="temporary"
+                                open={ mobileOpen }
+                                onClose={ handleDrawerToggle }
+                            />
+                        </Hidden>
+                        <Hidden xsDown={ true } implementation="css">
+                            <Navigator PaperProps={ { style: { width: drawerWidth } } }/>
+                        </Hidden>
+                    </nav>
+                    <div className={ classes.app }>
                         <Switch>
                             <Route path="/tests">
-                                <TestContent/>
+                                <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
-                            <Route path={'/test/new'}>
-                                <AddTestPage/>
+                            <Route path={ '/test/new' }>
+                                <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
-                            <Route path={'/test/:testId/run/:runId/:protocolId'}>
-                                <TestProtocolPage/>
+                            <Route path={ '/test/:testId/run/:runId/:protocolId' }>
+                                <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
-                            <Route path={'/test/:testId/runs/last'}>
-                                <TestRunPage/>
+                            <Route path="/test/:testId/runs">
+                                <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
-                            <Route path={'/test/:testId/runs'}>
-                                <TestRunsPage/>
-                            </Route>
-                            <Route path="/test/new">
-                                <AddTestPage/>
+                            <Route path="/test/:testId/runs/last">
+                                <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/results">
-                                <Content/>
+                                <Header onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/performance">
-                                <Content/>
+                                <Header onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/settings">
-                                <Content/>
+                                <Header onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/apps">
-                                <AppsPage/>
+                                <AppsHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/users">
-                                <Content/>
+                                <Header onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                             <Route path="/devices">
-                                <DevicesContent/>
+                                <DeviceHeader onDrawerToggle={ handleDrawerToggle }/>
                             </Route>
                         </Switch>
-                    </main>
-                    <footer className={classes.footer}>
-                        <Copyright/>
-                    </footer>
+                        <main className={ classes.main }>
+                            <Switch>
+                                <Route path="/tests">
+                                    <TestContent/>
+                                </Route>
+                                <Route path={ '/test/new' }>
+                                    <AddTestPage/>
+                                </Route>
+                                <Route path={ '/test/:testId/run/:runId/:protocolId' }>
+                                    <TestProtocolPage/>
+                                </Route>
+                                <Route path={ '/test/:testId/runs/last' }>
+                                    <TestRunPage/>
+                                </Route>
+                                <Route path={ '/test/:testId/runs' }>
+                                    <TestRunsPage/>
+                                </Route>
+                                <Route path="/test/new">
+                                    <AddTestPage/>
+                                </Route>
+                                <Route path="/results">
+                                    <Content/>
+                                </Route>
+                                <Route path="/performance">
+                                    <Content/>
+                                </Route>
+                                <Route path="/settings">
+                                    <Content/>
+                                </Route>
+                                <Route path="/apps">
+                                    <AppsPage/>
+                                </Route>
+                                <Route path="/users">
+                                    <Content/>
+                                </Route>
+                                <Route path="/devices">
+                                    <DevicesContent/>
+                                </Route>
+                            </Switch>
+                        </main>
+                        <footer className={ classes.footer }>
+                            <Copyright/>
+                        </footer>
+                    </div>
                 </div>
-            </div>
-        </ThemeProvider>
-    </Router>;
+            </ThemeProvider>
+        </Router>
+    </SSEProvider>;
 };
 
 export default withStyles(styles)(App);

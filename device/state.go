@@ -2,7 +2,8 @@ package device
 
 type State uint8
 const (
-	StateUnknown State = iota
+	StateNone State = iota
+	StateUnknown
 	StateShutdown
 	StateRemoteDisconnected
 	StateBooted

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -48,7 +47,7 @@ func (d *Device) Unlock() error {
 	return nil
 }
 
-func (d *Device) IsLocker() bool {
+func (d *Device) IsLocked() bool {
 	return d.locked
 }
 
@@ -57,14 +56,14 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 }
 
 func (d *Device) Log(source, format string, params ...interface{}) {
-	logrus.Infof(format, params...)
+	// logrus.Infof(format, params...)
 	if d.writer != nil {
 		d.writer.Log(source, format, params...)
 	}
 }
 
 func (d *Device) Error(source, format string, params ...interface{}) {
-	logrus.Errorf(format, params...)
+	// logrus.Errorf(format, params...)
 	if d.writer != nil {
 		d.writer.Error(source, format, params...)
 	}

@@ -50,41 +50,43 @@ namespace Com.AutomationHub {
             "EgoKc2NlZW5ncmFwaBgBIAEoDBISCgpzY3JlZW5zaG90GAIgASgMEigKC2Nv",
             "bnRlbnRUeXBlGAMgASgOMhMuYWN0aW9uLkNvbnRlbnRUeXBlIjcKBFRlc3QS",
             "EAoIYXNzZW1ibHkYASABKAkSDQoFY2xhc3MYAiABKAkSDgoGbWV0aG9kGAMg",
-            "ASgJIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9uLlRlc3QiOQoH",
-            "TG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5cGUSDwoHbWVz",
-            "c2FnZRgCIAEoCSKiAgoIUmVzcG9uc2USEAoIYWN0aW9uSUQYASABKAkSJgoK",
-            "YWN0aW9uVHlwZRgCIAEoDjISLmFjdGlvbi5BY3Rpb25UeXBlEg8KB3N1Y2Nl",
-            "c3MYAyABKAgSEQoHdmlzaWJsZRgEIAEoCEgAEg4KBGRhdGEYBSABKAxIABIP",
-            "CgV2YWx1ZRgGIAEoCUgAEigKCnNjcmVlbnNob3QYByABKAsyEi5hY3Rpb24u",
-            "U2NyZWVuc2hvdEgAEiIKB2Nvbm5lY3QYCCABKAsyDy5hY3Rpb24uQ29ubmVj",
-            "dEgAEh4KBXRlc3RzGAkgASgLMg0uYWN0aW9uLlRlc3RzSAASHgoDbG9nGAog",
-            "ASgLMg8uYWN0aW9uLkxvZ0RhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJ",
-            "bnRlcmFjdGlvblR5cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0Rldmlj",
-            "ZRABEhIKDkdldERldmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIO",
-            "CgpJbnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQ",
-            "BhILCgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJl",
-            "Y29yZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsS",
-            "EgoORXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIKCkFj",
-            "dGlvblR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVs",
-            "ZW1lbnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0Vs",
-            "ZW1lbnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglU",
-            "b3VjaE1vdmUQBxILCgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglM",
-            "b25nVG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90",
-            "EAwSDAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlv",
-            "blN0YXR1cxAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQESpiCgdMb2dUeXBl",
-            "EggKBEluZm8QABILCgdXYXJuaW5nEAESCQoFRXJyb3IQAhIICgRTdGVwEAMS",
-            "CgoGU3RhdHVzEAQSDgoKQ2hlY2twb2ludBAFEg8KC1BlcmZvcm1hbmNlEAYq",
-            "MAoLQ29udGVudFR5cGUSDgoKRmxhdGJ1ZmZlchAAEggKBEpzb24QARIHCgNY",
-            "bWwQAiofCgdBcHBUeXBlEgkKBUNvY29zEAASCQoFVW5pdHkQATLfAQoMUmVt",
-            "b3RlRGV2aWNlEkEKCkRldmljZUxpc3QSFS5hY3Rpb24uRGV2aWNlUmVxdWVz",
-            "dBoWLmFjdGlvbi5EZXZpY2VSZXNwb25zZSIAKAEwARJSChFEZXZpY2VJbnRl",
-            "cmFjdGlvbhIaLmFjdGlvbi5JbnRlcmFjdGlvblJlcXVlc3QaGy5hY3Rpb24u",
-            "SW50ZXJhY3Rpb25SZXNwb25zZSIAKAEwARI4Cg1BY3Rpb25FeGVjdXRlEg8u",
-            "YWN0aW9uLlJlcXVlc3QaEC5hY3Rpb24uUmVzcG9uc2UiACgBMAFCIFoKaHVi",
-            "L2FjdGlvbqoCEUNvbS5BdXRvbWF0aW9uSHViYgZwcm90bzM="));
+            "ASgJIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9uLlRlc3QiWgoH",
+            "TG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5cGUSHwoFbGV2",
+            "ZWwYAiABKA4yEC5hY3Rpb24uTG9nTGV2ZWwSDwoHbWVzc2FnZRgDIAEoCSKi",
+            "AgoIUmVzcG9uc2USEAoIYWN0aW9uSUQYASABKAkSJgoKYWN0aW9uVHlwZRgC",
+            "IAEoDjISLmFjdGlvbi5BY3Rpb25UeXBlEg8KB3N1Y2Nlc3MYAyABKAgSEQoH",
+            "dmlzaWJsZRgEIAEoCEgAEg4KBGRhdGEYBSABKAxIABIPCgV2YWx1ZRgGIAEo",
+            "CUgAEigKCnNjcmVlbnNob3QYByABKAsyEi5hY3Rpb24uU2NyZWVuc2hvdEgA",
+            "EiIKB2Nvbm5lY3QYCCABKAsyDy5hY3Rpb24uQ29ubmVjdEgAEh4KBXRlc3Rz",
+            "GAkgASgLMg0uYWN0aW9uLlRlc3RzSAASHgoDbG9nGAogASgLMg8uYWN0aW9u",
+            "LkxvZ0RhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJbnRlcmFjdGlvblR5",
+            "cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0RldmljZRABEhIKDkdldERl",
+            "dmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIOCgpJbnN0YWxsQXBw",
+            "EAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQBhILCgdTdG9wQXBw",
+            "EAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJlY29yZGluZxAJEhEK",
+            "DVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsSEgoORXhlY3V0ZUZl",
+            "YXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIKCkFjdGlvblR5cGUSCgoG",
+            "Q3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVsZW1lbnRJc0Rpc3Bs",
+            "YXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0VsZW1lbnRHZXRWYWx1",
+            "ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglUb3VjaE1vdmUQBxIL",
+            "CgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglMb25nVG91Y2gQChIQ",
+            "CgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90EAwSDAoIR2V0VGVz",
+            "dHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlvblN0YXR1cxAPEgcK",
+            "A0xvZxAQEg4KClVuaXR5UmVzZXQQESpbCgdMb2dUeXBlEg0KCURldmljZUxv",
+            "ZxAAEgsKB1N0ZXBMb2cQARINCglTdGF0dXNMb2cQAhIRCg1DaGVja3BvaW50",
+            "TG9nEAMSEgoOUGVyZm9ybWFuY2VMb2cQBCpGCghMb2dMZXZlbBIJCgVEZWJ1",
+            "ZxAAEggKBEluZm8QARILCgdXYXJuaW5nEAISCQoFRXJyb3IQAxINCglFeGNl",
+            "cHRpb24QBCowCgtDb250ZW50VHlwZRIOCgpGbGF0YnVmZmVyEAASCAoESnNv",
+            "bhABEgcKA1htbBACKh8KB0FwcFR5cGUSCQoFQ29jb3MQABIJCgVVbml0eRAB",
+            "Mt8BCgxSZW1vdGVEZXZpY2USQQoKRGV2aWNlTGlzdBIVLmFjdGlvbi5EZXZp",
+            "Y2VSZXF1ZXN0GhYuYWN0aW9uLkRldmljZVJlc3BvbnNlIgAoATABElIKEURl",
+            "dmljZUludGVyYWN0aW9uEhouYWN0aW9uLkludGVyYWN0aW9uUmVxdWVzdBob",
+            "LmFjdGlvbi5JbnRlcmFjdGlvblJlc3BvbnNlIgAoATABEjgKDUFjdGlvbkV4",
+            "ZWN1dGUSDy5hY3Rpb24uUmVxdWVzdBoQLmFjdGlvbi5SZXNwb25zZSIAKAEw",
+            "AUIgWgpodWIvYWN0aW9uqgIRQ29tLkF1dG9tYXRpb25IdWJiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.LogLevel), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Device), global::Com.AutomationHub.Device.Parser, new[]{ "Manager", "DeviceId", "Name", "OperationSystem", "SupportedArchitectures", "Status" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.DeviceRequest), global::Com.AutomationHub.DeviceRequest.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.DeviceResponse), global::Com.AutomationHub.DeviceResponse.Parser, new[]{ "Devices" }, null, null, null),
@@ -100,7 +102,7 @@ namespace Com.AutomationHub {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Screenshot), global::Com.AutomationHub.Screenshot.Parser, new[]{ "Sceengraph", "Screenshot_", "ContentType" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Test), global::Com.AutomationHub.Test.Parser, new[]{ "Assembly", "Class", "Method" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Tests), global::Com.AutomationHub.Tests.Parser, new[]{ "Tests_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.LogData), global::Com.AutomationHub.LogData.Parser, new[]{ "Type", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.LogData), global::Com.AutomationHub.LogData.Parser, new[]{ "Type", "Level", "Message" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests", "Log" }, new[]{ "Payload" }, null, null)
           }));
     }
@@ -147,13 +149,19 @@ namespace Com.AutomationHub {
   }
 
   public enum LogType {
-    [pbr::OriginalName("Info")] Info = 0,
-    [pbr::OriginalName("Warning")] Warning = 1,
-    [pbr::OriginalName("Error")] Error = 2,
-    [pbr::OriginalName("Step")] Step = 3,
-    [pbr::OriginalName("Status")] Status = 4,
-    [pbr::OriginalName("Checkpoint")] Checkpoint = 5,
-    [pbr::OriginalName("Performance")] Performance = 6,
+    [pbr::OriginalName("DeviceLog")] DeviceLog = 0,
+    [pbr::OriginalName("StepLog")] StepLog = 1,
+    [pbr::OriginalName("StatusLog")] StatusLog = 2,
+    [pbr::OriginalName("CheckpointLog")] CheckpointLog = 3,
+    [pbr::OriginalName("PerformanceLog")] PerformanceLog = 4,
+  }
+
+  public enum LogLevel {
+    [pbr::OriginalName("Debug")] Debug = 0,
+    [pbr::OriginalName("Info")] Info = 1,
+    [pbr::OriginalName("Warning")] Warning = 2,
+    [pbr::OriginalName("Error")] Error = 3,
+    [pbr::OriginalName("Exception")] Exception = 4,
   }
 
   public enum ContentType {
@@ -3024,6 +3032,7 @@ namespace Com.AutomationHub {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public LogData(LogData other) : this() {
       type_ = other.type_;
+      level_ = other.level_;
       message_ = other.message_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -3035,7 +3044,7 @@ namespace Com.AutomationHub {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 1;
-    private global::Com.AutomationHub.LogType type_ = global::Com.AutomationHub.LogType.Info;
+    private global::Com.AutomationHub.LogType type_ = global::Com.AutomationHub.LogType.DeviceLog;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Com.AutomationHub.LogType Type {
       get { return type_; }
@@ -3044,8 +3053,19 @@ namespace Com.AutomationHub {
       }
     }
 
+    /// <summary>Field number for the "level" field.</summary>
+    public const int LevelFieldNumber = 2;
+    private global::Com.AutomationHub.LogLevel level_ = global::Com.AutomationHub.LogLevel.Debug;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Com.AutomationHub.LogLevel Level {
+      get { return level_; }
+      set {
+        level_ = value;
+      }
+    }
+
     /// <summary>Field number for the "message" field.</summary>
-    public const int MessageFieldNumber = 2;
+    public const int MessageFieldNumber = 3;
     private string message_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Message {
@@ -3069,6 +3089,7 @@ namespace Com.AutomationHub {
         return true;
       }
       if (Type != other.Type) return false;
+      if (Level != other.Level) return false;
       if (Message != other.Message) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -3076,7 +3097,8 @@ namespace Com.AutomationHub {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Type != global::Com.AutomationHub.LogType.Info) hash ^= Type.GetHashCode();
+      if (Type != global::Com.AutomationHub.LogType.DeviceLog) hash ^= Type.GetHashCode();
+      if (Level != global::Com.AutomationHub.LogLevel.Debug) hash ^= Level.GetHashCode();
       if (Message.Length != 0) hash ^= Message.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -3091,12 +3113,16 @@ namespace Com.AutomationHub {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Type != global::Com.AutomationHub.LogType.Info) {
+      if (Type != global::Com.AutomationHub.LogType.DeviceLog) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Type);
       }
+      if (Level != global::Com.AutomationHub.LogLevel.Debug) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Level);
+      }
       if (Message.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(26);
         output.WriteString(Message);
       }
       if (_unknownFields != null) {
@@ -3107,8 +3133,11 @@ namespace Com.AutomationHub {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Type != global::Com.AutomationHub.LogType.Info) {
+      if (Type != global::Com.AutomationHub.LogType.DeviceLog) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
+      }
+      if (Level != global::Com.AutomationHub.LogLevel.Debug) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Level);
       }
       if (Message.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
@@ -3124,8 +3153,11 @@ namespace Com.AutomationHub {
       if (other == null) {
         return;
       }
-      if (other.Type != global::Com.AutomationHub.LogType.Info) {
+      if (other.Type != global::Com.AutomationHub.LogType.DeviceLog) {
         Type = other.Type;
+      }
+      if (other.Level != global::Com.AutomationHub.LogLevel.Debug) {
+        Level = other.Level;
       }
       if (other.Message.Length != 0) {
         Message = other.Message;
@@ -3145,7 +3177,11 @@ namespace Com.AutomationHub {
             Type = (global::Com.AutomationHub.LogType) input.ReadEnum();
             break;
           }
-          case 18: {
+          case 16: {
+            Level = (global::Com.AutomationHub.LogLevel) input.ReadEnum();
+            break;
+          }
+          case 26: {
             Message = input.ReadString();
             break;
           }

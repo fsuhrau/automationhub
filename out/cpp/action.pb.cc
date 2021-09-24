@@ -361,7 +361,7 @@ static void InitDefaultsscc_info_Touch_action_2eproto() {
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Touch_action_2eproto}, {}};
 
 static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[17];
-static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_action_2eproto[5];
+static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_action_2eproto[6];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_action_2eproto = nullptr;
 
 const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -491,6 +491,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::action::LogData, type_),
+  PROTOBUF_FIELD_OFFSET(::action::LogData, level_),
   PROTOBUF_FIELD_OFFSET(::action::LogData, message_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::action::Response, _internal_metadata_),
@@ -526,7 +527,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 106, -1, sizeof(::action::Test)},
   { 114, -1, sizeof(::action::Tests)},
   { 120, -1, sizeof(::action::LogData)},
-  { 127, -1, sizeof(::action::Response)},
+  { 128, -1, sizeof(::action::Response)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -580,41 +581,44 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "ntentType\030\003 \001(\0162\023.action.ContentType\"7\n\004"
   "Test\022\020\n\010assembly\030\001 \001(\t\022\r\n\005class\030\002 \001(\t\022\016\n"
   "\006method\030\003 \001(\t\"$\n\005Tests\022\033\n\005tests\030\001 \003(\0132\014."
-  "action.Test\"9\n\007LogData\022\035\n\004type\030\001 \001(\0162\017.a"
-  "ction.LogType\022\017\n\007message\030\002 \001(\t\"\242\002\n\010Respo"
-  "nse\022\020\n\010actionID\030\001 \001(\t\022&\n\nactionType\030\002 \001("
-  "\0162\022.action.ActionType\022\017\n\007success\030\003 \001(\010\022\021"
-  "\n\007visible\030\004 \001(\010H\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005val"
-  "ue\030\006 \001(\tH\000\022(\n\nscreenshot\030\007 \001(\0132\022.action."
-  "ScreenshotH\000\022\"\n\007connect\030\010 \001(\0132\017.action.C"
-  "onnectH\000\022\036\n\005tests\030\t \001(\0132\r.action.TestsH\000"
-  "\022\036\n\003log\030\n \001(\0132\017.action.LogDataH\000B\t\n\007payl"
-  "oad*\220\002\n\025DeviceInteractionType\022\016\n\nLockDev"
-  "ice\020\000\022\020\n\014UnlockDevice\020\001\022\022\n\016GetDeviceStat"
-  "e\020\002\022\022\n\016IsAppInstalled\020\003\022\016\n\nInstallApp\020\004\022"
-  "\020\n\014UninstallApp\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopA"
-  "pp\020\007\022\022\n\016IsAppConnected\020\010\022\022\n\016StartRecordi"
-  "ng\020\t\022\021\n\rStopRecording\020\n\022\016\n\nHasFeature\020\013\022"
-  "\022\n\016ExecuteFeature\020\014\022\021\n\rGetScreenShot\020\r*\264"
-  "\002\n\nActionType\022\n\n\006Custom\020\000\022\021\n\rGetSceneGra"
-  "ph\020\001\022\026\n\022ElementIsDisplayed\020\002\022\023\n\017ElementS"
-  "etValue\020\003\022\023\n\017ElementGetValue\020\004\022\010\n\004Move\020\005"
-  "\022\r\n\tTouchDown\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchU"
-  "p\020\010\022\017\n\013DragAndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014E"
-  "lementTouch\020\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetT"
-  "ests\020\r\022\017\n\013ExecuteTest\020\016\022\023\n\017ExecutionStat"
-  "us\020\017\022\007\n\003Log\020\020\022\016\n\nUnityReset\020\021*b\n\007LogType"
-  "\022\010\n\004Info\020\000\022\013\n\007Warning\020\001\022\t\n\005Error\020\002\022\010\n\004St"
-  "ep\020\003\022\n\n\006Status\020\004\022\016\n\nCheckpoint\020\005\022\017\n\013Perf"
-  "ormance\020\006*0\n\013ContentType\022\016\n\nFlatbuffer\020\000"
-  "\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppType\022\t\n\005Cocos\020"
-  "\000\022\t\n\005Unity\020\0012\337\001\n\014RemoteDevice\022A\n\nDeviceL"
-  "ist\022\025.action.DeviceRequest\032\026.action.Devi"
-  "ceResponse\"\000(\0010\001\022R\n\021DeviceInteraction\022\032."
-  "action.InteractionRequest\032\033.action.Inter"
-  "actionResponse\"\000(\0010\001\0228\n\rActionExecute\022\017."
-  "action.Request\032\020.action.Response\"\000(\0010\001B "
-  "Z\nhub/action\252\002\021Com.AutomationHubb\006proto3"
+  "action.Test\"Z\n\007LogData\022\035\n\004type\030\001 \001(\0162\017.a"
+  "ction.LogType\022\037\n\005level\030\002 \001(\0162\020.action.Lo"
+  "gLevel\022\017\n\007message\030\003 \001(\t\"\242\002\n\010Response\022\020\n\010"
+  "actionID\030\001 \001(\t\022&\n\nactionType\030\002 \001(\0162\022.act"
+  "ion.ActionType\022\017\n\007success\030\003 \001(\010\022\021\n\007visib"
+  "le\030\004 \001(\010H\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005value\030\006 \001("
+  "\tH\000\022(\n\nscreenshot\030\007 \001(\0132\022.action.Screens"
+  "hotH\000\022\"\n\007connect\030\010 \001(\0132\017.action.ConnectH"
+  "\000\022\036\n\005tests\030\t \001(\0132\r.action.TestsH\000\022\036\n\003log"
+  "\030\n \001(\0132\017.action.LogDataH\000B\t\n\007payload*\220\002\n"
+  "\025DeviceInteractionType\022\016\n\nLockDevice\020\000\022\020"
+  "\n\014UnlockDevice\020\001\022\022\n\016GetDeviceState\020\002\022\022\n\016"
+  "IsAppInstalled\020\003\022\016\n\nInstallApp\020\004\022\020\n\014Unin"
+  "stallApp\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020\007\022\022\n"
+  "\016IsAppConnected\020\010\022\022\n\016StartRecording\020\t\022\021\n"
+  "\rStopRecording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016Exec"
+  "uteFeature\020\014\022\021\n\rGetScreenShot\020\r*\264\002\n\nActi"
+  "onType\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020\001\022\026\n"
+  "\022ElementIsDisplayed\020\002\022\023\n\017ElementSetValue"
+  "\020\003\022\023\n\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTou"
+  "chDown\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchUp\020\010\022\017\n\013"
+  "DragAndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014ElementT"
+  "ouch\020\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTests\020\r\022"
+  "\017\n\013ExecuteTest\020\016\022\023\n\017ExecutionStatus\020\017\022\007\n"
+  "\003Log\020\020\022\016\n\nUnityReset\020\021*[\n\007LogType\022\r\n\tDev"
+  "iceLog\020\000\022\013\n\007StepLog\020\001\022\r\n\tStatusLog\020\002\022\021\n\r"
+  "CheckpointLog\020\003\022\022\n\016PerformanceLog\020\004*F\n\010L"
+  "ogLevel\022\t\n\005Debug\020\000\022\010\n\004Info\020\001\022\013\n\007Warning\020"
+  "\002\022\t\n\005Error\020\003\022\r\n\tException\020\004*0\n\013ContentTy"
+  "pe\022\016\n\nFlatbuffer\020\000\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n"
+  "\007AppType\022\t\n\005Cocos\020\000\022\t\n\005Unity\020\0012\337\001\n\014Remot"
+  "eDevice\022A\n\nDeviceList\022\025.action.DeviceReq"
+  "uest\032\026.action.DeviceResponse\"\000(\0010\001\022R\n\021De"
+  "viceInteraction\022\032.action.InteractionRequ"
+  "est\032\033.action.InteractionResponse\"\000(\0010\001\0228"
+  "\n\rActionExecute\022\017.action.Request\032\020.actio"
+  "n.Response\"\000(\0010\001B Z\nhub/action\252\002\021Com.Aut"
+  "omationHubb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
@@ -640,7 +644,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2600,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2698,
   &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 17, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
   file_level_metadata_action_2eproto, 17, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
@@ -716,8 +720,23 @@ bool LogType_IsValid(int value) {
     case 2:
     case 3:
     case 4:
-    case 5:
-    case 6:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* LogLevel_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_action_2eproto);
+  return file_level_enum_descriptors_action_2eproto[3];
+}
+bool LogLevel_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
       return true;
     default:
       return false;
@@ -726,7 +745,7 @@ bool LogType_IsValid(int value) {
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ContentType_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_action_2eproto);
-  return file_level_enum_descriptors_action_2eproto[3];
+  return file_level_enum_descriptors_action_2eproto[4];
 }
 bool ContentType_IsValid(int value) {
   switch (value) {
@@ -741,7 +760,7 @@ bool ContentType_IsValid(int value) {
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* AppType_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_action_2eproto);
-  return file_level_enum_descriptors_action_2eproto[4];
+  return file_level_enum_descriptors_action_2eproto[5];
 }
 bool AppType_IsValid(int value) {
   switch (value) {
@@ -4852,14 +4871,18 @@ LogData::LogData(const LogData& from)
   if (!from._internal_message().empty()) {
     message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
   }
-  type_ = from.type_;
+  ::memcpy(&type_, &from.type_,
+    static_cast<size_t>(reinterpret_cast<char*>(&level_) -
+    reinterpret_cast<char*>(&type_)) + sizeof(level_));
   // @@protoc_insertion_point(copy_constructor:action.LogData)
 }
 
 void LogData::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LogData_action_2eproto.base);
   message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  type_ = 0;
+  ::memset(&type_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&level_) -
+      reinterpret_cast<char*>(&type_)) + sizeof(level_));
 }
 
 LogData::~LogData() {
@@ -4887,7 +4910,9 @@ void LogData::Clear() {
   (void) cached_has_bits;
 
   message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  type_ = 0;
+  ::memset(&type_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&level_) -
+      reinterpret_cast<char*>(&type_)) + sizeof(level_));
   _internal_metadata_.Clear();
 }
 
@@ -4906,9 +4931,17 @@ const char* LogData::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::in
           _internal_set_type(static_cast<::action::LogType>(val));
         } else goto handle_unusual;
         continue;
-      // string message = 2;
+      // .action.LogLevel level = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+          _internal_set_level(static_cast<::action::LogLevel>(val));
+        } else goto handle_unusual;
+        continue;
+      // string message = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParserUTF8(_internal_mutable_message(), ptr, ctx, "action.LogData.message");
           CHK_(ptr);
         } else goto handle_unusual;
@@ -4946,14 +4979,21 @@ failure:
       1, this->_internal_type(), target);
   }
 
-  // string message = 2;
+  // .action.LogLevel level = 2;
+  if (this->level() != 0) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      2, this->_internal_level(), target);
+  }
+
+  // string message = 3;
   if (this->message().size() > 0) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_message().data(), static_cast<int>(this->_internal_message().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
       "action.LogData.message");
     target = stream->WriteStringMaybeAliased(
-        2, this->_internal_message(), target);
+        3, this->_internal_message(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4972,7 +5012,7 @@ size_t LogData::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string message = 2;
+  // string message = 3;
   if (this->message().size() > 0) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
@@ -4983,6 +5023,12 @@ size_t LogData::ByteSizeLong() const {
   if (this->type() != 0) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_type());
+  }
+
+  // .action.LogLevel level = 2;
+  if (this->level() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_level());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5023,6 +5069,9 @@ void LogData::MergeFrom(const LogData& from) {
   if (from.type() != 0) {
     _internal_set_type(from._internal_type());
   }
+  if (from.level() != 0) {
+    _internal_set_level(from._internal_level());
+  }
 }
 
 void LogData::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
@@ -5049,6 +5098,7 @@ void LogData::InternalSwap(LogData* other) {
   message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(type_, other->type_);
+  swap(level_, other->level_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LogData::GetMetadata() const {

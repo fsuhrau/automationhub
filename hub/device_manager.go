@@ -3,7 +3,9 @@ package hub
 import (
 	"context"
 	"fmt"
+	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
 	"net"
@@ -101,7 +103,6 @@ func (dm *DeviceManager) Stop(dev device.Device) error {
 	return device.DeviceNotFoundError
 }
 
-/*
 func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 	if properties == nil {
 		return true
@@ -125,7 +126,19 @@ func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 
 	return true
 }
-*/
+
+func (dm *DeviceManager) FindDevice(params *app.Parameter) device.Device {
+	for _, mng := range dm.deviceHandlers {
+		devices, _ := mng.GetDevices()
+		for i := range devices {
+			if devices[i].DeviceOSName() == params.Platform {
+				return devices[i]
+			}
+		}
+	}
+	return nil
+}
+
 /*
 func (dm *DeviceManager) LockDevice(session manager.Session, properties *device.Properties) (*manager.DeviceLock, error) {
 	for _, mng := range dm.deviceHandlers {
@@ -147,7 +160,7 @@ func (dm *DeviceManager) LockDevice(session manager.Session, properties *device.
 	}
 	return nil, device.ManagerNotFoundError
 }
-
+/*
 func (dm *DeviceManager) UnlockDevice(session manager.Session) error {
 
 	if d, ok := dm.LockedDevices[session.GetSessionID()]; ok {
@@ -205,7 +218,7 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 	deviceData := models.Device{
 		DeviceIdentifier: dev.DeviceID(),
 	}
-	if err:= dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", dev.DeviceID()).Error; err != nil {
+	if err := dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", dev.DeviceID()).Error; err != nil {
 		logrus.Errorf("%v", err)
 		return
 	}
@@ -240,6 +253,10 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 			Payload:  "",
 		}
 		dm.db.Create(&log)
+		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
+			DeviceID: deviceData.ID,
+			DeviceState: uint(dev.DeviceState()),
+		})
 	}
 }
 
@@ -344,7 +361,7 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 			Logger:                 dm.log,
 			Connection:             c,
 			ResponseChannel:        make(chan device.ResponseData, 100),
-			ActionChannel:        make(chan action.Response, 1),
+			ActionChannel:          make(chan action.Response, 1),
 			ConnectionStateChannel: make(chan device.ConnectionState, 1),
 		}
 		dev.SetConnection(connection)
@@ -381,8 +398,8 @@ func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) err
 	}
 
 	if dev.Connection() == nil {
-	return fmt.Errorf("device not connected")
-}
+		return fmt.Errorf("device not connected")
+	}
 
 	dev.Log("action", "send action: %v", act)
 	return dev.Connection().Send(buf)
@@ -390,20 +407,32 @@ func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) err
 
 func getTypeOfLog(logType action.LogType) string {
 	switch logType {
-	case action.LogType_Info:
-		return "info"
-	case action.LogType_Warning:
-		return "warn"
-	case action.LogType_Error:
-		return "error"
-	case action.LogType_Step:
+	case action.LogType_DeviceLog:
+		return "app"
+	case action.LogType_StepLog:
 		return "step"
-	case action.LogType_Status:
+	case action.LogType_StatusLog:
 		return "status"
-	case action.LogType_Checkpoint:
+	case action.LogType_CheckpointLog:
 		return "checkpoint"
-	case action.LogType_Performance:
+	case action.LogType_PerformanceLog:
 		return "performance"
+	}
+	return ""
+}
+
+func getLevelOfLog(loglevel action.LogLevel) string {
+	switch loglevel {
+	case action.LogLevel_Debug:
+		return "debug"
+	case action.LogLevel_Info:
+		return "info"
+	case action.LogLevel_Warning:
+		return "warning"
+	case action.LogLevel_Error:
+		return "error"
+	case action.LogLevel_Exception:
+		return "exception"
 	}
 	return ""
 }
@@ -424,8 +453,8 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 				resp := action.Response{}
 				_ = proto.Unmarshal(data.Data, &resp)
 				if d.ActionHandler() != nil {
-					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil{
-						if resp.GetLog().Type == action.LogType_Error {
+					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
+						if resp.GetLog().Level >= action.LogLevel_Error {
 							d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
 						} else {
 							d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
@@ -436,7 +465,15 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 					if resp.ActionID != "" {
 						d.Connection().ActionChannel <- resp
 					} else {
-						d.Log("action", "Received: %v", resp.Payload)
+						if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
+							if resp.GetLog().Level >= action.LogLevel_Error {
+								d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
+							} else {
+								d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
+							}
+						} else {
+							d.Log("unhandled", "Received: %v", resp.Payload)
+						}
 					}
 				}
 			}

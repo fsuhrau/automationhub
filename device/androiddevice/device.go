@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
+	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
 	"io/ioutil"
 	"net"
@@ -48,7 +49,7 @@ type Device struct {
 	recordingSession    *exec.Cmd
 	cfg                 *config.Device
 	lastUpdateAt        time.Time
-	installedApps       map[string][20]byte
+	installedApps       map[string]string
 }
 
 func (d *Device) DeviceOSName() string {
@@ -130,7 +131,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 		parameter = append(parameter, []string{"-r", "-g", params.AppPath}...)
 	}
 
-	cmd := device.NewCommand("adb", parameter...)
+	cmd := exec2.NewCommand("adb", parameter...)
 	//cmd.Stdout = os.Stdout
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
@@ -148,11 +149,11 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 func (d *Device) UninstallApp(params *app.Parameter) error {
 	d.Log("device","Uninstall App '%s'", params.Identifier)
 
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "uninstall", params.Identifier)
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "uninstall", params.Identifier)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	d.installedApps[params.Identifier] = [20]byte{}
+	d.installedApps[params.Identifier] = ""
 	return nil
 }
 
@@ -169,7 +170,7 @@ func (d *Device) unlockScreen() error {
 		_ = d.swipe(400, 800, 400, 200)
 	}
 
-	isLocked, err := d.IsLocked()
+	isLocked, err := d.IsPinLocked()
 	if err != nil {
 		return err
 	}
@@ -192,7 +193,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 		return err
 	}
 	if viper.GetBool("restart") {
-		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
 		return cmd.Run()
 	}
 	return nil
@@ -202,7 +203,7 @@ func (d *Device) StopApp(params *app.Parameter) error {
 	d.Log("device","Stop App '%s'", params.Identifier)
 
 	if viper.GetBool("restart") {
-		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
 		return cmd.Run()
 	}
 	return nil
@@ -215,7 +216,7 @@ func (d *Device) IsAppConnected() bool {
 func (d *Device) StartRecording(path string) error {
 	d.Log("device","Start Recording Session")
 	d.testRecordingPath = fmt.Sprintf("./%s.mp4", path)
-	d.recordingSession = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screenrecord", "--verbose", "/data/local/tmp/automation_hub_record.mp4")
+	d.recordingSession = exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screenrecord", "--verbose", "/data/local/tmp/automation_hub_record.mp4")
 	if err := d.recordingSession.Start(); err != nil {
 		return err
 	}
@@ -234,7 +235,7 @@ func (d *Device) StopRecording() error {
 		d.recordingSession = nil
 	}
 	time.Sleep(500 * time.Millisecond)
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/data/local/tmp/automation_hub_record.mp4")
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "pull", "/data/local/tmp/automation_hub_record.mp4")
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -242,8 +243,8 @@ func (d *Device) StopRecording() error {
 	return os.Rename("automation_hub_record.mp4", d.testRecordingPath)
 }
 
-func (d *Device) IsLocked() (bool, error) {
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "window", "|", "grep", "mDreamingLockscreen")
+func (d *Device) IsPinLocked() (bool, error) {
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "window", "|", "grep", "mDreamingLockscreen")
 	out, err := cmd.Output()
 	if err != nil {
 		return true, err
@@ -256,7 +257,7 @@ func (d *Device) IsLocked() (bool, error) {
 }
 
 func (d *Device) IsAwake() (bool, error) {
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "power", "|", "grep", "mHoldingDisplaySuspendBlocker")
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "dumpsys", "power", "|", "grep", "mHoldingDisplaySuspendBlocker")
 	out, err := cmd.Output()
 	if err != nil {
 		return true, err
@@ -275,23 +276,23 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	var height int
 	// cmd := device.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
 	if false {
-		cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/"+fileName)
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}
 
-		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/"+fileName)
+		cmd = exec2.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}
 
-		cmd = device.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/"+fileName)
+		cmd = exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}
 	} else {
 		start := time.Now()
-		cmd := device.NewCommand("/bin/sh", "android_screen.sh", d.DeviceID(), fileName)
+		cmd := exec2.NewCommand("/bin/sh", "android_screen.sh", d.DeviceID(), fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}
@@ -333,7 +334,7 @@ func (d *Device) Execute(feature string) {
 
 func (d *Device) Tap(x, y int64) error {
 	d.Log("device","Execute Tap: %d,%d", x, y)
-	cmd := device.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
 	return cmd.Run()
 }
 
