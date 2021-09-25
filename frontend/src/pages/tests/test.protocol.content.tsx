@@ -11,7 +11,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { AvTimer, DateRange } from '@material-ui/icons';
-import { Box, Button, Tab, Tabs } from '@material-ui/core';
+import { Box, Button, Chip, Tab, Tabs } from '@material-ui/core';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
@@ -35,16 +35,16 @@ function TabPanel(props: TabPanelProps): ReactElement {
     return (
         <div
             role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
+            hidden={ value !== index }
+            id={ `simple-tabpanel-${ index }` }
+            aria-labelledby={ `simple-tab-${ index }` }
+            { ...other }
         >
-            {value === index && (
-                <Box sx={{ p: 3 }}>
-                    <Typography>{children}</Typography>
+            { value === index && (
+                <Box sx={ { p: 3 } }>
+                    <Typography>{ children }</Typography>
                 </Box>
-            )}
+            ) }
         </div>
     );
 }
@@ -75,12 +75,49 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
         table: {
             minWidth: 650,
         },
+        chip: {
+            '& .chip--app': {
+                backgroundColor: '#a8a8a8',
+            },
+            '& .chip--app--unchecked': {
+                backgroundColor: '#ffffff',
+                fontcolor: '#a8a8a8',
+            },
+            '& .chip--testrunner': {
+                backgroundColor: '#4a7dff',
+            },
+            '& .chip--testrunner--unchecked': {
+                backgroundColor: '#ffffff',
+                fontcolor: '#4a7dff',
+            },
+            '& .chip--step': {
+                backgroundColor: '#dbff38',
+            },
+            '& .chip--step--unchecked': {
+                backgroundColor: '#ffffff',
+                fontcolor: '#dbff38',
+            },
+            '& .chip--status': {
+                backgroundColor: '#c44dd1',
+            },
+            '& .chip--status--unchecked': {
+                backgroundColor: '#ffffff',
+                fontcolor: '#c44dd1',
+            },
+            '& .chip--device': {
+                backgroundColor: '#ffbd38',
+            },
+            '& .chip--device--unchecked': {
+                backgroundColor: '#ffffff',
+                fontcolor: '#ffbd38',
+            },
+        },
     });
 
 function a11yProps(index: number): Map<string, string> {
     return {
-        id: `simple-tab-${index}`,
-        'aria-controls': `simple-tabpanel-${index}`,
+        id: `simple-tab-${ index }`,
+        'aria-controls': `simple-tabpanel-${ index }`,
     };
 }
 
@@ -95,13 +132,19 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
     const [run, setRun] = useState<ITestRunData>();
     const [protocol, setProtocol] = useState<ITestProtocolData>();
 
+    const [filterApp, setFilterApp] = useState<boolean>(true);
+    const [filterTestrunner, setFilterTestrunner] = useState<boolean>(true);
+    const [filterStep, setFilterStep] = useState<boolean>(true);
+    const [filterStatus, setFilterStatus] = useState<boolean>(true);
+    const [filterDevice, setFilterDevice] = useState<boolean>(true);
+
 
     useEffect(() => {
         getLastRun(testId).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
-                if (response.data.Protocols[i].ID == +protocolId) {
-                    setProtocol(response.data.Protocols[i]);
+                if (response.data.Protocols[ i ].ID == +protocolId) {
+                    setProtocol(response.data.Protocols[ i ]);
                     break;
                 }
             }
@@ -133,7 +176,7 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
         const lastE = Array<IProtocolEntryData>();
         const length = protocol?.Entries?.length;
         for (let i = length - 1; i > Math.max(length - 3, 0); i--) {
-            lastE.push(protocol?.Entries[i]);
+            lastE.push(protocol?.Entries[ i ]);
         }
         return lastE;
     }
@@ -144,65 +187,91 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
         setValue(newValue);
     };
 
+    const applyFilter = (source: string): boolean => {
+        return (filterApp && source === 'app') ||
+            (filterDevice && source === 'device') ||
+            (filterStatus && source === 'status') ||
+            (filterStep && source === 'step') ||
+            (filterTestrunner && source === 'testrunner');
+    };
+
+    const toggleFilter = (source: string): void => {
+        if (source === 'app') {
+            setFilterApp(!filterApp);
+        }
+        if (source === 'device') {
+            setFilterDevice(!filterDevice);
+        }
+        if (source === 'status') {
+            setFilterStatus(!filterStatus);
+        }
+        if (source === 'step') {
+            setFilterStep(!filterStep);
+        }
+        if (source === 'testrunner') {
+            setFilterTestrunner(!filterTestrunner);
+        }
+    };
+
     return (
-        <Paper className={classes.paper}>
-            <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
                 <Toolbar>
-                    <Grid container={true} spacing={2} alignItems="center">
-                        <Grid item={true}>
-                            <TestStatusIconComponent status={protocol?.TestResult} />
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <TestStatusIconComponent status={ protocol?.TestResult }/>
                         </Grid>
-                        <Grid item={true}>
-                            <TestStatusTextComponent status={protocol?.TestResult} />
+                        <Grid item={ true }>
+                            <TestStatusTextComponent status={ protocol?.TestResult }/>
                         </Grid>
-                        <Grid item={true}>
-                            <DateRange className={classes.block} color="inherit"/>
+                        <Grid item={ true }>
+                            <DateRange className={ classes.block } color="inherit"/>
                         </Grid>
-                        <Grid item={true}>
-                            <Moment format="YYYY/MM/DD HH:mm:ss">{protocol?.StartedAt}</Moment>
+                        <Grid item={ true }>
+                            <Moment format="YYYY/MM/DD HH:mm:ss">{ protocol?.StartedAt }</Moment>
                         </Grid>
 
-                        <Grid item={true}>
-                            <AvTimer className={classes.block} color="inherit"/>
+                        <Grid item={ true }>
+                            <AvTimer className={ classes.block } color="inherit"/>
                         </Grid>
-                        <Grid item={true} xs={true}>
-                            {getDuration(protocol)}
+                        <Grid item={ true } xs={ true }>
+                            { getDuration(protocol) }
                         </Grid>
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={{ width: '100%' }}>
-                <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={ { width: '100%' } }>
+                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                    <Box sx={ { borderBottom: 1, borderColor: 'divider' } }>
                         <Tabs
-                            value={value}
-                            onChange={handleChange}
+                            value={ value }
+                            onChange={ handleChange }
                         >
-                            <Tab label="Status" {...a11yProps(0)} />
-                            <Tab label="Executer" {...a11yProps(1)} />
-                            <Tab label="Logs" {...a11yProps(2)} />
-                            <Tab label="Screenshots" {...a11yProps(3)} />
-                            <Tab label="Video/Replay" {...a11yProps(4)} />
-                            <Tab label="Performance" {...a11yProps(5)} />
+                            <Tab label="Status" { ...a11yProps(0) } />
+                            <Tab label="Executer" { ...a11yProps(1) } />
+                            <Tab label="Logs" { ...a11yProps(2) } />
+                            <Tab label="Screenshots" { ...a11yProps(3) } />
+                            <Tab label="Video/Replay" { ...a11yProps(4) } />
+                            <Tab label="Performance" { ...a11yProps(5) } />
                         </Tabs>
                     </Box>
                 </AppBar>
-                <TabPanel value={value} index={0}>
-                    <Grid container={true} direction="column" spacing={6}>
-                        <Grid item={true}>
-                            <Grid container={true} spacing={6}>
-                                {protocol?.TestResult == TestResultState.TestResultFailed &&
-                                <Box width='100%' height='100%' color="white" bgcolor="palevioletred" padding={2}>
-                                    <Grid container={true} spacing={6} justifyContent="center"
+                <TabPanel value={ value } index={ 0 }>
+                    <Grid container={ true } direction="column" spacing={ 6 }>
+                        <Grid item={ true }>
+                            <Grid container={ true } spacing={ 6 }>
+                                { protocol?.TestResult == TestResultState.TestResultFailed &&
+                                <Box width='100%' height='100%' color="white" bgcolor="palevioletred" padding={ 2 }>
+                                    <Grid container={ true } spacing={ 6 } justifyContent="center"
                                         alignItems="center">
-                                        <Grid item={true}>
-                                            {lastEntries().map((data) => <Typography>
+                                        <Grid item={ true }>
+                                            { lastEntries().map((data) => <Typography>
                                                 <Moment
-                                                    format="YYYY/MM/DD HH:mm:ss">{data.CreatedAt}</Moment>: {data.Message}
+                                                    format="YYYY/MM/DD HH:mm:ss">{ data.CreatedAt }</Moment>: { data.Message }
                                             </Typography>,
-                                            )}
+                                            ) }
                                         </Grid>
-                                        <Grid item={true} sx={2}>
+                                        <Grid item={ true } sx={ 2 }>
                                             <Button variant="contained">Show</Button>
                                         </Grid>
                                     </Grid>
@@ -210,42 +279,42 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                                 }
                             </Grid>
                         </Grid>
-                        <Grid item={true}>
-                            <Grid container={true} spacing={6}>
-                                <Grid item={true}>
-                                    <Grid item={true} xs={true} container={true} direction="column" spacing={4}>
-                                        <Grid item={true} xs={true}>
-                                            <Typography gutterBottom={true} variant="subtitle1">
+                        <Grid item={ true }>
+                            <Grid container={ true } spacing={ 6 }>
+                                <Grid item={ true }>
+                                    <Grid item={ true } xs={ true } container={ true } direction="column" spacing={ 4 }>
+                                        <Grid item={ true } xs={ true }>
+                                            <Typography gutterBottom={ true } variant="subtitle1">
                                                 Time
                                             </Typography>
-                                            <Typography gutterBottom={true} variant="body2" color="textSecondary">
+                                            <Typography gutterBottom={ true } variant="body2" color="textSecondary">
                                                 Execution
                                             </Typography>
-                                            <Typography variant="h5" component="h5" style={{ whiteSpace: 'nowrap' }}>
-                                                {getDuration(protocol)}
+                                            <Typography variant="h5" component="h5" style={ { whiteSpace: 'nowrap' } }>
+                                                { getDuration(protocol) }
                                             </Typography>
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                <Grid item={true} xs={12} sm={true} container={true}>
-                                    <Grid item={true} xs={true} container={true} direction="column" spacing={2}>
-                                        <Grid item={true} xs={true}>
-                                            <Typography gutterBottom={true} variant="subtitle1">
+                                <Grid item={ true } xs={ 12 } sm={ true } container={ true }>
+                                    <Grid item={ true } xs={ true } container={ true } direction="column" spacing={ 2 }>
+                                        <Grid item={ true } xs={ true }>
+                                            <Typography gutterBottom={ true } variant="subtitle1">
                                                 Details
                                             </Typography>
-                                            <Typography gutterBottom={true} variant="gutterBottom">
-                                                <Grid container={true} spacing={2}>
-                                                    <Grid item={true} xs={2}>
-                                                        <Typography gutterBottom={true} variant="body2"
+                                            <Typography gutterBottom={ true } variant="gutterBottom">
+                                                <Grid container={ true } spacing={ 2 }>
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <Typography gutterBottom={ true } variant="body2"
                                                             color="textSecondary">
                                                             Actions
                                                         </Typography>
                                                         <Typography variant="h5" component="h5">
-                                                            {protocol?.Entries.length}
+                                                            { protocol?.Entries.length }
                                                         </Typography>
                                                     </Grid>
-                                                    <Grid item={true} xs={2}>
-                                                        <Typography gutterBottom={true} variant="body2"
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <Typography gutterBottom={ true } variant="body2"
                                                             color="textSecondary">
                                                             StartupTime
                                                         </Typography>
@@ -253,8 +322,8 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                                                             10 sec
                                                         </Typography>
                                                     </Grid>
-                                                    <Grid item={true} xs={2}>
-                                                        <Typography gutterBottom={true} variant="body2"
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <Typography gutterBottom={ true } variant="body2"
                                                             color="textSecondary">
                                                             FPS
                                                         </Typography>
@@ -262,8 +331,8 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                                                             12
                                                         </Typography>
                                                     </Grid>
-                                                    <Grid item={true} xs={2}>
-                                                        <Typography gutterBottom={true} variant="body2"
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <Typography gutterBottom={ true } variant="body2"
                                                             color="textSecondary">
                                                             Memory
                                                         </Typography>
@@ -280,8 +349,8 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                         </Grid>
                     </Grid>
                 </TabPanel>
-                <TabPanel value={value} index={1}>
-                    <Table className={classes.table} size="small" aria-label="a dense table">
+                <TabPanel value={ value } index={ 1 }>
+                    <Table className={ classes.table } size="small" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
                                 <TableCell>Date</TableCell>
@@ -290,19 +359,35 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {run?.Log?.map((entry) => <TableRow key={entry.ID}>
-                                <TableCell component="th" scope="row" style={{ whiteSpace: 'nowrap' }}>
-                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
+                            { run?.Log?.map((entry) => <TableRow key={ entry.ID }>
+                                <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
+                                    <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
                                 </TableCell>
-                                <TableCell>{entry.Level}</TableCell>
-                                <TableCell>{entry.Log}</TableCell>
-                            </TableRow>)}
+                                <TableCell>{ entry.Level }</TableCell>
+                                <TableCell>{ entry.Log }</TableCell>
+                            </TableRow>) }
                         </TableBody>
                     </Table>
                 </TabPanel>
-                <TabPanel value={value} index={2}>
-                    missing filter options
-                    <Table className={classes.table} size="small" aria-label="a dense table">
+                <TabPanel value={ value } index={ 2 } className={ classes.chip }>
+                    <span>
+                        <Chip className={ filterApp ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' } clickable={ true }
+                            variant={ filterApp ? 'default' : 'outlined' }
+                            onClick={ () => toggleFilter('app') }/>
+                        <Chip className={ filterStep ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' } clickable={ true }
+                            variant={ filterStep ? 'default' : 'outlined' }
+                            onClick={ () => toggleFilter('step') }/>
+                        <Chip className={ filterDevice ? 'chip--device' : 'chip--device--unchecked' } label={ 'device' } clickable={ true }
+                            variant={ filterDevice ? 'default' : 'outlined' }
+                            onClick={ () => toggleFilter('device') }/>
+                        <Chip className={ filterStatus ? 'chip--status' : 'chip--status--unchecked' } label={ 'status' } clickable={ true }
+                            variant={ filterStatus ? 'default' : 'outlined' }
+                            onClick={ () => toggleFilter('status') }/>
+                        <Chip className={ filterTestrunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' } label={ 'testrunner' } clickable={ true }
+                            variant={ filterTestrunner ? 'default' : 'outlined' }
+                            onClick={ () => toggleFilter('testrunner') }/>
+                    </span>
+                    <Table className={ classes.table } size="small" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
                                 <TableCell>Date</TableCell>
@@ -312,24 +397,29 @@ const TestProtocol: FC<TestProtocolProps> = (props) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {protocol?.Entries?.map((entry) => <TableRow key={entry.ID}>
-                                <TableCell component="th" scope="row" style={{ whiteSpace: 'nowrap' }}>
-                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
-                                </TableCell>
-                                <TableCell>{entry.Source}</TableCell>
-                                <TableCell>{entry.Level}</TableCell>
-                                <TableCell>{entry.Message}</TableCell>
-                            </TableRow>)}
+                            { protocol?.Entries?.map((entry) =>
+                                (applyFilter(entry.Source) &&
+                                    <TableRow key={ entry.ID }>
+                                        <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
+                                            <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
+                                        </TableCell>
+                                        <TableCell><Chip className={ `chip--${ entry.Source }` }
+                                            label={ entry.Source }/></TableCell>
+                                        <TableCell>{ entry.Level }</TableCell>
+                                        <TableCell>{ entry.Message }</TableCell>
+                                    </TableRow>
+                                ),
+                            ) }
                         </TableBody>
                     </Table>
                 </TabPanel>
-                <TabPanel value={value} index={3}>
+                <TabPanel value={ value } index={ 3 }>
                     screenshots?
                 </TabPanel>
-                <TabPanel value={value} index={4}>
+                <TabPanel value={ value } index={ 4 }>
                     Video
                 </TabPanel>
-                <TabPanel value={value} index={5}>
+                <TabPanel value={ value } index={ 5 }>
                     Performance
                 </TabPanel>
             </Box>
