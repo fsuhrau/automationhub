@@ -22,6 +22,11 @@ import (
 type workerChannel chan action.TestStart
 type cancelChannel chan bool
 
+type DeviceMap struct {
+	Device device.Device
+	Model  models.Device
+}
+
 type testsRunner struct {
 	base.TestRunner
 	deviceManager  manager.Devices
@@ -33,6 +38,8 @@ type testsRunner struct {
 	fin            chan bool
 	err            error
 	publisher      sse.Publisher
+
+	appParams app.Parameter
 }
 
 func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
@@ -54,10 +61,11 @@ func (tr *testsRunner) Initialize(test models.Test) error {
 	return nil
 }
 
-func (tr *testsRunner) newTestSession() error {
+func (tr *testsRunner) newTestSession(appId uint) error {
 	sessionID := tr.NewSessionID()
 	run := &models.TestRun{
 		TestID:    tr.test.ID,
+		AppID:     appId,
 		SessionID: sessionID,
 	}
 	if err := tr.db.Create(run).Error; err != nil {
@@ -97,12 +105,12 @@ func (tr *testsRunner) logError(format string, params ...interface{}) {
 }
 
 func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
-	if err := tr.newTestSession(); err != nil {
+	if err := tr.newTestSession(appData.ID); err != nil {
 		return err
 	}
 	defer tr.testSessionFinished()
 
-	var devices []device.Device
+	var devices []DeviceMap
 	for _, d := range devs {
 		dev := d.Dev.(device.Device)
 		tr.logInfo("locking device: %s", dev.DeviceID())
@@ -110,15 +118,11 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			defer func(dev device.Device) {
 				_ = dev.Unlock()
 			}(dev)
-			devices = append(devices, dev)
-			logWriter, err := tr.protocolWriter.NewProtocol(d.ID, appData.ID)
-			if err != nil {
-				tr.logError("unable to create LogWriter for %s: %v", dev.DeviceID(), err)
-			}
-			dev.SetLogWriter(logWriter)
-			defer func() {
-				dev.SetLogWriter(nil)
-			}()
+
+			devices = append(devices, DeviceMap{
+				Device: dev,
+				Model:  d,
+			})
 		} else {
 			tr.logError("locking device %s failed: %v", dev.DeviceID(), err)
 		}
@@ -132,7 +136,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	tr.logInfo("Starting devices")
 	var deviceWg sync.ExtendedWaitGroup
 	for _, d := range devices {
-		switch d.DeviceState() {
+		switch d.Device.DeviceState() {
 		case device.StateShutdown:
 			fallthrough
 		case device.StateRemoteDisconnected:
@@ -143,13 +147,14 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 					tr.logError("unable to start device: %v", err)
 				}
 				group.Done()
-			}(tr.deviceManager, d, &deviceWg)
+			}(tr.deviceManager, d.Device, &deviceWg)
 		case device.StateBooted:
 		}
 	}
 	deviceWg.Wait()
 
-	appParams := app.Parameter{
+	tr.appParams = app.Parameter{
+		AppID:          appData.ID,
 		Identifier:     appData.AppID,
 		AppPath:        appData.AppPath,
 		LaunchActivity: appData.LaunchActivity,
@@ -167,13 +172,13 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 				tr.logError("unable to stop app: %v", err)
 			}
 			group.Done()
-		}(tr.deviceManager, appParams, d, &deviceWg)
+		}(tr.deviceManager, tr.appParams, d.Device, &deviceWg)
 	}
 	deviceWg.Wait()
 
 	tr.logInfo("install app on devices")
 	for _, d := range devices {
-		installed, err := d.IsAppInstalled(&appParams)
+		installed, err := d.Device.IsAppInstalled(&tr.appParams)
 		if err != nil {
 			return err
 		}
@@ -185,14 +190,14 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 					tr.logError("unable to install app: %v", err)
 				}
 				group.Done()
-			}(appParams, d, &deviceWg)
+			}(tr.appParams, d.Device, &deviceWg)
 		}
 	}
 	deviceWg.Wait()
 
 	tr.logInfo("start app on devices and wait for connection")
 	for _, d := range devices {
-		if !d.IsAppConnected() {
+		if !d.Device.IsAppConnected() {
 			deviceWg.Add(1)
 			go func(dm manager.Devices, appp app.Parameter, d device.Device, sessionId string, group *sync.ExtendedWaitGroup) {
 				if err := d.StartApp(&appp, tr.protocolWriter.SessionID(), tr.ip); err != nil {
@@ -202,7 +207,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 					time.Sleep(500 * time.Millisecond)
 				}
 				group.Done()
-			}(tr.deviceManager, appParams, d, tr.protocolWriter.SessionID(), &deviceWg)
+			}(tr.deviceManager, tr.appParams, d.Device, tr.protocolWriter.SessionID(), &deviceWg)
 		}
 	}
 	if err := deviceWg.WaitWithTimeout(30 * time.Second); err == sync.TimeoutError {
@@ -214,7 +219,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	if tr.config.Unity.RunAllTests {
 		tr.logInfo("RunAllTests active requesting PlayMode tests")
 		a := &action.TestsGet{}
-		if err := tr.deviceManager.SendAction(devices[0], a); err != nil {
+		if err := tr.deviceManager.SendAction(devices[0].Device, a); err != nil {
 			return err
 		}
 		for _, t := range a.Tests {
@@ -290,7 +295,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	return nil
 }
 
-func (tr *testsRunner) WorkerFunction(channel workerChannel, dev device.Device, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
+func (tr *testsRunner) WorkerFunction(channel workerChannel, dev DeviceMap, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
 	for {
 		select {
 		case task := <-channel:
@@ -299,17 +304,30 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev device.Device, 
 			if len(methodParts) > 1 {
 				method = methodParts[1]
 			}
-			tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.DeviceID())
-			executer := NewExecuter(tr.deviceManager)
-			if err := executer.Execute(dev, task, 2*time.Minute); err != nil {
-				tr.logError("test execution failed: %v", err)
-			} else {
-				tr.logInfo("test execution finished")
-			}
+			tr.runTest(dev, task, method)
 			group.Done()
 		case <-cancel:
 			return
 		}
+	}
+}
+
+func (tr *testsRunner) runTest(dev DeviceMap, task action.TestStart, method string) {
+	logWriter, err := tr.protocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
+	if err != nil {
+		tr.logError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
+	}
+	dev.Device.SetLogWriter(logWriter)
+	defer func() {
+		dev.Device.SetLogWriter(nil)
+	}()
+
+	tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
+	executor := NewExecuter(tr.deviceManager)
+	if err := executor.Execute(dev.Device, task, 2*time.Minute); err != nil {
+		tr.logError("test execution failed: %v", err)
+	} else {
+		tr.logInfo("test execution finished")
 	}
 }
 

@@ -4,13 +4,25 @@ import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { getLastRun } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
-import { Box, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import {
+    Box,
+    Divider,
+    Link,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@material-ui/core';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
 import TestStatusIconComponent from '../../components/test-status-icon.component';
 import Moment from 'react-moment';
 import { useSSE } from 'react-hooks-sse';
 import ITesRunLogEntryData from '../../types/test.run.log.entry';
+import moment from 'moment';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -67,7 +79,7 @@ const TestRun: FC<TestRunProps> = (props) => {
             return newState;
         });
     }, [testRunEntry, testRun?.ID]);
-    
+
     const [runsOpen, setRunsOpen] = useState<number>();
     const [runsUnstable, setRunsUnstable] = useState<number>();
     const [runsFailed, setRunsFailed] = useState<number>();
@@ -122,48 +134,123 @@ const TestRun: FC<TestRunProps> = (props) => {
         }
     }, [testRun]);
 
+    const getDuration = (startedAt: Date, endedAt: Date): string => {
+        if (endedAt !== null && endedAt !== undefined) {
+            const start = new Date(startedAt);
+            const end = new Date(endedAt);
+            const duration = end.valueOf() - start.valueOf();
+            const m = moment.utc(duration);
+            const secs = duration / 1000;
+            if (secs > 60 * 60) {
+                return m.format('h') + 'Std ' + m.format('m') + 'Min ' + m.format('s') + 'Sec';
+            }
+            if (secs > 60) {
+                return m.format('m') + 'Min ' + m.format('s') + 'Sec';
+            }
+            return m.format('s') + 'Sec';
+        }
+        return 'running';
+    };
+
     return (
         <Grid container={ true } spacing={ 12 }>
-            <Grid item={ true } xs={ 8 }>
+            <Grid item={ true } xs={ 6 }>
+                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Typography variant={ 'h6' }>App Details</Typography>
+                    <Divider/>
+                    <Grid container={ true } spacing={ 12 }>
+                        <Grid item={ true } xs={ 2 }>
+                            Name:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Name }
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Identifier:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Identifier }
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Platform:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Platform }
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Version:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Version }
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Hash:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Hash }
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Created:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
+                        </Grid>
+
+                        <Grid item={ true } xs={ 2 }>
+                            Addons:
+                        </Grid>
+                        <Grid item={ true } xs={ 10 }>
+                            { testRun?.App?.Additional }
+                        </Grid>
+
+                    </Grid>
+                </Box>
+            </Grid>
+            <Grid item={ true } xs={ 2 }>
             </Grid>
             <Grid item={ true } xs={ 4 }>
                 <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Typography variant={ 'h6' }>Test Results</Typography>
+                    <Divider/>
                     <Grid container={ true } spacing={ 12 }>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             Open
                         </Grid>
-                        <Grid item={ true } xs={ 3 }>
-                            Unstable
-                        </Grid>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             Failed
                         </Grid>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             Success
                         </Grid>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             { runsOpen }
                         </Grid>
-                        <Grid item={ true } xs={ 3 }>
-                            { runsUnstable }
-                        </Grid>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             { runsFailed }
                         </Grid>
-                        <Grid item={ true } xs={ 3 }>
+                        <Grid item={ true } xs={ 4 } align="center">
                             { runsSuccess }
                         </Grid>
                     </Grid>
                 </Box>
             </Grid>
             <Grid item={ true } xs={ 12 }>
-                <Box component={ Paper } sx={ { m: 2 } }>
+                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Typography variant={ 'h6' }>Test Details</Typography>
+                    <Divider/>
                     <TableContainer>
                         <Table sx={ { minWidth: 650 } } size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Device</TableCell>
                                     <TableCell align="right">OS</TableCell>
+                                    <TableCell>Test</TableCell>
+                                    <TableCell>Duration</TableCell>
                                     <TableCell align="right">Status</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -179,7 +266,12 @@ const TestRun: FC<TestRunProps> = (props) => {
                                             </Link>
                                         </TableCell>
                                         <TableCell
-                                            align="right">{ protocol.Device.OS } { protocol.Device.OSVersion }</TableCell>
+                                            align="right">{ protocol.Device.OS } { protocol.Device.OSVersion }
+                                        </TableCell>
+                                        <TableCell>{ protocol.TestName }</TableCell>
+                                        <TableCell>
+                                            { getDuration(protocol.StartedAt, protocol.EndedAt) }
+                                        </TableCell>
                                         <TableCell align="right">
                                             <TestStatusIconComponent status={ protocol.TestResult }/>
                                         </TableCell>
@@ -191,7 +283,9 @@ const TestRun: FC<TestRunProps> = (props) => {
                 </Box>
             </Grid>
             <Grid item={ true } xs={ 12 }>
-                <Box component={ Paper } sx={ { m: 2 } }>
+                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Typography variant={ 'h6' }>Executer Log</Typography>
+                    <Divider/>
                     <TableContainer>
                         <Table sx={ { minWidth: 650 } } size="small" aria-label="a dense table">
                             <TableHead>

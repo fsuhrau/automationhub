@@ -5,9 +5,9 @@ import IDeviceData from './device';
 export default interface ITestProtocolData {
     ID?: number | null,
     TestRunID: number,
-    AppID: number,
     DeviceID?: number | null,
     Device?: IDeviceData | null,
+    TestName: string,
     StartedAt: Date,
     EndedAt?: Date,
     Entries: IProtocolEntryData[]

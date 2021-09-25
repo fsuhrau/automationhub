@@ -21,11 +21,11 @@ func NewProtocolWriter(db *gorm.DB, run *models.TestRun) *ProtocolWriter {
 	return &ProtocolWriter{db: db, run: run}
 }
 
-func (w *ProtocolWriter) NewProtocol(deviceID uint, appID uint) (*LogWriter, error) {
+func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*LogWriter, error) {
 	protocol := &models.TestProtocol{
 		TestRunID: w.run.ID,
 		DeviceID:  &deviceID,
-		AppID:     appID,
+		TestName:  testname,
 		StartedAt: time.Now(),
 	}
 
@@ -40,15 +40,15 @@ func (w *ProtocolWriter) NewProtocol(deviceID uint, appID uint) (*LogWriter, err
 	return writer, nil
 }
 
-func (w *ProtocolWriter)RunID() uint {
+func (w *ProtocolWriter) RunID() uint {
 	return w.run.ID
 }
 
-func (w *ProtocolWriter)SessionID() string {
+func (w *ProtocolWriter) SessionID() string {
 	return w.run.SessionID
 }
 
-func (w *ProtocolWriter) Close()  {
+func (w *ProtocolWriter) Close() {
 	for _, p := range w.protocols {
 		var state models.TestResultState
 

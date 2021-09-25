@@ -1,6 +1,7 @@
 package app
 
 type Parameter struct {
+	AppID          uint
 	Platform       string
 	Name           string
 	AppPath        string
