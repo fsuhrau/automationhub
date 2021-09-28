@@ -9,6 +9,7 @@ export default interface ITestRunData {
     SessionID: string,
     AppID: number,
     App: IAppData | null,
+    Parameter: string,
     TestResult: TestResultState,
     Protocols: Array<ITestProtocolData>,
     Log: Array<ITesRunLogEntryData>,

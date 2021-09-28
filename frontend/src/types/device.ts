@@ -1,4 +1,5 @@
 import IRealDeviceData from './real.device';
+import IRealDeviceConnectionData from './real.device.connection';
 
 export default interface IDeviceData {
     ID?: number | null,
@@ -18,6 +19,7 @@ export default interface IDeviceData {
     Status: number,
     Manager: string,
     Dev?: IRealDeviceData | null,
+    Connection?: IRealDeviceConnectionData | null,
     CreatedAt?: Date,
     UpdatedAt?: Date,
     DeletedAt?: Date,

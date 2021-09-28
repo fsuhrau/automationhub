@@ -1,6 +1,6 @@
 
 export enum TestExecutionType {
-    Parallel,
-    Synchronous,
+    Concurrent,
+    Simultaneously,
 }
 

@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -7,7 +7,6 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-
 import ITestData from '../types/test';
 import { executeTest, getAllTests } from '../services/test.service';
 import {
@@ -18,13 +17,12 @@ import {
     DialogContentText,
     DialogTitle,
     Link,
-    TextField,
+    TextField, Typography,
 } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
-import TestStatusIconComponent from './test-status-icon.component';
-import { TestResultState } from '../types/test.result.state.enum';
 import AppSelection from './app-selection.component';
 import IAppData from '../types/app';
+import { useHistory } from 'react-router-dom';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -38,6 +36,8 @@ export type TestProps = WithStyles<typeof styles>;
 const TestsTable: FC<TestProps> = (props) => {
     const { classes } = props;
 
+    const history = useHistory();
+
     // dialog
     const [open, setOpen] = useState(false);
     const handleClickOpen = (): void => {
@@ -50,6 +50,7 @@ const TestsTable: FC<TestProps> = (props) => {
     // test handling
     const [selectedTestID, setSelectedTestID] = useState<number>(0);
     const [selectedAppID, setSelectedAppID] = useState<number>(0);
+    const [envParameter, setEnvParameter] = useState<string>('');
     const [tests, setTests] = useState<ITestData[]>([]);
 
     useEffect(() => {
@@ -73,27 +74,18 @@ const TestsTable: FC<TestProps> = (props) => {
 
     const executionString = (type: number): string => {
         switch (type) {
-            case 0: return 'Parallel';
-            case 1: return 'Synchronous';
+            case 0: return 'Concurrent';
+            case 1: return 'Simultaneously';
         }
         return '';
     };
 
-    const handleRunTest = (id: number, appid: number): void => {
-        executeTest(id, appid).then(response => {
-            console.log(response.data);
+    const onRunTest = (id: number, appid: number): void => {
+        executeTest(id, appid, envParameter).then(response => {
+            history.push(`/test/${id}/runs/last`);
         }).catch(error => {
             console.log(error);
         });
-    };
-
-    const getTestStatus = (test: ITestData): TestResultState => {
-        if (test.TestRuns == null) {
-            return TestResultState.TestResultOpen;
-        }
-
-        const lastRun = test.TestRuns[test.TestRuns.length - 1];
-        return lastRun.TestResult;
     };
 
     const getDevices = (test: ITestData): string => {
@@ -123,25 +115,47 @@ const TestsTable: FC<TestProps> = (props) => {
         setSelectedAppID(app.ID);
     };
 
+    const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
+        setEnvParameter(event.target.value);
+    };
+
     return (
         <div>
             <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
+                <DialogTitle id="form-dialog-title">App Selection</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        To subscribe to this website, please enter your email address here. We will send updates
-                        occasionally.
+                        Select an existing App to execute the tests.<br />
+                        Or Upload a new one.<br />
+                        <br />
                     </DialogContentText>
                     <AppSelection upload={true} classes={classes} onSelectionChanged={onAppSelectionChanged} />
+                    You can change parameters of your app by providing key value pairs in an environment like format:<br />
+                    <br />
+                    <Typography variant={'subtitle2'}>
+                        server=http://localhost:8080<br />
+                        user=autohub
+                    </Typography>
+                    <br />
+                    <TextField
+                        id="outlined-multiline-static"
+                        label="Parameter"
+                        fullWidth={ true }
+                        multiline={true}
+                        rows={4}
+                        defaultValue=""
+                        variant="outlined"
+                        onChange={ onEnvParamsChanged }
+                    />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary">
                         Cancel
                     </Button>
                     <Button onClick={() => {
-                        handleRunTest(selectedTestID, selectedAppID);
+                        onRunTest(selectedTestID, selectedAppID);
                         handleClose();
-                    }} color="primary">
+                    }} color="primary" variant={'contained'} disabled={ selectedAppID === 0 }>
                         Start
                     </Button>
                 </DialogActions>

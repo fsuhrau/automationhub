@@ -11,23 +11,6 @@ import (
 	"time"
 )
 
-type Selectable struct {
-	Name             string
-	DeviceIdentifier string
-	OS               string
-	OSVersion        string
-	Status           string
-	Connected        *action.Connect
-}
-type Selectables []*Selectable
-
-func (s Selectables) Len() int      { return len(s) }
-func (s Selectables) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-type ByName struct{ Selectables }
-
-func (s ByName) Less(i, j int) bool { return s.Selectables[i].Name < s.Selectables[j].Name }
-
 func (s *ApiService) getDevices(session *Session, c *gin.Context) {
 	var devices []models.Device
 	if err := s.db.Find(&devices).Error; err != nil {
@@ -36,7 +19,11 @@ func (s *ApiService) getDevices(session *Session, c *gin.Context) {
 	}
 
 	for i := range devices {
-		devices[i].Dev = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
+		dev := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
+		devices[i].Dev = dev
+		if dev != nil && dev.Connection() != nil {
+			devices[i].Connection = dev.Connection().ConnectionParameter
+		}
 	}
 
 	c.JSON(http.StatusOK, devices)
@@ -102,7 +89,7 @@ func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 		Method: "MainTutorialTest",
 	}
 
-	executer := unity.NewExecuter(s.devicesManager)
+	executer := unity.NewExecutor(s.devicesManager)
 	if err := executer.Execute(dev, runTestAction, 5*time.Minute); err != nil {
 		logrus.Errorf("Execute failed: %v", err)
 		s.error(c, http.StatusInternalServerError, err)

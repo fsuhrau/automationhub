@@ -21,16 +21,17 @@ func (s *ApiService) getTests(session *Session, c *gin.Context) {
 func (s *ApiService) newTest(session *Session, c *gin.Context) {
 	type TestFunc struct {
 		Assembly string
-		Class string
-		Method string
+		Class    string
+		Method   string
 	}
 	type Request struct {
-		Name string
-		TestType models.TestType
-		UnityAllTests bool
+		Name               string
+		TestType           models.TestType
+		ExecutionType      models.ExecutionType
+		UnityAllTests      bool
 		UnitySelectedTests []TestFunc
-		AllDevices bool
-		SelectedDevices []uint
+		AllDevices         bool
+		SelectedDevices    []uint
 	}
 
 	var request Request
@@ -45,7 +46,7 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 		return
 	}
 
-	switch (request.TestType) {
+	switch request.TestType {
 	case models.TestTypeUnity:
 		if request.UnityAllTests == false && len(request.UnitySelectedTests) == 0 {
 			s.error(c, http.StatusBadRequest, fmt.Errorf("missing tests"))
@@ -65,9 +66,9 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 	defer func() {
 		tx.Rollback()
 	}()
-	test := models.Test {
+	test := models.Test{
 		CompanyID: 1,
-		Name: request.Name,
+		Name:      request.Name,
 	}
 	if err := tx.Create(&test).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -75,20 +76,21 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 	}
 
 	config := models.TestConfig{
-		TestID: test.ID,
-		Type: request.TestType,
-		AllDevices: request.AllDevices,
+		TestID:        test.ID,
+		Type:          request.TestType,
+		AllDevices:    request.AllDevices,
+		ExecutionType: request.ExecutionType,
 	}
 	if err := tx.Create(&config).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	switch (request.TestType) {
+	switch request.TestType {
 	case models.TestTypeUnity:
 		unityConfig := models.TestConfigUnity{
 			TestConfigID: config.ID,
-			RunAllTests: request.UnityAllTests,
+			RunAllTests:  request.UnityAllTests,
 		}
 		if err := tx.Create(&unityConfig).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
@@ -98,9 +100,9 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 
 			function := models.UnityTestFunction{
 				TestConfigUnityID: unityConfig.ID,
-				Assembly: r.Assembly,
-				Class: r.Class,
-				Method: r.Method,
+				Assembly:          r.Assembly,
+				Class:             r.Class,
+				Method:            r.Method,
 			}
 			if err := tx.Create(&function).Error; err != nil {
 				s.error(c, http.StatusInternalServerError, err)
@@ -112,7 +114,7 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 	for _, d := range request.SelectedDevices {
 		dev := models.TestConfigDevice{
 			TestConfigID: config.ID,
-			DeviceID: d,
+			DeviceID:     d,
 		}
 		if err := tx.Create(&dev).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
@@ -136,9 +138,24 @@ func (s *ApiService) getTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
+func extractParams(param string) map[string]string {
+	var env map[string]string
+	env = make(map[string]string)
+
+	params := strings.Split(param, "\n")
+	for _, p := range params {
+		kv := strings.Split(p, "=")
+		if len(kv) > 1 {
+			env[kv[0]] = kv[1]
+		}
+	}
+	return env
+}
+
 func (s *ApiService) runTest(c *gin.Context) {
 	type Request struct {
-		AppID   uint
+		AppID  uint
+		Params string
 	}
 
 	testId := c.Param("test_id")
@@ -147,6 +164,8 @@ func (s *ApiService) runTest(c *gin.Context) {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
+
+	environmentParams := extractParams(req.Params)
 
 	var app models.App
 	if err := s.db.First(&app, req.AppID).Error; err != nil {
@@ -179,7 +198,7 @@ func (s *ApiService) runTest(c *gin.Context) {
 
 	if test.TestConfig.Type == models.TestTypeUnity {
 		tr := unity.New(s.db, s.hostIP, s.devicesManager, s)
-		if err := tr.Initialize(test); err != nil {
+		if err := tr.Initialize(test, environmentParams); err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
@@ -216,7 +235,6 @@ func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
 
 	c.JSON(http.StatusOK, run)
 }
-
 
 func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
 	testId := c.Param("test_id")

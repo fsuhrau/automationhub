@@ -10,4 +10,5 @@ type Parameter struct {
 	LaunchActivity string
 	Additional     string
 	Hash           string
+	Size           int
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/sirupsen/logrus"
 )
 
 var (

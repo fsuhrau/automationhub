@@ -16,6 +16,7 @@ type App struct {
 	LaunchActivity string
 	Additional     string
 	Hash           string
+	Size           int
 	AppFunctions   []AppFunction
 }
 

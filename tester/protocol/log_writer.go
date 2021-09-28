@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
 	"time"
@@ -22,6 +23,11 @@ func (w *LogWriter) write(source, level, message string) {
 		Message:        message,
 	}
 	w.db.Create(&entry)
+
+	events.NewTestProtocolLog.Trigger(events.NewTestProtocolLogPayload{
+		TestProtocolID: w.protocolId,
+		Entry: entry,
+	})
 }
 
 func (w *LogWriter) Log(source, format string, params ...interface{}) {

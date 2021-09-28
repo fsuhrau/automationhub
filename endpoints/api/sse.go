@@ -16,6 +16,8 @@ func (s *ApiService) initSSE(api *gin.RouterGroup) {
 	RegisterEventAppCreatedListener(s)
 	RegisterEventTestCreatedListener(s)
 	RegisterNewTestLogEntryListener(s)
+	RegisterNewTestProtocolListener(s)
+	RegisterNewTestProtocolLogListener(s)
 
 	sseApi := api.Group("/sse")
 	sseApi.Use(sse.HeadersMiddleware())

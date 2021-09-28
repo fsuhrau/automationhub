@@ -29,8 +29,8 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 
 interface DeviceSelectionProps extends WithStyles<typeof styles> {
     onSelectionChanged: (devices: IDeviceData[]) => void;
-    selectedDevices: IDeviceData[];
 }
+
 function not(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
     return a.filter((value) => b.indexOf(value) === -1);
 }
@@ -40,7 +40,7 @@ function intersection(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
 }
 
 const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
-    const { classes, onSelectionChanged, selectedDevices } = props;
+    const { classes, onSelectionChanged } = props;
 
     const [checked, setChecked] = React.useState<IDeviceData[]>([]);
 

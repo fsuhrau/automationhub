@@ -24,11 +24,8 @@ import IDeviceData from '../../types/device';
 import { useHistory } from 'react-router-dom';
 import ICreateTestData from '../../types/request.create.test';
 import { createTest } from '../../services/test.service';
-import AppSelection from '../../components/app-selection.component';
-import IAppData from '../../types/app';
 import TestMethodSelection from '../../components/testmethod-selection.component';
 import IAppFunctionData from '../../types/app.function';
-import IUnityTestFunctionData from '../../types/unity.test.function';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -88,8 +85,6 @@ const AddTestPage: FC = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
 
-    const [appId, setAppId] = React.useState<number>(0);
-
     const testTypes = getTestTypes();
     const [testType, setTestType] = React.useState<TestType>(TestType.Unity);
     const handleTestTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
@@ -99,7 +94,7 @@ const AddTestPage: FC = () => {
     };
 
     const executionTypes = getExecutionTypes();
-    const [executionType, setExecutionType] = React.useState<TestExecutionType>(TestExecutionType.Parallel);
+    const [executionType, setExecutionType] = React.useState<TestExecutionType>(TestExecutionType.Concurrent);
     const handleExecutionTypeChange = (event: React.ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
         setExecutionType(event.target.value);
     };
@@ -134,6 +129,7 @@ const AddTestPage: FC = () => {
         const requestData: ICreateTestData = {
             Name: testName,
             TestType: testType,
+            ExecutionType: executionType,
             UnityAllTests: unityTestExecution === 0,
             UnitySelectedTests: unityTestFunctions,
             AllDevices: deviceType === 0,
@@ -176,7 +172,7 @@ const AddTestPage: FC = () => {
                 <div>
                     { activeStep === steps.length ? (
                         <div>
-                            <Typography className={ classes.instructions }>Test is beeing created wait a moment and you
+                            <Typography className={ classes.instructions }>Test is being created wait a moment and you
                                 get redirected</Typography>
                         </div>
                     ) : (
@@ -234,6 +230,10 @@ const AddTestPage: FC = () => {
                                                                         />
                                                                     )) }
                                                                 </RadioGroup>
+                                                                <Typography variant={'subtitle1'}>
+                                                                    Concurrent = runs each test on a different free device to get faster results<br />
+                                                                    Simultaneously = runs every test on every device to get a better accuracy
+                                                                </Typography>
                                                             </Grid>
                                                         </Grid>
                                                     </Grid>

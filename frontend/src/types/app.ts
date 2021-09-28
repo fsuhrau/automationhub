@@ -10,6 +10,7 @@ export default interface IAppData {
     LaunchActivity: string,
     Additional: string,
     Hash: string,
+    Size: number,
     AppFunctions: IAppFunctionData[],
     CreatedAt: Date,
     UpdatedAt: Date,

@@ -31,8 +31,9 @@ export const findTest = (filter?: TestFilter): Promise<AxiosResponse<ITestData[]
     return http.get('/tests', { params: filter });
 };
 
-export const executeTest = (id: number | null | undefined, appid: number): Promise<AxiosResponse<unknown>> => {
+export const executeTest = (id: number | null | undefined, appid: number, envParams: string): Promise<AxiosResponse<unknown>> => {
     return http.post(`/test/${id}/run`, {
         AppID: appid,
+        Params: envParams,
     });
 };

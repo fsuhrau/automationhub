@@ -50,6 +50,9 @@ func (a *analyser) AnalyseFile() error {
 	}
 
 	data, err := ioutil.ReadFile(a.appPath)
+
+	a.parameter.Size = len(data)
+
 	if err != nil {
 		return err
 	}

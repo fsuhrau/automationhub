@@ -93,7 +93,7 @@ enum ActionType {
   GetScreenshot = 12;
   GetTests = 13;
   ExecuteTest = 14;
-  ExecutionStatus = 15;
+  ExecutionResult = 15;
   Log = 16;
   UnityReset = 17;
 }
@@ -160,6 +160,7 @@ message Test {
   string assembly = 1;
   string class = 2;
   string method = 3;
+  map<string, string> parameter = 4;
 }
 
 message Tests {

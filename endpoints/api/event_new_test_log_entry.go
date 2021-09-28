@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/sse"
 )
@@ -19,7 +20,7 @@ func RegisterNewTestLogEntryListener(publisher sse.Publisher) {
 
 func (u newTestLogEntryNotifier) Handle(payload events.NewTestLogEntryPayload) {
 	u.publisher.PublishEvent(sse.Event{
-		Channel: "testlog",
+		Channel: fmt.Sprintf("test_run_%d_log", payload.TestRunID),
 		Content: payload,
 	})
 }

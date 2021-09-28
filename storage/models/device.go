@@ -33,4 +33,5 @@ type Device struct {
 	Manager          string
 	StatusLog        []DeviceLog
 	Dev              interface{} `gorm:"-"`
+	Connection       interface{} `gorm:"-"`
 }

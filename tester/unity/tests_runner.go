@@ -38,6 +38,7 @@ type testsRunner struct {
 	fin            chan bool
 	err            error
 	publisher      sse.Publisher
+	env            map[string]string
 
 	appParams app.Parameter
 }
@@ -52,21 +53,23 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 	}
 }
 
-func (tr *testsRunner) Initialize(test models.Test) error {
+func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
 	if test.TestConfig.Type != models.TestTypeUnity {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
+	tr.env = env
 	tr.test = test
 	tr.config = test.TestConfig
 	return nil
 }
 
-func (tr *testsRunner) newTestSession(appId uint) error {
+func (tr *testsRunner) newTestSession(appId uint, params string) error {
 	sessionID := tr.NewSessionID()
 	run := &models.TestRun{
 		TestID:    tr.test.ID,
 		AppID:     appId,
 		SessionID: sessionID,
+		Parameter: params,
 	}
 	if err := tr.db.Create(run).Error; err != nil {
 		return err
@@ -105,7 +108,11 @@ func (tr *testsRunner) logError(format string, params ...interface{}) {
 }
 
 func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
-	if err := tr.newTestSession(appData.ID); err != nil {
+	var params []string
+	for k,v := range tr.env {
+		params = append(params, fmt.Sprintf("%s=%s", k,v))
+	}
+	if err := tr.newTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
 		return err
 	}
 	defer tr.testSessionFinished()
@@ -236,7 +243,8 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	tr.logInfo("Execute Tests")
 
 	switch tr.config.ExecutionType {
-	case models.SynchronousExecutionType:
+	case models.SimultaneouslyExecutionType:
+		// each device gets its own input pool which needs to be processed
 		cancel := make(cancelChannel, len(devices))
 		group := sync.ExtendedWaitGroup{}
 
@@ -267,7 +275,8 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			close(workers[i])
 		}
 
-	case models.ParallelExecutionType:
+	case models.ConcurrentExecutionType:
+		// have one input pool where each device can select a job
 		cancel := make(cancelChannel, len(devices))
 		group := sync.ExtendedWaitGroup{}
 
@@ -280,6 +289,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 				Assembly: t.Assembly,
 				Class:    t.Class,
 				Method:   t.Method,
+				Env:      tr.env,
 			}
 			group.Add(1)
 			parallelWorker <- a
@@ -290,6 +300,13 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		}
 		close(cancel)
 		close(parallelWorker)
+	}
+
+	tr.logInfo("stop apps")
+	for _, d := range devices {
+		if err := d.Device.StopApp(&tr.appParams); err != nil {
+			tr.logError("unable to start app: %v", err)
+		}
 	}
 
 	return nil
@@ -323,8 +340,8 @@ func (tr *testsRunner) runTest(dev DeviceMap, task action.TestStart, method stri
 	}()
 
 	tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
-	executor := NewExecuter(tr.deviceManager)
-	if err := executor.Execute(dev.Device, task, 2*time.Minute); err != nil {
+	executor := NewExecutor(tr.deviceManager)
+	if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
 		tr.logError("test execution failed: %v", err)
 	} else {
 		tr.logInfo("test execution finished")

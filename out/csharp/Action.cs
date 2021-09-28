@@ -48,42 +48,45 @@ namespace Com.AutomationHub {
             "IAEoDjIPLmFjdGlvbi5BcHBUeXBlEhAKCGRldmljZUlEGAQgASgJEhEKCXNl",
             "c3Npb25JRBgFIAEoCRIPCgd2ZXJzaW9uGAYgASgJIl4KClNjcmVlbnNob3QS",
             "EgoKc2NlZW5ncmFwaBgBIAEoDBISCgpzY3JlZW5zaG90GAIgASgMEigKC2Nv",
-            "bnRlbnRUeXBlGAMgASgOMhMuYWN0aW9uLkNvbnRlbnRUeXBlIjcKBFRlc3QS",
-            "EAoIYXNzZW1ibHkYASABKAkSDQoFY2xhc3MYAiABKAkSDgoGbWV0aG9kGAMg",
-            "ASgJIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9uLlRlc3QiWgoH",
-            "TG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5cGUSHwoFbGV2",
-            "ZWwYAiABKA4yEC5hY3Rpb24uTG9nTGV2ZWwSDwoHbWVzc2FnZRgDIAEoCSKi",
-            "AgoIUmVzcG9uc2USEAoIYWN0aW9uSUQYASABKAkSJgoKYWN0aW9uVHlwZRgC",
-            "IAEoDjISLmFjdGlvbi5BY3Rpb25UeXBlEg8KB3N1Y2Nlc3MYAyABKAgSEQoH",
-            "dmlzaWJsZRgEIAEoCEgAEg4KBGRhdGEYBSABKAxIABIPCgV2YWx1ZRgGIAEo",
-            "CUgAEigKCnNjcmVlbnNob3QYByABKAsyEi5hY3Rpb24uU2NyZWVuc2hvdEgA",
-            "EiIKB2Nvbm5lY3QYCCABKAsyDy5hY3Rpb24uQ29ubmVjdEgAEh4KBXRlc3Rz",
-            "GAkgASgLMg0uYWN0aW9uLlRlc3RzSAASHgoDbG9nGAogASgLMg8uYWN0aW9u",
-            "LkxvZ0RhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJbnRlcmFjdGlvblR5",
-            "cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0RldmljZRABEhIKDkdldERl",
-            "dmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIOCgpJbnN0YWxsQXBw",
-            "EAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQBhILCgdTdG9wQXBw",
-            "EAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJlY29yZGluZxAJEhEK",
-            "DVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsSEgoORXhlY3V0ZUZl",
-            "YXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIKCkFjdGlvblR5cGUSCgoG",
-            "Q3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVsZW1lbnRJc0Rpc3Bs",
-            "YXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0VsZW1lbnRHZXRWYWx1",
-            "ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglUb3VjaE1vdmUQBxIL",
-            "CgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglMb25nVG91Y2gQChIQ",
-            "CgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90EAwSDAoIR2V0VGVz",
-            "dHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlvblN0YXR1cxAPEgcK",
-            "A0xvZxAQEg4KClVuaXR5UmVzZXQQESpbCgdMb2dUeXBlEg0KCURldmljZUxv",
-            "ZxAAEgsKB1N0ZXBMb2cQARINCglTdGF0dXNMb2cQAhIRCg1DaGVja3BvaW50",
-            "TG9nEAMSEgoOUGVyZm9ybWFuY2VMb2cQBCpGCghMb2dMZXZlbBIJCgVEZWJ1",
-            "ZxAAEggKBEluZm8QARILCgdXYXJuaW5nEAISCQoFRXJyb3IQAxINCglFeGNl",
-            "cHRpb24QBCowCgtDb250ZW50VHlwZRIOCgpGbGF0YnVmZmVyEAASCAoESnNv",
-            "bhABEgcKA1htbBACKh8KB0FwcFR5cGUSCQoFQ29jb3MQABIJCgVVbml0eRAB",
-            "Mt8BCgxSZW1vdGVEZXZpY2USQQoKRGV2aWNlTGlzdBIVLmFjdGlvbi5EZXZp",
-            "Y2VSZXF1ZXN0GhYuYWN0aW9uLkRldmljZVJlc3BvbnNlIgAoATABElIKEURl",
-            "dmljZUludGVyYWN0aW9uEhouYWN0aW9uLkludGVyYWN0aW9uUmVxdWVzdBob",
-            "LmFjdGlvbi5JbnRlcmFjdGlvblJlc3BvbnNlIgAoATABEjgKDUFjdGlvbkV4",
-            "ZWN1dGUSDy5hY3Rpb24uUmVxdWVzdBoQLmFjdGlvbi5SZXNwb25zZSIAKAEw",
-            "AUIgWgpodWIvYWN0aW9uqgIRQ29tLkF1dG9tYXRpb25IdWJiBnByb3RvMw=="));
+            "bnRlbnRUeXBlGAMgASgOMhMuYWN0aW9uLkNvbnRlbnRUeXBlIpkBCgRUZXN0",
+            "EhAKCGFzc2VtYmx5GAEgASgJEg0KBWNsYXNzGAIgASgJEg4KBm1ldGhvZBgD",
+            "IAEoCRIuCglwYXJhbWV0ZXIYBCADKAsyGy5hY3Rpb24uVGVzdC5QYXJhbWV0",
+            "ZXJFbnRyeRowCg5QYXJhbWV0ZXJFbnRyeRILCgNrZXkYASABKAkSDQoFdmFs",
+            "dWUYAiABKAk6AjgBIiQKBVRlc3RzEhsKBXRlc3RzGAEgAygLMgwuYWN0aW9u",
+            "LlRlc3QiWgoHTG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5",
+            "cGUSHwoFbGV2ZWwYAiABKA4yEC5hY3Rpb24uTG9nTGV2ZWwSDwoHbWVzc2Fn",
+            "ZRgDIAEoCSKiAgoIUmVzcG9uc2USEAoIYWN0aW9uSUQYASABKAkSJgoKYWN0",
+            "aW9uVHlwZRgCIAEoDjISLmFjdGlvbi5BY3Rpb25UeXBlEg8KB3N1Y2Nlc3MY",
+            "AyABKAgSEQoHdmlzaWJsZRgEIAEoCEgAEg4KBGRhdGEYBSABKAxIABIPCgV2",
+            "YWx1ZRgGIAEoCUgAEigKCnNjcmVlbnNob3QYByABKAsyEi5hY3Rpb24uU2Ny",
+            "ZWVuc2hvdEgAEiIKB2Nvbm5lY3QYCCABKAsyDy5hY3Rpb24uQ29ubmVjdEgA",
+            "Eh4KBXRlc3RzGAkgASgLMg0uYWN0aW9uLlRlc3RzSAASHgoDbG9nGAogASgL",
+            "Mg8uYWN0aW9uLkxvZ0RhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJbnRl",
+            "cmFjdGlvblR5cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0RldmljZRAB",
+            "EhIKDkdldERldmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIOCgpJ",
+            "bnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQBhIL",
+            "CgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJlY29y",
+            "ZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsSEgoO",
+            "RXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIKCkFjdGlv",
+            "blR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVsZW1l",
+            "bnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0VsZW1l",
+            "bnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglUb3Vj",
+            "aE1vdmUQBxILCgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglMb25n",
+            "VG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90EAwS",
+            "DAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlvblJl",
+            "c3VsdBAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQESpbCgdMb2dUeXBlEg0K",
+            "CURldmljZUxvZxAAEgsKB1N0ZXBMb2cQARINCglTdGF0dXNMb2cQAhIRCg1D",
+            "aGVja3BvaW50TG9nEAMSEgoOUGVyZm9ybWFuY2VMb2cQBCpGCghMb2dMZXZl",
+            "bBIJCgVEZWJ1ZxAAEggKBEluZm8QARILCgdXYXJuaW5nEAISCQoFRXJyb3IQ",
+            "AxINCglFeGNlcHRpb24QBCowCgtDb250ZW50VHlwZRIOCgpGbGF0YnVmZmVy",
+            "EAASCAoESnNvbhABEgcKA1htbBACKh8KB0FwcFR5cGUSCQoFQ29jb3MQABIJ",
+            "CgVVbml0eRABMt8BCgxSZW1vdGVEZXZpY2USQQoKRGV2aWNlTGlzdBIVLmFj",
+            "dGlvbi5EZXZpY2VSZXF1ZXN0GhYuYWN0aW9uLkRldmljZVJlc3BvbnNlIgAo",
+            "ATABElIKEURldmljZUludGVyYWN0aW9uEhouYWN0aW9uLkludGVyYWN0aW9u",
+            "UmVxdWVzdBobLmFjdGlvbi5JbnRlcmFjdGlvblJlc3BvbnNlIgAoATABEjgK",
+            "DUFjdGlvbkV4ZWN1dGUSDy5hY3Rpb24uUmVxdWVzdBoQLmFjdGlvbi5SZXNw",
+            "b25zZSIAKAEwAUIgWgpodWIvYWN0aW9uqgIRQ29tLkF1dG9tYXRpb25IdWJi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.LogLevel), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -100,7 +103,7 @@ namespace Com.AutomationHub {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Request), global::Com.AutomationHub.Request.Parser, new[]{ "ActionID", "ActionType", "Id", "Data", "SetAttr", "GetAttr", "MoveOffset", "Touch", "MoveElement", "Test" }, new[]{ "Payload" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Connect), global::Com.AutomationHub.Connect.Parser, new[]{ "CustomerId", "AppID", "AppType", "DeviceID", "SessionID", "Version" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Screenshot), global::Com.AutomationHub.Screenshot.Parser, new[]{ "Sceengraph", "Screenshot_", "ContentType" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Test), global::Com.AutomationHub.Test.Parser, new[]{ "Assembly", "Class", "Method" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Test), global::Com.AutomationHub.Test.Parser, new[]{ "Assembly", "Class", "Method", "Parameter" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Tests), global::Com.AutomationHub.Tests.Parser, new[]{ "Tests_" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.LogData), global::Com.AutomationHub.LogData.Parser, new[]{ "Type", "Level", "Message" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests", "Log" }, new[]{ "Payload" }, null, null)
@@ -143,7 +146,7 @@ namespace Com.AutomationHub {
     [pbr::OriginalName("GetScreenshot")] GetScreenshot = 12,
     [pbr::OriginalName("GetTests")] GetTests = 13,
     [pbr::OriginalName("ExecuteTest")] ExecuteTest = 14,
-    [pbr::OriginalName("ExecutionStatus")] ExecutionStatus = 15,
+    [pbr::OriginalName("ExecutionResult")] ExecutionResult = 15,
     [pbr::OriginalName("Log")] Log = 16,
     [pbr::OriginalName("UnityReset")] UnityReset = 17,
   }
@@ -2728,6 +2731,7 @@ namespace Com.AutomationHub {
       assembly_ = other.assembly_;
       class_ = other.class_;
       method_ = other.method_;
+      parameter_ = other.parameter_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2769,6 +2773,16 @@ namespace Com.AutomationHub {
       }
     }
 
+    /// <summary>Field number for the "parameter" field.</summary>
+    public const int ParameterFieldNumber = 4;
+    private static readonly pbc::MapField<string, string>.Codec _map_parameter_codec
+        = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10), pb::FieldCodec.ForString(18), 34);
+    private readonly pbc::MapField<string, string> parameter_ = new pbc::MapField<string, string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::MapField<string, string> Parameter {
+      get { return parameter_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Test);
@@ -2785,6 +2799,7 @@ namespace Com.AutomationHub {
       if (Assembly != other.Assembly) return false;
       if (Class != other.Class) return false;
       if (Method != other.Method) return false;
+      if (!Parameter.Equals(other.Parameter)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2794,6 +2809,7 @@ namespace Com.AutomationHub {
       if (Assembly.Length != 0) hash ^= Assembly.GetHashCode();
       if (Class.Length != 0) hash ^= Class.GetHashCode();
       if (Method.Length != 0) hash ^= Method.GetHashCode();
+      hash ^= Parameter.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2819,6 +2835,7 @@ namespace Com.AutomationHub {
         output.WriteRawTag(26);
         output.WriteString(Method);
       }
+      parameter_.WriteTo(output, _map_parameter_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2836,6 +2853,7 @@ namespace Com.AutomationHub {
       if (Method.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
       }
+      size += parameter_.CalculateSize(_map_parameter_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2856,6 +2874,7 @@ namespace Com.AutomationHub {
       if (other.Method.Length != 0) {
         Method = other.Method;
       }
+      parameter_.Add(other.parameter_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2877,6 +2896,10 @@ namespace Com.AutomationHub {
           }
           case 26: {
             Method = input.ReadString();
+            break;
+          }
+          case 34: {
+            parameter_.AddEntriesFrom(input, _map_parameter_codec);
             break;
           }
         }

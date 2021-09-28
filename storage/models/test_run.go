@@ -8,6 +8,7 @@ type TestRun struct {
 	AppID     uint
 	App       App
 	SessionID string
+	Parameter string
 	Protocols []TestProtocol
 	Log       []TestRunLogEntry
 }

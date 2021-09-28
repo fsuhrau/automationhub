@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, ReactElement, useEffect, useState } from 'react';
+import { ChangeEvent, FC, ReactElement, useEffect, useState } from 'react';
 import { createStyles, Theme, WithStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import {
@@ -89,14 +89,14 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
             uploadNewApp(f, progress => {
                 setUploadProgress(progress);
             }, data => {
-                console.log(data.data);
                 if (data.data !== undefined && data.data !== null) {
-                    setApp(data.data);
                     setApps(prevState => {
                         const newState = [...prevState];
                         newState.push(data.data);
                         return newState;
                     });
+                    setApp(data.data);
+                    setSelectedAppID(data.data.ID);
                 }
             });
         }
@@ -104,8 +104,6 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
 
     const handleChange = (e: ChangeEvent<{ name?: string | undefined, value: unknown }>): void => {
         e.preventDefault();
-        console.log(e.target.value);
-        console.log(e.target.name);
         if (e.target.value !== undefined) {
             const appId = e.target.value as number;
             const a = apps.find(element => element.ID == appId);
@@ -132,6 +130,7 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                         value={ selectedAppID }
                         onChange={ event => handleChange(event) }
                     >
+                        <MenuItem value={0}>Select an App</MenuItem>
                         { apps.map((a) =>
                             <MenuItem value={ a.ID }>{ a.Platform } { a.Name } ({ a.Version })</MenuItem>,
                         ) }
@@ -146,10 +145,10 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                     alignItems="center"
                     className={ classes.root }
                 >
-                    { upload && uploadProgress > 0 && (
+                    { upload && (
                     <Grid item={ true }>
                         <Box sx={ { width: '200px' } }>
-                            <LinearProgressWithLabel value={ uploadProgress }/>
+                            <LinearProgressWithLabel value={ uploadProgress } />
                         </Box>
                     </Grid>
                     ) }
@@ -166,7 +165,7 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                             }
                             }/>
                         <label htmlFor="app-upload">
-                            <Button variant="contained"
+                            <Button variant="outlined"
                                 color="primary"
                                 component="span">
                                 Upload New

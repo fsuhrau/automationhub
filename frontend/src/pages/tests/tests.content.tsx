@@ -7,7 +7,6 @@ import Button from '@material-ui/core/Button';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import SearchIcon from '@material-ui/icons/Search';
 import TestsTable from '../../components/tests-table.component';
-import { PlayArrow } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>

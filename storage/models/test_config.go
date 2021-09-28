@@ -14,8 +14,8 @@ const (
 type ExecutionType uint
 
 const (
-	ParallelExecutionType    ExecutionType = iota // each test on a different free device ( faster results )
-	SynchronousExecutionType                      // every test on every device ( more accuracy )
+	ConcurrentExecutionType     ExecutionType = iota // each test on a different free device ( faster results )
+	SimultaneouslyExecutionType                      // every test on every device ( more accuracy )
 )
 
 type TestConfig struct {
@@ -33,7 +33,7 @@ type TestConfig struct {
 
 func (t *TestConfig) GetDeviceIds() []uint {
 	var deviceIds []uint
-	for _,d := range t.Devices {
+	for _, d := range t.Devices {
 		deviceIds = append(deviceIds, d.DeviceID)
 	}
 	return deviceIds

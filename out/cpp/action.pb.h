@@ -31,6 +31,9 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/map.h>  // IWYU pragma: export
+#include <google/protobuf/map_entry.h>
+#include <google/protobuf/map_field_inl.h>
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
@@ -48,7 +51,7 @@ struct TableStruct_action_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[17]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[18]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -101,6 +104,9 @@ extern SetAttrDefaultTypeInternal _SetAttr_default_instance_;
 class Test;
 class TestDefaultTypeInternal;
 extern TestDefaultTypeInternal _Test_default_instance_;
+class Test_ParameterEntry_DoNotUse;
+class Test_ParameterEntry_DoNotUseDefaultTypeInternal;
+extern Test_ParameterEntry_DoNotUseDefaultTypeInternal _Test_ParameterEntry_DoNotUse_default_instance_;
 class Tests;
 class TestsDefaultTypeInternal;
 extern TestsDefaultTypeInternal _Tests_default_instance_;
@@ -124,6 +130,7 @@ template<> ::action::Response* Arena::CreateMaybeMessage<::action::Response>(Are
 template<> ::action::Screenshot* Arena::CreateMaybeMessage<::action::Screenshot>(Arena*);
 template<> ::action::SetAttr* Arena::CreateMaybeMessage<::action::SetAttr>(Arena*);
 template<> ::action::Test* Arena::CreateMaybeMessage<::action::Test>(Arena*);
+template<> ::action::Test_ParameterEntry_DoNotUse* Arena::CreateMaybeMessage<::action::Test_ParameterEntry_DoNotUse>(Arena*);
 template<> ::action::Tests* Arena::CreateMaybeMessage<::action::Tests>(Arena*);
 template<> ::action::Touch* Arena::CreateMaybeMessage<::action::Touch>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
@@ -182,7 +189,7 @@ enum ActionType : int {
   GetScreenshot = 12,
   GetTests = 13,
   ExecuteTest = 14,
-  ExecutionStatus = 15,
+  ExecutionResult = 15,
   Log = 16,
   UnityReset = 17,
   ActionType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
@@ -2529,6 +2536,40 @@ class Screenshot :
 };
 // -------------------------------------------------------------------
 
+class Test_ParameterEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Test_ParameterEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    0 > {
+public:
+  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Test_ParameterEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    0 > SuperType;
+  Test_ParameterEntry_DoNotUse();
+  Test_ParameterEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  void MergeFrom(const Test_ParameterEntry_DoNotUse& other);
+  static const Test_ParameterEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const Test_ParameterEntry_DoNotUse*>(&_Test_ParameterEntry_DoNotUse_default_instance_); }
+  static bool ValidateKey(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), s->size(), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "action.Test.ParameterEntry.key");
+ }
+  static bool ValidateValue(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), s->size(), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "action.Test.ParameterEntry.value");
+ }
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& other) final;
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_action_2eproto);
+    return ::descriptor_table_action_2eproto.file_level_metadata[13];
+  }
+
+  public:
+};
+
+// -------------------------------------------------------------------
+
 class Test :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.Test) */ {
  public:
@@ -2571,7 +2612,7 @@ class Test :
                &_Test_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    14;
 
   friend void swap(Test& a, Test& b) {
     a.Swap(&b);
@@ -2632,13 +2673,32 @@ class Test :
 
   // nested types ----------------------------------------------------
 
+
   // accessors -------------------------------------------------------
 
   enum : int {
+    kParameterFieldNumber = 4,
     kAssemblyFieldNumber = 1,
     kClassFieldNumber = 2,
     kMethodFieldNumber = 3,
   };
+  // map<string, string> parameter = 4;
+  int parameter_size() const;
+  private:
+  int _internal_parameter_size() const;
+  public:
+  void clear_parameter();
+  private:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      _internal_parameter() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      _internal_mutable_parameter();
+  public:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      parameter() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      mutable_parameter();
+
   // string assembly = 1;
   void clear_assembly();
   const std::string& assembly() const;
@@ -2692,6 +2752,12 @@ class Test :
   class _Internal;
 
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::MapField<
+      Test_ParameterEntry_DoNotUse,
+      std::string, std::string,
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+      0 > parameter_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr assembly_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr class__;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_;
@@ -2742,7 +2808,7 @@ class Tests :
                &_Tests_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    15;
 
   friend void swap(Tests& a, Tests& b) {
     a.Swap(&b);
@@ -2879,7 +2945,7 @@ class LogData :
                &_LogData_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    16;
 
   friend void swap(LogData& a, LogData& b) {
     a.Swap(&b);
@@ -3047,7 +3113,7 @@ class Response :
                &_Response_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    17;
 
   friend void swap(Response& a, Response& b) {
     a.Swap(&b);
@@ -5446,6 +5512,8 @@ inline void Screenshot::set_contenttype(::action::ContentType value) {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
 // Test
 
 // string assembly = 1;
@@ -5626,6 +5694,35 @@ inline void Test::set_allocated_method(std::string* method) {
   }
   method_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), method);
   // @@protoc_insertion_point(field_set_allocated:action.Test.method)
+}
+
+// map<string, string> parameter = 4;
+inline int Test::_internal_parameter_size() const {
+  return parameter_.size();
+}
+inline int Test::parameter_size() const {
+  return _internal_parameter_size();
+}
+inline void Test::clear_parameter() {
+  parameter_.Clear();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+Test::_internal_parameter() const {
+  return parameter_.GetMap();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+Test::parameter() const {
+  // @@protoc_insertion_point(field_map:action.Test.parameter)
+  return _internal_parameter();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+Test::_internal_mutable_parameter() {
+  return parameter_.MutableMap();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+Test::mutable_parameter() {
+  // @@protoc_insertion_point(field_mutable_map:action.Test.parameter)
+  return _internal_mutable_parameter();
 }
 
 // -------------------------------------------------------------------
@@ -6322,6 +6419,8 @@ inline Response::PayloadCase Response::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

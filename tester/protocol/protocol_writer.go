@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
 	"time"
@@ -36,6 +37,8 @@ func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*LogWriter
 	writer := NewLogWriter(w.db, protocol.ID)
 
 	w.protocols = append(w.protocols, logProtocol{protocol, writer})
+
+	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
 
 	return writer, nil
 }

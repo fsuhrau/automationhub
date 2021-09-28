@@ -75,6 +75,26 @@ const AppsPage: FC<AppsProps> = (props) => {
         });
     };
 
+    const ppSize = (bytes: number): string => {
+        const KB = 1024;
+        const MB = KB * 1024;
+        const GB = MB * 1024;
+
+        if (bytes >= GB) {
+            return `${(bytes / GB).toFixed(2)}GB`;
+        }
+
+        if (bytes >= MB) {
+            return `${(bytes / MB).toFixed(2)}MB`;
+        }
+
+        if (bytes >= KB) {
+            return `${(bytes / KB).toFixed(2)}KB`;
+        }
+
+        return `${bytes}B`;
+    };
+
     return (
         <Paper className={ classes.paper }>
             <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
@@ -105,6 +125,7 @@ const AppsPage: FC<AppsProps> = (props) => {
                             <TableCell>Bundle Identifier</TableCell>
                             <TableCell align="right">Version</TableCell>
                             <TableCell>Activity</TableCell>
+                            <TableCell align="right">Size</TableCell>
                             <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -119,6 +140,7 @@ const AppsPage: FC<AppsProps> = (props) => {
                             <TableCell>{app.Identifier}</TableCell>
                             <TableCell align="right">{app.Version}</TableCell>
                             <TableCell>{app.LaunchActivity}</TableCell>
+                            <TableCell align="right">{ppSize(app.Size)}</TableCell>
                             <TableCell>
                                 <Button variant="contained" color="secondary" size="small" onClick={ () => {
                                     handleDeleteApp(app.ID as number);

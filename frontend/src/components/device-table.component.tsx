@@ -87,6 +87,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                         <TableCell>OS</TableCell>
                         <TableCell align="right">Version</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Session</TableCell>
                         <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
@@ -102,6 +103,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                         <TableCell>{ device.OS }</TableCell>
                         <TableCell align="right">{ device.OSVersion }</TableCell>
                         <TableCell>{ deviceState(device.Status) }</TableCell>
+                        <TableCell>{ device.Connection?.appID }</TableCell>
                         <TableCell align="right">
                             <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
                                 onClick={ (e) => handleRunTests(device.ID, e) }>

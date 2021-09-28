@@ -120,6 +120,7 @@ func (s *ApiService) uploadApp(session *Session, c *gin.Context) {
 		LaunchActivity: params.LaunchActivity,
 		Platform: params.Platform,
 		Additional: params.Additional,
+		Size: params.Size,
 	}
 	if err := s.db.Create(&appDto).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to create app err: %s", err.Error()))

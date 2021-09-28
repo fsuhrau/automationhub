@@ -22,7 +22,8 @@ extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MoveOffset_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Screenshot_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetAttr_action_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_action_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Test_action_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_ParameterEntry_DoNotUse_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Tests_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Touch_action_2eproto;
 namespace action {
@@ -86,6 +87,10 @@ class ScreenshotDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Screenshot> _instance;
 } _Screenshot_default_instance_;
+class Test_ParameterEntry_DoNotUseDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Test_ParameterEntry_DoNotUse> _instance;
+} _Test_ParameterEntry_DoNotUse_default_instance_;
 class TestDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Test> _instance;
@@ -328,8 +333,22 @@ static void InitDefaultsscc_info_Test_action_2eproto() {
   ::action::Test::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_action_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Test_action_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Test_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_Test_action_2eproto}, {
+      &scc_info_Test_ParameterEntry_DoNotUse_action_2eproto.base,}};
+
+static void InitDefaultsscc_info_Test_ParameterEntry_DoNotUse_action_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::action::_Test_ParameterEntry_DoNotUse_default_instance_;
+    new (ptr) ::action::Test_ParameterEntry_DoNotUse();
+  }
+  ::action::Test_ParameterEntry_DoNotUse::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_ParameterEntry_DoNotUse_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Test_ParameterEntry_DoNotUse_action_2eproto}, {}};
 
 static void InitDefaultsscc_info_Tests_action_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -360,7 +379,7 @@ static void InitDefaultsscc_info_Touch_action_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Touch_action_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Touch_action_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[17];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[18];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_action_2eproto[6];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_action_2eproto = nullptr;
 
@@ -471,6 +490,15 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   PROTOBUF_FIELD_OFFSET(::action::Screenshot, sceengraph_),
   PROTOBUF_FIELD_OFFSET(::action::Screenshot, screenshot_),
   PROTOBUF_FIELD_OFFSET(::action::Screenshot, contenttype_),
+  PROTOBUF_FIELD_OFFSET(::action::Test_ParameterEntry_DoNotUse, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::action::Test_ParameterEntry_DoNotUse, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::action::Test_ParameterEntry_DoNotUse, key_),
+  PROTOBUF_FIELD_OFFSET(::action::Test_ParameterEntry_DoNotUse, value_),
+  0,
+  1,
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::action::Test, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -479,6 +507,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   PROTOBUF_FIELD_OFFSET(::action::Test, assembly_),
   PROTOBUF_FIELD_OFFSET(::action::Test, class__),
   PROTOBUF_FIELD_OFFSET(::action::Test, method_),
+  PROTOBUF_FIELD_OFFSET(::action::Test, parameter_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::action::Tests, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -524,10 +553,11 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 71, -1, sizeof(::action::Request)},
   { 87, -1, sizeof(::action::Connect)},
   { 98, -1, sizeof(::action::Screenshot)},
-  { 106, -1, sizeof(::action::Test)},
-  { 114, -1, sizeof(::action::Tests)},
-  { 120, -1, sizeof(::action::LogData)},
-  { 128, -1, sizeof(::action::Response)},
+  { 106, 113, sizeof(::action::Test_ParameterEntry_DoNotUse)},
+  { 115, -1, sizeof(::action::Test)},
+  { 124, -1, sizeof(::action::Tests)},
+  { 130, -1, sizeof(::action::LogData)},
+  { 138, -1, sizeof(::action::Response)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -544,6 +574,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Request_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Connect_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Screenshot_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Test_ParameterEntry_DoNotUse_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Test_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Tests_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_LogData_default_instance_),
@@ -578,51 +609,53 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "ppType\022\020\n\010deviceID\030\004 \001(\t\022\021\n\tsessionID\030\005 "
   "\001(\t\022\017\n\007version\030\006 \001(\t\"^\n\nScreenshot\022\022\n\nsc"
   "eengraph\030\001 \001(\014\022\022\n\nscreenshot\030\002 \001(\014\022(\n\013co"
-  "ntentType\030\003 \001(\0162\023.action.ContentType\"7\n\004"
-  "Test\022\020\n\010assembly\030\001 \001(\t\022\r\n\005class\030\002 \001(\t\022\016\n"
-  "\006method\030\003 \001(\t\"$\n\005Tests\022\033\n\005tests\030\001 \003(\0132\014."
-  "action.Test\"Z\n\007LogData\022\035\n\004type\030\001 \001(\0162\017.a"
-  "ction.LogType\022\037\n\005level\030\002 \001(\0162\020.action.Lo"
-  "gLevel\022\017\n\007message\030\003 \001(\t\"\242\002\n\010Response\022\020\n\010"
-  "actionID\030\001 \001(\t\022&\n\nactionType\030\002 \001(\0162\022.act"
-  "ion.ActionType\022\017\n\007success\030\003 \001(\010\022\021\n\007visib"
-  "le\030\004 \001(\010H\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005value\030\006 \001("
-  "\tH\000\022(\n\nscreenshot\030\007 \001(\0132\022.action.Screens"
-  "hotH\000\022\"\n\007connect\030\010 \001(\0132\017.action.ConnectH"
-  "\000\022\036\n\005tests\030\t \001(\0132\r.action.TestsH\000\022\036\n\003log"
-  "\030\n \001(\0132\017.action.LogDataH\000B\t\n\007payload*\220\002\n"
-  "\025DeviceInteractionType\022\016\n\nLockDevice\020\000\022\020"
-  "\n\014UnlockDevice\020\001\022\022\n\016GetDeviceState\020\002\022\022\n\016"
-  "IsAppInstalled\020\003\022\016\n\nInstallApp\020\004\022\020\n\014Unin"
-  "stallApp\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020\007\022\022\n"
-  "\016IsAppConnected\020\010\022\022\n\016StartRecording\020\t\022\021\n"
-  "\rStopRecording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016Exec"
-  "uteFeature\020\014\022\021\n\rGetScreenShot\020\r*\264\002\n\nActi"
-  "onType\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020\001\022\026\n"
-  "\022ElementIsDisplayed\020\002\022\023\n\017ElementSetValue"
-  "\020\003\022\023\n\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTou"
-  "chDown\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchUp\020\010\022\017\n\013"
-  "DragAndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014ElementT"
-  "ouch\020\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTests\020\r\022"
-  "\017\n\013ExecuteTest\020\016\022\023\n\017ExecutionStatus\020\017\022\007\n"
-  "\003Log\020\020\022\016\n\nUnityReset\020\021*[\n\007LogType\022\r\n\tDev"
-  "iceLog\020\000\022\013\n\007StepLog\020\001\022\r\n\tStatusLog\020\002\022\021\n\r"
-  "CheckpointLog\020\003\022\022\n\016PerformanceLog\020\004*F\n\010L"
-  "ogLevel\022\t\n\005Debug\020\000\022\010\n\004Info\020\001\022\013\n\007Warning\020"
-  "\002\022\t\n\005Error\020\003\022\r\n\tException\020\004*0\n\013ContentTy"
-  "pe\022\016\n\nFlatbuffer\020\000\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n"
-  "\007AppType\022\t\n\005Cocos\020\000\022\t\n\005Unity\020\0012\337\001\n\014Remot"
-  "eDevice\022A\n\nDeviceList\022\025.action.DeviceReq"
-  "uest\032\026.action.DeviceResponse\"\000(\0010\001\022R\n\021De"
-  "viceInteraction\022\032.action.InteractionRequ"
-  "est\032\033.action.InteractionResponse\"\000(\0010\001\0228"
-  "\n\rActionExecute\022\017.action.Request\032\020.actio"
-  "n.Response\"\000(\0010\001B Z\nhub/action\252\002\021Com.Aut"
-  "omationHubb\006proto3"
+  "ntentType\030\003 \001(\0162\023.action.ContentType\"\231\001\n"
+  "\004Test\022\020\n\010assembly\030\001 \001(\t\022\r\n\005class\030\002 \001(\t\022\016"
+  "\n\006method\030\003 \001(\t\022.\n\tparameter\030\004 \003(\0132\033.acti"
+  "on.Test.ParameterEntry\0320\n\016ParameterEntry"
+  "\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"$\n\005Test"
+  "s\022\033\n\005tests\030\001 \003(\0132\014.action.Test\"Z\n\007LogDat"
+  "a\022\035\n\004type\030\001 \001(\0162\017.action.LogType\022\037\n\005leve"
+  "l\030\002 \001(\0162\020.action.LogLevel\022\017\n\007message\030\003 \001"
+  "(\t\"\242\002\n\010Response\022\020\n\010actionID\030\001 \001(\t\022&\n\nact"
+  "ionType\030\002 \001(\0162\022.action.ActionType\022\017\n\007suc"
+  "cess\030\003 \001(\010\022\021\n\007visible\030\004 \001(\010H\000\022\016\n\004data\030\005 "
+  "\001(\014H\000\022\017\n\005value\030\006 \001(\tH\000\022(\n\nscreenshot\030\007 \001"
+  "(\0132\022.action.ScreenshotH\000\022\"\n\007connect\030\010 \001("
+  "\0132\017.action.ConnectH\000\022\036\n\005tests\030\t \001(\0132\r.ac"
+  "tion.TestsH\000\022\036\n\003log\030\n \001(\0132\017.action.LogDa"
+  "taH\000B\t\n\007payload*\220\002\n\025DeviceInteractionTyp"
+  "e\022\016\n\nLockDevice\020\000\022\020\n\014UnlockDevice\020\001\022\022\n\016G"
+  "etDeviceState\020\002\022\022\n\016IsAppInstalled\020\003\022\016\n\nI"
+  "nstallApp\020\004\022\020\n\014UninstallApp\020\005\022\014\n\010StartAp"
+  "p\020\006\022\013\n\007StopApp\020\007\022\022\n\016IsAppConnected\020\010\022\022\n\016"
+  "StartRecording\020\t\022\021\n\rStopRecording\020\n\022\016\n\nH"
+  "asFeature\020\013\022\022\n\016ExecuteFeature\020\014\022\021\n\rGetSc"
+  "reenShot\020\r*\264\002\n\nActionType\022\n\n\006Custom\020\000\022\021\n"
+  "\rGetSceneGraph\020\001\022\026\n\022ElementIsDisplayed\020\002"
+  "\022\023\n\017ElementSetValue\020\003\022\023\n\017ElementGetValue"
+  "\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDown\020\006\022\r\n\tTouchMove"
+  "\020\007\022\013\n\007TouchUp\020\010\022\017\n\013DragAndDrop\020\t\022\r\n\tLong"
+  "Touch\020\n\022\020\n\014ElementTouch\020\013\022\021\n\rGetScreensh"
+  "ot\020\014\022\014\n\010GetTests\020\r\022\017\n\013ExecuteTest\020\016\022\023\n\017E"
+  "xecutionResult\020\017\022\007\n\003Log\020\020\022\016\n\nUnityReset\020"
+  "\021*[\n\007LogType\022\r\n\tDeviceLog\020\000\022\013\n\007StepLog\020\001"
+  "\022\r\n\tStatusLog\020\002\022\021\n\rCheckpointLog\020\003\022\022\n\016Pe"
+  "rformanceLog\020\004*F\n\010LogLevel\022\t\n\005Debug\020\000\022\010\n"
+  "\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005Error\020\003\022\r\n\tExcep"
+  "tion\020\004*0\n\013ContentType\022\016\n\nFlatbuffer\020\000\022\010\n"
+  "\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppType\022\t\n\005Cocos\020\000\022\t"
+  "\n\005Unity\020\0012\337\001\n\014RemoteDevice\022A\n\nDeviceList"
+  "\022\025.action.DeviceRequest\032\026.action.DeviceR"
+  "esponse\"\000(\0010\001\022R\n\021DeviceInteraction\022\032.act"
+  "ion.InteractionRequest\032\033.action.Interact"
+  "ionResponse\"\000(\0010\001\0228\n\rActionExecute\022\017.act"
+  "ion.Request\032\020.action.Response\"\000(\0010\001B Z\nh"
+  "ub/action\252\002\021Com.AutomationHubb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[17] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[18] = {
   &scc_info_Connect_action_2eproto.base,
   &scc_info_Device_action_2eproto.base,
   &scc_info_DeviceRequest_action_2eproto.base,
@@ -638,16 +671,17 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
   &scc_info_Screenshot_action_2eproto.base,
   &scc_info_SetAttr_action_2eproto.base,
   &scc_info_Test_action_2eproto.base,
+  &scc_info_Test_ParameterEntry_DoNotUse_action_2eproto.base,
   &scc_info_Tests_action_2eproto.base,
   &scc_info_Touch_action_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2698,
-  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 17, 0,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2797,
+  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 18, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
-  file_level_metadata_action_2eproto, 17, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
+  file_level_metadata_action_2eproto, 18, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -4390,6 +4424,23 @@ void Screenshot::InternalSwap(Screenshot* other) {
 
 // ===================================================================
 
+Test_ParameterEntry_DoNotUse::Test_ParameterEntry_DoNotUse() {}
+Test_ParameterEntry_DoNotUse::Test_ParameterEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+    : SuperType(arena) {}
+void Test_ParameterEntry_DoNotUse::MergeFrom(const Test_ParameterEntry_DoNotUse& other) {
+  MergeFromInternal(other);
+}
+::PROTOBUF_NAMESPACE_ID::Metadata Test_ParameterEntry_DoNotUse::GetMetadata() const {
+  return GetMetadataStatic();
+}
+void Test_ParameterEntry_DoNotUse::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& other) {
+  ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom(other);
+}
+
+
+// ===================================================================
+
 void Test::InitAsDefaultInstance() {
 }
 class Test::_Internal {
@@ -4405,6 +4456,7 @@ Test::Test(const Test& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  parameter_.MergeFrom(from.parameter_);
   assembly_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_assembly().empty()) {
     assembly_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.assembly_);
@@ -4453,6 +4505,7 @@ void Test::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  parameter_.Clear();
   assembly_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   class__.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   method_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
@@ -4485,6 +4538,18 @@ const char* Test::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inter
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParserUTF8(_internal_mutable_method(), ptr, ctx, "action.Test.method");
           CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // map<string, string> parameter = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(&parameter_, ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<34>(ptr));
         } else goto handle_unusual;
         continue;
       default: {
@@ -4543,6 +4608,51 @@ failure:
         3, this->_internal_method(), target);
   }
 
+  // map<string, string> parameter = 4;
+  if (!this->_internal_parameter().empty()) {
+    typedef ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::const_pointer
+        ConstPtr;
+    typedef ConstPtr SortItem;
+    typedef ::PROTOBUF_NAMESPACE_ID::internal::CompareByDerefFirst<SortItem> Less;
+    struct Utf8Check {
+      static void Check(ConstPtr p) {
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+          p->first.data(), static_cast<int>(p->first.length()),
+          ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+          "action.Test.ParameterEntry.key");
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+          p->second.data(), static_cast<int>(p->second.length()),
+          ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+          "action.Test.ParameterEntry.value");
+      }
+    };
+
+    if (stream->IsSerializationDeterministic() &&
+        this->_internal_parameter().size() > 1) {
+      ::std::unique_ptr<SortItem[]> items(
+          new SortItem[this->_internal_parameter().size()]);
+      typedef ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::size_type size_type;
+      size_type n = 0;
+      for (::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::const_iterator
+          it = this->_internal_parameter().begin();
+          it != this->_internal_parameter().end(); ++it, ++n) {
+        items[static_cast<ptrdiff_t>(n)] = SortItem(&*it);
+      }
+      ::std::sort(&items[0], &items[static_cast<ptrdiff_t>(n)], Less());
+      for (size_type i = 0; i < n; i++) {
+        target = Test_ParameterEntry_DoNotUse::Funcs::InternalSerialize(4, items[static_cast<ptrdiff_t>(i)]->first, items[static_cast<ptrdiff_t>(i)]->second, target, stream);
+        Utf8Check::Check(&(*items[static_cast<ptrdiff_t>(i)]));
+      }
+    } else {
+      for (::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::const_iterator
+          it = this->_internal_parameter().begin();
+          it != this->_internal_parameter().end(); ++it) {
+        target = Test_ParameterEntry_DoNotUse::Funcs::InternalSerialize(4, it->first, it->second, target, stream);
+        Utf8Check::Check(&(*it));
+      }
+    }
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -4558,6 +4668,15 @@ size_t Test::ByteSizeLong() const {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
+
+  // map<string, string> parameter = 4;
+  total_size += 1 *
+      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(this->_internal_parameter_size());
+  for (::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >::const_iterator
+      it = this->_internal_parameter().begin();
+      it != this->_internal_parameter().end(); ++it) {
+    total_size += Test_ParameterEntry_DoNotUse::Funcs::ByteSizeLong(it->first, it->second);
+  }
 
   // string assembly = 1;
   if (this->assembly().size() > 0) {
@@ -4611,6 +4730,7 @@ void Test::MergeFrom(const Test& from) {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  parameter_.MergeFrom(from.parameter_);
   if (from.assembly().size() > 0) {
 
     assembly_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.assembly_);
@@ -4646,6 +4766,7 @@ bool Test::IsInitialized() const {
 void Test::InternalSwap(Test* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
+  parameter_.Swap(&other->parameter_);
   assembly_.Swap(&other->assembly_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   class__.Swap(&other->class__, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
@@ -5757,6 +5878,9 @@ template<> PROTOBUF_NOINLINE ::action::Connect* Arena::CreateMaybeMessage< ::act
 }
 template<> PROTOBUF_NOINLINE ::action::Screenshot* Arena::CreateMaybeMessage< ::action::Screenshot >(Arena* arena) {
   return Arena::CreateInternal< ::action::Screenshot >(arena);
+}
+template<> PROTOBUF_NOINLINE ::action::Test_ParameterEntry_DoNotUse* Arena::CreateMaybeMessage< ::action::Test_ParameterEntry_DoNotUse >(Arena* arena) {
+  return Arena::CreateInternal< ::action::Test_ParameterEntry_DoNotUse >(arena);
 }
 template<> PROTOBUF_NOINLINE ::action::Test* Arena::CreateMaybeMessage< ::action::Test >(Arena* arena) {
   return Arena::CreateInternal< ::action::Test >(arena);
