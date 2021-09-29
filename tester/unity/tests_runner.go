@@ -122,10 +122,6 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		dev := d.Dev.(device.Device)
 		tr.logInfo("locking device: %s", dev.DeviceID())
 		if err := dev.Lock(); err == nil {
-			defer func(dev device.Device) {
-				_ = dev.Unlock()
-			}(dev)
-
 			devices = append(devices, DeviceMap{
 				Device: dev,
 				Model:  d,
@@ -139,6 +135,13 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		tr.logError("no lockable devices available")
 		return fmt.Errorf("no lockable devices available")
 	}
+
+	defer func(devs []DeviceMap) {
+		for i := range devs {
+			_ = devs[i].Device.Unlock()
+
+		}
+	}(devices)
 
 	tr.logInfo("Starting devices")
 	var deviceWg sync.ExtendedWaitGroup
@@ -217,7 +220,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			}(tr.deviceManager, tr.appParams, d.Device, tr.protocolWriter.SessionID(), &deviceWg)
 		}
 	}
-	if err := deviceWg.WaitWithTimeout(30 * time.Second); err == sync.TimeoutError {
+	if err := deviceWg.WaitWithTimeout(60 * time.Second); err == sync.TimeoutError {
 		tr.logError("one or more apps didn't connect")
 		return fmt.Errorf("timout reached")
 	}
@@ -330,13 +333,14 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev DeviceMap, canc
 }
 
 func (tr *testsRunner) runTest(dev DeviceMap, task action.TestStart, method string) {
-	logWriter, err := tr.protocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
+	prot, err := tr.protocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
 		tr.logError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
 	}
-	dev.Device.SetLogWriter(logWriter)
+	dev.Device.SetLogWriter(prot.Writer)
 	defer func() {
 		dev.Device.SetLogWriter(nil)
+		prot.Close()
 	}()
 
 	tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())

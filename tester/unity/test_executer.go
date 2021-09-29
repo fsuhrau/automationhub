@@ -22,6 +22,9 @@ func NewExecutor(devices manager.Devices) *testExecutor {
 
 func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout time.Duration) error {
 	dev.SetActionHandler(e)
+	defer func () {
+		dev.SetActionHandler(nil)
+	}()
 
 	finishWaitingGroup := sync.ExtendedWaitGroup{}
 	finishWaitingGroup.Add(1)
@@ -60,6 +63,7 @@ func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Respons
 		if !response.Success {
 			dev.Error("testrunner", "starting test failed")
 			tr.fin <- true
+			return
 		}
 	}
 
@@ -71,16 +75,8 @@ func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Respons
 			dev.Error("testrunner", "test finished with errors")
 		}
 		tr.fin <- true
-
+		return
 	}
-		/*
-		if response.ActionType == action.ActionType_Log {
-			if response.GetLog().GetType() == action.LogType_StatusLog {
-				if response.GetLog().Message == "End" {
-					dev.Log("testrunner_status", "test finished")
-					tr.fin <- true
-				}
-			}
-		}
-		 */
+
+	// logrus.Info(response)
 }

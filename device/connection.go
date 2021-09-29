@@ -1,6 +1,7 @@
 package device
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -49,33 +50,31 @@ func (c *Connection) HandleMessages() {
 		}
 	}()
 
-	sizeBuffer := make([]byte, 4)
-	chunkBuffer := make([]byte, ReceiveBufferSize)
+	messageSizeBuf := make([]byte, 4)
+	r := bufio.NewReaderSize(c.Connection, ReceiveBufferSize)
 	for {
 		if err := c.Connection.SetDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
 			c.Logger.Errorf("SocketAccept SetDeadline: %v", err)
 			return
 		}
 
-		_, err := c.Connection.Read(sizeBuffer)
+		_, err := io.ReadFull(r, messageSizeBuf[:4])
 		if err != nil {
 			c.handleReadError(err)
 			return
 		}
-		messageSize := GetMessageSize(sizeBuffer)
+
+		messageSize := GetMessageSize(messageSizeBuf)
 
 		var responseData ResponseData
-		responseData.Data = make([]byte, 0, messageSize)
-		for uint32(len(responseData.Data)) < messageSize {
-			n, err := c.Connection.Read(chunkBuffer)
-			if err != nil {
-				responseData.Err = err
-				c.Logger.Errorf("Chunk ReadError: %v", err)
-				break
-			}
-			responseData.Data = append(responseData.Data, chunkBuffer[:n]...)
-		}
+		responseData.Data = make([]byte, messageSize)
 
+		_, err = io.ReadFull(r, responseData.Data[:messageSize])
+		if err != nil {
+			responseData.Err = err
+			c.handleReadError(err)
+			break
+		}
 		c.ResponseChannel <- responseData
 	}
 }

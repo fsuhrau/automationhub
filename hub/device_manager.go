@@ -390,8 +390,6 @@ func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) err
 		dm.log.WithField("prefix", "dm").Debugf("send message took %s", elapsed.String())
 	}()
 
-	dm.log.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
-
 	buf, err := act.Serialize()
 	if err != nil {
 		return fmt.Errorf("Could not marshal Action: %v", err)
@@ -401,7 +399,8 @@ func (dm *DeviceManager) SendAction(dev device.Device, act action.Interface) err
 		return fmt.Errorf("device not connected")
 	}
 
-	dev.Log("action", "send action: %v", act)
+	dm.log.Debugf("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
+	dev.Log("action", "Send Action: %s", reflect.TypeOf(act).Elem().Name())
 	return dev.Connection().Send(buf)
 }
 
@@ -452,7 +451,8 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 			if data.Err == nil {
 				resp := action.Response{}
 				_ = proto.Unmarshal(data.Data, &resp)
-				if d.ActionHandler() != nil {
+				actionHandler := d.ActionHandler()
+				if actionHandler != nil {
 					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
 						if resp.GetLog().Level >= action.LogLevel_Error {
 							d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
@@ -460,7 +460,7 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 							d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
 						}
 					}
-					d.ActionHandler().OnActionResponse(d, &resp)
+					actionHandler.OnActionResponse(d, &resp)
 				} else {
 					if resp.ActionID != "" {
 						d.Connection().ActionChannel <- resp
@@ -480,8 +480,9 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 		case status := <-d.Connection().ConnectionStateChannel:
 			if status == device.Disconnected {
 				dm.log.Info("handleActions disconnect")
-				if d.ActionHandler() != nil {
-					d.ActionHandler().OnActionResponse(d, nil)
+				actionHandler := d.ActionHandler()
+				if actionHandler != nil {
+					actionHandler.OnActionResponse(d, nil)
 				}
 				return
 			}
