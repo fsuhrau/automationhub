@@ -11,6 +11,10 @@ type SetValue struct {
 	Value string
 }
 
+func (a *SetValue) GetActionType() ActionType {
+	return ActionType_ElementSetValue
+}
+
 func (a *SetValue) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementSetValue,
@@ -19,11 +23,7 @@ func (a *SetValue) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *SetValue) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
+func (a *SetValue) ProcessResponse(response *Response) error {
+	a.Success = response.Success
 	return nil
 }

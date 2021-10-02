@@ -11,6 +11,10 @@ type UnityReset struct {
 	Success bool
 }
 
+func (a *UnityReset) GetActionType() ActionType {
+	return ActionType_UnityReset
+}
+
 func (a *UnityReset) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_UnityReset,
@@ -18,11 +22,7 @@ func (a *UnityReset) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *UnityReset) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
+func (a *UnityReset) ProcessResponse(response *Response) error {
+	a.Success = response.Success
 	return nil
 }

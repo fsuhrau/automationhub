@@ -1,9 +1,12 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useContext, useEffect, useState } from 'react';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import {
     Box,
+    Button,
     Divider,
+    Grid,
     Link,
+    Paper,
     Table,
     TableBody,
     TableCell,
@@ -11,8 +14,6 @@ import {
     TableHead,
     TableRow,
     Typography,
-    Grid,
-    Paper, Button,
 } from '@material-ui/core';
 import ITestRunData from '../types/test.run';
 import { TestResultState } from '../types/test.result.state.enum';
@@ -24,6 +25,9 @@ import moment from 'moment';
 import ITestProtocolData from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
+import { AppContext } from '../context/app.context';
+import { TestContext } from '../context/test.context';
+import ITestData from "../types/test";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -69,6 +73,9 @@ interface NewProtocolPayload {
 const TestRunContent: FC<TestRunContentProps> = (props) => {
     const { testRun, classes } = props;
 
+    const testContext = useContext(TestContext);
+    const { test, setTest } = testContext;
+
     const history = useHistory();
 
     const [log, setLog] = useState<Array<ITesRunLogEntryData>>([]);
@@ -101,6 +108,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
     const [runsOpen, setRunsOpen] = useState<number>();
     const [runsFailed, setRunsFailed] = useState<number>();
     const [runsSuccess, setRunsSuccess] = useState<number>();
+
     function rebuildStatistics(run: ITestRunData): void {
         let ro: number;
         let rf: number;
@@ -147,6 +155,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
     };
 
     useEffect(() => {
+        // setTest(testRun.Test);
         setLog(testRun.Log);
         setProtocols(testRun.Protocols);
         rebuildStatistics(testRun);
@@ -154,183 +163,185 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     const onTestRerun = (): void => {
         executeTest(testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
-            history.push(`/test/${testRun.TestID}/runs/last`);
+            history.push(`/test/${ testRun.TestID }/runs/last`);
         }).catch(error => {
             console.log(error);
         });
     };
 
     return (
-        <Grid container={ true }>
-            <Grid item={ true } xs={ 6 }>
-                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
-                    <Typography variant={ 'h6' }>App Details</Typography>
-                    <Divider/>
-                    <Grid container={ true } >
-                        <Grid item={ true } xs={ 2 }>
-                            Name:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Name }
-                        </Grid>
+        <div>
+            <Grid container={ true }>
+                <Grid item={ true } xs={ 6 }>
+                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                        <Typography variant={ 'h6' }>App Details</Typography>
+                        <Divider/>
+                        <Grid container={ true }>
+                            <Grid item={ true } xs={ 2 }>
+                                Name:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Name }
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Identifier:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Identifier }
-                        </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Identifier:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Identifier }
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Platform:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Platform }
-                        </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Platform:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Platform }
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Version:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Version }
-                        </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Version:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Version }
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Hash:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Hash }
-                        </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Hash:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Hash }
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Created:
-                        </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
-                        </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Created:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
+                            </Grid>
 
-                        <Grid item={ true } xs={ 2 }>
-                            Addons:
+                            <Grid item={ true } xs={ 2 }>
+                                Addons:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.App?.Additional }
+                            </Grid>
                         </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.App?.Additional }
+                        <br/>
+                        <Typography variant={ 'h6' }>Environment Parameter</Typography>
+                        <Divider/>
+                        <Grid container={ true }>
+                            <Grid item={ true } xs={ 10 }>
+                                { testRun?.Parameter }
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                <br/>
+                                <Button variant="contained" color="primary" onClick={ onTestRerun }>
+                                    Rerun
+                                </Button>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                    <br />
-                    <Typography variant={ 'h6' }>Environment Parameter</Typography>
-                    <Divider/>
-                    <Grid container={ true } >
-                        <Grid item={ true } xs={ 10 }>
-                            { testRun?.Parameter }
+                    </Box>
+                </Grid>
+                <Grid item={ true } xs={ 2 }>
+                </Grid>
+                <Grid item={ true } xs={ 4 }>
+                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                        <Typography variant={ 'h6' }>Test Results</Typography>
+                        <Divider/>
+                        <Grid container={ true }>
+                            <Grid item={ true } xs={ 4 }>
+                                Open
+                            </Grid>
+                            <Grid item={ true } xs={ 4 }>
+                                Failed
+                            </Grid>
+                            <Grid item={ true } xs={ 4 }>
+                                Success
+                            </Grid>
+                            <Grid item={ true } xs={ 4 }>
+                                { runsOpen }
+                            </Grid>
+                            <Grid item={ true } xs={ 4 }>
+                                { runsFailed }
+                            </Grid>
+                            <Grid item={ true } xs={ 4 }>
+                                { runsSuccess }
+                            </Grid>
                         </Grid>
-                        <Grid item={ true } xs={ 10 }>
-                            <br />
-                            <Button variant="contained" color="primary" onClick={onTestRerun}>
-                                Rerun
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Grid>
-            <Grid item={ true } xs={ 2 }>
-            </Grid>
-            <Grid item={ true } xs={ 4 }>
-                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
-                    <Typography variant={ 'h6' }>Test Results</Typography>
-                    <Divider/>
-                    <Grid container={ true }>
-                        <Grid item={ true } xs={ 4 }>
-                            Open
-                        </Grid>
-                        <Grid item={ true } xs={ 4 }>
-                            Failed
-                        </Grid>
-                        <Grid item={ true } xs={ 4 }>
-                            Success
-                        </Grid>
-                        <Grid item={ true } xs={ 4 }>
-                            { runsOpen }
-                        </Grid>
-                        <Grid item={ true } xs={ 4 }>
-                            { runsFailed }
-                        </Grid>
-                        <Grid item={ true } xs={ 4 }>
-                            { runsSuccess }
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Grid>
-            <Grid item={ true } xs={ 12 }>
-                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
-                    <Typography variant={ 'h6' }>Test Details</Typography>
-                    <Divider/>
-                    <TableContainer>
-                        <Table className={ classes.table } size="small" aria-label="a dense table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Test</TableCell>
-                                    <TableCell>Device</TableCell>
-                                    <TableCell align="right">OS</TableCell>
-                                    <TableCell>Duration</TableCell>
-                                    <TableCell align="right">Status</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                { protocols.map((protocol) => (
-                                    <TableRow key={ protocol.ID }>
-                                        <TableCell component="th" scope="row">
-                                            <Link
-                                                href={ `/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
-                                                underline="none">
-                                                { protocol.TestName }
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            { protocol.Device?.Name }
-                                        </TableCell>
-                                        <TableCell
-                                            align="right">{ protocol.Device?.OS } { protocol.Device?.OSVersion }
-                                        </TableCell>
-                                        <TableCell>
-                                            { getDuration(protocol.StartedAt, protocol.EndedAt) }
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <TestStatusIconComponent status={ protocol.TestResult }/>
-                                        </TableCell>
+                    </Box>
+                </Grid>
+                <Grid item={ true } xs={ 12 }>
+                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                        <Typography variant={ 'h6' }>Test Details</Typography>
+                        <Divider/>
+                        <TableContainer>
+                            <Table className={ classes.table } size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Test</TableCell>
+                                        <TableCell>Device</TableCell>
+                                        <TableCell align="right">OS</TableCell>
+                                        <TableCell>Duration</TableCell>
+                                        <TableCell align="right">Status</TableCell>
                                     </TableRow>
-                                )) }
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Box>
+                                </TableHead>
+                                <TableBody>
+                                    { protocols.map((protocol) => (
+                                        <TableRow key={ protocol.ID }>
+                                            <TableCell component="th" scope="row">
+                                                <Link
+                                                    href={ `/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
+                                                    underline="none">
+                                                    { protocol.TestName }
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>
+                                                { protocol.Device?.Name }
+                                            </TableCell>
+                                            <TableCell
+                                                align="right">{ protocol.Device?.OS } { protocol.Device?.OSVersion }
+                                            </TableCell>
+                                            <TableCell>
+                                                { getDuration(protocol.StartedAt, protocol.EndedAt) }
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <TestStatusIconComponent status={ protocol.TestResult }/>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) }
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                </Grid>
+                <Grid item={ true } xs={ 12 }>
+                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                        <Typography variant={ 'h6' }>Executor Log</Typography>
+                        <Divider/>
+                        <TableContainer>
+                            <Table className={ classes.table } size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Date</TableCell>
+                                        <TableCell>Level</TableCell>
+                                        <TableCell>Log</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    { log.map((entry) => <TableRow key={ entry.ID }>
+                                        <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
+                                            <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
+                                        </TableCell>
+                                        <TableCell>{ entry.Level }</TableCell>
+                                        <TableCell>{ entry.Log }</TableCell>
+                                    </TableRow>) }
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                </Grid>
             </Grid>
-            <Grid item={ true } xs={ 12 }>
-                <Box component={ Paper } sx={ { p: 2, m: 2 } }>
-                    <Typography variant={ 'h6' }>Executor Log</Typography>
-                    <Divider/>
-                    <TableContainer>
-                        <Table className={classes.table} size="small" aria-label="a dense table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Date</TableCell>
-                                    <TableCell>Level</TableCell>
-                                    <TableCell>Log</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                { log.map((entry) => <TableRow key={ entry.ID }>
-                                    <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
-                                        <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
-                                    </TableCell>
-                                    <TableCell>{ entry.Level }</TableCell>
-                                    <TableCell>{ entry.Log }</TableCell>
-                                </TableRow>) }
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Box>
-            </Grid>
-        </Grid>
+        </div>
     );
 };
 

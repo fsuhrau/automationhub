@@ -40,8 +40,10 @@ type Device interface {
 	IsLocked() bool
 
 	SetLogWriter(LogWriter)
+	Data(string, string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})
-	ActionHandler() action.ActionHandler
-	SetActionHandler(action.ActionHandler)
+	AddActionHandler(action.ActionHandler)
+	RemoveActionHandler(action.ActionHandler)
+	ActionHandlers() []action.ActionHandler
 }

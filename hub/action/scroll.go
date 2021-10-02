@@ -9,6 +9,10 @@ type Scroll struct {
 	OffsetY int64
 }
 
+func (a *Scroll) GetActionType() ActionType {
+	return ActionType_Move
+}
+
 func (a *Scroll) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_Move,
@@ -17,10 +21,6 @@ func (a *Scroll) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *Scroll) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
+func (a *Scroll) ProcessResponse(response *Response) error {
 	return nil
 }

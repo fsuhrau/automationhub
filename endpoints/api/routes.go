@@ -58,6 +58,7 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api.GET("/devices", HandleWithSession(s.getDevices))
 
 	api.POST("/test", HandleWithSession(s.newTest))
+	api.GET("/data/test/data/:name", HandleWithSession(s.getData))
 	api.GET("/test/:test_id", HandleWithSession(s.getTest))
 	api.POST("/test/:test_id/run", s.runTest)
 	api.GET("/test/:test_id/runs", HandleWithSession(s.getTestRuns))

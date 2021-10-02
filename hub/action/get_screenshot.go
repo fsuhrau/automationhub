@@ -13,6 +13,10 @@ type GetScreenshot struct {
 	height     int
 }
 
+func (a *GetScreenshot) GetActionType() ActionType {
+	return ActionType_GetScreenshot
+}
+
 func (a *GetScreenshot) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_GetScreenshot,
@@ -20,13 +24,9 @@ func (a *GetScreenshot) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *GetScreenshot) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
-	a.screenshot = resp.GetScreenshot()
+func (a *GetScreenshot) ProcessResponse(response *Response) error {
+	a.Success = response.Success
+	a.screenshot = response.GetScreenshot()
 	if a.screenshot != nil {
 		reader := bytes.NewReader(a.screenshot.Screenshot)
 		srcImage, _, _ := image.Decode(reader)

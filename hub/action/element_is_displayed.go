@@ -10,6 +10,10 @@ type IsDisplayed struct {
 	IsDisplayed bool
 }
 
+func (a *IsDisplayed) GetActionType() ActionType {
+	return ActionType_ElementIsDisplayed
+}
+
 func (a *IsDisplayed) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementIsDisplayed,
@@ -18,13 +22,9 @@ func (a *IsDisplayed) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *IsDisplayed) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
-	a.IsDisplayed = resp.GetVisible()
+func (a *IsDisplayed) ProcessResponse(response *Response) error {
+	a.Success = response.Success
+	a.IsDisplayed = response.GetVisible()
 	return nil
 }
 

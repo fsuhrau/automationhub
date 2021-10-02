@@ -12,6 +12,10 @@ type TestStart struct {
 	Success  bool
 }
 
+func (a *TestStart) GetActionType() ActionType {
+	return ActionType_ExecuteTest
+}
+
 func (a *TestStart) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ExecuteTest,
@@ -25,11 +29,7 @@ func (a *TestStart) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *TestStart) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
+func (a *TestStart) ProcessResponse(response *Response) error {
+	a.Success = response.Success
 	return nil
 }

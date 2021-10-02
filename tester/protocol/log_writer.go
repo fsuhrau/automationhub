@@ -14,30 +14,35 @@ type LogWriter struct {
 	errs       []error
 }
 
-func (w *LogWriter) write(source, level, message string) {
+func (w *LogWriter) write(source, level, message, data string) {
 	entry := models.ProtocolEntry{
 		Timestamp:      time.Now(),
 		TestProtocolID: w.protocolId,
 		Source:         source,
 		Level:          level,
 		Message:        message,
+		Data:           data,
 	}
 	w.db.Create(&entry)
 
 	events.NewTestProtocolLog.Trigger(events.NewTestProtocolLogPayload{
 		TestProtocolID: w.protocolId,
-		Entry: entry,
+		Entry:          entry,
 	})
 }
 
+func (w *LogWriter) Data(source, data string) {
+	w.write(source, "log", "", data)
+}
+
 func (w *LogWriter) Log(source, format string, params ...interface{}) {
-	w.write(source, "log", fmt.Sprintf(format, params...))
+	w.write(source, "log", fmt.Sprintf(format, params...), "")
 }
 
 func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	msg := fmt.Sprintf(format, params...)
 	w.errs = append(w.errs, fmt.Errorf(msg))
-	w.write(source,"error", msg)
+	w.write(source, "error", msg, "")
 }
 
 func NewLogWriter(db *gorm.DB, protocolId uint) *LogWriter {

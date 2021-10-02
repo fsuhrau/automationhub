@@ -12,4 +12,5 @@ type ProtocolEntry struct {
 	Source         string
 	Level          string
 	Message        string
+	Data           string
 }

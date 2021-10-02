@@ -9,6 +9,10 @@ type DragAndDrop struct {
 	To string
 }
 
+func (a *DragAndDrop) GetActionType() ActionType {
+	return ActionType_DragAndDrop
+}
+
 func (a *DragAndDrop) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_DragAndDrop,
@@ -17,13 +21,6 @@ func (a *DragAndDrop) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *DragAndDrop) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	//if !resp.Success {
-	//	return fmt.Errorf("drag and drop failed")
-	//}
+func (a *DragAndDrop) ProcessResponse(response *Response) error {
 	return nil
 }

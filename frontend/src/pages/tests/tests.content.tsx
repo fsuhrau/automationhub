@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useContext } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Paper from '@material-ui/core/Paper';
@@ -8,6 +8,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import SearchIcon from '@material-ui/icons/Search';
 import TestsTable from '../../components/tests-table.component';
 import { useHistory } from 'react-router-dom';
+import { AppContext } from '../../context/app.context';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -45,27 +46,29 @@ const Tests: FC<TestsProps> = (props) => {
     }
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
-                <Toolbar>
-                    <Grid container={ true } spacing={ 2 } alignItems="center">
-                        <Grid item={ true }>
-                            <SearchIcon className={ classes.block } color="inherit"/>
+        <AppContext.Provider value={ { title: 'Tests' } }>
+            <Paper className={ classes.paper }>
+                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                    <Toolbar>
+                        <Grid container={ true } spacing={ 2 } alignItems="center">
+                            <Grid item={ true }>
+                                <SearchIcon className={ classes.block } color="inherit"/>
+                            </Grid>
+                            <Grid item={ true } xs={ true }>
+                            </Grid>
+                            <Grid item={ true }>
+                                <Button color="primary" variant="contained"
+                                    onClick={ newTestClick }>
+                                    New Test
+                                </Button>
+                            </Grid>
                         </Grid>
-                        <Grid item={ true } xs={ true }>
-                        </Grid>
-                        <Grid item={ true }>
-                            <Button color="primary" variant="contained"
-                                onClick={ newTestClick }>
-                                New Test
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Toolbar>
-            </AppBar>
-            <TestsTable>
-            </TestsTable>
-        </Paper>
+                    </Toolbar>
+                </AppBar>
+                <TestsTable>
+                </TestsTable>
+            </Paper>
+        </AppContext.Provider>
     );
 };
 

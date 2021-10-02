@@ -9,6 +9,10 @@ type TestsGet struct {
 	Success bool
 }
 
+func (a *TestsGet) GetActionType() ActionType {
+	return ActionType_GetTests
+}
+
 func (a *TestsGet) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_GetTests,
@@ -16,13 +20,8 @@ func (a *TestsGet) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *TestsGet) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-
-	a.Tests = resp.GetTests().Tests
-	a.Success = resp.Success
+func (a *TestsGet) ProcessResponse(response *Response) error {
+	a.Tests = response.GetTests().Tests
+	a.Success = response.Success
 	return nil
 }

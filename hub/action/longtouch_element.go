@@ -9,6 +9,10 @@ type LongTouchElement struct {
 	Success bool
 }
 
+func (a *LongTouchElement) GetActionType() ActionType {
+	return ActionType_LongTouch
+}
+
 func (a *LongTouchElement) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_LongTouch,
@@ -17,11 +21,7 @@ func (a *LongTouchElement) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *LongTouchElement) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
+func (a *LongTouchElement) ProcessResponse(response *Response) error {
+	a.Success = response.Success
 	return nil
 }

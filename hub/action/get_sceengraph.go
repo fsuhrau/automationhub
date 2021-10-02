@@ -67,6 +67,10 @@ func convertFlatToXml(content []byte, pretty bool) []byte {
 	return output
 }
 
+func (a *GetSceenGraph) GetActionType() ActionType {
+	return ActionType_GetSceneGraph
+}
+
 func (a *GetSceenGraph) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_GetSceneGraph,
@@ -74,14 +78,10 @@ func (a *GetSceenGraph) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *GetSceenGraph) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	if resp.GetScreenshot() != nil {
-		a.content = resp.GetScreenshot().Sceengraph
-		a.contentType = resp.GetScreenshot().ContentType
+func (a *GetSceenGraph) ProcessResponse(response *Response) error {
+	if response.GetScreenshot() != nil {
+		a.content = response.GetScreenshot().Sceengraph
+		a.contentType = response.GetScreenshot().ContentType
 	}
 	return nil
 }

@@ -21,9 +21,9 @@ func NewExecutor(devices manager.Devices) *testExecutor {
 }
 
 func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout time.Duration) error {
-	dev.SetActionHandler(e)
+	dev.AddActionHandler(e)
 	defer func () {
-		dev.SetActionHandler(nil)
+		dev.RemoveActionHandler(e)
 	}()
 
 	finishWaitingGroup := sync.ExtendedWaitGroup{}

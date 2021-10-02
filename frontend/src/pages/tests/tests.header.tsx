@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useContext } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Grid from '@material-ui/core/Grid';
 import Hidden from '@material-ui/core/Hidden';
@@ -9,6 +9,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { TestContext } from "../../context/test.context";
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
 
@@ -41,26 +42,28 @@ interface HeaderProps extends WithStyles<typeof styles> {
 
 const TestsHeader: FC<HeaderProps> = (props) => {
     const { classes, onDrawerToggle } = props;
+    const testContext = useContext(TestContext);
+    const { test } = testContext;
 
     return (
         <React.Fragment>
-            <AppBar color="primary" position="sticky" elevation={0}>
+            <AppBar color="primary" position="sticky" elevation={ 0 }>
                 <Toolbar>
-                    <Grid container={true} spacing={1} alignItems="center">
-                        <Hidden smUp={true}>
-                            <Grid item={true}>
+                    <Grid container={ true } spacing={ 1 } alignItems="center">
+                        <Hidden smUp={ true }>
+                            <Grid item={ true }>
                                 <IconButton
                                     color="inherit"
                                     aria-label="open drawer"
-                                    onClick={onDrawerToggle}
-                                    className={classes.menuButton}
+                                    onClick={ onDrawerToggle }
+                                    className={ classes.menuButton }
                                 >
                                     <MenuIcon/>
                                 </IconButton>
                             </Grid>
                         </Hidden>
-                        <Grid item={true} xs={true}/>
-                        <Grid item={true}>
+                        <Grid item={ true } xs={ true }/>
+                        <Grid item={ true }>
                             <Tooltip title="Alerts • No alerts">
                                 <IconButton color="inherit">
                                     <NotificationsIcon/>
@@ -72,16 +75,16 @@ const TestsHeader: FC<HeaderProps> = (props) => {
             </AppBar>
             <AppBar
                 component="div"
-                className={classes.secondaryBar}
+                className={ classes.secondaryBar }
                 color="primary"
                 position="static"
-                elevation={0}
+                elevation={ 0 }
             >
                 <Toolbar>
-                    <Grid container={true} alignItems="center" spacing={1}>
-                        <Grid item={true} xs={true}>
+                    <Grid container={ true } alignItems="center" spacing={ 1 }>
+                        <Grid item={ true } xs={ true }>
                             <Typography color="inherit" variant="h5" component="h1">
-                                Tests
+                                {test?.Name}
                             </Typography>
                         </Grid>
                     </Grid>

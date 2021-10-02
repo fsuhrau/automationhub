@@ -9,6 +9,10 @@ type TouchElement struct {
 	Success bool
 }
 
+func (a *TouchElement) GetActionType() ActionType {
+	return ActionType_ElementTouch
+}
+
 func (a *TouchElement) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementTouch,
@@ -17,11 +21,7 @@ func (a *TouchElement) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *TouchElement) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Success = resp.Success
+func (a *TouchElement) ProcessResponse(response *Response) error {
+	a.Success = response.Success
 	return nil
 }

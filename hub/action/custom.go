@@ -10,6 +10,10 @@ type Custom struct {
 	Success bool
 }
 
+func (a *Custom) GetActionType() ActionType {
+	return ActionType_Custom
+}
+
 func (a *Custom) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_Custom,
@@ -18,12 +22,8 @@ func (a *Custom) Serialize() ([]byte, error) {
 	return proto.Marshal(req)
 }
 
-func (a *Custom) Deserialize(content []byte) error {
-	resp := &Response{}
-	if err := proto.Unmarshal(content, resp); err != nil {
-		return err
-	}
-	a.Content = resp.GetData()
-	a.Success = resp.Success
+func (a *Custom) ProcessResponse(response *Response) error {
+	a.Content = response.GetData()
+	a.Success = response.Success
 	return nil
 }

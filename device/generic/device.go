@@ -15,7 +15,7 @@ var (
 type Device struct {
 	con           *device.Connection
 	writer        device.LogWriter
-	actionHandler action.ActionHandler
+	actionHandler []action.ActionHandler
 	locked        bool
 }
 
@@ -56,25 +56,41 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
+func (d *Device) Data(source, path string) {
+	if d.writer != nil {
+		d.writer.Data(source, path)
+	}
+}
+
 func (d *Device) Log(source, format string, params ...interface{}) {
-	// logrus.Infof(format, params...)
 	if d.writer != nil {
 		d.writer.Log(source, format, params...)
+	} else {
+		logrus.Infof(format, params...)
 	}
 }
 
 func (d *Device) Error(source, format string, params ...interface{}) {
-	// logrus.Errorf(format, params...)
 	if d.writer != nil {
 		d.writer.Error(source, format, params...)
+	} else {
+		logrus.Errorf(format, params...)
 	}
 }
 
-func (d *Device) SetActionHandler(handler action.ActionHandler) {
-	d.actionHandler = handler
+func (d *Device) AddActionHandler(handler action.ActionHandler) {
+	d.actionHandler = append(d.actionHandler, handler)
 }
 
-func (d *Device) ActionHandler() action.ActionHandler {
+func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
+	for i := range d.actionHandler {
+		if d.actionHandler[i] == handler {
+			d.actionHandler = append(d.actionHandler[:i], d.actionHandler[i+1:]...)
+		}
+	}
+}
+
+func (d *Device) ActionHandlers() []action.ActionHandler {
 	return d.actionHandler
 }
 
@@ -107,8 +123,8 @@ func (d *Device) SendAction(act action.Interface) error {
 	if err != nil {
 		return err
 	}
-	dm.log.Debugf("Deserialize Action")
-	if err := act.Deserialize(response); err != nil {
+	dm.log.Debugf("ProcessResponse Action")
+	if err := act.ProcessResponse(response); err != nil {
 		return err
 	}
 	dev.Log("action response: %v", act)

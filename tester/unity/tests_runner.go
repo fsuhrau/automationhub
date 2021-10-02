@@ -1,6 +1,7 @@
 package unity
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
@@ -15,6 +16,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -40,6 +43,7 @@ type testsRunner struct {
 	publisher      sse.Publisher
 	env            map[string]string
 
+	run       models.TestRun
 	appParams app.Parameter
 }
 
@@ -65,17 +69,17 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 
 func (tr *testsRunner) newTestSession(appId uint, params string) error {
 	sessionID := tr.NewSessionID()
-	run := &models.TestRun{
+	tr.run = models.TestRun{
 		TestID:    tr.test.ID,
 		AppID:     appId,
 		SessionID: sessionID,
 		Parameter: params,
 	}
-	if err := tr.db.Create(run).Error; err != nil {
+	if err := tr.db.Create(&tr.run).Error; err != nil {
 		return err
 	}
 
-	tr.protocolWriter = protocol.NewProtocolWriter(tr.db, run)
+	tr.protocolWriter = protocol.NewProtocolWriter(tr.db, &tr.run)
 	return nil
 }
 
@@ -109,8 +113,8 @@ func (tr *testsRunner) logError(format string, params ...interface{}) {
 
 func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	var params []string
-	for k,v := range tr.env {
-		params = append(params, fmt.Sprintf("%s=%s", k,v))
+	for k, v := range tr.env {
+		params = append(params, fmt.Sprintf("%s=%s", k, v))
 	}
 	if err := tr.newTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
 		return err
@@ -346,6 +350,13 @@ func (tr *testsRunner) runTest(dev DeviceMap, task action.TestStart, method stri
 	tr.logInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
 	executor := NewExecutor(tr.deviceManager)
 	if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
+		rawData, _, _, err := dev.Device.GetScreenshot()
+		nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.run.SessionID, dev.Device.DeviceID(), task.Method))
+		filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
+		dir, _ := filepath.Split(filePath)
+		os.MkdirAll(dir, os.ModePerm)
+		os.WriteFile(filePath, rawData, os.ModePerm)
+		dev.Device.Data("screen", filePath)
 		tr.logError("test execution failed: %v", err)
 	} else {
 		tr.logInfo("test execution finished")

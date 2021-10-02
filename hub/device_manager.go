@@ -451,7 +451,7 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 			if data.Err == nil {
 				resp := action.Response{}
 				_ = proto.Unmarshal(data.Data, &resp)
-				actionHandler := d.ActionHandler()
+				actionHandler := d.ActionHandlers()
 				if actionHandler != nil {
 					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
 						if resp.GetLog().Level >= action.LogLevel_Error {
@@ -460,7 +460,9 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 							d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
 						}
 					}
-					actionHandler.OnActionResponse(d, &resp)
+					for i := range actionHandler {
+						actionHandler[i].OnActionResponse(d, &resp)
+					}
 				} else {
 					if resp.ActionID != "" {
 						d.Connection().ActionChannel <- resp
@@ -480,9 +482,11 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 		case status := <-d.Connection().ConnectionStateChannel:
 			if status == device.Disconnected {
 				dm.log.Info("handleActions disconnect")
-				actionHandler := d.ActionHandler()
+				actionHandler := d.ActionHandlers()
 				if actionHandler != nil {
-					actionHandler.OnActionResponse(d, nil)
+					for i := range actionHandler {
+						actionHandler[i].OnActionResponse(d, nil)
+					}
 				}
 				return
 			}

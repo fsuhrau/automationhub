@@ -4,6 +4,7 @@ export default interface IProtocolEntryData {
     Source: string,
     Level: string,
     Message: string,
+    Data: string,
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,
