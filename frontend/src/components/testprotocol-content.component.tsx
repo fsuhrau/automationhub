@@ -22,6 +22,7 @@ import TestStatusIconComponent from '../components/test-status-icon.component';
 import TestStatusTextComponent from '../components/test-status-text.component';
 import { useSSE } from 'react-hooks-sse';
 import ProtocolLogComponent from "./protocol.log.component";
+import ProtocolScreensComponent from "./protocol.screens.component";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -113,6 +114,8 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
     const [lastStep, setLastStep] = useState<IProtocolEntryData>();
 
     const [entries, setEntries] = useState<IProtocolEntryData[]>([]);
+    const [screenEntries, setScreenEntries] = useState<IProtocolEntryData[]>([]);
+
     const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${ protocol.ID }_log`, null);
     useEffect(() => {
         if (protocolEntry === null)
@@ -123,8 +126,6 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
             newState.push(protocolEntry.Entry);
             return newState;
         });
-
-
     }, [protocolEntry]);
 
     function getDuration(p: ITestProtocolData): string {
@@ -169,6 +170,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
 
     useEffect(() => {
         updateStatusEntries();
+        setScreenEntries(entries.filter(value1 => value1.Source === "screen"))
     }, [entries]);
 
     return (
@@ -287,7 +289,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         Actions
                                                     </Typography>
                                                     <Typography variant="h5">
-                                                        { protocol?.Entries.length }
+                                                        N/A
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
@@ -296,7 +298,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         StartupTime
                                                     </Typography>
                                                     <Typography variant="h5">
-                                                        10 sec
+                                                        N/A
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
@@ -305,7 +307,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         FPS
                                                     </Typography>
                                                     <Typography variant="h5">
-                                                        12
+                                                        N/A
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
@@ -314,7 +316,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         Memory
                                                     </Typography>
                                                     <Typography variant="h5" component="h5">
-                                                        400MB
+                                                        N/A
                                                     </Typography>
                                                 </Grid>
                                             </Grid>
@@ -349,13 +351,13 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     <ProtocolLogComponent entries={entries} classes={classes} />
                 </TabPanel>
                 <TabPanel value={ value } index={ 3 }>
-                    screenshots?
+                    <ProtocolScreensComponent classes={classes} entries={screenEntries} />
                 </TabPanel>
                 <TabPanel value={ value } index={ 4 }>
-                    Video
+                    Video (not implemented)
                 </TabPanel>
                 <TabPanel value={ value } index={ 5 }>
-                    Performance
+                    Performance (not implemented)
                 </TabPanel>
             </Box>
         </Paper>
