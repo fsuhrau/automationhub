@@ -1,6 +1,6 @@
 module github.com/fsuhrau/automationhub
 
-go 1.13
+go 1.16
 
 require (
 	github.com/antchfx/xmlquery v1.2.4

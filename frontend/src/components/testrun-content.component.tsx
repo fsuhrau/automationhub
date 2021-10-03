@@ -27,7 +27,7 @@ import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
 import { AppContext } from '../context/app.context';
 import { TestContext } from '../context/test.context';
-import ITestData from "../types/test";
+import ITestData from '../types/test';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({

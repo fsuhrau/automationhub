@@ -7,3 +7,8 @@ run:
 .PHONY: lint
 lint:
 	yarn lint
+
+# run build
+.PHONY: build
+build:
+	mkdir -p ../endpoints/web/ && yarn build && cp -rf build/* ../endpoints/web/

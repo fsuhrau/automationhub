@@ -75,21 +75,16 @@ interface TestProtocolContentProps extends WithStyles<typeof styles> {
     entries: IProtocolEntryData[]
 }
 
-interface FilterDef {
-    name: string,
-    active: boolean,
-}
-
 const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
-    const {entries, classes} = props;
+    const { entries, classes } = props;
 
     const [anchorLogScreenEl, setAnchorLogScreenEl] = useState<HTMLButtonElement | null>(null);
 
-    const showLogScreenPopup = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const showLogScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
         setAnchorLogScreenEl(event.currentTarget);
     };
 
-    const hideLogScreenPopup = () => {
+    const hideLogScreenPopup = (): void => {
         setAnchorLogScreenEl(null);
     };
 
@@ -123,7 +118,7 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
             disableColumnMenu: true,
             renderCell: (params) => {
                 return (<Chip className={ `chip--${ params.value }` }
-                              label={ params.value }/>);
+                    label={ params.value }/>);
             },
         },
         {
@@ -142,11 +137,11 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                if (params.value === "") {
+                if (params.value === '') {
                     return (
                         <div>
                             <Button aria-describedby={ params.row.ID } variant="contained"
-                                    onClick={ showLogScreenPopup }>
+                                onClick={ showLogScreenPopup }>
                                 Show
                             </Button>
                             <Popover
@@ -169,7 +164,7 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
                                 </Card>
                             </Popover>
                         </div>
-                    )
+                    );
                 }
                 return (<div>{ params.value }</div>);
             },
@@ -226,33 +221,33 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
 
     return (
         <div className={ classes.chip }>
-            <Box sx={ {width: '100%', height: '50px'} }>
+            <Box sx={ { width: '100%', height: '50px' } }>
                 <Chip className={ filterApp ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
-                      clickable={ true }
-                      variant={ filterApp ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('app') }/>
+                    clickable={ true }
+                    variant={ filterApp ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('app') }/>
                 <Chip className={ filterStep ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' }
-                      clickable={ true }
-                      variant={ filterStep ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('step') }/>
+                    clickable={ true }
+                    variant={ filterStep ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('step') }/>
                 <Chip className={ filterDevice ? 'chip--device' : 'chip--device--unchecked' }
-                      label={ 'device' }
-                      clickable={ true }
-                      variant={ filterDevice ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('device') }/>
+                    label={ 'device' }
+                    clickable={ true }
+                    variant={ filterDevice ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('device') }/>
                 <Chip className={ filterStatus ? 'chip--status' : 'chip--status--unchecked' }
-                      label={ 'status' }
-                      clickable={ true }
-                      variant={ filterStatus ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('status') }/>
+                    label={ 'status' }
+                    clickable={ true }
+                    variant={ filterStatus ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('status') }/>
                 <Chip className={ filterTestrunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' }
-                      label={ 'testrunner' } clickable={ true }
-                      variant={ filterTestrunner ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('testrunner') }/>
+                    label={ 'testrunner' } clickable={ true }
+                    variant={ filterTestrunner ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('testrunner') }/>
                 <Chip className={ filterAction ? 'chip--action' : 'chip--action--unchecked' }
-                      label={ 'action' } clickable={ true }
-                      variant={ filterAction ? 'default' : 'outlined' }
-                      onClick={ () => toggleFilter('action') }/>
+                    label={ 'action' } clickable={ true }
+                    variant={ filterAction ? 'default' : 'outlined' }
+                    onClick={ () => toggleFilter('action') }/>
             </Box>
             <DataGrid
                 autoHeight={ true }

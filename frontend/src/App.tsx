@@ -178,7 +178,7 @@ const styles = createStyles({
 export type AppProps = WithStyles<typeof styles>;
 
 const App: FC<AppProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = (): void => {
@@ -186,7 +186,7 @@ const App: FC<AppProps> = (props) => {
     };
 
     return <SSEProvider endpoint="http://localhost:8002/api/sse/">
-        <AppContext.Provider value={ {title: ''} }>
+        <AppContext.Provider value={ { title: '' } }>
             <Router>
                 <ThemeProvider theme={ theme }>
                     <div className={ classes.root }>
@@ -194,14 +194,14 @@ const App: FC<AppProps> = (props) => {
                         <nav className={ classes.drawer }>
                             <Hidden smUp={ true } implementation="js">
                                 <Navigator
-                                    PaperProps={ {style: {width: drawerWidth}} }
+                                    PaperProps={ { style: { width: drawerWidth } } }
                                     variant="temporary"
                                     open={ mobileOpen }
                                     onClose={ handleDrawerToggle }
                                 />
                             </Hidden>
                             <Hidden xsDown={ true } implementation="css">
-                                <Navigator PaperProps={ {style: {width: drawerWidth}} }/>
+                                <Navigator PaperProps={ { style: { width: drawerWidth } } }/>
                             </Hidden>
                         </nav>
                         <div className={ classes.app }>

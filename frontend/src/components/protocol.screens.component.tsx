@@ -38,12 +38,12 @@ interface ProtocolEntriesProps extends WithStyles<typeof styles> {
 }
 
 const ProtocolScreensComponent: FC<ProtocolEntriesProps> = (props) => {
-    const {entries, classes} = props;
+    const { entries, classes } = props;
     return (
         <div className={classes.root}>
             <ImageList className={classes.imageList} rowHeight={500} cols={1}>
                 {entries.map((item) => (
-                    <ImageListItem key={"image_"+item.ID}>
+                    <ImageListItem key={'image_' + item.ID}>
                         <Card >
                             <CardMedia
                                 component="img"

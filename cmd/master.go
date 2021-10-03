@@ -17,8 +17,8 @@ package cmd
 import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints/api"
-	"github.com/fsuhrau/automationhub/endpoints/inspector"
 	"github.com/fsuhrau/automationhub/endpoints/selenium"
+	"github.com/fsuhrau/automationhub/endpoints/web"
 	"github.com/fsuhrau/automationhub/hub"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/utils"
@@ -60,7 +60,8 @@ var masterCmd = &cobra.Command{
 		server := hub.NewService(logger, hostIP, deviceManager, sessionManager, serviceConfig)
 		server.AddEndpoint(api.New(logger, db, hostIP, deviceManager, sessionManager))
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
-		server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
+		server.AddEndpoint(web.New())
+		// server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
 
 		return server.RunMaster()
 	},

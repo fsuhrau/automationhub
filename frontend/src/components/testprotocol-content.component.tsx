@@ -21,8 +21,8 @@ import IProtocolEntryData from '../types/protocol.entry';
 import TestStatusIconComponent from '../components/test-status-icon.component';
 import TestStatusTextComponent from '../components/test-status-text.component';
 import { useSSE } from 'react-hooks-sse';
-import ProtocolLogComponent from "./protocol.log.component";
-import ProtocolScreensComponent from "./protocol.screens.component";
+import ProtocolLogComponent from './protocol.log.component';
+import ProtocolScreensComponent from './protocol.screens.component';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -31,7 +31,7 @@ interface TabPanelProps {
 }
 
 function TabPanel(props: TabPanelProps): ReactElement {
-    const {children, value, index, ...other} = props;
+    const { children, value, index, ...other } = props;
 
     return (
         <div
@@ -42,7 +42,7 @@ function TabPanel(props: TabPanelProps): ReactElement {
             { ...other }
         >
             { value === index && (
-                <Box sx={ {p: 3} }>
+                <Box sx={ { p: 3 } }>
                     <Typography>{ children }</Typography>
                 </Box>
             ) }
@@ -96,13 +96,13 @@ interface TestProtocolContentProps extends WithStyles<typeof styles> {
 }
 
 const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
-    const {run, protocol, classes} = props;
+    const { run, protocol, classes } = props;
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
-    const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
         setAnchorScreenEl(event.currentTarget);
     };
-    const hideScreenPopup = () => {
+    const hideScreenPopup = (): void => {
         setAnchorScreenEl(null);
     };
 
@@ -128,7 +128,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
         });
     }, [protocolEntry]);
 
-    function getDuration(p: ITestProtocolData): string {
+    const getDuration = (p: ITestProtocolData): string => {
         if (p.EndedAt !== null && p.EndedAt !== undefined) {
             const duration = (new Date(p.EndedAt)).valueOf() - (new Date(p.StartedAt)).valueOf();
             const m = moment.utc(duration);
@@ -142,22 +142,22 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
             return m.format('s') + 'Sec';
         }
         return 'running';
-    }
+    };
 
-    function updateStatusEntries(): void {
+    const updateStatusEntries = (): void => {
         const length = entries.length;
         for (let i = 0; i < length; i++) {
-            if (lastScreen === undefined && entries[ i ].Source === "screen") {
+            if (lastScreen === undefined && entries[ i ].Source === 'screen') {
                 setLastScreen(entries[ i ]);
             }
-            if (lastStep === undefined && entries[ i ].Source === "step") {
+            if (lastStep === undefined && entries[ i ].Source === 'step') {
                 setLastStep(entries[ i ]);
             }
-            if (lastError === undefined && entries[ i ].Level === "error") {
+            if (lastError === undefined && entries[ i ].Level === 'error') {
                 setLastError(entries[ i ]);
             }
         }
-    }
+    };
 
     const [value, setValue] = useState(0);
     const handleChange = (event: React.ChangeEvent<{}>, newValue: number): void => {
@@ -170,7 +170,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
 
     useEffect(() => {
         updateStatusEntries();
-        setScreenEntries(entries.filter(value1 => value1.Source === "screen"))
+        setScreenEntries(entries.filter(value1 => value1.Source === 'screen'));
     }, [entries]);
 
     return (
@@ -200,9 +200,9 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={ {width: '100%'} }>
+            <Box sx={ { width: '100%' } }>
                 <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
-                    <Box sx={ {borderBottom: 1, borderColor: 'divider'} }>
+                    <Box sx={ { borderBottom: 1, borderColor: 'divider' } }>
                         <Tabs
                             value={ value }
                             onChange={ handleChange }
@@ -223,14 +223,14 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                 { protocol?.TestResult == TestResultState.TestResultFailed &&
                                 <Box width='100%' height='100%' color="white" bgcolor="palevioletred" padding={ 2 }>
                                     <Grid container={ true } spacing={ 6 } justifyContent="center"
-                                          alignItems="center">
+                                        alignItems="center">
                                         <Grid item={ true }>
                                             { lastStep && <Typography><Moment format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message } </Typography> }
                                             { lastError && <Typography><Moment format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message } </Typography> }
                                         </Grid>
                                         <Grid item={ true }>
                                             { lastScreen &&  <div>
-                                                <Button aria-describedby={"last_screen_"+lastScreen.ID} variant="contained" onClick={showScreenPopup}>
+                                                <Button aria-describedby={'last_screen_' + lastScreen.ID} variant="contained" onClick={showScreenPopup}>
                                                     Show
                                                 </Button>
                                                 <Popover
@@ -270,7 +270,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                             <Typography gutterBottom={ true } variant="body2" color="textSecondary">
                                                 Execution
                                             </Typography>
-                                            <Typography variant="h5" style={ {whiteSpace: 'nowrap'} }>
+                                            <Typography variant="h5" style={ { whiteSpace: 'nowrap' } }>
                                                 { getDuration(protocol) }
                                             </Typography>
                                         </Grid>
@@ -285,7 +285,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                             <Grid container={ true } spacing={ 2 }>
                                                 <Grid item={ true } xs={ 2 }>
                                                     <Typography gutterBottom={ true } variant="body2"
-                                                                color="textSecondary">
+                                                        color="textSecondary">
                                                         Actions
                                                     </Typography>
                                                     <Typography variant="h5">
@@ -294,7 +294,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
                                                     <Typography gutterBottom={ true } variant="body2"
-                                                                color="textSecondary">
+                                                        color="textSecondary">
                                                         StartupTime
                                                     </Typography>
                                                     <Typography variant="h5">
@@ -303,7 +303,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
                                                     <Typography gutterBottom={ true } variant="body2"
-                                                                color="textSecondary">
+                                                        color="textSecondary">
                                                         FPS
                                                     </Typography>
                                                     <Typography variant="h5">
@@ -312,7 +312,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
                                                     <Typography gutterBottom={ true } variant="body2"
-                                                                color="textSecondary">
+                                                        color="textSecondary">
                                                         Memory
                                                     </Typography>
                                                     <Typography variant="h5" component="h5">
@@ -338,7 +338,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                         </TableHead>
                         <TableBody>
                             { run.Log.map((entry) => <TableRow key={ entry.ID }>
-                                <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
+                                <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
                                     <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
                                 </TableCell>
                                 <TableCell>{ entry.Level }</TableCell>
