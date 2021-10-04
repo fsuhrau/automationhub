@@ -27,3 +27,4 @@
 /__debug_bin
 *.db
 endpoints/web/data/
+test/
