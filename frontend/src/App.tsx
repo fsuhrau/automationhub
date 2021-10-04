@@ -224,17 +224,19 @@ const App: FC<AppProps> = (props) => {
                                         <TestProtocolPage/>
                                     </main>
                                 </Route>
-                                <Route path="/web/test/:testId/runs">
-                                    <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
-                                        <TestRunPage/>
-                                    </main>
-                                </Route>
                                 <Route path="/web/test/:testId/runs/last">
                                     <TestContextProvider>
                                         <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                         <main className={ classes.main }>
-                                            <TestRunsPage/>
+                                            <TestRunPage/>
+                                        </main>
+                                    </TestContextProvider>
+                                </Route>
+                                <Route path="/web/test/:testId/run/:runId">
+                                    <TestContextProvider>
+                                        <TestHeader onDrawerToggle={ handleDrawerToggle }/>
+                                        <main className={ classes.main }>
+                                            <TestRunPage/>
                                         </main>
                                     </TestContextProvider>
                                 </Route>

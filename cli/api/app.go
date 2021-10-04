@@ -65,7 +65,7 @@ func (c *Client) uploadApp(values map[string]io.Reader) (*models.App, error) {
 	}
 
 	// Check the response
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
 		err = fmt.Errorf("bad status: %s", res.Status)
 		return nil, err
 	}

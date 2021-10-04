@@ -17,8 +17,8 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"github.com/fsuhrau/automationhub/cli/api"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -32,25 +32,28 @@ var (
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run a new test",
+	Short: "run --url http://localhost:8002 --appid 50 --testid 9",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		client := api.NewClient(apiURL, apiKey)
 		if len(appPath) > 0 {
+			logrus.Info("uploading app")
 			app, err := client.UploadApp(appPath)
 			if err != nil {
 				return err
 			}
 			appID = int(app.ID)
+			logrus.Infof("upload finished new appId: %d", appID)
 		}
 
+		logrus.Infof("execute test %d with appId: %d", testID, appID)
 		testRun, err := client.ExecuteTest(context.Background(), testID, appID, params)
 		if err != nil {
 			return err
 		}
-		fmt.Println(fmt.Sprintf("find your results at: http://%s/test/%d/run/%d", apiURL, testID, testRun.ID))
+		logrus.Infof("Test Running... check your restults at: %s/web/test/%d/run/%d", apiURL, testID, testRun.ID)
 		return nil
 	},
 }

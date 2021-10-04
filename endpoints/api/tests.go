@@ -196,19 +196,22 @@ func (s *ApiService) runTest(c *gin.Context) {
 		devices[i].Dev = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 	}
 
+	var run *models.TestRun
 	if test.TestConfig.Type == models.TestTypeUnity {
 		tr := unity.New(s.db, s.hostIP, s.devicesManager, s)
 		if err := tr.Initialize(test, environmentParams); err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
-		if err := tr.Run(devices, app); err != nil {
+		var err error
+		run, err = tr.Run(devices, app)
+		if err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
 	}
 
-	c.JSON(http.StatusOK, test)
+	c.JSON(http.StatusOK, run)
 }
 
 func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
@@ -242,24 +245,12 @@ func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
 	runId := c.Param("run_id")
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols").Preload("Log").First(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, run)
-}
-
-func (s *ApiService) startTest(session *Session, c *gin.Context) {
-	type Result struct {
-	}
-	c.JSON(http.StatusOK, &Result{})
-}
-
-func (s *ApiService) getStatus(session *Session, c *gin.Context) {
-	type Result struct {
-	}
-	c.JSON(http.StatusOK, &Result{})
 }
 
 func (s *ApiService) getData(session *Session, c *gin.Context) {

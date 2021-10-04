@@ -111,14 +111,7 @@ func (tr *testsRunner) logError(format string, params ...interface{}) {
 	})
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
-	var params []string
-	for k, v := range tr.env {
-		params = append(params, fmt.Sprintf("%s=%s", k, v))
-	}
-	if err := tr.newTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
-		return err
-	}
+func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	defer tr.testSessionFinished()
 
 	var devices []DeviceMap
@@ -137,7 +130,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 
 	if len(devices) == 0 {
 		tr.logError("no lockable devices available")
-		return fmt.Errorf("no lockable devices available")
+		return
 	}
 
 	defer func(devs []DeviceMap) {
@@ -194,7 +187,8 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	for _, d := range devices {
 		installed, err := d.Device.IsAppInstalled(&tr.appParams)
 		if err != nil {
-			return err
+			tr.logError("check installation failed: %v", err)
+			return
 		}
 
 		if !installed {
@@ -226,7 +220,7 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 	}
 	if err := deviceWg.WaitWithTimeout(60 * time.Second); err == sync.TimeoutError {
 		tr.logError("one or more apps didn't connect")
-		return fmt.Errorf("timout reached")
+		return
 	}
 
 	var testList []models.UnityTestFunction
@@ -234,7 +228,8 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 		tr.logInfo("RunAllTests active requesting PlayMode tests")
 		a := &action.TestsGet{}
 		if err := tr.deviceManager.SendAction(devices[0].Device, a); err != nil {
-			return err
+			tr.logError("send action to select all tests failed: %v", err)
+			return
 		}
 		for _, t := range a.Tests {
 			testList = append(testList, models.UnityTestFunction{
@@ -315,8 +310,19 @@ func (tr *testsRunner) Run(devs []models.Device, appData models.App) error {
 			tr.logError("unable to start app: %v", err)
 		}
 	}
+}
 
-	return nil
+func (tr *testsRunner) Run(devs []models.Device, appData models.App) (*models.TestRun, error) {
+	var params []string
+	for k, v := range tr.env {
+		params = append(params, fmt.Sprintf("%s=%s", k, v))
+	}
+	if err := tr.newTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
+		return nil, err
+	}
+	go tr.exec(devs, appData)
+
+	return &tr.run, nil
 }
 
 func (tr *testsRunner) WorkerFunction(channel workerChannel, dev DeviceMap, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
