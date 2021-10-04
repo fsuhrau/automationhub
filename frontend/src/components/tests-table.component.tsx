@@ -82,7 +82,7 @@ const TestsTable: FC<TestProps> = (props) => {
 
     const onRunTest = (id: number, appid: number): void => {
         executeTest(id, appid, envParameter).then(response => {
-            history.push(`/test/${id}/runs/last`);
+            history.push(`/web/test/${id}/runs/last`);
         }).catch(error => {
             console.log(error);
         });

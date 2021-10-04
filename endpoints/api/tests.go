@@ -152,14 +152,14 @@ func extractParams(param string) map[string]string {
 	return env
 }
 
-func (s *ApiService) runTest(c *gin.Context) {
-	type Request struct {
-		AppID  uint
-		Params string
-	}
+type RunTestRequest struct {
+	AppID  uint
+	Params string
+}
 
+func (s *ApiService) runTest(c *gin.Context) {
 	testId := c.Param("test_id")
-	var req Request
+	var req RunTestRequest
 	if err := c.Bind(&req); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return

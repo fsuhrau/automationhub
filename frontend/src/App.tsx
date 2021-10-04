@@ -185,7 +185,7 @@ const App: FC<AppProps> = (props) => {
         setMobileOpen(!mobileOpen);
     };
 
-    return <SSEProvider endpoint="http://localhost:8002/api/sse/">
+    return <SSEProvider endpoint="/api/sse/">
         <AppContext.Provider value={ { title: '' } }>
             <Router>
                 <ThemeProvider theme={ theme }>
@@ -206,31 +206,31 @@ const App: FC<AppProps> = (props) => {
                         </nav>
                         <div className={ classes.app }>
                             <Switch>
-                                <Route path="/tests">
+                                <Route path="/web/tests">
                                     <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <TestContent/>
                                     </main>
                                 </Route>
-                                <Route path={ '/test/new' }>
+                                <Route path={ '/web/test/new' }>
                                     <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <AddTestPage/>
                                     </main>
                                 </Route>
-                                <Route path={ '/test/:testId/run/:runId/:protocolId' }>
+                                <Route path={ '/web/test/:testId/run/:runId/:protocolId' }>
                                     <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <TestProtocolPage/>
                                     </main>
                                 </Route>
-                                <Route path="/test/:testId/runs">
+                                <Route path="/web/test/:testId/runs">
                                     <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <TestRunPage/>
                                     </main>
                                 </Route>
-                                <Route path="/test/:testId/runs/last">
+                                <Route path="/web/test/:testId/runs/last">
                                     <TestContextProvider>
                                         <TestHeader onDrawerToggle={ handleDrawerToggle }/>
                                         <main className={ classes.main }>
@@ -238,37 +238,37 @@ const App: FC<AppProps> = (props) => {
                                         </main>
                                     </TestContextProvider>
                                 </Route>
-                                <Route path="/results">
+                                <Route path="/web/results">
                                     <Header onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <Content/>
                                     </main>
                                 </Route>
-                                <Route path="/performance">
+                                <Route path="/web/performance">
                                     <Header onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <Content/>
                                     </main>
                                 </Route>
-                                <Route path="/settings">
+                                <Route path="/web/settings">
                                     <Header onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <Content/>
                                     </main>
                                 </Route>
-                                <Route path="/apps">
+                                <Route path="/web/apps">
                                     <AppsHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <AppsPage/>
                                     </main>
                                 </Route>
-                                <Route path="/users">
+                                <Route path="/web/users">
                                     <Header onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <Content/>
                                     </main>
                                 </Route>
-                                <Route path="/devices">
+                                <Route path="/web/devices">
                                     <DeviceHeader onDrawerToggle={ handleDrawerToggle }/>
                                     <main className={ classes.main }>
                                         <DevicesContent/>

@@ -11,4 +11,4 @@ lint:
 # run build
 .PHONY: build
 build:
-	mkdir -p ../endpoints/web/ && yarn build && cp -rf build/* ../endpoints/web/
+	BUILD_PATH=../endpoints/web/data/ yarn build

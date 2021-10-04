@@ -4,12 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *ApiService) error(c *gin.Context, status int, err error) {
-	type Response struct {
-		Message string
-	}
+type ErrorResponse struct {
+	Message string
+}
 
-	c.JSON(status, &Response{
+func (s *ApiService) error(c *gin.Context, status int, err error) {
+	c.JSON(status, &ErrorResponse{
 		Message:   err.Error(),
 	})
 }

@@ -138,7 +138,7 @@ const AddTestPage: FC = () => {
 
         createTest(requestData).then(response => {
             console.log(response.data);
-            history.push('/tests');
+            history.push('/web/tests');
         }).catch(ex => {
             console.log(ex);
         });

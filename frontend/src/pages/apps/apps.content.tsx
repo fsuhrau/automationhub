@@ -49,7 +49,7 @@ const AppsPage: FC<AppsProps> = (props) => {
     const history = useHistory();
 
     function newAppClick(): void {
-        history.push('/app/new');
+        history.push('/web/app/new');
     }
 
     const [apps, setApps] = useState<IAppData[]>([]);

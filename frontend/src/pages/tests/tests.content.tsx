@@ -42,7 +42,7 @@ const Tests: FC<TestsProps> = (props) => {
     const history = useHistory();
 
     function newTestClick(): void {
-        history.push('/test/new');
+        history.push('/web/test/new');
     }
 
     return (

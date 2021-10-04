@@ -23,18 +23,18 @@ const categories = [
     {
         id: 'Test Center',
         children: [
-            { id: 'Tests', ref: '/tests', icon: <PermMediaOutlinedIcon/> },
-            { id: 'Results', ref: '/results', icon: <SettingsEthernetIcon/> },
-            { id: 'Performance', ref: '/performance', icon: <TimerIcon/> },
+            { id: 'Tests', ref: '/web/tests', icon: <PermMediaOutlinedIcon/> },
+            // { id: 'Results', ref: '/web/results', icon: <SettingsEthernetIcon/> },
+            // { id: 'Performance', ref: '/web/performance', icon: <TimerIcon/> },
         ],
     },
     {
         id: 'Management',
         children: [
-            { id: 'Settings', ref: '/settings', icon: <SettingsIcon/> },
-            { id: 'Apps', ref: '/apps', icon: <DnsRoundedIcon/> },
-            { id: 'User', ref: '/users', icon: <PeopleIcon/> },
-            { id: 'Devices', ref: '/devices', icon: <PhonelinkSetupIcon/> },
+            // { id: 'Settings', ref: '/web/settings', icon: <SettingsIcon/> },
+            { id: 'Apps', ref: '/web/apps', icon: <DnsRoundedIcon/> },
+            // { id: 'User', ref: '/web/users', icon: <PeopleIcon/> },
+            { id: 'Devices', ref: '/web/devices', icon: <PhonelinkSetupIcon/> },
         ],
     },
 ];

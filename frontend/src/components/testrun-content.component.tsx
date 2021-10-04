@@ -163,7 +163,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     const onTestRerun = (): void => {
         executeTest(testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
-            history.push(`/test/${ testRun.TestID }/runs/last`);
+            history.push(`/web/test/${ testRun.TestID }/runs/last`);
         }).catch(error => {
             console.log(error);
         });
@@ -290,7 +290,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                                         <TableRow key={ protocol.ID }>
                                             <TableCell component="th" scope="row">
                                                 <Link
-                                                    href={ `/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
+                                                    href={ `/web/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
                                                     underline="none">
                                                     { protocol.TestName }
                                                 </Link>
