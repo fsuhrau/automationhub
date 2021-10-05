@@ -12,7 +12,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/gin-contrib/cors v1.3.1
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.4
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/google/flatbuffers v1.12.0
@@ -30,6 +30,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.3 // indirect
 	github.com/prometheus/common v0.4.0
+	github.com/r3labs/sse/v2 v2.3.6 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/cobra v1.2.1
