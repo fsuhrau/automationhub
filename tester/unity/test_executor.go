@@ -1,6 +1,7 @@
 package unity
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -11,6 +12,7 @@ import (
 type testExecutor struct {
 	devicesManager manager.Devices
 	fin            chan bool
+	wg sync.ExtendedWaitGroup
 }
 
 func NewExecutor(devices manager.Devices) *testExecutor {
@@ -26,8 +28,8 @@ func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout
 		dev.RemoveActionHandler(e)
 	}()
 
-	finishWaitingGroup := sync.ExtendedWaitGroup{}
-	finishWaitingGroup.Add(1)
+	e.wg = sync.ExtendedWaitGroup{}
+	e.wg.Add(1)
 	go func(wg *sync.ExtendedWaitGroup) {
 		select {
 		case finished := <-e.fin:
@@ -38,13 +40,13 @@ func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout
 				}
 			}
 		}
-	}(&finishWaitingGroup)
+	}(&e.wg)
 	if err := e.devicesManager.SendAction(dev, &test); err != nil {
 		dev.Error("testrunner", err.Error())
 		return err
 	}
 
-	if err := finishWaitingGroup.WaitWithTimeout(timeout); err != nil {
+	if err := e.wg.WaitUntil(time.Now().Add(30 * time.Second)); err != nil {
 		dev.Error("testrunner", err.Error())
 		return err
 	}
@@ -60,7 +62,13 @@ func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Respons
 	}
 
 	if response.ActionType == action.ActionType_ExecuteTest {
-		if !response.Success {
+		if response.Success {
+			dev.Log("testrunner", fmt.Sprintf("timeout: %d", response.GetTestDetails().Timeout))
+			dev.Log("testrunner", fmt.Sprintf("categories: %v", response.GetTestDetails().Categories))
+			if response.GetTestDetails().Timeout > 0 {
+				tr.wg.UpdateUntil(time.Now().Add(time.Duration(response.GetTestDetails().Timeout) * time.Millisecond))
+			}
+		} else {
 			dev.Error("testrunner", "starting test failed")
 			tr.fin <- true
 			return

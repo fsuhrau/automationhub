@@ -24,6 +24,7 @@ extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetAttr_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Test_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_ParameterEntry_DoNotUse_action_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TestDetails_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Tests_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Touch_action_2eproto;
 namespace action {
@@ -103,6 +104,10 @@ class LogDataDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LogData> _instance;
 } _LogData_default_instance_;
+class TestDetailsDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TestDetails> _instance;
+} _TestDetails_default_instance_;
 class ResponseDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Response> _instance;
@@ -113,6 +118,7 @@ class ResponseDefaultTypeInternal {
   const ::action::Connect* connect_;
   const ::action::Tests* tests_;
   const ::action::LogData* log_;
+  const ::action::TestDetails* testdetails_;
 } _Response_default_instance_;
 }  // namespace action
 static void InitDefaultsscc_info_Connect_action_2eproto() {
@@ -287,12 +293,13 @@ static void InitDefaultsscc_info_Response_action_2eproto() {
   ::action::Response::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<4> scc_info_Response_action_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 4, 0, InitDefaultsscc_info_Response_action_2eproto}, {
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<5> scc_info_Response_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 5, 0, InitDefaultsscc_info_Response_action_2eproto}, {
       &scc_info_Screenshot_action_2eproto.base,
       &scc_info_Connect_action_2eproto.base,
       &scc_info_Tests_action_2eproto.base,
-      &scc_info_LogData_action_2eproto.base,}};
+      &scc_info_LogData_action_2eproto.base,
+      &scc_info_TestDetails_action_2eproto.base,}};
 
 static void InitDefaultsscc_info_Screenshot_action_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -350,6 +357,20 @@ static void InitDefaultsscc_info_Test_ParameterEntry_DoNotUse_action_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Test_ParameterEntry_DoNotUse_action_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Test_ParameterEntry_DoNotUse_action_2eproto}, {}};
 
+static void InitDefaultsscc_info_TestDetails_action_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::action::_TestDetails_default_instance_;
+    new (ptr) ::action::TestDetails();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::action::TestDetails::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TestDetails_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TestDetails_action_2eproto}, {}};
+
 static void InitDefaultsscc_info_Tests_action_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -379,7 +400,7 @@ static void InitDefaultsscc_info_Touch_action_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Touch_action_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Touch_action_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[18];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[19];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_action_2eproto[6];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_action_2eproto = nullptr;
 
@@ -523,6 +544,13 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   PROTOBUF_FIELD_OFFSET(::action::LogData, level_),
   PROTOBUF_FIELD_OFFSET(::action::LogData, message_),
   ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::action::TestDetails, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::action::TestDetails, timeout_),
+  PROTOBUF_FIELD_OFFSET(::action::TestDetails, categories_),
+  ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::action::Response, _internal_metadata_),
   ~0u,  // no _extensions_
   PROTOBUF_FIELD_OFFSET(::action::Response, _oneof_case_[0]),
@@ -537,6 +565,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   offsetof(::action::ResponseDefaultTypeInternal, connect_),
   offsetof(::action::ResponseDefaultTypeInternal, tests_),
   offsetof(::action::ResponseDefaultTypeInternal, log_),
+  offsetof(::action::ResponseDefaultTypeInternal, testdetails_),
   PROTOBUF_FIELD_OFFSET(::action::Response, payload_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -557,7 +586,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 115, -1, sizeof(::action::Test)},
   { 124, -1, sizeof(::action::Tests)},
   { 130, -1, sizeof(::action::LogData)},
-  { 138, -1, sizeof(::action::Response)},
+  { 138, -1, sizeof(::action::TestDetails)},
+  { 145, -1, sizeof(::action::Response)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -578,6 +608,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Test_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Tests_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_LogData_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_TestDetails_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Response_default_instance_),
 };
 
@@ -617,45 +648,48 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "s\022\033\n\005tests\030\001 \003(\0132\014.action.Test\"Z\n\007LogDat"
   "a\022\035\n\004type\030\001 \001(\0162\017.action.LogType\022\037\n\005leve"
   "l\030\002 \001(\0162\020.action.LogLevel\022\017\n\007message\030\003 \001"
-  "(\t\"\242\002\n\010Response\022\020\n\010actionID\030\001 \001(\t\022&\n\nact"
-  "ionType\030\002 \001(\0162\022.action.ActionType\022\017\n\007suc"
-  "cess\030\003 \001(\010\022\021\n\007visible\030\004 \001(\010H\000\022\016\n\004data\030\005 "
-  "\001(\014H\000\022\017\n\005value\030\006 \001(\tH\000\022(\n\nscreenshot\030\007 \001"
-  "(\0132\022.action.ScreenshotH\000\022\"\n\007connect\030\010 \001("
-  "\0132\017.action.ConnectH\000\022\036\n\005tests\030\t \001(\0132\r.ac"
-  "tion.TestsH\000\022\036\n\003log\030\n \001(\0132\017.action.LogDa"
-  "taH\000B\t\n\007payload*\220\002\n\025DeviceInteractionTyp"
-  "e\022\016\n\nLockDevice\020\000\022\020\n\014UnlockDevice\020\001\022\022\n\016G"
-  "etDeviceState\020\002\022\022\n\016IsAppInstalled\020\003\022\016\n\nI"
-  "nstallApp\020\004\022\020\n\014UninstallApp\020\005\022\014\n\010StartAp"
-  "p\020\006\022\013\n\007StopApp\020\007\022\022\n\016IsAppConnected\020\010\022\022\n\016"
-  "StartRecording\020\t\022\021\n\rStopRecording\020\n\022\016\n\nH"
-  "asFeature\020\013\022\022\n\016ExecuteFeature\020\014\022\021\n\rGetSc"
-  "reenShot\020\r*\264\002\n\nActionType\022\n\n\006Custom\020\000\022\021\n"
-  "\rGetSceneGraph\020\001\022\026\n\022ElementIsDisplayed\020\002"
-  "\022\023\n\017ElementSetValue\020\003\022\023\n\017ElementGetValue"
-  "\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDown\020\006\022\r\n\tTouchMove"
-  "\020\007\022\013\n\007TouchUp\020\010\022\017\n\013DragAndDrop\020\t\022\r\n\tLong"
-  "Touch\020\n\022\020\n\014ElementTouch\020\013\022\021\n\rGetScreensh"
-  "ot\020\014\022\014\n\010GetTests\020\r\022\017\n\013ExecuteTest\020\016\022\023\n\017E"
-  "xecutionResult\020\017\022\007\n\003Log\020\020\022\016\n\nUnityReset\020"
-  "\021*[\n\007LogType\022\r\n\tDeviceLog\020\000\022\013\n\007StepLog\020\001"
-  "\022\r\n\tStatusLog\020\002\022\021\n\rCheckpointLog\020\003\022\022\n\016Pe"
-  "rformanceLog\020\004*F\n\010LogLevel\022\t\n\005Debug\020\000\022\010\n"
-  "\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005Error\020\003\022\r\n\tExcep"
-  "tion\020\004*0\n\013ContentType\022\016\n\nFlatbuffer\020\000\022\010\n"
-  "\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppType\022\t\n\005Cocos\020\000\022\t"
-  "\n\005Unity\020\0012\337\001\n\014RemoteDevice\022A\n\nDeviceList"
-  "\022\025.action.DeviceRequest\032\026.action.DeviceR"
-  "esponse\"\000(\0010\001\022R\n\021DeviceInteraction\022\032.act"
-  "ion.InteractionRequest\032\033.action.Interact"
-  "ionResponse\"\000(\0010\001\0228\n\rActionExecute\022\017.act"
-  "ion.Request\032\020.action.Response\"\000(\0010\001B Z\nh"
-  "ub/action\252\002\021Com.AutomationHubb\006proto3"
+  "(\t\"2\n\013TestDetails\022\017\n\007timeout\030\001 \001(\005\022\022\n\nca"
+  "tegories\030\002 \003(\t\"\316\002\n\010Response\022\020\n\010actionID\030"
+  "\001 \001(\t\022&\n\nactionType\030\002 \001(\0162\022.action.Actio"
+  "nType\022\017\n\007success\030\003 \001(\010\022\021\n\007visible\030\004 \001(\010H"
+  "\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005value\030\006 \001(\tH\000\022(\n\nsc"
+  "reenshot\030\007 \001(\0132\022.action.ScreenshotH\000\022\"\n\007"
+  "connect\030\010 \001(\0132\017.action.ConnectH\000\022\036\n\005test"
+  "s\030\t \001(\0132\r.action.TestsH\000\022\036\n\003log\030\n \001(\0132\017."
+  "action.LogDataH\000\022*\n\013testDetails\030\013 \001(\0132\023."
+  "action.TestDetailsH\000B\t\n\007payload*\220\002\n\025Devi"
+  "ceInteractionType\022\016\n\nLockDevice\020\000\022\020\n\014Unl"
+  "ockDevice\020\001\022\022\n\016GetDeviceState\020\002\022\022\n\016IsApp"
+  "Installed\020\003\022\016\n\nInstallApp\020\004\022\020\n\014Uninstall"
+  "App\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020\007\022\022\n\016IsAp"
+  "pConnected\020\010\022\022\n\016StartRecording\020\t\022\021\n\rStop"
+  "Recording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016ExecuteFe"
+  "ature\020\014\022\021\n\rGetScreenShot\020\r*\264\002\n\nActionTyp"
+  "e\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020\001\022\026\n\022Elem"
+  "entIsDisplayed\020\002\022\023\n\017ElementSetValue\020\003\022\023\n"
+  "\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDow"
+  "n\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchUp\020\010\022\017\n\013DragA"
+  "ndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014ElementTouch\020"
+  "\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTests\020\r\022\017\n\013Ex"
+  "ecuteTest\020\016\022\023\n\017ExecutionResult\020\017\022\007\n\003Log\020"
+  "\020\022\016\n\nUnityReset\020\021*[\n\007LogType\022\r\n\tDeviceLo"
+  "g\020\000\022\013\n\007StepLog\020\001\022\r\n\tStatusLog\020\002\022\021\n\rCheck"
+  "pointLog\020\003\022\022\n\016PerformanceLog\020\004*F\n\010LogLev"
+  "el\022\t\n\005Debug\020\000\022\010\n\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005"
+  "Error\020\003\022\r\n\tException\020\004*0\n\013ContentType\022\016\n"
+  "\nFlatbuffer\020\000\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppT"
+  "ype\022\t\n\005Cocos\020\000\022\t\n\005Unity\020\0012\337\001\n\014RemoteDevi"
+  "ce\022A\n\nDeviceList\022\025.action.DeviceRequest\032"
+  "\026.action.DeviceResponse\"\000(\0010\001\022R\n\021DeviceI"
+  "nteraction\022\032.action.InteractionRequest\032\033"
+  ".action.InteractionResponse\"\000(\0010\001\0228\n\rAct"
+  "ionExecute\022\017.action.Request\032\020.action.Res"
+  "ponse\"\000(\0010\001B Z\nhub/action\252\002\021Com.Automati"
+  "onHubb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[18] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[19] = {
   &scc_info_Connect_action_2eproto.base,
   &scc_info_Device_action_2eproto.base,
   &scc_info_DeviceRequest_action_2eproto.base,
@@ -672,16 +706,17 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
   &scc_info_SetAttr_action_2eproto.base,
   &scc_info_Test_action_2eproto.base,
   &scc_info_Test_ParameterEntry_DoNotUse_action_2eproto.base,
+  &scc_info_TestDetails_action_2eproto.base,
   &scc_info_Tests_action_2eproto.base,
   &scc_info_Touch_action_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2797,
-  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 18, 0,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2893,
+  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 19, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
-  file_level_metadata_action_2eproto, 18, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
+  file_level_metadata_action_2eproto, 19, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -5229,6 +5264,227 @@ void LogData::InternalSwap(LogData* other) {
 
 // ===================================================================
 
+void TestDetails::InitAsDefaultInstance() {
+}
+class TestDetails::_Internal {
+ public:
+};
+
+TestDetails::TestDetails()
+  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:action.TestDetails)
+}
+TestDetails::TestDetails(const TestDetails& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _internal_metadata_(nullptr),
+      categories_(from.categories_) {
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  timeout_ = from.timeout_;
+  // @@protoc_insertion_point(copy_constructor:action.TestDetails)
+}
+
+void TestDetails::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_TestDetails_action_2eproto.base);
+  timeout_ = 0;
+}
+
+TestDetails::~TestDetails() {
+  // @@protoc_insertion_point(destructor:action.TestDetails)
+  SharedDtor();
+}
+
+void TestDetails::SharedDtor() {
+}
+
+void TestDetails::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const TestDetails& TestDetails::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_TestDetails_action_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void TestDetails::Clear() {
+// @@protoc_insertion_point(message_clear_start:action.TestDetails)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  categories_.Clear();
+  timeout_ = 0;
+  _internal_metadata_.Clear();
+}
+
+const char* TestDetails::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // int32 timeout = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          timeout_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // repeated string categories = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParserUTF8(_internal_add_categories(), ptr, ctx, "action.TestDetails.categories");
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* TestDetails::InternalSerializeWithCachedSizesToArray(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:action.TestDetails)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 timeout = 1;
+  if (this->timeout() != 0) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(1, this->_internal_timeout(), target);
+  }
+
+  // repeated string categories = 2;
+  for (int i = 0, n = this->_internal_categories_size(); i < n; i++) {
+    const auto& s = this->_internal_categories(i);
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      s.data(), static_cast<int>(s.length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "action.TestDetails.categories");
+    target = stream->WriteString(2, s, target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields(), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:action.TestDetails)
+  return target;
+}
+
+size_t TestDetails::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:action.TestDetails)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated string categories = 2;
+  total_size += 1 *
+      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(categories_.size());
+  for (int i = 0, n = categories_.size(); i < n; i++) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      categories_.Get(i));
+  }
+
+  // int32 timeout = 1;
+  if (this->timeout() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+        this->_internal_timeout());
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void TestDetails::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:action.TestDetails)
+  GOOGLE_DCHECK_NE(&from, this);
+  const TestDetails* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<TestDetails>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:action.TestDetails)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:action.TestDetails)
+    MergeFrom(*source);
+  }
+}
+
+void TestDetails::MergeFrom(const TestDetails& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:action.TestDetails)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  categories_.MergeFrom(from.categories_);
+  if (from.timeout() != 0) {
+    _internal_set_timeout(from._internal_timeout());
+  }
+}
+
+void TestDetails::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:action.TestDetails)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void TestDetails::CopyFrom(const TestDetails& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:action.TestDetails)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool TestDetails::IsInitialized() const {
+  return true;
+}
+
+void TestDetails::InternalSwap(TestDetails* other) {
+  using std::swap;
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  categories_.InternalSwap(&other->categories_);
+  swap(timeout_, other->timeout_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata TestDetails::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
 void Response::InitAsDefaultInstance() {
   ::action::_Response_default_instance_.visible_ = false;
   ::action::_Response_default_instance_.data_.UnsafeSetDefault(
@@ -5243,6 +5499,8 @@ void Response::InitAsDefaultInstance() {
       ::action::Tests::internal_default_instance());
   ::action::_Response_default_instance_.log_ = const_cast< ::action::LogData*>(
       ::action::LogData::internal_default_instance());
+  ::action::_Response_default_instance_.testdetails_ = const_cast< ::action::TestDetails*>(
+      ::action::TestDetails::internal_default_instance());
 }
 class Response::_Internal {
  public:
@@ -5250,6 +5508,7 @@ class Response::_Internal {
   static const ::action::Connect& connect(const Response* msg);
   static const ::action::Tests& tests(const Response* msg);
   static const ::action::LogData& log(const Response* msg);
+  static const ::action::TestDetails& testdetails(const Response* msg);
 };
 
 const ::action::Screenshot&
@@ -5267,6 +5526,10 @@ Response::_Internal::tests(const Response* msg) {
 const ::action::LogData&
 Response::_Internal::log(const Response* msg) {
   return *msg->payload_.log_;
+}
+const ::action::TestDetails&
+Response::_Internal::testdetails(const Response* msg) {
+  return *msg->payload_.testdetails_;
 }
 void Response::set_allocated_screenshot(::action::Screenshot* screenshot) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaNoVirtual();
@@ -5324,6 +5587,20 @@ void Response::set_allocated_log(::action::LogData* log) {
   }
   // @@protoc_insertion_point(field_set_allocated:action.Response.log)
 }
+void Response::set_allocated_testdetails(::action::TestDetails* testdetails) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaNoVirtual();
+  clear_payload();
+  if (testdetails) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena = nullptr;
+    if (message_arena != submessage_arena) {
+      testdetails = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, testdetails, submessage_arena);
+    }
+    set_has_testdetails();
+    payload_.testdetails_ = testdetails;
+  }
+  // @@protoc_insertion_point(field_set_allocated:action.Response.testDetails)
+}
 Response::Response()
   : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
@@ -5368,6 +5645,10 @@ Response::Response(const Response& from)
     }
     case kLog: {
       _internal_mutable_log()->::action::LogData::MergeFrom(from._internal_log());
+      break;
+    }
+    case kTestDetails: {
+      _internal_mutable_testdetails()->::action::TestDetails::MergeFrom(from._internal_testdetails());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -5436,6 +5717,10 @@ void Response::clear_payload() {
     }
     case kLog: {
       delete payload_.log_;
+      break;
+    }
+    case kTestDetails: {
+      delete payload_.testdetails_;
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -5535,6 +5820,13 @@ const char* Response::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::i
       case 10:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 82)) {
           ptr = ctx->ParseMessage(_internal_mutable_log(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // .action.TestDetails testDetails = 11;
+      case 11:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 90)) {
+          ptr = ctx->ParseMessage(_internal_mutable_testdetails(), ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -5641,6 +5933,14 @@ failure:
         10, _Internal::log(this), target, stream);
   }
 
+  // .action.TestDetails testDetails = 11;
+  if (_internal_has_testdetails()) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessageToArray(
+        11, _Internal::testdetails(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -5723,6 +6023,13 @@ size_t Response::ByteSizeLong() const {
           *payload_.log_);
       break;
     }
+    // .action.TestDetails testDetails = 11;
+    case kTestDetails: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *payload_.testdetails_);
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -5795,6 +6102,10 @@ void Response::MergeFrom(const Response& from) {
     }
     case kLog: {
       _internal_mutable_log()->::action::LogData::MergeFrom(from._internal_log());
+      break;
+    }
+    case kTestDetails: {
+      _internal_mutable_testdetails()->::action::TestDetails::MergeFrom(from._internal_testdetails());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -5890,6 +6201,9 @@ template<> PROTOBUF_NOINLINE ::action::Tests* Arena::CreateMaybeMessage< ::actio
 }
 template<> PROTOBUF_NOINLINE ::action::LogData* Arena::CreateMaybeMessage< ::action::LogData >(Arena* arena) {
   return Arena::CreateInternal< ::action::LogData >(arena);
+}
+template<> PROTOBUF_NOINLINE ::action::TestDetails* Arena::CreateMaybeMessage< ::action::TestDetails >(Arena* arena) {
+  return Arena::CreateInternal< ::action::TestDetails >(arena);
 }
 template<> PROTOBUF_NOINLINE ::action::Response* Arena::CreateMaybeMessage< ::action::Response >(Arena* arena) {
   return Arena::CreateInternal< ::action::Response >(arena);

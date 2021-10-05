@@ -173,6 +173,11 @@ message LogData {
   string message = 3;
 }
 
+message TestDetails {
+  int32 timeout = 1;
+  repeated string categories = 2;
+}
+
 message Response {
   string actionID = 1;
   ActionType actionType = 2;
@@ -185,5 +190,6 @@ message Response {
     Connect connect = 8;
     Tests tests = 9;
     LogData log = 10;
+    TestDetails testDetails = 11;
   }
 }

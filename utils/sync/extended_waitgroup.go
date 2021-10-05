@@ -12,6 +12,7 @@ var (
 
 type ExtendedWaitGroup struct {
 	group sync.WaitGroup
+	until time.Time
 }
 
 func (wg *ExtendedWaitGroup) Done() {
@@ -41,6 +42,38 @@ func (wg *ExtendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	case _ = <-wait:
 		return nil
 	}
+}
+
+func (wg *ExtendedWaitGroup) WaitUntil(waitUntil time.Time) error {
+	wg.until = waitUntil
+
+	timeout := make(chan bool, 1)
+	go func() {
+		for {
+			time.Sleep(50 * time.Millisecond)
+			if time.Now().After(wg.until) {
+				timeout <- true
+				return
+			}
+		}
+	}()
+
+	wait := make(chan bool, 1)
+	go func() {
+		wg.group.Wait()
+		wait <- true
+	}()
+
+	select {
+	case _ = <-timeout:
+		return TimeoutError
+	case _ = <-wait:
+		return nil
+	}
+}
+
+func (wg *ExtendedWaitGroup) UpdateUntil(waitUntil time.Time) {
+	wg.until = waitUntil
 }
 
 func (wg *ExtendedWaitGroup) Wait() {

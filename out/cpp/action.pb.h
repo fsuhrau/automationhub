@@ -51,7 +51,7 @@ struct TableStruct_action_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[18]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[19]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -104,6 +104,9 @@ extern SetAttrDefaultTypeInternal _SetAttr_default_instance_;
 class Test;
 class TestDefaultTypeInternal;
 extern TestDefaultTypeInternal _Test_default_instance_;
+class TestDetails;
+class TestDetailsDefaultTypeInternal;
+extern TestDetailsDefaultTypeInternal _TestDetails_default_instance_;
 class Test_ParameterEntry_DoNotUse;
 class Test_ParameterEntry_DoNotUseDefaultTypeInternal;
 extern Test_ParameterEntry_DoNotUseDefaultTypeInternal _Test_ParameterEntry_DoNotUse_default_instance_;
@@ -130,6 +133,7 @@ template<> ::action::Response* Arena::CreateMaybeMessage<::action::Response>(Are
 template<> ::action::Screenshot* Arena::CreateMaybeMessage<::action::Screenshot>(Arena*);
 template<> ::action::SetAttr* Arena::CreateMaybeMessage<::action::SetAttr>(Arena*);
 template<> ::action::Test* Arena::CreateMaybeMessage<::action::Test>(Arena*);
+template<> ::action::TestDetails* Arena::CreateMaybeMessage<::action::TestDetails>(Arena*);
 template<> ::action::Test_ParameterEntry_DoNotUse* Arena::CreateMaybeMessage<::action::Test_ParameterEntry_DoNotUse>(Arena*);
 template<> ::action::Tests* Arena::CreateMaybeMessage<::action::Tests>(Arena*);
 template<> ::action::Touch* Arena::CreateMaybeMessage<::action::Touch>(Arena*);
@@ -3060,6 +3064,160 @@ class LogData :
 };
 // -------------------------------------------------------------------
 
+class TestDetails :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.TestDetails) */ {
+ public:
+  TestDetails();
+  virtual ~TestDetails();
+
+  TestDetails(const TestDetails& from);
+  TestDetails(TestDetails&& from) noexcept
+    : TestDetails() {
+    *this = ::std::move(from);
+  }
+
+  inline TestDetails& operator=(const TestDetails& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TestDetails& operator=(TestDetails&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const TestDetails& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const TestDetails* internal_default_instance() {
+    return reinterpret_cast<const TestDetails*>(
+               &_TestDetails_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    17;
+
+  friend void swap(TestDetails& a, TestDetails& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(TestDetails* other) {
+    if (other == this) return;
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline TestDetails* New() const final {
+    return CreateMaybeMessage<TestDetails>(nullptr);
+  }
+
+  TestDetails* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<TestDetails>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const TestDetails& from);
+  void MergeFrom(const TestDetails& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* InternalSerializeWithCachedSizesToArray(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(TestDetails* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "action.TestDetails";
+  }
+  private:
+  inline ::PROTOBUF_NAMESPACE_ID::Arena* GetArenaNoVirtual() const {
+    return nullptr;
+  }
+  inline void* MaybeArenaPtr() const {
+    return nullptr;
+  }
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_action_2eproto);
+    return ::descriptor_table_action_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kCategoriesFieldNumber = 2,
+    kTimeoutFieldNumber = 1,
+  };
+  // repeated string categories = 2;
+  int categories_size() const;
+  private:
+  int _internal_categories_size() const;
+  public:
+  void clear_categories();
+  const std::string& categories(int index) const;
+  std::string* mutable_categories(int index);
+  void set_categories(int index, const std::string& value);
+  void set_categories(int index, std::string&& value);
+  void set_categories(int index, const char* value);
+  void set_categories(int index, const char* value, size_t size);
+  std::string* add_categories();
+  void add_categories(const std::string& value);
+  void add_categories(std::string&& value);
+  void add_categories(const char* value);
+  void add_categories(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& categories() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_categories();
+  private:
+  const std::string& _internal_categories(int index) const;
+  std::string* _internal_add_categories();
+  public:
+
+  // int32 timeout = 1;
+  void clear_timeout();
+  ::PROTOBUF_NAMESPACE_ID::int32 timeout() const;
+  void set_timeout(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_timeout() const;
+  void _internal_set_timeout(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:action.TestDetails)
+ private:
+  class _Internal;
+
+  ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> categories_;
+  ::PROTOBUF_NAMESPACE_ID::int32 timeout_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_action_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Response :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.Response) */ {
  public:
@@ -3104,6 +3262,7 @@ class Response :
     kConnect = 8,
     kTests = 9,
     kLog = 10,
+    kTestDetails = 11,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -3113,7 +3272,7 @@ class Response :
                &_Response_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    18;
 
   friend void swap(Response& a, Response& b) {
     a.Swap(&b);
@@ -3187,6 +3346,7 @@ class Response :
     kConnectFieldNumber = 8,
     kTestsFieldNumber = 9,
     kLogFieldNumber = 10,
+    kTestDetailsFieldNumber = 11,
   };
   // string actionID = 1;
   void clear_actionid();
@@ -3332,6 +3492,21 @@ class Response :
   ::action::LogData* _internal_mutable_log();
   public:
 
+  // .action.TestDetails testDetails = 11;
+  bool has_testdetails() const;
+  private:
+  bool _internal_has_testdetails() const;
+  public:
+  void clear_testdetails();
+  const ::action::TestDetails& testdetails() const;
+  ::action::TestDetails* release_testdetails();
+  ::action::TestDetails* mutable_testdetails();
+  void set_allocated_testdetails(::action::TestDetails* testdetails);
+  private:
+  const ::action::TestDetails& _internal_testdetails() const;
+  ::action::TestDetails* _internal_mutable_testdetails();
+  public:
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:action.Response)
@@ -3344,6 +3519,7 @@ class Response :
   void set_has_connect();
   void set_has_tests();
   void set_has_log();
+  void set_has_testdetails();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -3361,6 +3537,7 @@ class Response :
     ::action::Connect* connect_;
     ::action::Tests* tests_;
     ::action::LogData* log_;
+    ::action::TestDetails* testdetails_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   ::PROTOBUF_NAMESPACE_ID::uint32 _oneof_case_[1];
@@ -5874,6 +6051,104 @@ inline void LogData::set_allocated_message(std::string* message) {
 
 // -------------------------------------------------------------------
 
+// TestDetails
+
+// int32 timeout = 1;
+inline void TestDetails::clear_timeout() {
+  timeout_ = 0;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 TestDetails::_internal_timeout() const {
+  return timeout_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 TestDetails::timeout() const {
+  // @@protoc_insertion_point(field_get:action.TestDetails.timeout)
+  return _internal_timeout();
+}
+inline void TestDetails::_internal_set_timeout(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  
+  timeout_ = value;
+}
+inline void TestDetails::set_timeout(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_timeout(value);
+  // @@protoc_insertion_point(field_set:action.TestDetails.timeout)
+}
+
+// repeated string categories = 2;
+inline int TestDetails::_internal_categories_size() const {
+  return categories_.size();
+}
+inline int TestDetails::categories_size() const {
+  return _internal_categories_size();
+}
+inline void TestDetails::clear_categories() {
+  categories_.Clear();
+}
+inline std::string* TestDetails::add_categories() {
+  // @@protoc_insertion_point(field_add_mutable:action.TestDetails.categories)
+  return _internal_add_categories();
+}
+inline const std::string& TestDetails::_internal_categories(int index) const {
+  return categories_.Get(index);
+}
+inline const std::string& TestDetails::categories(int index) const {
+  // @@protoc_insertion_point(field_get:action.TestDetails.categories)
+  return _internal_categories(index);
+}
+inline std::string* TestDetails::mutable_categories(int index) {
+  // @@protoc_insertion_point(field_mutable:action.TestDetails.categories)
+  return categories_.Mutable(index);
+}
+inline void TestDetails::set_categories(int index, const std::string& value) {
+  // @@protoc_insertion_point(field_set:action.TestDetails.categories)
+  categories_.Mutable(index)->assign(value);
+}
+inline void TestDetails::set_categories(int index, std::string&& value) {
+  // @@protoc_insertion_point(field_set:action.TestDetails.categories)
+  categories_.Mutable(index)->assign(std::move(value));
+}
+inline void TestDetails::set_categories(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  categories_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:action.TestDetails.categories)
+}
+inline void TestDetails::set_categories(int index, const char* value, size_t size) {
+  categories_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:action.TestDetails.categories)
+}
+inline std::string* TestDetails::_internal_add_categories() {
+  return categories_.Add();
+}
+inline void TestDetails::add_categories(const std::string& value) {
+  categories_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:action.TestDetails.categories)
+}
+inline void TestDetails::add_categories(std::string&& value) {
+  categories_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:action.TestDetails.categories)
+}
+inline void TestDetails::add_categories(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  categories_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:action.TestDetails.categories)
+}
+inline void TestDetails::add_categories(const char* value, size_t size) {
+  categories_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:action.TestDetails.categories)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+TestDetails::categories() const {
+  // @@protoc_insertion_point(field_list:action.TestDetails.categories)
+  return categories_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+TestDetails::mutable_categories() {
+  // @@protoc_insertion_point(field_mutable_list:action.TestDetails.categories)
+  return &categories_;
+}
+
+// -------------------------------------------------------------------
+
 // Response
 
 // string actionID = 1;
@@ -6407,6 +6682,56 @@ inline ::action::LogData* Response::mutable_log() {
   return _internal_mutable_log();
 }
 
+// .action.TestDetails testDetails = 11;
+inline bool Response::_internal_has_testdetails() const {
+  return payload_case() == kTestDetails;
+}
+inline bool Response::has_testdetails() const {
+  return _internal_has_testdetails();
+}
+inline void Response::set_has_testdetails() {
+  _oneof_case_[0] = kTestDetails;
+}
+inline void Response::clear_testdetails() {
+  if (_internal_has_testdetails()) {
+    delete payload_.testdetails_;
+    clear_has_payload();
+  }
+}
+inline ::action::TestDetails* Response::release_testdetails() {
+  // @@protoc_insertion_point(field_release:action.Response.testDetails)
+  if (has_testdetails()) {
+    clear_has_payload();
+      ::action::TestDetails* temp = payload_.testdetails_;
+    payload_.testdetails_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::action::TestDetails& Response::_internal_testdetails() const {
+  return _internal_has_testdetails()
+      ? *payload_.testdetails_
+      : *reinterpret_cast< ::action::TestDetails*>(&::action::_TestDetails_default_instance_);
+}
+inline const ::action::TestDetails& Response::testdetails() const {
+  // @@protoc_insertion_point(field_get:action.Response.testDetails)
+  return _internal_testdetails();
+}
+inline ::action::TestDetails* Response::_internal_mutable_testdetails() {
+  if (!_internal_has_testdetails()) {
+    clear_payload();
+    set_has_testdetails();
+    payload_.testdetails_ = CreateMaybeMessage< ::action::TestDetails >(
+        GetArenaNoVirtual());
+  }
+  return payload_.testdetails_;
+}
+inline ::action::TestDetails* Response::mutable_testdetails() {
+  // @@protoc_insertion_point(field_mutable:action.Response.testDetails)
+  return _internal_mutable_testdetails();
+}
+
 inline bool Response::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -6419,6 +6744,8 @@ inline Response::PayloadCase Response::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
