@@ -17,9 +17,15 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/fsuhrau/automationhub/cli/api"
+	"github.com/fsuhrau/automationhub/events"
+	"github.com/fsuhrau/automationhub/utils/sync"
+	"github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 var (
@@ -27,16 +33,17 @@ var (
 	appID   int
 	testID  int
 	params  string
+	async *bool
+	success bool
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run --url http://localhost:8002 --appid 50 --testid 9",
+	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --async",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		client := api.NewClient(apiURL, apiKey)
 		if len(appPath) > 0 {
 			logrus.Info("uploading app")
@@ -53,12 +60,45 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		logrus.Infof("Test Running... check your restults at: %s/web/test/%d/run/%d", apiURL, testID, testRun.ID)
+		defer func() {
+			logrus.Infof("Check your restults at: %s/web/test/%d/run/%d", apiURL, testID, testRun.ID)
+		}()
+		if async != nil && *async == true {
+			logrus.Infof("Test Running...")
+		} else {
+			eventsChannel := make(chan *sse.Event)
+			client := sse.NewClient(fmt.Sprintf("%s/api/sse", apiURL))
+			client.SubscribeChan(fmt.Sprintf("test_run_%d_finished", testRun.ID), eventsChannel)
+			wg := sync.ExtendedWaitGroup{}
+			wg.Add(1)
+			go waitForResult(&wg, eventsChannel)
+			close(eventsChannel)
+			if err := wg.WaitWithTimeout(5 * time.Minute); err != nil {
+				return err
+			}
+			if success {
+				logrus.Infof("Test finished Successfully!")
+			}
+		}
 		return nil
 	},
 }
 
+func waitForResult(wg *sync.ExtendedWaitGroup, eventsChannel chan *sse.Event) {
+	for {
+		select {
+		case event := <- eventsChannel:
+			var finishedEvent events.TestRunFinishedPayload
+			json.Unmarshal(event.Data, &finishedEvent)
+			success = finishedEvent.Success
+			wg.Done()
+			return
+		}
+	}
+}
+
 func init() {
+	success = false
 	testCmd.AddCommand(runCmd)
 
 	testCmd.PersistentFlags().StringVar(&appPath, "app", "", "app path")
@@ -74,5 +114,5 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	async = testCmd.PersistentFlags().BoolP("async", "a", false, "run command async observe status manually")
 }

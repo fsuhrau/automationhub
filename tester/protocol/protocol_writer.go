@@ -69,20 +69,17 @@ func (w *ProtocolWriter) SessionID() string {
 }
 
 func (w *ProtocolWriter) Close() {
-	/*
-		for _, p := range w.protocols {
-			var state models.TestResultState
-
-			if len(p.Writer.errs) > 0 {
-				state = models.TestResultFailed
-			} else {
-				state = models.TestResultSuccess
-			}
-
-			endTime := time.Now()
-			p.p.TestResult = state
-			p.p.EndedAt = &endTime
-			w.db.Updates(&p.p)
+	success := true
+	for _, p := range w.protocols {
+		if p.p.TestResult != models.TestResultSuccess {
+			success = false
+			break
 		}
-	*/
+	}
+
+	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{
+		TestRunID: w.run.ID,
+		TestRun: w.run,
+		Success: success,
+	})
 }
