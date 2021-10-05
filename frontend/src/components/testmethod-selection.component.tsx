@@ -117,7 +117,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
     }
 
     const customList = (items: IAppFunctionData[]): ReactElement => (
-        <Paper className={ classes.paper }>
+        <Paper className={ classes.paper } style={{overflow: 'auto'}}>
             <List dense={ true } component="div" role="list">
                 { items.map((value) => {
                     const labelId = `transfer-list-item-${ value.ID }-label`;
@@ -148,12 +148,12 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
             alignItems={ 'center' }
             direction={ 'column' }>
             <Grid item={ true }>
-                <Typography variant={ 'h6' }>Copy Test Export from Unity Editor.</Typography>
+                <Typography variant={ 'h6' }>Copy Test Export from Unity Editor.</Typography><br/>
                 <TextField
                     id="outlined-multiline-static"
-                    label="Multiline"
+                    label="Paste Test Functions here"
                     multiline={true}
-                    rows={ 4 }
+                    rows={ 6 }
                     defaultValue={ testJson }
                     variant="outlined"
                     onChange={ changeJsonFunction }
@@ -169,7 +169,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
                 >
 
                     <Grid item={ true }>
-                        <Typography variant={ 'subtitle1' }>Available Test Functions</Typography>
+                        <Typography variant={ 'subtitle1' }>Available Test Functions</Typography><br/>
                         { customList(left) }
                     </Grid>
                     <Grid item={ true }>
@@ -217,7 +217,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
                         </Grid>
                     </Grid>
                     <Grid item={ true }>
-                        <Typography variant={ 'subtitle1' }>Selected Test Functions</Typography>
+                        <Typography variant={ 'subtitle1' }>Selected Test Functions</Typography><br/>
                         { customList(right) }
                     </Grid>
                 </Grid>

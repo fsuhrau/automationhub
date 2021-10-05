@@ -24,5 +24,8 @@ func (s *wf) RegisterRoutes(r *gin.Engine) error {
 		}
 		context.FileFromFS(file, fs)
 	})
+	r.GET("/", func(context *gin.Context) {
+		context.Redirect(http.StatusMovedPermanently, "/web")
+	})
 	return nil
 }
