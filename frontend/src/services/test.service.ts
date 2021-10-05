@@ -2,6 +2,7 @@ import http from '../http-common';
 import ITestData from '../types/test';
 import { AxiosResponse } from 'axios';
 import ICreateTestData from '../types/request.create.test';
+import ITestRunData from '../types/test.run';
 
 export const getAllTests = (): Promise<AxiosResponse<ITestData[]>> => {
     return http.get('/tests');
@@ -31,7 +32,7 @@ export const findTest = (filter?: TestFilter): Promise<AxiosResponse<ITestData[]
     return http.get('/tests', { params: filter });
 };
 
-export const executeTest = (id: number | null | undefined, appid: number, envParams: string): Promise<AxiosResponse<unknown>> => {
+export const executeTest = (id: number | null | undefined, appid: number, envParams: string): Promise<AxiosResponse<ITestRunData>> => {
     return http.post(`/test/${id}/run`, {
         AppID: appid,
         Params: envParams,

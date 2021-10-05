@@ -65,8 +65,7 @@ const Tests: FC<TestsProps> = (props) => {
                         </Grid>
                     </Toolbar>
                 </AppBar>
-                <TestsTable>
-                </TestsTable>
+                <TestsTable />
             </Paper>
         </AppContext.Provider>
     );
