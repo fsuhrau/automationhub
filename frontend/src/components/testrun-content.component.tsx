@@ -163,7 +163,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     const onTestRerun = (): void => {
         executeTest(testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
-            history.push(`/web/test/${ testRun.TestID }/runs/last`);
+            history.push(`/web/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);
         });
