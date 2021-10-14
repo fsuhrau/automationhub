@@ -33,7 +33,7 @@ var (
 	appID   int
 	testID  int
 	params  string
-	async *bool
+	async   *bool
 	success bool
 )
 
@@ -66,16 +66,25 @@ var runCmd = &cobra.Command{
 		if async != nil && *async == true {
 			logrus.Infof("Test Running...")
 		} else {
-			eventsChannel := make(chan *sse.Event)
 			client := sse.NewClient(fmt.Sprintf("%s/api/sse", apiURL))
-			client.SubscribeChan(fmt.Sprintf("test_run_%d_finished", testRun.ID), eventsChannel)
+
+			eventsChannel := make(chan *sse.Event)
+			if err := client.SubscribeChan(fmt.Sprintf("test_run_%d_finished", testRun.ID), eventsChannel); err != nil {
+				return err
+			}
+
+			runLogChannel := make(chan *sse.Event)
+			if err := client.SubscribeChan(fmt.Sprintf("test_run_%d_log", testRun.ID), runLogChannel); err != nil {
+				return err
+			}
+
 			wg := sync.ExtendedWaitGroup{}
 			wg.Add(1)
-			go waitForResult(&wg, eventsChannel)
-			close(eventsChannel)
+			go waitForResult(&wg, eventsChannel, runLogChannel)
 			if err := wg.WaitWithTimeout(5 * time.Minute); err != nil {
 				return err
 			}
+			close(eventsChannel)
 			if success {
 				logrus.Infof("Test finished Successfully!")
 			}
@@ -84,15 +93,21 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func waitForResult(wg *sync.ExtendedWaitGroup, eventsChannel chan *sse.Event) {
+func waitForResult(wg *sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan *sse.Event) {
 	for {
 		select {
-		case event := <- eventsChannel:
-			var finishedEvent events.TestRunFinishedPayload
-			json.Unmarshal(event.Data, &finishedEvent)
-			success = finishedEvent.Success
-			wg.Done()
-			return
+		case event := <-eventsChannel:
+			if event != nil {
+				var finishedEvent events.TestRunFinishedPayload
+				json.Unmarshal(event.Data, &finishedEvent)
+				success = finishedEvent.Success
+				wg.Done()
+				return
+			}
+			case log := <- runLogChannel:
+				var ev events.NewTestLogEntryPayload
+				json.Unmarshal(log.Data, &ev)
+				logrus.Infof("log: %v", ev)
 		}
 	}
 }
