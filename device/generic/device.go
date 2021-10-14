@@ -56,6 +56,12 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
+func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+	if d.writer != nil {
+		d.writer.LogPerformance(checkpoint, cpu, fps, mem, other)
+	}
+}
+
 func (d *Device) Data(source, path string) {
 	if d.writer != nil {
 		d.writer.Data(source, path)

@@ -96,6 +96,7 @@ enum ActionType {
   ExecutionResult = 15;
   Log = 16;
   UnityReset = 17;
+  Performance = 18;
 }
 
 enum LogType {
@@ -178,6 +179,13 @@ message TestDetails {
   repeated string categories = 2;
 }
 
+message PerformanceData {
+  string checkpoint = 1;
+  float cpu = 2;
+  float memory = 3;
+  float fps = 4;
+}
+
 message Response {
   string actionID = 1;
   ActionType actionType = 2;
@@ -191,5 +199,6 @@ message Response {
     Tests tests = 9;
     LogData log = 10;
     TestDetails testDetails = 11;
+    PerformanceData performance = 12;
   }
 }

@@ -14,6 +14,19 @@ type LogWriter struct {
 	errs       []error
 }
 
+func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+	entry := models.ProtocolPerformanceEntry{
+		TestProtocolID: w.protocolId,
+		Checkpoint:     checkpoint,
+		FPS:            fps,
+		MEM:            mem,
+		CPU:            cpu,
+		Other:          other,
+	}
+	w.db.Create(&entry)
+}
+
+
 func (w *LogWriter) write(source, level, message, data string) {
 	entry := models.ProtocolEntry{
 		Timestamp:      time.Now(),

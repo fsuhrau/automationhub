@@ -56,39 +56,42 @@ namespace Com.AutomationHub {
             "LlRlc3QiWgoHTG9nRGF0YRIdCgR0eXBlGAEgASgOMg8uYWN0aW9uLkxvZ1R5",
             "cGUSHwoFbGV2ZWwYAiABKA4yEC5hY3Rpb24uTG9nTGV2ZWwSDwoHbWVzc2Fn",
             "ZRgDIAEoCSIyCgtUZXN0RGV0YWlscxIPCgd0aW1lb3V0GAEgASgFEhIKCmNh",
-            "dGVnb3JpZXMYAiADKAkizgIKCFJlc3BvbnNlEhAKCGFjdGlvbklEGAEgASgJ",
-            "EiYKCmFjdGlvblR5cGUYAiABKA4yEi5hY3Rpb24uQWN0aW9uVHlwZRIPCgdz",
-            "dWNjZXNzGAMgASgIEhEKB3Zpc2libGUYBCABKAhIABIOCgRkYXRhGAUgASgM",
-            "SAASDwoFdmFsdWUYBiABKAlIABIoCgpzY3JlZW5zaG90GAcgASgLMhIuYWN0",
-            "aW9uLlNjcmVlbnNob3RIABIiCgdjb25uZWN0GAggASgLMg8uYWN0aW9uLkNv",
-            "bm5lY3RIABIeCgV0ZXN0cxgJIAEoCzINLmFjdGlvbi5UZXN0c0gAEh4KA2xv",
-            "ZxgKIAEoCzIPLmFjdGlvbi5Mb2dEYXRhSAASKgoLdGVzdERldGFpbHMYCyAB",
-            "KAsyEy5hY3Rpb24uVGVzdERldGFpbHNIAEIJCgdwYXlsb2FkKpACChVEZXZp",
-            "Y2VJbnRlcmFjdGlvblR5cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0Rl",
-            "dmljZRABEhIKDkdldERldmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQ",
-            "AxIOCgpJbnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRB",
-            "cHAQBhILCgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFy",
-            "dFJlY29yZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJl",
-            "EAsSEgoORXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qtAIK",
-            "CkFjdGlvblR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYK",
-            "EkVsZW1lbnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMK",
-            "D0VsZW1lbnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhIN",
-            "CglUb3VjaE1vdmUQBxILCgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRIN",
-            "CglMb25nVG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5z",
-            "aG90EAwSDAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1",
-            "dGlvblJlc3VsdBAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQESpbCgdMb2dU",
-            "eXBlEg0KCURldmljZUxvZxAAEgsKB1N0ZXBMb2cQARINCglTdGF0dXNMb2cQ",
-            "AhIRCg1DaGVja3BvaW50TG9nEAMSEgoOUGVyZm9ybWFuY2VMb2cQBCpGCghM",
-            "b2dMZXZlbBIJCgVEZWJ1ZxAAEggKBEluZm8QARILCgdXYXJuaW5nEAISCQoF",
-            "RXJyb3IQAxINCglFeGNlcHRpb24QBCowCgtDb250ZW50VHlwZRIOCgpGbGF0",
-            "YnVmZmVyEAASCAoESnNvbhABEgcKA1htbBACKh8KB0FwcFR5cGUSCQoFQ29j",
-            "b3MQABIJCgVVbml0eRABMt8BCgxSZW1vdGVEZXZpY2USQQoKRGV2aWNlTGlz",
-            "dBIVLmFjdGlvbi5EZXZpY2VSZXF1ZXN0GhYuYWN0aW9uLkRldmljZVJlc3Bv",
-            "bnNlIgAoATABElIKEURldmljZUludGVyYWN0aW9uEhouYWN0aW9uLkludGVy",
-            "YWN0aW9uUmVxdWVzdBobLmFjdGlvbi5JbnRlcmFjdGlvblJlc3BvbnNlIgAo",
-            "ATABEjgKDUFjdGlvbkV4ZWN1dGUSDy5hY3Rpb24uUmVxdWVzdBoQLmFjdGlv",
-            "bi5SZXNwb25zZSIAKAEwAUIgWgpodWIvYWN0aW9uqgIRQ29tLkF1dG9tYXRp",
-            "b25IdWJiBnByb3RvMw=="));
+            "dGVnb3JpZXMYAiADKAkiTwoPUGVyZm9ybWFuY2VEYXRhEhIKCmNoZWNrcG9p",
+            "bnQYASABKAkSCwoDY3B1GAIgASgCEg4KBm1lbW9yeRgDIAEoAhILCgNmcHMY",
+            "BCABKAIi/gIKCFJlc3BvbnNlEhAKCGFjdGlvbklEGAEgASgJEiYKCmFjdGlv",
+            "blR5cGUYAiABKA4yEi5hY3Rpb24uQWN0aW9uVHlwZRIPCgdzdWNjZXNzGAMg",
+            "ASgIEhEKB3Zpc2libGUYBCABKAhIABIOCgRkYXRhGAUgASgMSAASDwoFdmFs",
+            "dWUYBiABKAlIABIoCgpzY3JlZW5zaG90GAcgASgLMhIuYWN0aW9uLlNjcmVl",
+            "bnNob3RIABIiCgdjb25uZWN0GAggASgLMg8uYWN0aW9uLkNvbm5lY3RIABIe",
+            "CgV0ZXN0cxgJIAEoCzINLmFjdGlvbi5UZXN0c0gAEh4KA2xvZxgKIAEoCzIP",
+            "LmFjdGlvbi5Mb2dEYXRhSAASKgoLdGVzdERldGFpbHMYCyABKAsyEy5hY3Rp",
+            "b24uVGVzdERldGFpbHNIABIuCgtwZXJmb3JtYW5jZRgMIAEoCzIXLmFjdGlv",
+            "bi5QZXJmb3JtYW5jZURhdGFIAEIJCgdwYXlsb2FkKpACChVEZXZpY2VJbnRl",
+            "cmFjdGlvblR5cGUSDgoKTG9ja0RldmljZRAAEhAKDFVubG9ja0RldmljZRAB",
+            "EhIKDkdldERldmljZVN0YXRlEAISEgoOSXNBcHBJbnN0YWxsZWQQAxIOCgpJ",
+            "bnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQBhIL",
+            "CgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJlY29y",
+            "ZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsSEgoO",
+            "RXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qxQIKCkFjdGlv",
+            "blR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVsZW1l",
+            "bnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0VsZW1l",
+            "bnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglUb3Vj",
+            "aE1vdmUQBxILCgdUb3VjaFVwEAgSDwoLRHJhZ0FuZERyb3AQCRINCglMb25n",
+            "VG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90EAwS",
+            "DAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlvblJl",
+            "c3VsdBAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQERIPCgtQZXJmb3JtYW5j",
+            "ZRASKlsKB0xvZ1R5cGUSDQoJRGV2aWNlTG9nEAASCwoHU3RlcExvZxABEg0K",
+            "CVN0YXR1c0xvZxACEhEKDUNoZWNrcG9pbnRMb2cQAxISCg5QZXJmb3JtYW5j",
+            "ZUxvZxAEKkYKCExvZ0xldmVsEgkKBURlYnVnEAASCAoESW5mbxABEgsKB1dh",
+            "cm5pbmcQAhIJCgVFcnJvchADEg0KCUV4Y2VwdGlvbhAEKjAKC0NvbnRlbnRU",
+            "eXBlEg4KCkZsYXRidWZmZXIQABIICgRKc29uEAESBwoDWG1sEAIqHwoHQXBw",
+            "VHlwZRIJCgVDb2NvcxAAEgkKBVVuaXR5EAEy3wEKDFJlbW90ZURldmljZRJB",
+            "CgpEZXZpY2VMaXN0EhUuYWN0aW9uLkRldmljZVJlcXVlc3QaFi5hY3Rpb24u",
+            "RGV2aWNlUmVzcG9uc2UiACgBMAESUgoRRGV2aWNlSW50ZXJhY3Rpb24SGi5h",
+            "Y3Rpb24uSW50ZXJhY3Rpb25SZXF1ZXN0GhsuYWN0aW9uLkludGVyYWN0aW9u",
+            "UmVzcG9uc2UiACgBMAESOAoNQWN0aW9uRXhlY3V0ZRIPLmFjdGlvbi5SZXF1",
+            "ZXN0GhAuYWN0aW9uLlJlc3BvbnNlIgAoATABQiBaCmh1Yi9hY3Rpb26qAhFD",
+            "b20uQXV0b21hdGlvbkh1YmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.LogLevel), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -109,7 +112,8 @@ namespace Com.AutomationHub {
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Tests), global::Com.AutomationHub.Tests.Parser, new[]{ "Tests_" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.LogData), global::Com.AutomationHub.LogData.Parser, new[]{ "Type", "Level", "Message" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.TestDetails), global::Com.AutomationHub.TestDetails.Parser, new[]{ "Timeout", "Categories" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests", "Log", "TestDetails" }, new[]{ "Payload" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.PerformanceData), global::Com.AutomationHub.PerformanceData.Parser, new[]{ "Checkpoint", "Cpu", "Memory", "Fps" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Com.AutomationHub.Response), global::Com.AutomationHub.Response.Parser, new[]{ "ActionID", "ActionType", "Success", "Visible", "Data", "Value", "Screenshot", "Connect", "Tests", "Log", "TestDetails", "Performance" }, new[]{ "Payload" }, null, null)
           }));
     }
     #endregion
@@ -152,6 +156,7 @@ namespace Com.AutomationHub {
     [pbr::OriginalName("ExecutionResult")] ExecutionResult = 15,
     [pbr::OriginalName("Log")] Log = 16,
     [pbr::OriginalName("UnityReset")] UnityReset = 17,
+    [pbr::OriginalName("Performance")] Performance = 18,
   }
 
   public enum LogType {
@@ -3366,6 +3371,219 @@ namespace Com.AutomationHub {
 
   }
 
+  public sealed partial class PerformanceData : pb::IMessage<PerformanceData> {
+    private static readonly pb::MessageParser<PerformanceData> _parser = new pb::MessageParser<PerformanceData>(() => new PerformanceData());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<PerformanceData> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[17]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public PerformanceData() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public PerformanceData(PerformanceData other) : this() {
+      checkpoint_ = other.checkpoint_;
+      cpu_ = other.cpu_;
+      memory_ = other.memory_;
+      fps_ = other.fps_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public PerformanceData Clone() {
+      return new PerformanceData(this);
+    }
+
+    /// <summary>Field number for the "checkpoint" field.</summary>
+    public const int CheckpointFieldNumber = 1;
+    private string checkpoint_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Checkpoint {
+      get { return checkpoint_; }
+      set {
+        checkpoint_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "cpu" field.</summary>
+    public const int CpuFieldNumber = 2;
+    private float cpu_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Cpu {
+      get { return cpu_; }
+      set {
+        cpu_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "memory" field.</summary>
+    public const int MemoryFieldNumber = 3;
+    private float memory_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Memory {
+      get { return memory_; }
+      set {
+        memory_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "fps" field.</summary>
+    public const int FpsFieldNumber = 4;
+    private float fps_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float Fps {
+      get { return fps_; }
+      set {
+        fps_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as PerformanceData);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(PerformanceData other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Checkpoint != other.Checkpoint) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Cpu, other.Cpu)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Memory, other.Memory)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Fps, other.Fps)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Checkpoint.Length != 0) hash ^= Checkpoint.GetHashCode();
+      if (Cpu != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Cpu);
+      if (Memory != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Memory);
+      if (Fps != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Fps);
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Checkpoint.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Checkpoint);
+      }
+      if (Cpu != 0F) {
+        output.WriteRawTag(21);
+        output.WriteFloat(Cpu);
+      }
+      if (Memory != 0F) {
+        output.WriteRawTag(29);
+        output.WriteFloat(Memory);
+      }
+      if (Fps != 0F) {
+        output.WriteRawTag(37);
+        output.WriteFloat(Fps);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Checkpoint.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Checkpoint);
+      }
+      if (Cpu != 0F) {
+        size += 1 + 4;
+      }
+      if (Memory != 0F) {
+        size += 1 + 4;
+      }
+      if (Fps != 0F) {
+        size += 1 + 4;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(PerformanceData other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Checkpoint.Length != 0) {
+        Checkpoint = other.Checkpoint;
+      }
+      if (other.Cpu != 0F) {
+        Cpu = other.Cpu;
+      }
+      if (other.Memory != 0F) {
+        Memory = other.Memory;
+      }
+      if (other.Fps != 0F) {
+        Fps = other.Fps;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Checkpoint = input.ReadString();
+            break;
+          }
+          case 21: {
+            Cpu = input.ReadFloat();
+            break;
+          }
+          case 29: {
+            Memory = input.ReadFloat();
+            break;
+          }
+          case 37: {
+            Fps = input.ReadFloat();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class Response : pb::IMessage<Response> {
     private static readonly pb::MessageParser<Response> _parser = new pb::MessageParser<Response>(() => new Response());
     private pb::UnknownFieldSet _unknownFields;
@@ -3374,7 +3592,7 @@ namespace Com.AutomationHub {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Com.AutomationHub.ActionReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3418,6 +3636,9 @@ namespace Com.AutomationHub {
           break;
         case PayloadOneofCase.TestDetails:
           TestDetails = other.TestDetails.Clone();
+          break;
+        case PayloadOneofCase.Performance:
+          Performance = other.Performance.Clone();
           break;
       }
 
@@ -3550,6 +3771,17 @@ namespace Com.AutomationHub {
       }
     }
 
+    /// <summary>Field number for the "performance" field.</summary>
+    public const int PerformanceFieldNumber = 12;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Com.AutomationHub.PerformanceData Performance {
+      get { return payloadCase_ == PayloadOneofCase.Performance ? (global::Com.AutomationHub.PerformanceData) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.Performance;
+      }
+    }
+
     private object payload_;
     /// <summary>Enum of possible cases for the "payload" oneof.</summary>
     public enum PayloadOneofCase {
@@ -3562,6 +3794,7 @@ namespace Com.AutomationHub {
       Tests = 9,
       Log = 10,
       TestDetails = 11,
+      Performance = 12,
     }
     private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3599,6 +3832,7 @@ namespace Com.AutomationHub {
       if (!object.Equals(Tests, other.Tests)) return false;
       if (!object.Equals(Log, other.Log)) return false;
       if (!object.Equals(TestDetails, other.TestDetails)) return false;
+      if (!object.Equals(Performance, other.Performance)) return false;
       if (PayloadCase != other.PayloadCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -3617,6 +3851,7 @@ namespace Com.AutomationHub {
       if (payloadCase_ == PayloadOneofCase.Tests) hash ^= Tests.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Log) hash ^= Log.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.TestDetails) hash ^= TestDetails.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.Performance) hash ^= Performance.GetHashCode();
       hash ^= (int) payloadCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -3675,6 +3910,10 @@ namespace Com.AutomationHub {
         output.WriteRawTag(90);
         output.WriteMessage(TestDetails);
       }
+      if (payloadCase_ == PayloadOneofCase.Performance) {
+        output.WriteRawTag(98);
+        output.WriteMessage(Performance);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3715,6 +3954,9 @@ namespace Com.AutomationHub {
       }
       if (payloadCase_ == PayloadOneofCase.TestDetails) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(TestDetails);
+      }
+      if (payloadCase_ == PayloadOneofCase.Performance) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Performance);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3775,6 +4017,12 @@ namespace Com.AutomationHub {
             TestDetails = new global::Com.AutomationHub.TestDetails();
           }
           TestDetails.MergeFrom(other.TestDetails);
+          break;
+        case PayloadOneofCase.Performance:
+          if (Performance == null) {
+            Performance = new global::Com.AutomationHub.PerformanceData();
+          }
+          Performance.MergeFrom(other.Performance);
           break;
       }
 
@@ -3856,6 +4104,15 @@ namespace Com.AutomationHub {
             }
             input.ReadMessage(subBuilder);
             TestDetails = subBuilder;
+            break;
+          }
+          case 98: {
+            global::Com.AutomationHub.PerformanceData subBuilder = new global::Com.AutomationHub.PerformanceData();
+            if (payloadCase_ == PayloadOneofCase.Performance) {
+              subBuilder.MergeFrom(Performance);
+            }
+            input.ReadMessage(subBuilder);
+            Performance = subBuilder;
             break;
           }
         }

@@ -22,5 +22,6 @@ func migrate(db *gorm.DB) error {
 	db.AutoMigrate(&models.TestConfigUnity{})
 	db.AutoMigrate(&models.UnityTestFunction{})
 	db.AutoMigrate(&models.TestConfigDevice{})
+	db.AutoMigrate(&models.ProtocolPerformanceEntry{})
 	return nil
 }

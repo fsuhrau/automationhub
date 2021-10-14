@@ -20,6 +20,7 @@ extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LogData_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MoveElement_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MoveOffset_action_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PerformanceData_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Screenshot_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetAttr_action_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_action_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Test_action_2eproto;
@@ -108,6 +109,10 @@ class TestDetailsDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TestDetails> _instance;
 } _TestDetails_default_instance_;
+class PerformanceDataDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PerformanceData> _instance;
+} _PerformanceData_default_instance_;
 class ResponseDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Response> _instance;
@@ -119,6 +124,7 @@ class ResponseDefaultTypeInternal {
   const ::action::Tests* tests_;
   const ::action::LogData* log_;
   const ::action::TestDetails* testdetails_;
+  const ::action::PerformanceData* performance_;
 } _Response_default_instance_;
 }  // namespace action
 static void InitDefaultsscc_info_Connect_action_2eproto() {
@@ -262,6 +268,20 @@ static void InitDefaultsscc_info_MoveOffset_action_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MoveOffset_action_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MoveOffset_action_2eproto}, {}};
 
+static void InitDefaultsscc_info_PerformanceData_action_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::action::_PerformanceData_default_instance_;
+    new (ptr) ::action::PerformanceData();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::action::PerformanceData::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PerformanceData_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PerformanceData_action_2eproto}, {}};
+
 static void InitDefaultsscc_info_Request_action_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -293,13 +313,14 @@ static void InitDefaultsscc_info_Response_action_2eproto() {
   ::action::Response::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<5> scc_info_Response_action_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 5, 0, InitDefaultsscc_info_Response_action_2eproto}, {
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<6> scc_info_Response_action_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 6, 0, InitDefaultsscc_info_Response_action_2eproto}, {
       &scc_info_Screenshot_action_2eproto.base,
       &scc_info_Connect_action_2eproto.base,
       &scc_info_Tests_action_2eproto.base,
       &scc_info_LogData_action_2eproto.base,
-      &scc_info_TestDetails_action_2eproto.base,}};
+      &scc_info_TestDetails_action_2eproto.base,
+      &scc_info_PerformanceData_action_2eproto.base,}};
 
 static void InitDefaultsscc_info_Screenshot_action_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -400,7 +421,7 @@ static void InitDefaultsscc_info_Touch_action_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Touch_action_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Touch_action_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[19];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_action_2eproto[20];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_action_2eproto[6];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_action_2eproto = nullptr;
 
@@ -551,6 +572,15 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   PROTOBUF_FIELD_OFFSET(::action::TestDetails, timeout_),
   PROTOBUF_FIELD_OFFSET(::action::TestDetails, categories_),
   ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::action::PerformanceData, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::action::PerformanceData, checkpoint_),
+  PROTOBUF_FIELD_OFFSET(::action::PerformanceData, cpu_),
+  PROTOBUF_FIELD_OFFSET(::action::PerformanceData, memory_),
+  PROTOBUF_FIELD_OFFSET(::action::PerformanceData, fps_),
+  ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::action::Response, _internal_metadata_),
   ~0u,  // no _extensions_
   PROTOBUF_FIELD_OFFSET(::action::Response, _oneof_case_[0]),
@@ -566,6 +596,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_action_2eproto::offsets[] PROT
   offsetof(::action::ResponseDefaultTypeInternal, tests_),
   offsetof(::action::ResponseDefaultTypeInternal, log_),
   offsetof(::action::ResponseDefaultTypeInternal, testdetails_),
+  offsetof(::action::ResponseDefaultTypeInternal, performance_),
   PROTOBUF_FIELD_OFFSET(::action::Response, payload_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -587,7 +618,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 124, -1, sizeof(::action::Tests)},
   { 130, -1, sizeof(::action::LogData)},
   { 138, -1, sizeof(::action::TestDetails)},
-  { 145, -1, sizeof(::action::Response)},
+  { 145, -1, sizeof(::action::PerformanceData)},
+  { 154, -1, sizeof(::action::Response)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -609,6 +641,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Tests_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_LogData_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_TestDetails_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_PerformanceData_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::action::_Response_default_instance_),
 };
 
@@ -649,47 +682,50 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "a\022\035\n\004type\030\001 \001(\0162\017.action.LogType\022\037\n\005leve"
   "l\030\002 \001(\0162\020.action.LogLevel\022\017\n\007message\030\003 \001"
   "(\t\"2\n\013TestDetails\022\017\n\007timeout\030\001 \001(\005\022\022\n\nca"
-  "tegories\030\002 \003(\t\"\316\002\n\010Response\022\020\n\010actionID\030"
-  "\001 \001(\t\022&\n\nactionType\030\002 \001(\0162\022.action.Actio"
-  "nType\022\017\n\007success\030\003 \001(\010\022\021\n\007visible\030\004 \001(\010H"
-  "\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005value\030\006 \001(\tH\000\022(\n\nsc"
-  "reenshot\030\007 \001(\0132\022.action.ScreenshotH\000\022\"\n\007"
-  "connect\030\010 \001(\0132\017.action.ConnectH\000\022\036\n\005test"
-  "s\030\t \001(\0132\r.action.TestsH\000\022\036\n\003log\030\n \001(\0132\017."
-  "action.LogDataH\000\022*\n\013testDetails\030\013 \001(\0132\023."
-  "action.TestDetailsH\000B\t\n\007payload*\220\002\n\025Devi"
-  "ceInteractionType\022\016\n\nLockDevice\020\000\022\020\n\014Unl"
-  "ockDevice\020\001\022\022\n\016GetDeviceState\020\002\022\022\n\016IsApp"
-  "Installed\020\003\022\016\n\nInstallApp\020\004\022\020\n\014Uninstall"
-  "App\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020\007\022\022\n\016IsAp"
-  "pConnected\020\010\022\022\n\016StartRecording\020\t\022\021\n\rStop"
-  "Recording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016ExecuteFe"
-  "ature\020\014\022\021\n\rGetScreenShot\020\r*\264\002\n\nActionTyp"
-  "e\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020\001\022\026\n\022Elem"
-  "entIsDisplayed\020\002\022\023\n\017ElementSetValue\020\003\022\023\n"
-  "\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n\tTouchDow"
-  "n\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchUp\020\010\022\017\n\013DragA"
-  "ndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014ElementTouch\020"
-  "\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTests\020\r\022\017\n\013Ex"
-  "ecuteTest\020\016\022\023\n\017ExecutionResult\020\017\022\007\n\003Log\020"
-  "\020\022\016\n\nUnityReset\020\021*[\n\007LogType\022\r\n\tDeviceLo"
-  "g\020\000\022\013\n\007StepLog\020\001\022\r\n\tStatusLog\020\002\022\021\n\rCheck"
-  "pointLog\020\003\022\022\n\016PerformanceLog\020\004*F\n\010LogLev"
-  "el\022\t\n\005Debug\020\000\022\010\n\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005"
-  "Error\020\003\022\r\n\tException\020\004*0\n\013ContentType\022\016\n"
-  "\nFlatbuffer\020\000\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppT"
-  "ype\022\t\n\005Cocos\020\000\022\t\n\005Unity\020\0012\337\001\n\014RemoteDevi"
-  "ce\022A\n\nDeviceList\022\025.action.DeviceRequest\032"
-  "\026.action.DeviceResponse\"\000(\0010\001\022R\n\021DeviceI"
-  "nteraction\022\032.action.InteractionRequest\032\033"
-  ".action.InteractionResponse\"\000(\0010\001\0228\n\rAct"
-  "ionExecute\022\017.action.Request\032\020.action.Res"
-  "ponse\"\000(\0010\001B Z\nhub/action\252\002\021Com.Automati"
-  "onHubb\006proto3"
+  "tegories\030\002 \003(\t\"O\n\017PerformanceData\022\022\n\nche"
+  "ckpoint\030\001 \001(\t\022\013\n\003cpu\030\002 \001(\002\022\016\n\006memory\030\003 \001"
+  "(\002\022\013\n\003fps\030\004 \001(\002\"\376\002\n\010Response\022\020\n\010actionID"
+  "\030\001 \001(\t\022&\n\nactionType\030\002 \001(\0162\022.action.Acti"
+  "onType\022\017\n\007success\030\003 \001(\010\022\021\n\007visible\030\004 \001(\010"
+  "H\000\022\016\n\004data\030\005 \001(\014H\000\022\017\n\005value\030\006 \001(\tH\000\022(\n\ns"
+  "creenshot\030\007 \001(\0132\022.action.ScreenshotH\000\022\"\n"
+  "\007connect\030\010 \001(\0132\017.action.ConnectH\000\022\036\n\005tes"
+  "ts\030\t \001(\0132\r.action.TestsH\000\022\036\n\003log\030\n \001(\0132\017"
+  ".action.LogDataH\000\022*\n\013testDetails\030\013 \001(\0132\023"
+  ".action.TestDetailsH\000\022.\n\013performance\030\014 \001"
+  "(\0132\027.action.PerformanceDataH\000B\t\n\007payload"
+  "*\220\002\n\025DeviceInteractionType\022\016\n\nLockDevice"
+  "\020\000\022\020\n\014UnlockDevice\020\001\022\022\n\016GetDeviceState\020\002"
+  "\022\022\n\016IsAppInstalled\020\003\022\016\n\nInstallApp\020\004\022\020\n\014"
+  "UninstallApp\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020"
+  "\007\022\022\n\016IsAppConnected\020\010\022\022\n\016StartRecording\020"
+  "\t\022\021\n\rStopRecording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016"
+  "ExecuteFeature\020\014\022\021\n\rGetScreenShot\020\r*\305\002\n\n"
+  "ActionType\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020"
+  "\001\022\026\n\022ElementIsDisplayed\020\002\022\023\n\017ElementSetV"
+  "alue\020\003\022\023\n\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n"
+  "\tTouchDown\020\006\022\r\n\tTouchMove\020\007\022\013\n\007TouchUp\020\010"
+  "\022\017\n\013DragAndDrop\020\t\022\r\n\tLongTouch\020\n\022\020\n\014Elem"
+  "entTouch\020\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTest"
+  "s\020\r\022\017\n\013ExecuteTest\020\016\022\023\n\017ExecutionResult\020"
+  "\017\022\007\n\003Log\020\020\022\016\n\nUnityReset\020\021\022\017\n\013Performanc"
+  "e\020\022*[\n\007LogType\022\r\n\tDeviceLog\020\000\022\013\n\007StepLog"
+  "\020\001\022\r\n\tStatusLog\020\002\022\021\n\rCheckpointLog\020\003\022\022\n\016"
+  "PerformanceLog\020\004*F\n\010LogLevel\022\t\n\005Debug\020\000\022"
+  "\010\n\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005Error\020\003\022\r\n\tExc"
+  "eption\020\004*0\n\013ContentType\022\016\n\nFlatbuffer\020\000\022"
+  "\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppType\022\t\n\005Cocos\020\000"
+  "\022\t\n\005Unity\020\0012\337\001\n\014RemoteDevice\022A\n\nDeviceLi"
+  "st\022\025.action.DeviceRequest\032\026.action.Devic"
+  "eResponse\"\000(\0010\001\022R\n\021DeviceInteraction\022\032.a"
+  "ction.InteractionRequest\032\033.action.Intera"
+  "ctionResponse\"\000(\0010\001\0228\n\rActionExecute\022\017.a"
+  "ction.Request\032\020.action.Response\"\000(\0010\001B Z"
+  "\nhub/action\252\002\021Com.AutomationHubb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[19] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_action_2eproto_sccs[20] = {
   &scc_info_Connect_action_2eproto.base,
   &scc_info_Device_action_2eproto.base,
   &scc_info_DeviceRequest_action_2eproto.base,
@@ -700,6 +736,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
   &scc_info_LogData_action_2eproto.base,
   &scc_info_MoveElement_action_2eproto.base,
   &scc_info_MoveOffset_action_2eproto.base,
+  &scc_info_PerformanceData_action_2eproto.base,
   &scc_info_Request_action_2eproto.base,
   &scc_info_Response_action_2eproto.base,
   &scc_info_Screenshot_action_2eproto.base,
@@ -713,10 +750,10 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 2893,
-  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 19, 0,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 3039,
+  &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 20, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
-  file_level_metadata_action_2eproto, 19, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
+  file_level_metadata_action_2eproto, 20, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -772,6 +809,7 @@ bool ActionType_IsValid(int value) {
     case 15:
     case 16:
     case 17:
+    case 18:
       return true;
     default:
       return false;
@@ -5485,6 +5523,278 @@ void TestDetails::InternalSwap(TestDetails* other) {
 
 // ===================================================================
 
+void PerformanceData::InitAsDefaultInstance() {
+}
+class PerformanceData::_Internal {
+ public:
+};
+
+PerformanceData::PerformanceData()
+  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:action.PerformanceData)
+}
+PerformanceData::PerformanceData(const PerformanceData& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _internal_metadata_(nullptr) {
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  checkpoint_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_checkpoint().empty()) {
+    checkpoint_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.checkpoint_);
+  }
+  ::memcpy(&cpu_, &from.cpu_,
+    static_cast<size_t>(reinterpret_cast<char*>(&fps_) -
+    reinterpret_cast<char*>(&cpu_)) + sizeof(fps_));
+  // @@protoc_insertion_point(copy_constructor:action.PerformanceData)
+}
+
+void PerformanceData::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_PerformanceData_action_2eproto.base);
+  checkpoint_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&cpu_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&fps_) -
+      reinterpret_cast<char*>(&cpu_)) + sizeof(fps_));
+}
+
+PerformanceData::~PerformanceData() {
+  // @@protoc_insertion_point(destructor:action.PerformanceData)
+  SharedDtor();
+}
+
+void PerformanceData::SharedDtor() {
+  checkpoint_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+
+void PerformanceData::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const PerformanceData& PerformanceData::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PerformanceData_action_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void PerformanceData::Clear() {
+// @@protoc_insertion_point(message_clear_start:action.PerformanceData)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  checkpoint_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&cpu_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&fps_) -
+      reinterpret_cast<char*>(&cpu_)) + sizeof(fps_));
+  _internal_metadata_.Clear();
+}
+
+const char* PerformanceData::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // string checkpoint = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParserUTF8(_internal_mutable_checkpoint(), ptr, ctx, "action.PerformanceData.checkpoint");
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // float cpu = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 21)) {
+          cpu_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      // float memory = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 29)) {
+          memory_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      // float fps = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 37)) {
+          fps_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* PerformanceData::InternalSerializeWithCachedSizesToArray(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:action.PerformanceData)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string checkpoint = 1;
+  if (this->checkpoint().size() > 0) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_checkpoint().data(), static_cast<int>(this->_internal_checkpoint().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "action.PerformanceData.checkpoint");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_checkpoint(), target);
+  }
+
+  // float cpu = 2;
+  if (!(this->cpu() <= 0 && this->cpu() >= 0)) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(2, this->_internal_cpu(), target);
+  }
+
+  // float memory = 3;
+  if (!(this->memory() <= 0 && this->memory() >= 0)) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(3, this->_internal_memory(), target);
+  }
+
+  // float fps = 4;
+  if (!(this->fps() <= 0 && this->fps() >= 0)) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(4, this->_internal_fps(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields(), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:action.PerformanceData)
+  return target;
+}
+
+size_t PerformanceData::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:action.PerformanceData)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string checkpoint = 1;
+  if (this->checkpoint().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_checkpoint());
+  }
+
+  // float cpu = 2;
+  if (!(this->cpu() <= 0 && this->cpu() >= 0)) {
+    total_size += 1 + 4;
+  }
+
+  // float memory = 3;
+  if (!(this->memory() <= 0 && this->memory() >= 0)) {
+    total_size += 1 + 4;
+  }
+
+  // float fps = 4;
+  if (!(this->fps() <= 0 && this->fps() >= 0)) {
+    total_size += 1 + 4;
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void PerformanceData::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:action.PerformanceData)
+  GOOGLE_DCHECK_NE(&from, this);
+  const PerformanceData* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PerformanceData>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:action.PerformanceData)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:action.PerformanceData)
+    MergeFrom(*source);
+  }
+}
+
+void PerformanceData::MergeFrom(const PerformanceData& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:action.PerformanceData)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from.checkpoint().size() > 0) {
+
+    checkpoint_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.checkpoint_);
+  }
+  if (!(from.cpu() <= 0 && from.cpu() >= 0)) {
+    _internal_set_cpu(from._internal_cpu());
+  }
+  if (!(from.memory() <= 0 && from.memory() >= 0)) {
+    _internal_set_memory(from._internal_memory());
+  }
+  if (!(from.fps() <= 0 && from.fps() >= 0)) {
+    _internal_set_fps(from._internal_fps());
+  }
+}
+
+void PerformanceData::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:action.PerformanceData)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void PerformanceData::CopyFrom(const PerformanceData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:action.PerformanceData)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool PerformanceData::IsInitialized() const {
+  return true;
+}
+
+void PerformanceData::InternalSwap(PerformanceData* other) {
+  using std::swap;
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  checkpoint_.Swap(&other->checkpoint_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
+  swap(cpu_, other->cpu_);
+  swap(memory_, other->memory_);
+  swap(fps_, other->fps_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata PerformanceData::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
 void Response::InitAsDefaultInstance() {
   ::action::_Response_default_instance_.visible_ = false;
   ::action::_Response_default_instance_.data_.UnsafeSetDefault(
@@ -5501,6 +5811,8 @@ void Response::InitAsDefaultInstance() {
       ::action::LogData::internal_default_instance());
   ::action::_Response_default_instance_.testdetails_ = const_cast< ::action::TestDetails*>(
       ::action::TestDetails::internal_default_instance());
+  ::action::_Response_default_instance_.performance_ = const_cast< ::action::PerformanceData*>(
+      ::action::PerformanceData::internal_default_instance());
 }
 class Response::_Internal {
  public:
@@ -5509,6 +5821,7 @@ class Response::_Internal {
   static const ::action::Tests& tests(const Response* msg);
   static const ::action::LogData& log(const Response* msg);
   static const ::action::TestDetails& testdetails(const Response* msg);
+  static const ::action::PerformanceData& performance(const Response* msg);
 };
 
 const ::action::Screenshot&
@@ -5530,6 +5843,10 @@ Response::_Internal::log(const Response* msg) {
 const ::action::TestDetails&
 Response::_Internal::testdetails(const Response* msg) {
   return *msg->payload_.testdetails_;
+}
+const ::action::PerformanceData&
+Response::_Internal::performance(const Response* msg) {
+  return *msg->payload_.performance_;
 }
 void Response::set_allocated_screenshot(::action::Screenshot* screenshot) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaNoVirtual();
@@ -5601,6 +5918,20 @@ void Response::set_allocated_testdetails(::action::TestDetails* testdetails) {
   }
   // @@protoc_insertion_point(field_set_allocated:action.Response.testDetails)
 }
+void Response::set_allocated_performance(::action::PerformanceData* performance) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaNoVirtual();
+  clear_payload();
+  if (performance) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena = nullptr;
+    if (message_arena != submessage_arena) {
+      performance = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, performance, submessage_arena);
+    }
+    set_has_performance();
+    payload_.performance_ = performance;
+  }
+  // @@protoc_insertion_point(field_set_allocated:action.Response.performance)
+}
 Response::Response()
   : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
@@ -5649,6 +5980,10 @@ Response::Response(const Response& from)
     }
     case kTestDetails: {
       _internal_mutable_testdetails()->::action::TestDetails::MergeFrom(from._internal_testdetails());
+      break;
+    }
+    case kPerformance: {
+      _internal_mutable_performance()->::action::PerformanceData::MergeFrom(from._internal_performance());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -5721,6 +6056,10 @@ void Response::clear_payload() {
     }
     case kTestDetails: {
       delete payload_.testdetails_;
+      break;
+    }
+    case kPerformance: {
+      delete payload_.performance_;
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -5827,6 +6166,13 @@ const char* Response::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::i
       case 11:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 90)) {
           ptr = ctx->ParseMessage(_internal_mutable_testdetails(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // .action.PerformanceData performance = 12;
+      case 12:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 98)) {
+          ptr = ctx->ParseMessage(_internal_mutable_performance(), ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -5941,6 +6287,14 @@ failure:
         11, _Internal::testdetails(this), target, stream);
   }
 
+  // .action.PerformanceData performance = 12;
+  if (_internal_has_performance()) {
+    stream->EnsureSpace(&target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessageToArray(
+        12, _Internal::performance(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -6030,6 +6384,13 @@ size_t Response::ByteSizeLong() const {
           *payload_.testdetails_);
       break;
     }
+    // .action.PerformanceData performance = 12;
+    case kPerformance: {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *payload_.performance_);
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -6106,6 +6467,10 @@ void Response::MergeFrom(const Response& from) {
     }
     case kTestDetails: {
       _internal_mutable_testdetails()->::action::TestDetails::MergeFrom(from._internal_testdetails());
+      break;
+    }
+    case kPerformance: {
+      _internal_mutable_performance()->::action::PerformanceData::MergeFrom(from._internal_performance());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -6204,6 +6569,9 @@ template<> PROTOBUF_NOINLINE ::action::LogData* Arena::CreateMaybeMessage< ::act
 }
 template<> PROTOBUF_NOINLINE ::action::TestDetails* Arena::CreateMaybeMessage< ::action::TestDetails >(Arena* arena) {
   return Arena::CreateInternal< ::action::TestDetails >(arena);
+}
+template<> PROTOBUF_NOINLINE ::action::PerformanceData* Arena::CreateMaybeMessage< ::action::PerformanceData >(Arena* arena) {
+  return Arena::CreateInternal< ::action::PerformanceData >(arena);
 }
 template<> PROTOBUF_NOINLINE ::action::Response* Arena::CreateMaybeMessage< ::action::Response >(Arena* arena) {
   return Arena::CreateInternal< ::action::Response >(arena);

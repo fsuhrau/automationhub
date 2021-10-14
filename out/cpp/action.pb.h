@@ -51,7 +51,7 @@ struct TableStruct_action_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[19]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[20]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -89,6 +89,9 @@ extern MoveElementDefaultTypeInternal _MoveElement_default_instance_;
 class MoveOffset;
 class MoveOffsetDefaultTypeInternal;
 extern MoveOffsetDefaultTypeInternal _MoveOffset_default_instance_;
+class PerformanceData;
+class PerformanceDataDefaultTypeInternal;
+extern PerformanceDataDefaultTypeInternal _PerformanceData_default_instance_;
 class Request;
 class RequestDefaultTypeInternal;
 extern RequestDefaultTypeInternal _Request_default_instance_;
@@ -128,6 +131,7 @@ template<> ::action::InteractionResponse* Arena::CreateMaybeMessage<::action::In
 template<> ::action::LogData* Arena::CreateMaybeMessage<::action::LogData>(Arena*);
 template<> ::action::MoveElement* Arena::CreateMaybeMessage<::action::MoveElement>(Arena*);
 template<> ::action::MoveOffset* Arena::CreateMaybeMessage<::action::MoveOffset>(Arena*);
+template<> ::action::PerformanceData* Arena::CreateMaybeMessage<::action::PerformanceData>(Arena*);
 template<> ::action::Request* Arena::CreateMaybeMessage<::action::Request>(Arena*);
 template<> ::action::Response* Arena::CreateMaybeMessage<::action::Response>(Arena*);
 template<> ::action::Screenshot* Arena::CreateMaybeMessage<::action::Screenshot>(Arena*);
@@ -196,12 +200,13 @@ enum ActionType : int {
   ExecutionResult = 15,
   Log = 16,
   UnityReset = 17,
+  Performance = 18,
   ActionType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ActionType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ActionType_IsValid(int value);
 constexpr ActionType ActionType_MIN = Custom;
-constexpr ActionType ActionType_MAX = UnityReset;
+constexpr ActionType ActionType_MAX = Performance;
 constexpr int ActionType_ARRAYSIZE = ActionType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ActionType_descriptor();
@@ -3218,6 +3223,174 @@ class TestDetails :
 };
 // -------------------------------------------------------------------
 
+class PerformanceData :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.PerformanceData) */ {
+ public:
+  PerformanceData();
+  virtual ~PerformanceData();
+
+  PerformanceData(const PerformanceData& from);
+  PerformanceData(PerformanceData&& from) noexcept
+    : PerformanceData() {
+    *this = ::std::move(from);
+  }
+
+  inline PerformanceData& operator=(const PerformanceData& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PerformanceData& operator=(PerformanceData&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const PerformanceData& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const PerformanceData* internal_default_instance() {
+    return reinterpret_cast<const PerformanceData*>(
+               &_PerformanceData_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    18;
+
+  friend void swap(PerformanceData& a, PerformanceData& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(PerformanceData* other) {
+    if (other == this) return;
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline PerformanceData* New() const final {
+    return CreateMaybeMessage<PerformanceData>(nullptr);
+  }
+
+  PerformanceData* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<PerformanceData>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const PerformanceData& from);
+  void MergeFrom(const PerformanceData& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* InternalSerializeWithCachedSizesToArray(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(PerformanceData* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "action.PerformanceData";
+  }
+  private:
+  inline ::PROTOBUF_NAMESPACE_ID::Arena* GetArenaNoVirtual() const {
+    return nullptr;
+  }
+  inline void* MaybeArenaPtr() const {
+    return nullptr;
+  }
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_action_2eproto);
+    return ::descriptor_table_action_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kCheckpointFieldNumber = 1,
+    kCpuFieldNumber = 2,
+    kMemoryFieldNumber = 3,
+    kFpsFieldNumber = 4,
+  };
+  // string checkpoint = 1;
+  void clear_checkpoint();
+  const std::string& checkpoint() const;
+  void set_checkpoint(const std::string& value);
+  void set_checkpoint(std::string&& value);
+  void set_checkpoint(const char* value);
+  void set_checkpoint(const char* value, size_t size);
+  std::string* mutable_checkpoint();
+  std::string* release_checkpoint();
+  void set_allocated_checkpoint(std::string* checkpoint);
+  private:
+  const std::string& _internal_checkpoint() const;
+  void _internal_set_checkpoint(const std::string& value);
+  std::string* _internal_mutable_checkpoint();
+  public:
+
+  // float cpu = 2;
+  void clear_cpu();
+  float cpu() const;
+  void set_cpu(float value);
+  private:
+  float _internal_cpu() const;
+  void _internal_set_cpu(float value);
+  public:
+
+  // float memory = 3;
+  void clear_memory();
+  float memory() const;
+  void set_memory(float value);
+  private:
+  float _internal_memory() const;
+  void _internal_set_memory(float value);
+  public:
+
+  // float fps = 4;
+  void clear_fps();
+  float fps() const;
+  void set_fps(float value);
+  private:
+  float _internal_fps() const;
+  void _internal_set_fps(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:action.PerformanceData)
+ private:
+  class _Internal;
+
+  ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr checkpoint_;
+  float cpu_;
+  float memory_;
+  float fps_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_action_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Response :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:action.Response) */ {
  public:
@@ -3263,6 +3436,7 @@ class Response :
     kTests = 9,
     kLog = 10,
     kTestDetails = 11,
+    kPerformance = 12,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -3272,7 +3446,7 @@ class Response :
                &_Response_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    19;
 
   friend void swap(Response& a, Response& b) {
     a.Swap(&b);
@@ -3347,6 +3521,7 @@ class Response :
     kTestsFieldNumber = 9,
     kLogFieldNumber = 10,
     kTestDetailsFieldNumber = 11,
+    kPerformanceFieldNumber = 12,
   };
   // string actionID = 1;
   void clear_actionid();
@@ -3507,6 +3682,21 @@ class Response :
   ::action::TestDetails* _internal_mutable_testdetails();
   public:
 
+  // .action.PerformanceData performance = 12;
+  bool has_performance() const;
+  private:
+  bool _internal_has_performance() const;
+  public:
+  void clear_performance();
+  const ::action::PerformanceData& performance() const;
+  ::action::PerformanceData* release_performance();
+  ::action::PerformanceData* mutable_performance();
+  void set_allocated_performance(::action::PerformanceData* performance);
+  private:
+  const ::action::PerformanceData& _internal_performance() const;
+  ::action::PerformanceData* _internal_mutable_performance();
+  public:
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:action.Response)
@@ -3520,6 +3710,7 @@ class Response :
   void set_has_tests();
   void set_has_log();
   void set_has_testdetails();
+  void set_has_performance();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -3538,6 +3729,7 @@ class Response :
     ::action::Tests* tests_;
     ::action::LogData* log_;
     ::action::TestDetails* testdetails_;
+    ::action::PerformanceData* performance_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   ::PROTOBUF_NAMESPACE_ID::uint32 _oneof_case_[1];
@@ -6149,6 +6341,130 @@ TestDetails::mutable_categories() {
 
 // -------------------------------------------------------------------
 
+// PerformanceData
+
+// string checkpoint = 1;
+inline void PerformanceData::clear_checkpoint() {
+  checkpoint_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& PerformanceData::checkpoint() const {
+  // @@protoc_insertion_point(field_get:action.PerformanceData.checkpoint)
+  return _internal_checkpoint();
+}
+inline void PerformanceData::set_checkpoint(const std::string& value) {
+  _internal_set_checkpoint(value);
+  // @@protoc_insertion_point(field_set:action.PerformanceData.checkpoint)
+}
+inline std::string* PerformanceData::mutable_checkpoint() {
+  // @@protoc_insertion_point(field_mutable:action.PerformanceData.checkpoint)
+  return _internal_mutable_checkpoint();
+}
+inline const std::string& PerformanceData::_internal_checkpoint() const {
+  return checkpoint_.GetNoArena();
+}
+inline void PerformanceData::_internal_set_checkpoint(const std::string& value) {
+  
+  checkpoint_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void PerformanceData::set_checkpoint(std::string&& value) {
+  
+  checkpoint_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:action.PerformanceData.checkpoint)
+}
+inline void PerformanceData::set_checkpoint(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  checkpoint_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:action.PerformanceData.checkpoint)
+}
+inline void PerformanceData::set_checkpoint(const char* value, size_t size) {
+  
+  checkpoint_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:action.PerformanceData.checkpoint)
+}
+inline std::string* PerformanceData::_internal_mutable_checkpoint() {
+  
+  return checkpoint_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* PerformanceData::release_checkpoint() {
+  // @@protoc_insertion_point(field_release:action.PerformanceData.checkpoint)
+  
+  return checkpoint_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void PerformanceData::set_allocated_checkpoint(std::string* checkpoint) {
+  if (checkpoint != nullptr) {
+    
+  } else {
+    
+  }
+  checkpoint_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), checkpoint);
+  // @@protoc_insertion_point(field_set_allocated:action.PerformanceData.checkpoint)
+}
+
+// float cpu = 2;
+inline void PerformanceData::clear_cpu() {
+  cpu_ = 0;
+}
+inline float PerformanceData::_internal_cpu() const {
+  return cpu_;
+}
+inline float PerformanceData::cpu() const {
+  // @@protoc_insertion_point(field_get:action.PerformanceData.cpu)
+  return _internal_cpu();
+}
+inline void PerformanceData::_internal_set_cpu(float value) {
+  
+  cpu_ = value;
+}
+inline void PerformanceData::set_cpu(float value) {
+  _internal_set_cpu(value);
+  // @@protoc_insertion_point(field_set:action.PerformanceData.cpu)
+}
+
+// float memory = 3;
+inline void PerformanceData::clear_memory() {
+  memory_ = 0;
+}
+inline float PerformanceData::_internal_memory() const {
+  return memory_;
+}
+inline float PerformanceData::memory() const {
+  // @@protoc_insertion_point(field_get:action.PerformanceData.memory)
+  return _internal_memory();
+}
+inline void PerformanceData::_internal_set_memory(float value) {
+  
+  memory_ = value;
+}
+inline void PerformanceData::set_memory(float value) {
+  _internal_set_memory(value);
+  // @@protoc_insertion_point(field_set:action.PerformanceData.memory)
+}
+
+// float fps = 4;
+inline void PerformanceData::clear_fps() {
+  fps_ = 0;
+}
+inline float PerformanceData::_internal_fps() const {
+  return fps_;
+}
+inline float PerformanceData::fps() const {
+  // @@protoc_insertion_point(field_get:action.PerformanceData.fps)
+  return _internal_fps();
+}
+inline void PerformanceData::_internal_set_fps(float value) {
+  
+  fps_ = value;
+}
+inline void PerformanceData::set_fps(float value) {
+  _internal_set_fps(value);
+  // @@protoc_insertion_point(field_set:action.PerformanceData.fps)
+}
+
+// -------------------------------------------------------------------
+
 // Response
 
 // string actionID = 1;
@@ -6732,6 +7048,56 @@ inline ::action::TestDetails* Response::mutable_testdetails() {
   return _internal_mutable_testdetails();
 }
 
+// .action.PerformanceData performance = 12;
+inline bool Response::_internal_has_performance() const {
+  return payload_case() == kPerformance;
+}
+inline bool Response::has_performance() const {
+  return _internal_has_performance();
+}
+inline void Response::set_has_performance() {
+  _oneof_case_[0] = kPerformance;
+}
+inline void Response::clear_performance() {
+  if (_internal_has_performance()) {
+    delete payload_.performance_;
+    clear_has_payload();
+  }
+}
+inline ::action::PerformanceData* Response::release_performance() {
+  // @@protoc_insertion_point(field_release:action.Response.performance)
+  if (has_performance()) {
+    clear_has_payload();
+      ::action::PerformanceData* temp = payload_.performance_;
+    payload_.performance_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::action::PerformanceData& Response::_internal_performance() const {
+  return _internal_has_performance()
+      ? *payload_.performance_
+      : *reinterpret_cast< ::action::PerformanceData*>(&::action::_PerformanceData_default_instance_);
+}
+inline const ::action::PerformanceData& Response::performance() const {
+  // @@protoc_insertion_point(field_get:action.Response.performance)
+  return _internal_performance();
+}
+inline ::action::PerformanceData* Response::_internal_mutable_performance() {
+  if (!_internal_has_performance()) {
+    clear_payload();
+    set_has_performance();
+    payload_.performance_ = CreateMaybeMessage< ::action::PerformanceData >(
+        GetArenaNoVirtual());
+  }
+  return payload_.performance_;
+}
+inline ::action::PerformanceData* Response::mutable_performance() {
+  // @@protoc_insertion_point(field_mutable:action.Response.performance)
+  return _internal_mutable_performance();
+}
+
 inline bool Response::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -6744,6 +7110,8 @@ inline Response::PayloadCase Response::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

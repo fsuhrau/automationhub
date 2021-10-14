@@ -116,6 +116,9 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 
 	var devices []DeviceMap
 	for _, d := range devs {
+		if d.Dev == nil {
+			continue
+		}
 		dev := d.Dev.(device.Device)
 		tr.logInfo("locking device: %s", dev.DeviceID())
 		if err := dev.Lock(); err == nil {

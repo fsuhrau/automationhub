@@ -41,6 +41,7 @@ type Device interface {
 
 	SetLogWriter(LogWriter)
 	Data(string, string)
+	LogPerformance(checkpoint string, cpu, fps, mem float32, other string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})
 	AddActionHandler(action.ActionHandler)

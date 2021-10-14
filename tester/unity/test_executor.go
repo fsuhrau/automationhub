@@ -86,5 +86,10 @@ func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Respons
 		return
 	}
 
-	// logrus.Info(response)
+	if response.ActionType == action.ActionType_Performance {
+		perf := response.GetPerformance()
+		if perf != nil {
+			dev.LogPerformance(perf.Checkpoint, perf.Cpu, perf.Fps, perf.Memory, "")
+		}
+	}
 }
