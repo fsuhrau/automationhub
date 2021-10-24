@@ -441,7 +441,9 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 
 	defer func() {
 		dm.log.Info("handleActions finished")
-		d.Connection().Close()
+		if d.Connection() != nil {
+			d.Connection().Close()
+		}
 		d.SetConnection(nil)
 	}()
 

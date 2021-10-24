@@ -23,6 +23,13 @@ import TestStatusTextComponent from '../components/test-status-text.component';
 import { useSSE } from 'react-hooks-sse';
 import ProtocolLogComponent from './protocol.log.component';
 import ProtocolScreensComponent from './protocol.screens.component';
+import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
+import {
+    ValueAxis,
+    Chart,
+    LineSeries,
+    Tooltip,
+} from '@devexpress/dx-react-chart-material-ui';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -115,6 +122,13 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
 
     const [entries, setEntries] = useState<IProtocolEntryData[]>([]);
     const [screenEntries, setScreenEntries] = useState<IProtocolEntryData[]>([]);
+    const [performanceEntries, setPerformanceEntries] = useState<IProtocolPerformanceEntryData[]>([]);
+
+    const [steps, setSteps] = useState<number>(0);
+    const [startupTime, setStartupTime] = useState<number>(0);
+    const [fps, setFps] = useState<number>(0);
+    const [memory, setMemory] = useState<number>(0);
+    const [cpu, setCpu] = useState<number>(0);
 
     const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${ protocol.ID }_log`, null);
     useEffect(() => {
@@ -146,17 +160,40 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
 
     const updateStatusEntries = (): void => {
         const length = entries.length;
+        let numSteps = 0;
         for (let i = 0; i < length; i++) {
             if (lastScreen === undefined && entries[ i ].Source === 'screen') {
                 setLastScreen(entries[ i ]);
             }
-            if (lastStep === undefined && entries[ i ].Source === 'step') {
-                setLastStep(entries[ i ]);
+            if (entries[ i ].Source === 'step') {
+                numSteps++;
+                if (lastStep === undefined) {
+                    setLastStep(entries[ i ]);
+                }
             }
             if (lastError === undefined && entries[ i ].Level === 'error') {
                 setLastError(entries[ i ]);
             }
         }
+        setSteps(numSteps);
+    };
+
+    const updatePerformanceStats = (): void => {
+        const length = performanceEntries.length;
+        if (length === 0) {
+            return;
+        }
+        let sumFps = 0;
+        let sumMem = 0;
+        let sumCpu = 0;
+        performanceEntries.forEach(value1 => {
+            sumCpu += value1.CPU;
+            sumFps += value1.FPS;
+            sumMem += value1.MEM;
+        });
+        setFps(sumFps / length);
+        setMemory(sumMem / length);
+        setCpu(sumFps / length);
     };
 
     const [value, setValue] = useState(0);
@@ -166,12 +203,17 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
 
     useEffect(() => {
         setEntries(protocol.Entries);
+        setPerformanceEntries(protocol.Performance);
     }, [protocol]);
 
     useEffect(() => {
         updateStatusEntries();
         setScreenEntries(entries.filter(value1 => value1.Source === 'screen'));
     }, [entries]);
+
+    useEffect(() => {
+        updatePerformanceStats();
+    }, [performanceEntries]);
 
     return (
         <Paper className={ classes.paper }>
@@ -286,10 +328,10 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                 <Grid item={ true } xs={ 2 }>
                                                     <Typography gutterBottom={ true } variant="body2"
                                                         color="textSecondary">
-                                                        Actions
+                                                        Steps
                                                     </Typography>
                                                     <Typography variant="h5">
-                                                        N/A
+                                                        { steps }
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
@@ -307,7 +349,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         FPS
                                                     </Typography>
                                                     <Typography variant="h5">
-                                                        N/A
+                                                        { fps.toFixed(2) }
                                                     </Typography>
                                                 </Grid>
                                                 <Grid item={ true } xs={ 2 }>
@@ -316,7 +358,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         Memory
                                                     </Typography>
                                                     <Typography variant="h5" component="h5">
-                                                        N/A
+                                                        { (memory * 1024 * 1024).toFixed(2) }MB
                                                     </Typography>
                                                 </Grid>
                                             </Grid>
@@ -357,7 +399,44 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     Video (not implemented)
                 </TabPanel>
                 <TabPanel value={ value } index={ 5 }>
-                    Performance (not implemented)
+                    <Grid item={ true } xs={ true } container={ true } direction="column" spacing={ 4 }>
+                        <Grid item={ true } xs={ true }>
+                            <Typography gutterBottom={ true } variant="subtitle1">
+                                FPS
+                            </Typography>
+                            <Chart
+                                data={performanceEntries}
+                            >
+                                <ValueAxis />
+                                <LineSeries valueField="FPS" argumentField="CreatedAt" />
+                                <Tooltip />
+                            </Chart>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                            <Typography gutterBottom={ true } variant="subtitle1">
+                                Memory
+                            </Typography>
+                            <Chart
+                                data={performanceEntries}
+                            >
+                                <ValueAxis />
+                                <LineSeries valueField="MEM" argumentField="CreatedAt" />
+                                <Tooltip />
+                            </Chart>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                            <Typography gutterBottom={ true } variant="subtitle1">
+                                CPU
+                            </Typography>
+                            <Chart
+                                data={performanceEntries}
+                            >
+                                <ValueAxis />
+                                <LineSeries valueField="CPU" argumentField="CreatedAt" />
+                                <Tooltip />
+                            </Chart>
+                        </Grid>
+                    </Grid>
                 </TabPanel>
             </Box>
         </Paper>

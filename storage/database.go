@@ -12,7 +12,9 @@ func GetDB() (*gorm.DB, error) {
 		return db, nil
 	}
 	var err error
-	db, err = gorm.Open(sqlite.Open("ah.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open("ah.db"), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
 		return nil, err
 	}

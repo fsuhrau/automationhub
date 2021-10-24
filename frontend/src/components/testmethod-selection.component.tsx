@@ -117,7 +117,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
     }
 
     const customList = (items: IAppFunctionData[]): ReactElement => (
-        <Paper className={ classes.paper } style={{overflow: 'auto'}}>
+        <Paper className={ classes.paper } style={{ overflow: 'auto' }}>
             <List dense={ true } component="div" role="list">
                 { items.map((value) => {
                     const labelId = `transfer-list-item-${ value.ID }-label`;
