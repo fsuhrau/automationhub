@@ -289,7 +289,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                                         <CardMedia
                                                             component="img"
                                                             height="400"
-                                                            image={`http://localhost:8002/api/data/${lastScreen.Data}`}
+                                                            image={`/api/data/${lastScreen.Data}`}
                                                             alt="green iguana"
                                                         />
                                                     </Card>

@@ -158,7 +158,7 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
                                     <CardMedia
                                         component="img"
                                         height="400"
-                                        image={ `http://localhost:8002/api/data/${ params.row.Data }` }
+                                        image={ `/api/data/${ params.row.Data }` }
                                         alt="green iguana"
                                     />
                                 </Card>

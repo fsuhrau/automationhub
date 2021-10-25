@@ -48,7 +48,7 @@ const ProtocolScreensComponent: FC<ProtocolEntriesProps> = (props) => {
                             <CardMedia
                                 component="img"
                                 height="350"
-                                image={`http://localhost:8002/api/data/${item.Data}`}
+                                image={`/api/data/${item.Data}`}
                                 alt={item.Data}
                             />
                         </Card>
