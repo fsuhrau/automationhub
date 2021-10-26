@@ -1,4 +1,4 @@
-import { FC, ReactElement, useEffect, useState } from 'react';
+import React, { FC, ReactElement, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -24,12 +24,7 @@ import { useSSE } from 'react-hooks-sse';
 import ProtocolLogComponent from './protocol.log.component';
 import ProtocolScreensComponent from './protocol.screens.component';
 import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
-import {
-    ValueAxis,
-    Chart,
-    LineSeries,
-    Tooltip,
-} from '@devexpress/dx-react-chart-material-ui';
+import { Chart, LineSeries, Tooltip, ValueAxis } from '@devexpress/dx-react-chart-material-ui';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -282,29 +277,34 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                     <Grid container={ true } spacing={ 6 } justifyContent="center"
                                         alignItems="center">
                                         <Grid item={ true }>
-                                            { lastStep && <Typography><Moment format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message } </Typography> }
-                                            { lastError && <Typography><Moment format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message } </Typography> }
+                                            { lastStep && <Typography><Moment
+                                                format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message }
+                                            </Typography> }
+                                            { lastError && <Typography><Moment
+                                                format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message }
+                                            </Typography> }
                                         </Grid>
                                         <Grid item={ true }>
-                                            { lastScreen &&  <div>
-                                                <Button aria-describedby={'last_screen_' + lastScreen.ID} variant="contained" onClick={showScreenPopup}>
+                                            { lastScreen && <div>
+                                                <Button aria-describedby={ 'last_screen_' + lastScreen.ID }
+                                                    variant="contained" onClick={ showScreenPopup }>
                                                     Show
                                                 </Button>
                                                 <Popover
-                                                    id={lastScreenID}
-                                                    open={lastScreenOpen}
-                                                    anchorEl={anchorScreenEl}
-                                                    onClose={hideScreenPopup}
-                                                    anchorOrigin={{
+                                                    id={ lastScreenID }
+                                                    open={ lastScreenOpen }
+                                                    anchorEl={ anchorScreenEl }
+                                                    onClose={ hideScreenPopup }
+                                                    anchorOrigin={ {
                                                         vertical: 'bottom',
                                                         horizontal: 'left',
-                                                    }}
+                                                    } }
                                                 >
                                                     <Card>
                                                         <CardMedia
                                                             component="img"
                                                             height="400"
-                                                            image={`/api/data/${lastScreen.Data}`}
+                                                            image={ `/api/data/${ lastScreen.Data }` }
                                                             alt="green iguana"
                                                         />
                                                     </Card>
@@ -405,10 +405,10 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     </Table>
                 </TabPanel>
                 <TabPanel value={ value } index={ 2 }>
-                    <ProtocolLogComponent entries={entries} classes={classes} />
+                    <ProtocolLogComponent entries={ entries } classes={ classes }/>
                 </TabPanel>
                 <TabPanel value={ value } index={ 3 }>
-                    <ProtocolScreensComponent classes={classes} entries={screenEntries} />
+                    <ProtocolScreensComponent classes={ classes } entries={ screenEntries }/>
                 </TabPanel>
                 <TabPanel value={ value } index={ 4 }>
                     Video (not implemented)
@@ -420,11 +420,11 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                 FPS
                             </Typography>
                             <Chart
-                                data={performanceEntries}
+                                data={ performanceEntries }
                             >
-                                <ValueAxis />
-                                <LineSeries valueField="FPS" argumentField="CreatedAt" />
-                                <Tooltip />
+                                <ValueAxis/>
+                                <LineSeries valueField="FPS" argumentField="Runtime"/>
+                                <Tooltip/>
                             </Chart>
                         </Grid>
                         <Grid item={ true } xs={ true }>
@@ -432,25 +432,26 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                                 Memory
                             </Typography>
                             <Chart
-                                data={performanceEntries}
+                                data={ performanceEntries }
                             >
-                                <ValueAxis />
-                                <LineSeries valueField="MEM" argumentField="CreatedAt" />
-                                <Tooltip />
+                                <ValueAxis/>
+                                <LineSeries valueField="MEM" argumentField="Runtime"/>
+                                <Tooltip/>
                             </Chart>
                         </Grid>
-                        <Grid item={ true } xs={ true }>
+                        { cpu > 0 && (<Grid item={ true } xs={ true }>
                             <Typography gutterBottom={ true } variant="subtitle1">
                                 CPU
                             </Typography>
                             <Chart
-                                data={performanceEntries}
-                            >
-                                <ValueAxis />
-                                <LineSeries valueField="CPU" argumentField="CreatedAt" />
-                                <Tooltip />
+                                data={ performanceEntries }
+                                >
+                                <ValueAxis/>
+                                <LineSeries valueField="CPU" argumentField="Runtime"/>
+                                <Tooltip/>
                             </Chart>
-                        </Grid>
+                            </Grid>
+                        ) }
                     </Grid>
                 </TabPanel>
             </Box>

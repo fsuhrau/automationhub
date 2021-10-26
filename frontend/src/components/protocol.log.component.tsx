@@ -98,15 +98,14 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
             hide: true,
         },
         {
-            field: 'CreatedAt',
-            headerName: 'Date',
-            width: 150,
-            type: 'dateTime',
+            field: 'Runtime',
+            headerName: 'Time',
+            width: 100,
             sortable: true,
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                return (<Moment format="YYYY/MM/DD HH:mm:ss">{ params.value as string }</Moment>);
+                return (<div>{ new Date((params.value as number) * 1000).toISOString().substr(11, 8) }</div>);
             },
         },
         {

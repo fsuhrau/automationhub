@@ -12,6 +12,7 @@ type LogWriter struct {
 	db         *gorm.DB
 	protocolId uint
 	errs       []error
+	startTime time.Time
 }
 
 func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
@@ -22,10 +23,14 @@ func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, oth
 		MEM:            mem,
 		CPU:            cpu,
 		Other:          other,
+		Runtime: w.getRuntime(),
 	}
 	w.db.Create(&entry)
 }
 
+func (w *LogWriter) getRuntime() int64 {
+	return time.Now().UTC().Unix() - w.startTime.Unix()
+}
 
 func (w *LogWriter) write(source, level, message, data string) {
 	entry := models.ProtocolEntry{
@@ -35,6 +40,7 @@ func (w *LogWriter) write(source, level, message, data string) {
 		Level:          level,
 		Message:        message,
 		Data:           data,
+		Runtime: w.getRuntime(),
 	}
 	w.db.Create(&entry)
 
@@ -62,5 +68,6 @@ func NewLogWriter(db *gorm.DB, protocolId uint) *LogWriter {
 	return &LogWriter{
 		db:         db,
 		protocolId: protocolId,
+		startTime: time.Now().UTC(),
 	}
 }

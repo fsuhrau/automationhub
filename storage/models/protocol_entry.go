@@ -13,4 +13,5 @@ type ProtocolEntry struct {
 	Level          string
 	Message        string
 	Data           string
+	Runtime        int64
 }
