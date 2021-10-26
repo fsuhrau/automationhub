@@ -8,7 +8,7 @@ import ITestProtocolData from '../types/test.protocol';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { AvTimer, DateRange } from '@material-ui/icons';
+import { AvTimer, DateRange, PhoneAndroid, Speed } from '@material-ui/icons';
 import { Box, Button, Card, CardMedia, Popover, Tab, Tabs } from '@material-ui/core';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
@@ -226,6 +226,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                         <Grid item={ true }>
                             <TestStatusTextComponent status={ protocol.TestResult }/>
                         </Grid>
+
                         <Grid item={ true }>
                             <DateRange className={ classes.block } color="inherit"/>
                         </Grid>
@@ -236,8 +237,22 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                         <Grid item={ true }>
                             <AvTimer className={ classes.block } color="inherit"/>
                         </Grid>
-                        <Grid item={ true } xs={ true }>
+                        <Grid item={ true }>
                             { getDuration(protocol) }
+                        </Grid>
+
+                        <Grid item={ true }>
+                            <PhoneAndroid className={ classes.block } color="inherit"/>
+                        </Grid>
+                        <Grid item={ true }>
+                            { protocol.Device?.Name }
+                        </Grid>
+
+                        <Grid item={ true }>
+                            <Speed className={ classes.block } color="inherit"/>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                            { protocol.TestName }
                         </Grid>
                     </Grid>
                 </Toolbar>
