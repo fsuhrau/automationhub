@@ -12,5 +12,5 @@ type ProtocolPerformanceEntry struct {
 	MEM            float32 `sql:"type:decimal(10,2);"`
 	CPU            float32 `sql:"type:decimal(10,2);"`
 	Other          string
-	Runtime        int64
+	Runtime        float64
 }

@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { Box, Button, Card, CardMedia, Chip, Popover } from '@material-ui/core';
 import Moment from 'react-moment';
 import IProtocolEntryData from '../types/protocol.entry';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridCellValue, GridColDef } from '@mui/x-data-grid';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -91,6 +91,15 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
     const logScreenOpen = Boolean(anchorLogScreenEl);
     const logScreenID = logScreenOpen ? 'simple-popover' : undefined;
 
+    const timeFrom = (value :GridCellValue): string => {
+        return new Date((value as number) * 1000).toISOString().substr(11, 8)
+    };
+
+    const nanosFrom = (value :GridCellValue): string => {
+        let str = (value as number).toFixed(4)
+        return str.substring(str.length - 4)
+    };
+
     const columns: GridColDef[] = [
         {
             field: 'ID',
@@ -105,7 +114,7 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                return (<div>{ new Date((params.value as number) * 1000).toISOString().substr(11, 8) }</div>);
+                return (<div>{ timeFrom(params.value) }.{ nanosFrom(params.value) }</div>);
             },
         },
         {

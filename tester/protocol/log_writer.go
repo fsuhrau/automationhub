@@ -28,8 +28,8 @@ func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, oth
 	w.db.Create(&entry)
 }
 
-func (w *LogWriter) getRuntime() int64 {
-	return time.Now().UTC().Unix() - w.startTime.Unix()
+func (w *LogWriter) getRuntime() float64 {
+	return float64(time.Now().UTC().UnixNano() - w.startTime.UnixNano()) / float64(time.Second)
 }
 
 func (w *LogWriter) write(source, level, message, data string) {
