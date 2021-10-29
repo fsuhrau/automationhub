@@ -700,7 +700,7 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "UninstallApp\020\005\022\014\n\010StartApp\020\006\022\013\n\007StopApp\020"
   "\007\022\022\n\016IsAppConnected\020\010\022\022\n\016StartRecording\020"
   "\t\022\021\n\rStopRecording\020\n\022\016\n\nHasFeature\020\013\022\022\n\016"
-  "ExecuteFeature\020\014\022\021\n\rGetScreenShot\020\r*\305\002\n\n"
+  "ExecuteFeature\020\014\022\021\n\rGetScreenShot\020\r*\327\002\n\n"
   "ActionType\022\n\n\006Custom\020\000\022\021\n\rGetSceneGraph\020"
   "\001\022\026\n\022ElementIsDisplayed\020\002\022\023\n\017ElementSetV"
   "alue\020\003\022\023\n\017ElementGetValue\020\004\022\010\n\004Move\020\005\022\r\n"
@@ -709,19 +709,20 @@ const char descriptor_table_protodef_action_2eproto[] PROTOBUF_SECTION_VARIABLE(
   "entTouch\020\013\022\021\n\rGetScreenshot\020\014\022\014\n\010GetTest"
   "s\020\r\022\017\n\013ExecuteTest\020\016\022\023\n\017ExecutionResult\020"
   "\017\022\007\n\003Log\020\020\022\016\n\nUnityReset\020\021\022\017\n\013Performanc"
-  "e\020\022*[\n\007LogType\022\r\n\tDeviceLog\020\000\022\013\n\007StepLog"
-  "\020\001\022\r\n\tStatusLog\020\002\022\021\n\rCheckpointLog\020\003\022\022\n\016"
-  "PerformanceLog\020\004*F\n\010LogLevel\022\t\n\005Debug\020\000\022"
-  "\010\n\004Info\020\001\022\013\n\007Warning\020\002\022\t\n\005Error\020\003\022\r\n\tExc"
-  "eption\020\004*0\n\013ContentType\022\016\n\nFlatbuffer\020\000\022"
-  "\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007AppType\022\t\n\005Cocos\020\000"
-  "\022\t\n\005Unity\020\0012\337\001\n\014RemoteDevice\022A\n\nDeviceLi"
-  "st\022\025.action.DeviceRequest\032\026.action.Devic"
-  "eResponse\"\000(\0010\001\022R\n\021DeviceInteraction\022\032.a"
-  "ction.InteractionRequest\032\033.action.Intera"
-  "ctionResponse\"\000(\0010\001\0228\n\rActionExecute\022\017.a"
-  "ction.Request\032\020.action.Response\"\000(\0010\001B Z"
-  "\nhub/action\252\002\021Com.AutomationHubb\006proto3"
+  "e\020\022\022\020\n\014NativeScript\020\023*[\n\007LogType\022\r\n\tDevi"
+  "ceLog\020\000\022\013\n\007StepLog\020\001\022\r\n\tStatusLog\020\002\022\021\n\rC"
+  "heckpointLog\020\003\022\022\n\016PerformanceLog\020\004*F\n\010Lo"
+  "gLevel\022\t\n\005Debug\020\000\022\010\n\004Info\020\001\022\013\n\007Warning\020\002"
+  "\022\t\n\005Error\020\003\022\r\n\tException\020\004*0\n\013ContentTyp"
+  "e\022\016\n\nFlatbuffer\020\000\022\010\n\004Json\020\001\022\007\n\003Xml\020\002*\037\n\007"
+  "AppType\022\t\n\005Cocos\020\000\022\t\n\005Unity\020\0012\337\001\n\014Remote"
+  "Device\022A\n\nDeviceList\022\025.action.DeviceRequ"
+  "est\032\026.action.DeviceResponse\"\000(\0010\001\022R\n\021Dev"
+  "iceInteraction\022\032.action.InteractionReque"
+  "st\032\033.action.InteractionResponse\"\000(\0010\001\0228\n"
+  "\rActionExecute\022\017.action.Request\032\020.action"
+  ".Response\"\000(\0010\001B Z\nhub/action\252\002\021Com.Auto"
+  "mationHubb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_action_2eproto_deps[1] = {
 };
@@ -750,7 +751,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_act
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_action_2eproto_once;
 static bool descriptor_table_action_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_action_2eproto = {
-  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 3039,
+  &descriptor_table_action_2eproto_initialized, descriptor_table_protodef_action_2eproto, "action.proto", 3057,
   &descriptor_table_action_2eproto_once, descriptor_table_action_2eproto_sccs, descriptor_table_action_2eproto_deps, 20, 0,
   schemas, file_default_instances, TableStruct_action_2eproto::offsets,
   file_level_metadata_action_2eproto, 20, file_level_enum_descriptors_action_2eproto, file_level_service_descriptors_action_2eproto,
@@ -810,6 +811,7 @@ bool ActionType_IsValid(int value) {
     case 16:
     case 17:
     case 18:
+    case 19:
       return true;
     default:
       return false;

@@ -72,7 +72,7 @@ namespace Com.AutomationHub {
             "bnN0YWxsQXBwEAQSEAoMVW5pbnN0YWxsQXBwEAUSDAoIU3RhcnRBcHAQBhIL",
             "CgdTdG9wQXBwEAcSEgoOSXNBcHBDb25uZWN0ZWQQCBISCg5TdGFydFJlY29y",
             "ZGluZxAJEhEKDVN0b3BSZWNvcmRpbmcQChIOCgpIYXNGZWF0dXJlEAsSEgoO",
-            "RXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0qxQIKCkFjdGlv",
+            "RXhlY3V0ZUZlYXR1cmUQDBIRCg1HZXRTY3JlZW5TaG90EA0q1wIKCkFjdGlv",
             "blR5cGUSCgoGQ3VzdG9tEAASEQoNR2V0U2NlbmVHcmFwaBABEhYKEkVsZW1l",
             "bnRJc0Rpc3BsYXllZBACEhMKD0VsZW1lbnRTZXRWYWx1ZRADEhMKD0VsZW1l",
             "bnRHZXRWYWx1ZRAEEggKBE1vdmUQBRINCglUb3VjaERvd24QBhINCglUb3Vj",
@@ -80,18 +80,18 @@ namespace Com.AutomationHub {
             "VG91Y2gQChIQCgxFbGVtZW50VG91Y2gQCxIRCg1HZXRTY3JlZW5zaG90EAwS",
             "DAoIR2V0VGVzdHMQDRIPCgtFeGVjdXRlVGVzdBAOEhMKD0V4ZWN1dGlvblJl",
             "c3VsdBAPEgcKA0xvZxAQEg4KClVuaXR5UmVzZXQQERIPCgtQZXJmb3JtYW5j",
-            "ZRASKlsKB0xvZ1R5cGUSDQoJRGV2aWNlTG9nEAASCwoHU3RlcExvZxABEg0K",
-            "CVN0YXR1c0xvZxACEhEKDUNoZWNrcG9pbnRMb2cQAxISCg5QZXJmb3JtYW5j",
-            "ZUxvZxAEKkYKCExvZ0xldmVsEgkKBURlYnVnEAASCAoESW5mbxABEgsKB1dh",
-            "cm5pbmcQAhIJCgVFcnJvchADEg0KCUV4Y2VwdGlvbhAEKjAKC0NvbnRlbnRU",
-            "eXBlEg4KCkZsYXRidWZmZXIQABIICgRKc29uEAESBwoDWG1sEAIqHwoHQXBw",
-            "VHlwZRIJCgVDb2NvcxAAEgkKBVVuaXR5EAEy3wEKDFJlbW90ZURldmljZRJB",
-            "CgpEZXZpY2VMaXN0EhUuYWN0aW9uLkRldmljZVJlcXVlc3QaFi5hY3Rpb24u",
-            "RGV2aWNlUmVzcG9uc2UiACgBMAESUgoRRGV2aWNlSW50ZXJhY3Rpb24SGi5h",
-            "Y3Rpb24uSW50ZXJhY3Rpb25SZXF1ZXN0GhsuYWN0aW9uLkludGVyYWN0aW9u",
-            "UmVzcG9uc2UiACgBMAESOAoNQWN0aW9uRXhlY3V0ZRIPLmFjdGlvbi5SZXF1",
-            "ZXN0GhAuYWN0aW9uLlJlc3BvbnNlIgAoATABQiBaCmh1Yi9hY3Rpb26qAhFD",
-            "b20uQXV0b21hdGlvbkh1YmIGcHJvdG8z"));
+            "ZRASEhAKDE5hdGl2ZVNjcmlwdBATKlsKB0xvZ1R5cGUSDQoJRGV2aWNlTG9n",
+            "EAASCwoHU3RlcExvZxABEg0KCVN0YXR1c0xvZxACEhEKDUNoZWNrcG9pbnRM",
+            "b2cQAxISCg5QZXJmb3JtYW5jZUxvZxAEKkYKCExvZ0xldmVsEgkKBURlYnVn",
+            "EAASCAoESW5mbxABEgsKB1dhcm5pbmcQAhIJCgVFcnJvchADEg0KCUV4Y2Vw",
+            "dGlvbhAEKjAKC0NvbnRlbnRUeXBlEg4KCkZsYXRidWZmZXIQABIICgRKc29u",
+            "EAESBwoDWG1sEAIqHwoHQXBwVHlwZRIJCgVDb2NvcxAAEgkKBVVuaXR5EAEy",
+            "3wEKDFJlbW90ZURldmljZRJBCgpEZXZpY2VMaXN0EhUuYWN0aW9uLkRldmlj",
+            "ZVJlcXVlc3QaFi5hY3Rpb24uRGV2aWNlUmVzcG9uc2UiACgBMAESUgoRRGV2",
+            "aWNlSW50ZXJhY3Rpb24SGi5hY3Rpb24uSW50ZXJhY3Rpb25SZXF1ZXN0Ghsu",
+            "YWN0aW9uLkludGVyYWN0aW9uUmVzcG9uc2UiACgBMAESOAoNQWN0aW9uRXhl",
+            "Y3V0ZRIPLmFjdGlvbi5SZXF1ZXN0GhAuYWN0aW9uLlJlc3BvbnNlIgAoATAB",
+            "QiBaCmh1Yi9hY3Rpb26qAhFDb20uQXV0b21hdGlvbkh1YmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Com.AutomationHub.DeviceInteractionType), typeof(global::Com.AutomationHub.ActionType), typeof(global::Com.AutomationHub.LogType), typeof(global::Com.AutomationHub.LogLevel), typeof(global::Com.AutomationHub.ContentType), typeof(global::Com.AutomationHub.AppType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -157,6 +157,7 @@ namespace Com.AutomationHub {
     [pbr::OriginalName("Log")] Log = 16,
     [pbr::OriginalName("UnityReset")] UnityReset = 17,
     [pbr::OriginalName("Performance")] Performance = 18,
+    [pbr::OriginalName("NativeScript")] NativeScript = 19,
   }
 
   public enum LogType {

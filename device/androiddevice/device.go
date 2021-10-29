@@ -3,6 +3,7 @@ package androiddevice
 import (
 	"bytes"
 	"fmt"
+	"github.com/antchfx/xmlquery"
 	"github.com/fsuhrau/automationhub/device/generic"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -340,4 +342,83 @@ func (d *Device) Tap(x, y int64) error {
 
 func (d *Device) ConnectionTimeout() time.Duration {
 	return CONNECTION_TIMEOUT
+}
+
+func (d *Device) getScreenXml() (*xmlquery.Node, error) {
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "uiautomator", "dump", "/dev/tty")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	reader := bytes.NewReader(out)
+	return xmlquery.Parse(reader)
+}
+
+func (d *Device) RunNativeScript(script []byte)  {
+
+	boundsEx := regexp.MustCompile(`\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]`)
+
+	actions, err := ParseNativeScript(script)
+	if err != nil {
+		d.Error("device", "Error: %v", err)
+		return
+	}
+
+	_ = actions
+
+	for _, a := range actions {
+		if wfa, ok  := a.(*WaitForAction); ok {
+			d.Log("device", "wait_for_action: %s with timeout: %d", wfa.XPath, wfa.Timeout)
+			timeout := time.Now().Add(time.Duration(wfa.Timeout) * time.Second)
+
+			for {
+				xml, _ := d.getScreenXml()
+				element := xmlquery.FindOne(xml, wfa.XPath)
+				if element == nil {
+					if time.Now().After(timeout) {
+						d.Error("device", "Timeout: Element '%s' not found", wfa.XPath)
+						return
+					}
+					time.Sleep(500 * time.Millisecond)
+				} else {
+					break
+				}
+			}
+		}
+		if ca, ok  := a.(*ClickAction); ok {
+			d.Log("device", "click: %s", ca.XPath)
+			xml, _ := d.getScreenXml()
+			element := xmlquery.FindOne(xml, ca.XPath)
+			if element == nil {
+				d.Error("device", "Element '%s' not found", ca.XPath)
+				return
+			}
+
+			var bounds string
+			for _, attr  := range element.Attr {
+				if attr.Name.Local == "bounds" {
+					bounds = attr.Value
+					break
+				}
+			}
+
+			actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
+			if len(actionContent) == 0 {
+				d.Error("device", "No valid bounds for element '%s'", ca.XPath)
+				return
+			}
+			xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
+			ys, _ := strconv.ParseFloat(actionContent[0][2], 64)
+			xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
+			ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
+
+			x := ((xe - xs) * 0.5) + xs
+			y := ((ye - ys) * 0.5) + ys
+
+			if err := d.Tap(int64(x), int64(y)); err != nil {
+				d.Error("device", "Touch element '%s' failed: '%v'", ca.XPath, err)
+				return
+			}
+		}
+	}
 }

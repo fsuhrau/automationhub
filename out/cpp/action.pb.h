@@ -201,12 +201,13 @@ enum ActionType : int {
   Log = 16,
   UnityReset = 17,
   Performance = 18,
+  NativeScript = 19,
   ActionType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ActionType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ActionType_IsValid(int value);
 constexpr ActionType ActionType_MIN = Custom;
-constexpr ActionType ActionType_MAX = Performance;
+constexpr ActionType ActionType_MAX = NativeScript;
 constexpr int ActionType_ARRAYSIZE = ActionType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ActionType_descriptor();

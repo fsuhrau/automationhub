@@ -92,4 +92,9 @@ func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Respons
 			dev.LogPerformance(perf.Checkpoint, perf.Cpu, perf.Fps, perf.Memory, "")
 		}
 	}
+
+	if response.ActionType == action.ActionType_NativeScript {
+		scriptData := response.GetData()
+		go dev.RunNativeScript(scriptData)
+	}
 }

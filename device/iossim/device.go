@@ -161,3 +161,7 @@ func (d *Device) Execute(string) {
 func (d *Device) ConnectionTimeout() time.Duration {
 	return CONNECTION_TIMEOUT
 }
+
+func (d *Device) RunNativeScript(script []byte)  {
+
+}

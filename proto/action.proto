@@ -97,6 +97,7 @@ enum ActionType {
   Log = 16;
   UnityReset = 17;
   Performance = 18;
+  NativeScript = 19;
 }
 
 enum LogType {
