@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -34,10 +35,18 @@ func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {
 }
 
 func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
+	type Request struct {
+		TestName string
+		Env string
+	}
 	type Response struct {
 		Success bool
 		Message string
 	}
+	var req Request
+	c.Bind(&req)
+	arr := strings.Split(req.TestName, " ")
+
 	deviceID := c.Param("device_id")
 	_ = deviceID
 	var device models.Device
@@ -85,12 +94,12 @@ func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	s.devicesManager.SendAction(dev, &reset)
 
 	runTestAction := action.TestStart{
-		Class: "Innium.IntegrationTests.SmokeTests",
-		Method: "MainTutorialTest",
+		Class: arr[0],
+		Method: arr[1],
 	}
 
-	executer := unity.NewExecutor(s.devicesManager)
-	if err := executer.Execute(dev, runTestAction, 5*time.Minute); err != nil {
+	executor := unity.NewExecutor(s.devicesManager)
+	if err := executor.Execute(dev, runTestAction, 5*time.Minute); err != nil {
 		logrus.Errorf("Execute failed: %v", err)
 		s.error(c, http.StatusInternalServerError, err)
 		return

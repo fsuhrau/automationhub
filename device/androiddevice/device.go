@@ -345,6 +345,11 @@ func (d *Device) ConnectionTimeout() time.Duration {
 }
 
 func (d *Device) getScreenXml() (*xmlquery.Node, error) {
+	start := time.Now()
+	defer func(s time.Time) {
+		logrus.Infof("Android getScreenXml took: %d ms", time.Now().Sub(s).Milliseconds())
+	}(start)
+
 	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "uiautomator", "dump", "/dev/tty")
 	out, err := cmd.Output()
 	if err != nil {
@@ -361,6 +366,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 	actions, err := ParseNativeScript(script)
 	if err != nil {
 		d.Error("device", "Error: %v", err)
+		d.pressKey(KEYCODE_BACK)
 		return
 	}
 
@@ -377,6 +383,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 				if element == nil {
 					if time.Now().After(timeout) {
 						d.Error("device", "Timeout: Element '%s' not found", wfa.XPath)
+						d.pressKey(KEYCODE_BACK)
 						return
 					}
 					time.Sleep(500 * time.Millisecond)
@@ -391,6 +398,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 			element := xmlquery.FindOne(xml, ca.XPath)
 			if element == nil {
 				d.Error("device", "Element '%s' not found", ca.XPath)
+				d.pressKey(KEYCODE_BACK)
 				return
 			}
 
@@ -405,6 +413,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 			actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
 			if len(actionContent) == 0 {
 				d.Error("device", "No valid bounds for element '%s'", ca.XPath)
+				d.pressKey(KEYCODE_BACK)
 				return
 			}
 			xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
@@ -412,11 +421,12 @@ func (d *Device) RunNativeScript(script []byte)  {
 			xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
 			ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
 
-			x := ((xe - xs) * 0.5) + xs
-			y := ((ye - ys) * 0.5) + ys
+			x := (xs + xe) * 0.5
+			y := (ys + ye) * 0.5
 
 			if err := d.Tap(int64(x), int64(y)); err != nil {
 				d.Error("device", "Touch element '%s' failed: '%v'", ca.XPath, err)
+				d.pressKey(KEYCODE_BACK)
 				return
 			}
 		}

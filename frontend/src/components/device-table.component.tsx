@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FC, MouseEvent, useEffect, useState } from 'react';
 import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -9,10 +9,21 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
 import IDeviceData from '../types/device';
-import { getAllDevices, runTests } from '../services/device.service';
-import { Button } from '@material-ui/core';
+import { getAllDevices, runTest } from '../services/device.service';
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    TextField,
+    Typography
+} from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 import { useSSE } from 'react-hooks-sse';
+import AppSelection from "./app-selection.component";
+import { executeTest } from "../services/test.service";
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -29,7 +40,7 @@ interface DeviceChangePayload {
 }
 
 const DeviceTable: FC<DeviceProps> = (props) => {
-    const { classes } = props;
+    const {classes} = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
@@ -38,7 +49,10 @@ const DeviceTable: FC<DeviceProps> = (props) => {
         if (deviceStateChange === null)
             return;
         console.log(deviceStateChange);
-        setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? { ...device, Status: deviceStateChange.DeviceState } : device));
+        setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? {
+            ...device,
+            Status: deviceStateChange.DeviceState
+        } : device));
     }, [deviceStateChange]);
 
     useEffect(() => {
@@ -67,53 +81,127 @@ const DeviceTable: FC<DeviceProps> = (props) => {
         return '';
     }
 
-    function handleRunTests(id: number | null | undefined, e: MouseEvent<HTMLButtonElement>): void {
-        e.preventDefault();
-        runTests(id).then(response => {
+    // dialog
+    const [testName, seTestName] = useState<string>("");
+    const [selectedDeviceID, setSelectedDeviceID] = useState<number>(0);
+    const [envParameter, setEnvParameter] = useState<string>('');
+
+    const [open, setOpen] = useState(false);
+    const handleClickOpen = (): void => {
+        setOpen(true);
+    };
+    const handleClose = (): void => {
+        setOpen(false);
+    };
+
+    const onRunTest = (): void => {
+        runTest(selectedDeviceID, testName, envParameter).then(response => {
             console.log(response.data);
         }).catch(ex => {
             console.log(ex);
         });
-    }
+    };
+
+    const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
+        setEnvParameter(event.target.value);
+    };
+
+    const onTestNameChanged = (event: ChangeEvent<HTMLInputElement>): void => {
+        seTestName(event.target.value);
+    };
 
     return (
-        <TableContainer component={ Paper }>
-            <Table className={ classes.table } size="small" aria-label="a dense table">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Identifier</TableCell>
-                        <TableCell>OS</TableCell>
-                        <TableCell align="right">Version</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Session</TableCell>
-                        <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    { devices.map((device) => <TableRow key={ device.Name }>
-                        <TableCell component="th" scope="row">
-                            { device.ID }
-                        </TableCell>
-                        <TableCell>
-                            { device.Name }
-                        </TableCell>
-                        <TableCell>{ device.DeviceIdentifier }</TableCell>
-                        <TableCell>{ device.OS }</TableCell>
-                        <TableCell align="right">{ device.OSVersion }</TableCell>
-                        <TableCell>{ deviceState(device.Status) }</TableCell>
-                        <TableCell>{ device.Connection?.appID }</TableCell>
-                        <TableCell align="right">
-                            <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
-                                onClick={ (e) => handleRunTests(device.ID, e) }>
-                                Run
-                            </Button>
-                        </TableCell>
-                    </TableRow>) }
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <div>
+            <Dialog open={ open } onClose={ handleClose } aria-labelledby="form-dialog-title">
+                <DialogTitle id="form-dialog-title">Run Test</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Enter Test to execute
+                    </DialogContentText>
+                    <Typography variant={ 'subtitle1'}>
+                        Parameter:
+                    </Typography>
+                    <Typography variant={ 'subtitle2' }>
+                        server=http://localhost:8080<br/>
+                        user=autohub
+                    </Typography>
+                    <br/>
+                    <TextField
+                        id="outlined-multiline-static"
+                        label="Parameter"
+                        fullWidth={ true }
+                        multiline={ true }
+                        rows={ 4 }
+                        defaultValue=""
+                        variant="outlined"
+                        onChange={ onEnvParamsChanged }
+                    />
+                    <Typography variant={ 'subtitle1' }>
+                        Test:
+                    </Typography>
+                    <br/>
+                    <TextField
+                        id="outlined-static"
+                        label="Parameter"
+                        fullWidth={ true }
+                        defaultValue=""
+                        variant="outlined"
+                        onChange={ onTestNameChanged }
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={ handleClose } color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={ () => {
+                        onRunTest();
+                        handleClose();
+                    } } color="primary" variant={ 'contained' }>
+                        Start
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <TableContainer component={ Paper }>
+                <Table className={ classes.table } size="small" aria-label="a dense table">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>ID</TableCell>
+                            <TableCell>Name</TableCell>
+                            <TableCell>Identifier</TableCell>
+                            <TableCell>OS</TableCell>
+                            <TableCell align="right">Version</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Session</TableCell>
+                            <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        { devices.map((device) => <TableRow key={ device.Name }>
+                            <TableCell component="th" scope="row">
+                                { device.ID }
+                            </TableCell>
+                            <TableCell>
+                                { device.Name }
+                            </TableCell>
+                            <TableCell>{ device.DeviceIdentifier }</TableCell>
+                            <TableCell>{ device.OS }</TableCell>
+                            <TableCell align="right">{ device.OSVersion }</TableCell>
+                            <TableCell>{ deviceState(device.Status) }</TableCell>
+                            <TableCell>{ device.Connection?.appID }</TableCell>
+                            <TableCell align="right">
+                                { device.Connection && ( <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
+                                        onClick={ (e) => {
+                                            setSelectedDeviceID(device.ID as number);
+                                            handleClickOpen();
+                                        } }>
+                                    Run
+                                </Button>) }
+                            </TableCell>
+                        </TableRow>) }
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </div>
     );
 };
 
