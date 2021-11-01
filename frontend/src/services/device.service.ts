@@ -32,5 +32,5 @@ export const findByNameFoo = (filter?: DeviceFilter): Promise<AxiosResponse<IDev
 };
 
 export const runTest = (id: number | null | undefined, testName: string, env: string): Promise<AxiosResponse<ITestRunData>> => {
-    return http.post(`/device/${id}/tests`, {testName: testName, env: env});
+    return http.post(`/device/${id}/tests`, { testName: testName, env: env });
 };

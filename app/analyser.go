@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='(.*)' versionCode='(.*)' versionName='(.*)' compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)'`)
+	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='([a-zA-Z0-9._]+)' versionCode='([a-zA-Z0-9._]+)' versionName='([a-zA-Z0-9._]+)'.*`)
+	//  compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)' <- TODO check if we can it also on older adb versions
 	LaunchActivityRegex  = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9.]+)'\s+label='(.*)'\sicon='.*'`)
 )
 
@@ -150,7 +151,7 @@ func (a *analyser) analyseAPK() error {
 		if matches := AndroidAPKInfosRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
 			a.parameter.Identifier = matches[0][1]
 			a.parameter.Version = matches[0][3]
-			a.parameter.Additional = fmt.Sprintf("versionCode: %s compileSdkVersion %s", matches[0][2], matches[0][4])
+			// a.parameter.Additional = fmt.Sprintf("versionCode: %s compileSdkVersion %s", matches[0][2], matches[0][4])
 			continue
 		}
 		if matches := LaunchActivityRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {

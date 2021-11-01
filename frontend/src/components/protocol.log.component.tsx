@@ -92,12 +92,12 @@ const ProtocolLogComponent: FC<TestProtocolContentProps> = (props) => {
     const logScreenID = logScreenOpen ? 'simple-popover' : undefined;
 
     const timeFrom = (value :GridCellValue): string => {
-        return new Date((value as number) * 1000).toISOString().substr(11, 8)
+        return new Date((value as number) * 1000).toISOString().substr(11, 8);
     };
 
     const nanosFrom = (value :GridCellValue): string => {
-        let str = (value as number).toFixed(4)
-        return str.substring(str.length - 4)
+        const str = (value as number).toFixed(4);
+        return str.substring(str.length - 4);
     };
 
     const columns: GridColDef[] = [

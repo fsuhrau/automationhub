@@ -18,12 +18,12 @@ import {
     DialogContentText,
     DialogTitle,
     TextField,
-    Typography
+    Typography,
 } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 import { useSSE } from 'react-hooks-sse';
-import AppSelection from "./app-selection.component";
-import { executeTest } from "../services/test.service";
+import AppSelection from './app-selection.component';
+import { executeTest } from '../services/test.service';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -40,7 +40,7 @@ interface DeviceChangePayload {
 }
 
 const DeviceTable: FC<DeviceProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
@@ -51,7 +51,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
         console.log(deviceStateChange);
         setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? {
             ...device,
-            Status: deviceStateChange.DeviceState
+            Status: deviceStateChange.DeviceState,
         } : device));
     }, [deviceStateChange]);
 
@@ -82,7 +82,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     }
 
     // dialog
-    const [testName, seTestName] = useState<string>("");
+    const [testName, seTestName] = useState<string>('');
     const [selectedDeviceID, setSelectedDeviceID] = useState<number>(0);
     const [envParameter, setEnvParameter] = useState<string>('');
 
@@ -190,10 +190,10 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                             <TableCell>{ device.Connection?.appID }</TableCell>
                             <TableCell align="right">
                                 { device.Connection && ( <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
-                                        onClick={ (e) => {
-                                            setSelectedDeviceID(device.ID as number);
-                                            handleClickOpen();
-                                        } }>
+                                    onClick={ (e) => {
+                                        setSelectedDeviceID(device.ID as number);
+                                        handleClickOpen();
+                                    } }>
                                     Run
                                 </Button>) }
                             </TableCell>

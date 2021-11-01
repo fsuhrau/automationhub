@@ -6,6 +6,7 @@ import (
 	"github.com/antchfx/xmlquery"
 	"github.com/fsuhrau/automationhub/device/generic"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
+	"github.com/google/uuid"
 	"image"
 	"io/ioutil"
 	"net"
@@ -273,11 +274,11 @@ func (d *Device) IsAwake() (bool, error) {
 
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	d.Log("device","Get Native Screenshot")
-	fileName := fmt.Sprintf("%s.png", d.deviceID)
+	id := uuid.New()
+	fileName := fmt.Sprintf("%s.png", id.String())
 	var width int
 	var height int
-	// cmd := device.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
-	if false {
+	if true {
 		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/"+fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
@@ -294,7 +295,8 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 		}
 	} else {
 		start := time.Now()
-		cmd := exec2.NewCommand("/bin/sh", "android_screen.sh", d.DeviceID(), fileName)
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
+		//cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", ">", fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}
@@ -378,7 +380,10 @@ func (d *Device) RunNativeScript(script []byte)  {
 			timeout := time.Now().Add(time.Duration(wfa.Timeout) * time.Second)
 
 			for {
-				xml, _ := d.getScreenXml()
+				xml, err := d.getScreenXml()
+				if err != nil {
+					d.Error("device", "get screen failed: %v", err)
+				}
 				element := xmlquery.FindOne(xml, wfa.XPath)
 				if element == nil {
 					if time.Now().After(timeout) {
@@ -394,7 +399,10 @@ func (d *Device) RunNativeScript(script []byte)  {
 		}
 		if ca, ok  := a.(*ClickAction); ok {
 			d.Log("device", "click: %s", ca.XPath)
-			xml, _ := d.getScreenXml()
+			xml, err := d.getScreenXml()
+			if err != nil {
+				d.Error("device", "get screen failed: %v", err)
+			}
 			element := xmlquery.FindOne(xml, ca.XPath)
 			if element == nil {
 				d.Error("device", "Element '%s' not found", ca.XPath)
