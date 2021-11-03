@@ -203,11 +203,16 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	d.Log("device","Stop App '%s'", params.Identifier)
-
 	if viper.GetBool("restart") {
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
-		return cmd.Run()
+		d.Log("device","Stop App '%s'", params.Identifier)
+		if false {
+			cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
+			return cmd.Run()
+		} else {
+			cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "clear", params.Identifier)
+			// adb shell pm clear com.my.app.package
+			return cmd.Run()
+		}
 	}
 	return nil
 }
@@ -398,44 +403,54 @@ func (d *Device) RunNativeScript(script []byte)  {
 			}
 		}
 		if ca, ok  := a.(*ClickAction); ok {
-			d.Log("device", "click: %s", ca.XPath)
-			xml, err := d.getScreenXml()
-			if err != nil {
-				d.Error("device", "get screen failed: %v", err)
-			}
-			element := xmlquery.FindOne(xml, ca.XPath)
-			if element == nil {
-				d.Error("device", "Element '%s' not found", ca.XPath)
-				d.pressKey(KEYCODE_BACK)
-				return
-			}
-
-			var bounds string
-			for _, attr  := range element.Attr {
-				if attr.Name.Local == "bounds" {
-					bounds = attr.Value
-					break
+			retryCounter := 0
+			for {
+				d.Log("device", "click: %s", ca.XPath)
+				xml, err := d.getScreenXml()
+				if err != nil {
+					d.Error("device", "get screen failed: %v", err)
 				}
-			}
+				element := xmlquery.FindOne(xml, ca.XPath)
+				if element == nil {
+					if retryCounter > 3 {
+						d.Error("device", "Element '%s' not found", ca.XPath)
+						d.pressKey(KEYCODE_BACK)
+						return
+					} else {
+						time.Sleep(500 * time.Millisecond)
+						retryCounter++
+						continue
+					}
+				}
 
-			actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
-			if len(actionContent) == 0 {
-				d.Error("device", "No valid bounds for element '%s'", ca.XPath)
-				d.pressKey(KEYCODE_BACK)
-				return
-			}
-			xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
-			ys, _ := strconv.ParseFloat(actionContent[0][2], 64)
-			xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
-			ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
+				var bounds string
+				for _, attr  := range element.Attr {
+					if attr.Name.Local == "bounds" {
+						bounds = attr.Value
+						break
+					}
+				}
 
-			x := (xs + xe) * 0.5
-			y := (ys + ye) * 0.5
+				actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
+				if len(actionContent) == 0 {
+					d.Error("device", "No valid bounds for element '%s'", ca.XPath)
+					d.pressKey(KEYCODE_BACK)
+					return
+				}
+				xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
+				ys, _ := strconv.ParseFloat(actionContent[0][2], 64)
+				xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
+				ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
 
-			if err := d.Tap(int64(x), int64(y)); err != nil {
-				d.Error("device", "Touch element '%s' failed: '%v'", ca.XPath, err)
-				d.pressKey(KEYCODE_BACK)
-				return
+				x := (xs + xe) * 0.5
+				y := (ys + ye) * 0.5
+
+				if err := d.Tap(int64(x), int64(y)); err != nil {
+					d.Error("device", "Touch element '%s' failed: '%v'", ca.XPath, err)
+					d.pressKey(KEYCODE_BACK)
+					return
+				}
+				break
 			}
 		}
 	}
