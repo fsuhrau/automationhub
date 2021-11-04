@@ -101,7 +101,7 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 		isAppInstalled = hash == params.Hash
 	}
 	installed, err := android.IsAppInstalled(d.deviceID, params)
-	d.Log("device","App '%s' is installed: %t", params.Identifier, installed)
+	d.Log("device", "App '%s' is installed: %t", params.Identifier, installed)
 	return installed && isAppInstalled, err
 }
 
@@ -116,7 +116,7 @@ func (d *Device) UpdateDeviceInfos() error {
 
 func (d *Device) InstallApp(params *app.Parameter) error {
 
-	d.Log("device","Install App '%s'", params.Identifier)
+	d.Log("device", "Install App '%s'", params.Identifier)
 
 	isApkDebuggable := isDebuggablePackage(params.AppPath)
 
@@ -150,7 +150,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	d.Log("device","Uninstall App '%s'", params.Identifier)
+	d.Log("device", "Uninstall App '%s'", params.Identifier)
 
 	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "uninstall", params.Identifier)
 	if err := cmd.Run(); err != nil {
@@ -190,7 +190,7 @@ func (d *Device) unlockScreen() error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	d.Log("device","Start App '%s' with Session: '%s'", params.Identifier, sessionId)
+	d.Log("device", "Start App '%s' with Session: '%s'", params.Identifier, sessionId)
 
 	if err := d.unlockScreen(); err != nil {
 		return err
@@ -204,7 +204,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 
 func (d *Device) StopApp(params *app.Parameter) error {
 	if viper.GetBool("restart") {
-		d.Log("device","Stop App '%s'", params.Identifier)
+		d.Log("device", "Stop App '%s'", params.Identifier)
 		if false {
 			cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
 			return cmd.Run()
@@ -222,7 +222,7 @@ func (d *Device) IsAppConnected() bool {
 }
 
 func (d *Device) StartRecording(path string) error {
-	d.Log("device","Start Recording Session")
+	d.Log("device", "Start Recording Session")
 	d.testRecordingPath = fmt.Sprintf("./%s.mp4", path)
 	d.recordingSession = exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screenrecord", "--verbose", "/data/local/tmp/automation_hub_record.mp4")
 	if err := d.recordingSession.Start(); err != nil {
@@ -232,7 +232,7 @@ func (d *Device) StartRecording(path string) error {
 }
 
 func (d *Device) StopRecording() error {
-	d.Log("device","Stop Recording Session")
+	d.Log("device", "Stop Recording Session")
 	if d.recordingSession != nil && d.recordingSession.Process != nil {
 		if err := d.recordingSession.Process.Signal(os.Interrupt); err != nil {
 			return err
@@ -278,7 +278,7 @@ func (d *Device) IsAwake() (bool, error) {
 }
 
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
-	d.Log("device","Get Native Screenshot")
+	d.Log("device", "Get Native Screenshot")
 	id := uuid.New()
 	fileName := fmt.Sprintf("%s.png", id.String())
 	var width int
@@ -319,6 +319,7 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	imagePath.Seek(0, 0)
 	bytes, err := ioutil.ReadAll(imagePath)
 	logrus.Infof("Android open Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
+	defer os.Remove(fileName)
 	return bytes, width, height, err
 }
 
@@ -330,7 +331,7 @@ func (d *Device) HasFeature(feature string) bool {
 }
 
 func (d *Device) Execute(feature string) {
-	d.Log("device","Execute Feature: '%s'", feature)
+	d.Log("device", "Execute Feature: '%s'", feature)
 	features := map[string]func(d *Device){
 		"back": func(d *Device) {
 			d.pressKey(KEYCODE_BACK)
@@ -342,7 +343,7 @@ func (d *Device) Execute(feature string) {
 }
 
 func (d *Device) Tap(x, y int64) error {
-	d.Log("device","Execute Tap: %d,%d", x, y)
+	d.Log("device", "Execute Tap: %d,%d", x, y)
 	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
 	return cmd.Run()
 }
@@ -366,7 +367,7 @@ func (d *Device) getScreenXml() (*xmlquery.Node, error) {
 	return xmlquery.Parse(reader)
 }
 
-func (d *Device) RunNativeScript(script []byte)  {
+func (d *Device) RunNativeScript(script []byte) {
 
 	boundsEx := regexp.MustCompile(`\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]`)
 
@@ -380,7 +381,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 	_ = actions
 
 	for _, a := range actions {
-		if wfa, ok  := a.(*WaitForAction); ok {
+		if wfa, ok := a.(*WaitForAction); ok {
 			d.Log("device", "wait_for_action: %s with timeout: %d", wfa.XPath, wfa.Timeout)
 			timeout := time.Now().Add(time.Duration(wfa.Timeout) * time.Second)
 
@@ -402,7 +403,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 				}
 			}
 		}
-		if ca, ok  := a.(*ClickAction); ok {
+		if ca, ok := a.(*ClickAction); ok {
 			retryCounter := 0
 			for {
 				d.Log("device", "click: %s", ca.XPath)
@@ -424,7 +425,7 @@ func (d *Device) RunNativeScript(script []byte)  {
 				}
 
 				var bounds string
-				for _, attr  := range element.Attr {
+				for _, attr := range element.Attr {
 					if attr.Name.Local == "bounds" {
 						bounds = attr.Value
 						break
