@@ -89,14 +89,14 @@ const AddTestPage: FC = () => {
     const [testType, setTestType] = React.useState<TestType>(TestType.Unity);
     const handleTestTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
         const type = (+event.target.value as TestType);
-        console.log(type);
         setTestType(type);
     };
 
     const executionTypes = getExecutionTypes();
     const [executionType, setExecutionType] = React.useState<TestExecutionType>(TestExecutionType.Concurrent);
     const handleExecutionTypeChange = (event: React.ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
-        setExecutionType(event.target.value);
+        const type =  (+event.target.value as TestExecutionType);
+        setExecutionType(type);
     };
 
     const [testName, setTestName] = React.useState('');

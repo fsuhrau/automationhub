@@ -197,8 +197,19 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 		if !installed {
 			deviceWg.Add(1)
 			go func(appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
-				if err := d.InstallApp(&appp); err != nil {
-					tr.logError("unable to install app: %v", err)
+				tries := 0
+				for {
+					if tries > 1{
+						tr.logError("unable to install app: %v", err)
+						break
+					}
+					if err := d.InstallApp(&appp); err != nil {
+						tr.logInfo("installation failed try delete first: %v", err)
+						d.UninstallApp(&appp)
+						tries++
+						continue
+					}
+					break
 				}
 				group.Done()
 			}(tr.appParams, d.Device, &deviceWg)

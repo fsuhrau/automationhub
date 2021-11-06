@@ -35,12 +35,13 @@ var (
 	params  string
 	async   *bool
 	success bool
+	testName string
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --async",
+	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --test \"name\" --async",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,6 +54,22 @@ var runCmd = &cobra.Command{
 			}
 			appID = int(app.ID)
 			logrus.Infof("upload finished new appId: %d", appID)
+		}
+
+		if testID == 0 && len(testName) > 0 {
+			tests, err := client.GetTests(context.Background())
+			if err != nil {
+				return err
+			}
+			for _, t := range tests {
+				if t.Name == testName {
+					testID = int(t.ID)
+				}
+			}
+		}
+
+		if testID == 0 {
+			return fmt.Errorf("no test provided or test could not be found")
 		}
 
 		logrus.Infof("execute test %d with appId: %d", testID, appID)
@@ -116,10 +133,11 @@ func init() {
 	success = false
 	testCmd.AddCommand(runCmd)
 
-	testCmd.PersistentFlags().StringVar(&appPath, "app", "", "app path")
-	testCmd.PersistentFlags().IntVar(&appID, "appid", 0, "appid")
-	testCmd.PersistentFlags().IntVar(&testID, "testid", 0, "testid")
-	testCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter")
+	runCmd.PersistentFlags().StringVar(&appPath, "app", "", "app path")
+	runCmd.PersistentFlags().IntVar(&appID, "appid", 0, "appid 123")
+	runCmd.PersistentFlags().IntVar(&testID, "testid", 0, "testid 123")
+	runCmd.PersistentFlags().StringVar(&testName, "test", "", "test \"testname\"")
+	runCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter")
 
 	// Here you will define your flags and configuration settings.
 

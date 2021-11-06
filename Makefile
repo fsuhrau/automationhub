@@ -11,4 +11,4 @@ lint:
 # run build
 .PHONY: build
 build:
-	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -o bin/automationhub && cd cli && go build -o ../bin/automationhubcli
+	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -o bin/automationhub && cd cli && go build -o ../bin/cli

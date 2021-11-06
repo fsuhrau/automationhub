@@ -15,7 +15,13 @@ func New() *wf {
 
 func (s *wf) RegisterRoutes(r *gin.Engine) error {
 	fs := http.FS(Content)
-	r.GET("/web/*filepath", func(context *gin.Context) {
+	//authorized := r.Group("/web", gin.BasicAuth(gin.Accounts{
+	//	"admin": "password",
+	//}))
+
+	authorized := r.Group("/web")
+
+	authorized.GET("/*filepath", func(context *gin.Context) {
 		url := context.Request.RequestURI
 		file := strings.Replace(url, "/web/", "/data/", -1)
 		_, err := fs.Open(file)

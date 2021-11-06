@@ -92,10 +92,12 @@ func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 
 	reset := action.UnityReset{}
 	s.devicesManager.SendAction(dev, &reset)
+	envParams := extractParams(req.Env)
 
 	runTestAction := action.TestStart{
 		Class: arr[0],
 		Method: arr[1],
+		Env: envParams,
 	}
 
 	executor := unity.NewExecutor(s.devicesManager)

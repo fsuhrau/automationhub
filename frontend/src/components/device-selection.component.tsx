@@ -112,7 +112,7 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
                                     inputProps={{ 'aria-labelledby': labelId }}
                                 />
                             </ListItemIcon>
-                            <ListItemText id={labelId} primary={`${value.Name}`} />
+                            <ListItemText id={labelId} primary={`${value.DeviceIdentifier}(${value.Name})`} />
                         </ListItem>
                     );
                 })}
