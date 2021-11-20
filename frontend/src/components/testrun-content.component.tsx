@@ -27,6 +27,13 @@ import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@material-ui/icons';
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import Hidden from "@material-ui/core/Hidden";
+import IconButton from "@material-ui/core/IconButton";
+import MenuIcon from "@material-ui/icons/Menu";
+import Tooltip from "@material-ui/core/Tooltip";
+import NotificationsIcon from "@material-ui/icons/Notifications";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -172,6 +179,10 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     return (
         <div>
+            <Typography variant={ "h5" }>
+                Test: {testRun.Test.Name}
+            </Typography>
+            <br/>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
                     { prevRunId > 0 && <Button variant="contained" color="primary"

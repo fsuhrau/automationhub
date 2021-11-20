@@ -13,9 +13,10 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
-import { getAllApps, deleteApp } from '../../services/app.service';
+import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 import Moment from 'react-moment';
+import { Typography } from "@material-ui/core";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -44,7 +45,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 export type AppsProps = WithStyles<typeof styles>;
 
 const AppsPage: FC<AppsProps> = (props) => {
-    const { classes } = props;
+    const {classes} = props;
 
     const history = useHistory();
 
@@ -81,78 +82,85 @@ const AppsPage: FC<AppsProps> = (props) => {
         const GB = MB * 1024;
 
         if (bytes >= GB) {
-            return `${(bytes / GB).toFixed(2)}GB`;
+            return `${ (bytes / GB).toFixed(2) }GB`;
         }
 
         if (bytes >= MB) {
-            return `${(bytes / MB).toFixed(2)}MB`;
+            return `${ (bytes / MB).toFixed(2) }MB`;
         }
 
         if (bytes >= KB) {
-            return `${(bytes / KB).toFixed(2)}KB`;
+            return `${ (bytes / KB).toFixed(2) }KB`;
         }
 
-        return `${bytes}B`;
+        return `${ bytes }B`;
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
-                <Toolbar>
-                    <Grid container={ true } spacing={ 2 } alignItems="center">
-                        <Grid item={ true }>
-                            <SearchIcon className={ classes.block } color="inherit"/>
-                        </Grid>
-                        <Grid item={ true } xs={ true }>
-                        </Grid>
-                        <Grid item={ true }>
-                            <Button color="primary" variant="contained"
-                                onClick={ newAppClick }>
-                                New App
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Toolbar>
-            </AppBar>
-            <TableContainer component={Paper}>
-                <Table className={classes.table} size="small" aria-label="a dense table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell>Created</TableCell>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Platform</TableCell>
-                            <TableCell>Bundle Identifier</TableCell>
-                            <TableCell align="right">Version</TableCell>
-                            <TableCell>Activity</TableCell>
-                            <TableCell align="right">Size</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {apps.map((app) => <TableRow key={app.ID}>
-                            <TableCell component="th" scope="row">
-                                {app.ID}
-                            </TableCell>
-                            <TableCell><Moment format="YYYY/MM/DD HH:mm:ss">{app.CreatedAt}</Moment></TableCell>
-                            <TableCell>{app.Name}</TableCell>
-                            <TableCell>{app.Platform}</TableCell>
-                            <TableCell>{app.Identifier}</TableCell>
-                            <TableCell align="right">{app.Version}</TableCell>
-                            <TableCell>{app.LaunchActivity}</TableCell>
-                            <TableCell align="right">{ppSize(app.Size)}</TableCell>
-                            <TableCell>
-                                <Button variant="contained" color="secondary" size="small" onClick={ () => {
-                                    handleDeleteApp(app.ID as number);
-                                }}>
-                                    Delete
+        <div>
+            <Typography variant={ "h4" }>
+                Apps
+            </Typography>
+            <br/>
+            <Paper className={ classes.paper }>
+                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                    <Toolbar>
+                        <Grid container={ true } spacing={ 2 } alignItems="center">
+                            <Grid item={ true }>
+                                <SearchIcon className={ classes.block } color="inherit"/>
+                            </Grid>
+                            <Grid item={ true } xs={ true }>
+                            </Grid>
+                            <Grid item={ true }>
+                                { false && <Button color="primary" variant="contained"
+                                                   onClick={ newAppClick }>
+                                    New App
                                 </Button>
-                            </TableCell>
-                        </TableRow>)}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
+                                }
+                            </Grid>
+                        </Grid>
+                    </Toolbar>
+                </AppBar>
+                <TableContainer component={ Paper }>
+                    <Table className={ classes.table } size="small" aria-label="a dense table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell>Created</TableCell>
+                                <TableCell>Name</TableCell>
+                                <TableCell>Platform</TableCell>
+                                <TableCell>Bundle Identifier</TableCell>
+                                <TableCell align="right">Version</TableCell>
+                                <TableCell>Activity</TableCell>
+                                <TableCell align="right">Size</TableCell>
+                                <TableCell>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            { apps.map((app) => <TableRow key={ app.ID }>
+                                <TableCell component="th" scope="row">
+                                    { app.ID }
+                                </TableCell>
+                                <TableCell><Moment format="YYYY/MM/DD HH:mm:ss">{ app.CreatedAt }</Moment></TableCell>
+                                <TableCell>{ app.Name }</TableCell>
+                                <TableCell>{ app.Platform }</TableCell>
+                                <TableCell>{ app.Identifier }</TableCell>
+                                <TableCell align="right">{ app.Version }</TableCell>
+                                <TableCell>{ app.LaunchActivity }</TableCell>
+                                <TableCell align="right">{ ppSize(app.Size) }</TableCell>
+                                <TableCell>
+                                    <Button variant="contained" color="secondary" size="small" onClick={ () => {
+                                        handleDeleteApp(app.ID as number);
+                                    } }>
+                                        Delete
+                                    </Button>
+                                </TableCell>
+                            </TableRow>) }
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
+        </div>
     );
 };
 

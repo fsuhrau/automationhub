@@ -6,22 +6,18 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Hidden from '@material-ui/core/Hidden';
 import Navigator from './components/navigator';
-import TestHeader from './pages/tests/tests.header';
 import TestContent from './pages/tests/tests.content';
-import DeviceHeader from './pages/devices/device.header';
 import DevicesContent from './pages/devices/device.content';
-import Header from './Header';
 import Content from './Content';
 import AddTestPage from './pages/tests/add.test.content';
-import TestRunsPage from './pages/tests/test.runs.content';
 import TestRunPage from './pages/tests/test.run.content';
 import TestProtocolPage from './pages/tests/test.protocol.content';
 import Moment from 'react-moment';
 import AppsPage from './pages/apps/apps.content';
-import AppsHeader from './pages/apps/apps.header';
 import { SSEProvider } from 'react-hooks-sse';
 import { AppContext } from './context/app.context';
-import { TestContext, TestContextProvider } from './context/test.context';
+import { TestContextProvider } from './context/test.context';
+import DefaultHeader from "./pages/shared/header";
 
 Moment.globalLocale = 'de';
 
@@ -178,7 +174,7 @@ const styles = createStyles({
 export type AppProps = WithStyles<typeof styles>;
 
 const App: FC<AppProps> = (props) => {
-    const { classes } = props;
+    const {classes} = props;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = (): void => {
@@ -186,7 +182,7 @@ const App: FC<AppProps> = (props) => {
     };
 
     return <SSEProvider endpoint="/api/sse/">
-        <AppContext.Provider value={ { title: '' } }>
+        <AppContext.Provider value={ {title: ''} }>
             <Router>
                 <ThemeProvider theme={ theme }>
                     <div className={ classes.root }>
@@ -194,89 +190,59 @@ const App: FC<AppProps> = (props) => {
                         <nav className={ classes.drawer }>
                             <Hidden smUp={ true } implementation="js">
                                 <Navigator
-                                    PaperProps={ { style: { width: drawerWidth } } }
+                                    PaperProps={ {style: {width: drawerWidth}} }
                                     variant="temporary"
                                     open={ mobileOpen }
                                     onClose={ handleDrawerToggle }
                                 />
                             </Hidden>
                             <Hidden xsDown={ true } implementation="css">
-                                <Navigator PaperProps={ { style: { width: drawerWidth } } }/>
+                                <Navigator PaperProps={ {style: {width: drawerWidth}} }/>
                             </Hidden>
                         </nav>
                         <div className={ classes.app }>
-                            <Switch>
-                                <Route path="/web/tests">
-                                    <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                            <DefaultHeader onDrawerToggle={ handleDrawerToggle }/>
+                            <main className={ classes.main }>
+                                <Switch>
+                                    <Route path="/web/tests">
                                         <TestContent/>
-                                    </main>
-                                </Route>
-                                <Route path={ '/web/test/new' }>
-                                    <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path={ '/web/test/new' }>
                                         <AddTestPage/>
-                                    </main>
-                                </Route>
-                                <Route path={ '/web/test/:testId/run/:runId/:protocolId' }>
-                                    <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path={ '/web/test/:testId/run/:runId/:protocolId' }>
                                         <TestProtocolPage/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/test/:testId/runs/last">
-                                    <TestContextProvider>
-                                        <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                        <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/test/:testId/runs/last">
+                                        <TestContextProvider>
                                             <TestRunPage/>
-                                        </main>
-                                    </TestContextProvider>
-                                </Route>
-                                <Route path="/web/test/:testId/run/:runId">
-                                    <TestContextProvider>
-                                        <TestHeader onDrawerToggle={ handleDrawerToggle }/>
-                                        <main className={ classes.main }>
+                                        </TestContextProvider>
+                                    </Route>
+                                    <Route path="/web/test/:testId/run/:runId">
+                                        <TestContextProvider>
                                             <TestRunPage/>
-                                        </main>
-                                    </TestContextProvider>
-                                </Route>
-                                <Route path="/web/results">
-                                    <Header onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                        </TestContextProvider>
+                                    </Route>
+                                    <Route path="/web/results">
                                         <Content/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/performance">
-                                    <Header onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/performance">
                                         <Content/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/settings">
-                                    <Header onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/settings">
                                         <Content/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/apps">
-                                    <AppsHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/apps">
                                         <AppsPage/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/users">
-                                    <Header onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/users">
                                         <Content/>
-                                    </main>
-                                </Route>
-                                <Route path="/web/devices">
-                                    <DeviceHeader onDrawerToggle={ handleDrawerToggle }/>
-                                    <main className={ classes.main }>
+                                    </Route>
+                                    <Route path="/web/devices">
                                         <DevicesContent/>
-                                    </main>
-                                </Route>
-                            </Switch>
+                                    </Route>
+                                </Switch>
+                            </main>
                             <footer className={ classes.footer }>
                                 <Copyright/>
                             </footer>

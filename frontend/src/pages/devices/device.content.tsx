@@ -2,6 +2,7 @@ import { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DeviceTableComponent from '../../components/device-table.component';
+import { Typography } from "@material-ui/core";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -30,12 +31,18 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 export type DevicesProps = WithStyles<typeof styles>;
 
 const Devices: FC<DevicesProps> = props => {
-    const { classes } = props;
+    const {classes} = props;
 
     return (
-        <Paper className={classes.paper}>
-            <DeviceTableComponent/>
-        </Paper>
+        <div>
+            <Typography variant={ "h4" }>
+                Devices
+            </Typography>
+            <br/>
+            <Paper className={ classes.paper }>
+                <DeviceTableComponent/>
+            </Paper>
+        </div>
     );
 };
 
