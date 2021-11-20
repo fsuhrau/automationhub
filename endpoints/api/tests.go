@@ -227,30 +227,52 @@ func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
 }
 
 func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
-	testId := c.Param("test_id")
-	_ = testId
+	type Response struct {
+		TestRun   models.TestRun
+		PrevRunId uint
+		NextRunId uint
+	}
 
-	var run models.TestRun
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&run).Error; err != nil {
+	testId := c.Param("test_id")
+
+	var resp Response
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
+	// get prev
+	s.db.Table("test_runs").Where("test_id = ? and id < ?", testId, resp.TestRun.ID).Order("created_at desc").Limit(1).Select("id").Scan(&resp.PrevRunId)
 
-	c.JSON(http.StatusOK, run)
+	// get next
+	s.db.Table("test_runs").Where("test_id = ? and id > ?", testId, resp.TestRun.ID).Order("created_at asc").Limit(1).Select("id").Scan(&resp.NextRunId)
+
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
+	type Response struct {
+		TestRun   models.TestRun
+		PrevRunId uint
+		NextRunId uint
+	}
+
 	testId := c.Param("test_id")
-	_ = testId
 	runId := c.Param("run_id")
 
-	var run models.TestRun
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").First(&run, runId).Error; err != nil {
+	var resp Response
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, run)
+	// get prev
+	s.db.Table("test_runs").Where("test_id = ? and id < ?", testId, runId).Order("created_at desc").Limit(1).Select("id").Scan(&resp.PrevRunId)
+
+	// get next
+	s.db.Table("test_runs").Where("test_id = ? and id > ?", testId, runId).Order("created_at asc").Limit(1).Select("id").Scan(&resp.NextRunId)
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (s *ApiService) getTestRunProtocol(session *Session, c *gin.Context) {
@@ -263,12 +285,10 @@ func (s *ApiService) getTestRunProtocol(session *Session, c *gin.Context) {
 		return
 	}
 
-
-
 	c.JSON(http.StatusOK, run)
 }
 
 func (s *ApiService) getData(session *Session, c *gin.Context) {
 	name := c.Param("name")
-	c.File(fmt.Sprintf("test/data/"+ name))
+	c.File(fmt.Sprintf("test/data/" + name))
 }

@@ -8,18 +8,25 @@ import { Typography } from '@material-ui/core';
 const TestRun: FC = () => {
     const { testId } = useParams();
     const { runId } = useParams<number>();
+
     const [testRun, setTestRun] = useState<ITestRunData>();
+    const [nextRunId, setNextRunId] = useState<number>();
+    const [prevRunId, setPrevRunId] = useState<number>();
 
     useEffect(() => {
         if (runId !== undefined) {
             getRun(testId, runId).then(response => {
-                setTestRun(response.data);
+                setTestRun(response.data.TestRun);
+                setNextRunId(response.data.NextRunId);
+                setPrevRunId(response.data.PrevRunId);
             }).catch(ex => {
                 console.log(ex);
             });
         } else {
             getLastRun(testId).then(response => {
-                setTestRun(response.data);
+                setTestRun(response.data.TestRun);
+                setNextRunId(response.data.NextRunId);
+                setPrevRunId(response.data.PrevRunId);
             }).catch(ex => {
                 console.log(ex);
             });
@@ -29,7 +36,7 @@ const TestRun: FC = () => {
     return (
         <div>
             { testRun
-                ? <TestRunContent testRun={ testRun } />
+                ? <TestRunContent testRun={ testRun } nextRunId={ nextRunId } prevRunId={ prevRunId }/>
                 : <Typography variant={ 'h1' }>Loading</Typography>
             }
         </div>

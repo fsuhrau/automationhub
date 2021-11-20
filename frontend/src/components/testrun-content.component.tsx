@@ -25,9 +25,8 @@ import moment from 'moment';
 import ITestProtocolData from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
-import { AppContext } from '../context/app.context';
 import { TestContext } from '../context/test.context';
-import ITestData from '../types/test';
+import { KeyboardArrowLeft, KeyboardArrowRight } from '@material-ui/icons';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -58,6 +57,8 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 
 interface TestRunContentProps extends WithStyles<typeof styles> {
     testRun: ITestRunData
+    nextRunId: number
+    prevRunId: number
 }
 
 interface NewTestRunPayload {
@@ -71,7 +72,7 @@ interface NewProtocolPayload {
 }
 
 const TestRunContent: FC<TestRunContentProps> = (props) => {
-    const { testRun, classes } = props;
+    const { testRun, nextRunId, prevRunId, classes } = props;
 
     const testContext = useContext(TestContext);
     const { test, setTest } = testContext;
@@ -163,7 +164,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     const onTestRerun = (): void => {
         executeTest(testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
-            history.push(`/web/test/${testRun.TestID}/run/${response.data.ID}`);
+            history.push(`/web/test/${ testRun.TestID }/run/${ response.data.ID }`);
         }).catch(error => {
             console.log(error);
         });
@@ -171,6 +172,22 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
 
     return (
         <div>
+            <Grid container={ true }>
+                <Grid item={ true } xs={ 6 }>
+                    { prevRunId > 0 && <Button variant="contained" color="primary"
+                        href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                        <KeyboardArrowLeft/> Prev
+                    </Button>
+                    }
+                </Grid>
+                <Grid container={ true } item={ true } xs={ 6 } justify="flex-end">
+                    { nextRunId > 0 && <Button variant="contained" color="primary"
+                        href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                        Next <KeyboardArrowRight/>
+                    </Button>
+                    }
+                </Grid>
+            </Grid>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
                     <Box component={ Paper } sx={ { p: 2, m: 2 } }>
