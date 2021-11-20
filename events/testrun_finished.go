@@ -5,6 +5,9 @@ var TestRunFinished testRunFinished
 type TestRunFinishedPayload struct {
 	TestRunID uint
 	Success   bool
+	Succeeded int
+	Unstable  int
+	Failed    int
 	TestRun   interface{}
 }
 

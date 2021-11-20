@@ -25,6 +25,7 @@ import (
 	"github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"strings"
 	"time"
 )
 
@@ -72,8 +73,10 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("no test provided or test could not be found")
 		}
 
+		logrus.Infof("execute test %d with appId: %d\n%s", testID, appID, params)
+		parameter := strings.Split(params, ";")
 		logrus.Infof("execute test %d with appId: %d", testID, appID)
-		testRun, err := client.ExecuteTest(context.Background(), testID, appID, params)
+		testRun, err := client.ExecuteTest(context.Background(), testID, appID, strings.Join(parameter, "\n"))
 		if err != nil {
 			return err
 		}

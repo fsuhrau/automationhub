@@ -4,6 +4,9 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/modules/hooks"
+	"github.com/fsuhrau/automationhub/modules/hooks/notifier"
+	"github.com/fsuhrau/automationhub/modules/hooks/slack"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -23,7 +26,8 @@ type Service struct {
 	hostIP         net.IP
 	endpoints      []endpoints.ServiceEndpoint
 	router         *gin.Engine
-	cfg  config.Service
+	cfg            config.Service
+	hooks          []hooks.Hook
 	// sessions       map[string]*Session
 }
 
@@ -64,4 +68,14 @@ func (s *Service) AddEndpoint(endpoint endpoints.ServiceEndpoint) error {
 	}
 	s.endpoints = append(s.endpoints, endpoint)
 	return nil
+}
+
+func (s *Service) RegisterHooks(hooksCfgs []config.Hook) {
+	for _, hook := range hooksCfgs {
+		if hook.Provider == "slack" {
+			s.hooks = append(s.hooks, slack.NewHook(hook))
+		}
+	}
+
+	notifier.RegisterEventTestRunFinishedListener(s.hooks)
 }

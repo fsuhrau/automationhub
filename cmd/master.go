@@ -62,6 +62,7 @@ var masterCmd = &cobra.Command{
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
 		server.AddEndpoint(web.New())
 		// server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
+		server.RegisterHooks(serviceConfig.Hooks)
 
 		return server.RunMaster()
 	},

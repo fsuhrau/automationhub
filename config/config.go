@@ -26,10 +26,19 @@ type Device struct {
 	Connection Connection `mapstructure:"connection"`
 }
 
+type Hook struct {
+	Provider string `mapstructure:"provider"`
+	Url      string `mapstructure:"url"`
+	Token    string `mapstructure:"token"`
+	Username string `mapstructure:"username"`
+	Channel  string `mapstructure:"channel"`
+}
+
 type Service struct {
 	Autodetect    bool               `mapstructure:"autodetect_ip"`
 	HostIP        string             `mapstructure:"host_ip"`
 	ServerURL     string             `mapstructure:"server_url"`
 	Port          uint16             `mapstructure:"port"`
 	DeviceManager map[string]Manager `mapstructure:"managers"`
+	Hooks         []Hook             `mapstructure:"hooks"`
 }

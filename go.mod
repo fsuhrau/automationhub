@@ -23,6 +23,7 @@ require (
 	github.com/prometheus/common v0.4.0
 	github.com/r3labs/sse/v2 v2.3.6
 	github.com/sirupsen/logrus v1.6.0
+	github.com/slack-go/slack v0.10.0 // indirect
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2

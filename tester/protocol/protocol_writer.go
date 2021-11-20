@@ -69,17 +69,26 @@ func (w *ProtocolWriter) SessionID() string {
 }
 
 func (w *ProtocolWriter) Close() {
-	success := true
+	failedCount := 0
+	successCount := 0
+	unstableCount := 0
 	for _, p := range w.protocols {
-		if p.p.TestResult != models.TestResultSuccess {
-			success = false
-			break
+		switch p.p.TestResult {
+		case models.TestResultSuccess:
+			successCount++
+		case models.TestResultUnstable:
+			unstableCount++
+		case models.TestResultFailed:
+			failedCount++
 		}
 	}
 
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{
 		TestRunID: w.run.ID,
 		TestRun: w.run,
-		Success: success,
+		Success: failedCount == 0 && unstableCount == 0,
+		Succeeded: successCount,
+		Unstable: unstableCount,
+		Failed: failedCount,
 	})
 }
