@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { getLastRun } from '../../services/test.run.service';
+import { getTestProtocol } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
 import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
@@ -8,13 +8,14 @@ import { Typography } from '@material-ui/core';
 
 const TestProtocol: FC = () => {
     const { testId } = useParams<number>();
+    const { runId } = useParams<number>();
     const { protocolId } = useParams<number>();
 
     const [protocol, setProtocol] = useState<ITestProtocolData>();
     const [run, setRun] = useState<ITestRunData>();
 
     useEffect(() => {
-        getLastRun(testId).then(response => {
+        getTestProtocol(testId, runId, protocolId).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
                 if (response.data.Protocols[ i ].ID == +protocolId) {

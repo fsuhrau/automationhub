@@ -28,3 +28,4 @@
 *.db
 endpoints/web/data/
 test/
+/bin

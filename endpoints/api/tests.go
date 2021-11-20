@@ -253,6 +253,21 @@ func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, run)
 }
 
+func (s *ApiService) getTestRunProtocol(session *Session, c *gin.Context) {
+	runId := c.Param("run_id")
+	protocolId := c.Param("protocol_id")
+
+	var run models.TestRun
+	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("App").Preload("Test").First(&run, runId).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+
+
+	c.JSON(http.StatusOK, run)
+}
+
 func (s *ApiService) getData(session *Session, c *gin.Context) {
 	name := c.Param("name")
 	c.File(fmt.Sprintf("test/data/"+ name))
