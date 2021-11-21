@@ -1,25 +1,26 @@
 import React, { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import {
-    Box, Button,
-    Divider,
-    Grid,
-    makeStyles,
-    Typography,
-} from '@material-ui/core';
+import { Box, Button, Divider, Grid, Typography } from '@material-ui/core';
 import { TestExecutionType } from '../../types/test.execution.type.enum';
 import { TestType } from '../../types/test.type.enum';
 import { useHistory } from 'react-router-dom';
 import ITestData from '../../types/test';
-import styles = module;
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
 
-const useStyles = makeStyles((theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
             maxWidth: 1200,
-            padding: '10px',
+            margin: 'auto',
             overflow: 'hidden',
+        },
+        searchBar: {
+            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        },
+        searchInput: {
+            fontSize: theme.typography.fontSize,
         },
         root: {
             width: '100%',
@@ -38,8 +39,11 @@ const useStyles = makeStyles((theme: Theme) =>
         selectEmpty: {
             marginTop: theme.spacing(2),
         },
-    }),
-);
+        contentWrapper: {
+            margin: '40px 16px',
+        },
+    });
+
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
 function ToArray(en: any): Array<Object> {
@@ -99,23 +103,27 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
     };
 
     return (
-        <div>
-            <Grid container={ true } sx={ { p: 2, m: 2 } }>
-                <Button variant="outlined" color="primary" size="small" href={ `${ test.ID }/edit` }>Edit</Button>
-                <Grid item={ true } xs={ 12 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
-                        <Typography variant={ 'h6' }>Test Details</Typography>
-                        <Divider/>
-                        <br/>
-                        <Grid container={ true }>
-                            <Grid item={ true } xs={ 2 }>
-                                Name:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { test.Name }
-                            </Grid>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <Toolbar>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <Typography variant={ 'h6' }>
+                                Test: { test.Name }
+                            </Typography>
                         </Grid>
-                        <br/>
+                        <Grid item={ true } xs={ true }>
+                        </Grid>
+                        <Grid item={ true }>
+                            <Button variant="outlined" color="primary" size="small"
+                                href={ `${ test.ID }/edit` }>Edit</Button>
+                        </Grid>
+                    </Grid>
+                </Toolbar>
+            </AppBar>
+            <Box sx={ { p: 2, m: 2 } }>
+                <Grid container={ true } >
+                    <Grid item={ true } xs={ 12 }>
                         <Typography variant={ 'h6' }>Test Configuration</Typography>
                         <Divider/>
                         <br/>
@@ -144,9 +152,9 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                                 { getDeviceConfigName(test.TestConfig.AllDevices) }
                                 { test.TestConfig.AllDevices === true && (<div>all</div>) }
                                 { test.TestConfig.AllDevices === false && (<div>
-                                    Devices:<br />
+                                    Devices:<br/>
                                     { test.TestConfig.Devices.map((a) =>
-                                        <div>- { a.Device?.DeviceIdentifier }({a.Device?.Name })<br/></div>,
+                                        <div>- { a.Device?.DeviceIdentifier }({ a.Device?.Name })<br/></div>,
                                     ) }
                                 </div>) }
                             </Grid>
@@ -165,7 +173,7 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                                     <Grid item={ true } xs={ 10 }>
                                         { getUnityTestConfigName(test.TestConfig.Unity?.RunAllTests) }
                                         { test.TestConfig.Unity?.RunAllTests === false && (<div>
-                                            Functions:<br />
+                                            Functions:<br/>
                                             { test.TestConfig.Unity.UnityTestFunctions.map((a) =>
                                                 <div>- { a.Class }/{ a.Method }<br/></div>,
                                             ) }
@@ -173,12 +181,11 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                                     </Grid>
                                 </Grid>
                             </div>) }
-
-                    </Box>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </div>
+            </Box>
+        </Paper>
     );
 };
 
-export default withStyles(useStyles)(ShowTestPage);
+export default withStyles(styles)(ShowTestPage);

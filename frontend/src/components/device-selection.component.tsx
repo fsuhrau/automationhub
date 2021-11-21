@@ -11,6 +11,7 @@ import Paper from '@material-ui/core/Paper';
 import IDeviceData from '../types/device';
 import { getAllDevices } from '../services/device.service';
 import { Typography } from '@material-ui/core';
+import { findAllByAltText } from '@testing-library/react';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -29,6 +30,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 
 interface DeviceSelectionProps extends WithStyles<typeof styles> {
     onSelectionChanged: (devices: IDeviceData[]) => void;
+    selectedDevices: IDeviceData[];
 }
 
 function not(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
@@ -40,7 +42,7 @@ function intersection(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
 }
 
 const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
-    const { classes, onSelectionChanged } = props;
+    const { classes, selectedDevices, onSelectionChanged } = props;
 
     const [checked, setChecked] = React.useState<IDeviceData[]>([]);
 
@@ -87,7 +89,9 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
 
     useEffect(() => {
         getAllDevices().then(response => {
-            setLeft(response.data);
+            const r = response.data.filter(value => selectedDevices.find(element => element.ID == value.ID));
+            setRight(r);
+            setLeft(not(response.data, r));
         }).catch(e => {
         });
     }, []);

@@ -1,15 +1,16 @@
-import React, { FC, useEffect } from 'react';
+import React, { ChangeEvent, FC, useEffect, useState } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import {
-    Box, Button,
-    Divider, FormControl,
+    Box,
+    Button,
+    Divider,
+    FormControl,
     FormControlLabel,
     Grid,
-    makeStyles,
-    MenuItem,
     Radio,
-    RadioGroup, TextField,
+    RadioGroup,
+    TextField,
     Typography,
 } from '@material-ui/core';
 import { TestExecutionType } from '../../types/test.execution.type.enum';
@@ -20,15 +21,22 @@ import TestMethodSelection from '../../components/testmethod-selection.component
 import IAppFunctionData from '../../types/app.function';
 import ITestData from '../../types/test';
 import { updateTest } from '../../services/test.service';
-import styles = module;
 import DeviceSelection from '../../components/device-selection.component';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
 
-const useStyles = makeStyles((theme: Theme) =>
+const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
         paper: {
             maxWidth: 1200,
-            padding: '10px',
+            margin: 'auto',
             overflow: 'hidden',
+        },
+        searchBar: {
+            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        },
+        searchInput: {
+            fontSize: theme.typography.fontSize,
         },
         root: {
             width: '100%',
@@ -47,8 +55,11 @@ const useStyles = makeStyles((theme: Theme) =>
         selectEmpty: {
             marginTop: theme.spacing(2),
         },
-    }),
-);
+        contentWrapper: {
+            margin: '40px 16px',
+        },
+    });
+
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
 function ToArray(en: any): Array<Object> {
@@ -80,41 +91,45 @@ const EditTestPage: FC<TestContentProps> = (props) => {
     const history = useHistory();
 
     const testTypes = getTestTypes();
-    const [testType, setTestType] = React.useState<TestType>(TestType.Unity);
-    const handleTestTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
-        const type = (+event.target.value as TestType);
-        setTestType(type);
-    };
-
     const executionTypes = getExecutionTypes();
-    const handleExecutionTypeChange = (event: React.ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
-        const type = (+event.target.value as TestExecutionType);
-        test.TestConfig.ExecutionType = type;
-    };
-
     const unityTestExecutionTypes = getUnityTestsConfig();
-    const [unityTestExecution, setUnityTestExecution] = React.useState<number>(0);
-    const handleUnityTestExecutionChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
-        setUnityTestExecution(+event.target.value);
-        test.TestConfig.Unity.RunAllTests = (event.target.value == 0);
-    };
-
-
     const deviceTypes = getDeviceOption();
-    const [deviceType, setDeviceType] = React.useState<number>(0);
-    const handleDeviceTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
-        setDeviceType(+event.target.value);
-        test.TestConfig.AllDevices = (event.target.value == 0);
+
+    const [testName, setTestName] = useState<string>(test.Name);
+    const [deviceType, setDeviceType] = useState<number>(test.TestConfig.AllDevices ? 0 : 1);
+    const [executionType, setExecutionType] = useState<number>(test.TestConfig.ExecutionType);
+    const [unityTestExecution, setUnityTestExecution] = useState<number>(test.TestConfig.Unity?.RunAllTests ? 0 : 1);
+    const [selectedDevices, setSelectedDevices] = useState<IDeviceData[]>(test.TestConfig.Devices.map(value => value.Device));
+    const [unityTestFunctions, setUnityTestFunctions] = useState<IAppFunctionData[]>(test.TestConfig.Unity?.UnityTestFunctions);
+
+    const onTestNameChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
+        setTestName(event.target.value);
     };
 
-    const [selectedDevices, setSelectedDevices] = React.useState<IDeviceData[]>([]);
-    const handleDeviceSelectionChanged = (devices: IDeviceData[]): void => {
+    const onExecutionTypeChange = (event: ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
+        const type = (+event.target.value as TestExecutionType);
+        setExecutionType(type);
+    };
+
+    const onUnityTestExecutionChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
+        setUnityTestExecution(+event.target.value);
+    };
+
+    const onDeviceExecutionChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
+        setDeviceType(+event.target.value);
+    };
+
+    const onDeviceSelectionChanged = (devices: IDeviceData[]): void => {
         setSelectedDevices(devices);
     };
 
-    const [unityTestFunctions, setUnityTestFunctions] = React.useState<IAppFunctionData[]>([]);
-
     const updateTestData = (): void => {
+        test.Name = testName;
+        test.TestConfig.AllDevices = deviceType == 0;
+        test.TestConfig.ExecutionType = executionType;
+        if (test.TestConfig.Unity !== null) {
+            test.TestConfig.Unity.RunAllTests = unityTestExecution == 0;
+        }
         updateTest(test.ID, test).then(response => {
             console.log(response.data);
             history.push('/web/tests');
@@ -137,20 +152,34 @@ const EditTestPage: FC<TestContentProps> = (props) => {
         return item.name;
     };
 
-    const handleTestNameChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
-        test.Name = event.target.value;
-    };
-
     useEffect(() => {
         setUnityTestExecution(test.TestConfig.Unity?.RunAllTests ? 0 : 1);
         setDeviceType(test.TestConfig.AllDevices ? 0 : 1);
-    }, []);
+    }, [test]);
 
     return (
-        <div>
-            <Grid container={ true } sx={ { p: 2, m: 2 } }>
-                <Grid item={ true } xs={ 12 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <Toolbar>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <Typography variant={ 'h6' }>
+                                Edit Test
+                            </Typography>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                        </Grid>
+                        <Grid item={ true }>
+                            <Button variant="contained" color="primary" onClick={ updateTestData }>
+                                Save
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Toolbar>
+            </AppBar>
+            <Box sx={ { p: 2, m: 2 } }>
+                <Grid container={ true }>
+                    <Grid item={ true } xs={ 12 }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <br/>
@@ -161,8 +190,8 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                             <Grid item={ true } xs={ 10 }>
                                 <FormControl className={ classes.formControl }>
                                     <TextField required={ true } id="test-name" label="Name"
-                                        value={ test.Name }
-                                        onChange={ handleTestNameChange }/>
+                                        value={ testName }
+                                        onChange={ onTestNameChanged }/>
                                 </FormControl>
                             </Grid>
                         </Grid>
@@ -184,8 +213,8 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                 <RadioGroup
                                     name="execution-type-selection"
                                     aria-label="spacing"
-                                    value={ test.TestConfig.ExecutionType.toString() }
-                                    onChange={ handleExecutionTypeChange }
+                                    value={ executionType.toString() }
+                                    onChange={ onExecutionTypeChange }
                                     row={ true }
                                 >
                                     { executionTypes.map((value) => (
@@ -213,7 +242,7 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                     name="device-selection"
                                     aria-label="spacing"
                                     value={ deviceType.toString() }
-                                    onChange={ handleDeviceTypeChange }
+                                    onChange={ onDeviceExecutionChanged }
                                     row={ true }
                                 >
                                     { deviceTypes.map((value) => (
@@ -234,8 +263,9 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                             </Typography>
                                         </Grid>
                                         <Grid item={ true }>
-                                            <DeviceSelection selectedDevices={ test.TestConfig.Devices }
-                                                onSelectionChanged={ handleDeviceSelectionChanged }/>
+                                            <DeviceSelection
+                                                selectedDevices={ test.TestConfig.Devices.map(value => value.Device) }
+                                                onSelectionChanged={ onDeviceSelectionChanged }/>
                                         </Grid>
                                     </Grid>
                                 ) }
@@ -256,8 +286,8 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                         <RadioGroup
                                             name="unity-test-execution-selection"
                                             aria-label="spacing"
-                                            value={ test.TestConfig.Unity?.RunAllTests ? 'ß' : '1' }
-                                            onChange={ handleUnityTestExecutionChange }
+                                            value={ unityTestExecution.toString() }
+                                            onChange={ onUnityTestExecutionChanged }
                                             row={ true }
                                         >
                                             { unityTestExecutionTypes.map((value) => (
@@ -276,26 +306,14 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                                     onSelectionChanged={ handleFunctionSelection }/>
                                             </div>
                                         ) }
-
-                                        { test.TestConfig.Unity?.RunAllTests === true && (<div>all</div>) }
-                                        { test.TestConfig.Unity?.RunAllTests === false && (<div>
-                                            { test.TestConfig.Unity.UnityTestFunctions.map((a) =>
-                                                <div>- { a.Class }/{ a.Method }<br/></div>,
-                                            ) }
-                                        </div>) }
                                     </Grid>
                                 </Grid>
                             </div>) }
-                    </Box>
+                    </Grid>
                 </Grid>
-                <Grid item={ true }>
-                    <Button variant="contained" color="primary" onClick={ updateTestData }>
-                        Save
-                    </Button>
-                </Grid>
-            </Grid>
-        </div>
+            </Box>
+        </Paper>
     );
 };
 
-export default withStyles(useStyles)(EditTestPage);
+export default withStyles(styles)(EditTestPage);

@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles } from '@material-ui/core/styles';
 import {
+    Box,
     Button,
     FormControl,
     FormControlLabel,
@@ -26,13 +27,21 @@ import ICreateTestData from '../../types/request.create.test';
 import { createTest } from '../../services/test.service';
 import TestMethodSelection from '../../components/testmethod-selection.component';
 import IAppFunctionData from '../../types/app.function';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         paper: {
             maxWidth: 1200,
-            padding: '10px',
+            margin: 'auto',
             overflow: 'hidden',
+        },
+        searchBar: {
+            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        },
+        searchInput: {
+            fontSize: theme.typography.fontSize,
         },
         root: {
             width: '100%',
@@ -160,189 +169,202 @@ const AddTestPage: FC = () => {
     };
 
     return (
-        <div>
-            <Typography variant={ 'h4' }>
-                Create a new Test
-            </Typography>
-            <br/>
-            <Paper className={ classes.paper }>
-                <div className={ classes.root }>
-                    <Stepper activeStep={ activeStep } alternativeLabel={ true }>
-                        { steps.map((label) => (
-                            <Step key={ label }>
-                                <StepLabel>{ label }</StepLabel>
-                            </Step>
-                        )) }
-                    </Stepper>
-                    <div>
-                        { activeStep === steps.length ? (
-                            <div>
-                                <Typography className={ classes.instructions }>Test is being created wait a moment and
-                                    you
-                                    get redirected</Typography>
-                            </div>
-                        ) : (
-                            <div>
-                                <Grid container={ true } className={ classes.root } spacing={ 2 }>
-                                    <Grid item={ true } xs={ 12 }>
-                                        <Grid container={ true } justifyContent="center" spacing={ 2 }>
-                                            <Grid item={ true }>
-                                                { activeStep === 0 && (
-                                                    <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                        alignItems={ 'center' } direction={ 'column' }>
-                                                        <Grid item={ true } sx={ 6 }>
-                                                            <FormControl className={ classes.formControl }>
-                                                                <TextField required={ true } id="test-name" label="Name"
-                                                                    value={ testName }
-                                                                    onChange={ handleTestNameChange }/>
-                                                            </FormControl>
-                                                        </Grid>
-                                                        <Grid item={ true } sx={ 6 }>
-                                                            <FormControl className={ classes.formControl }>
-                                                                <InputLabel htmlFor="test-type-selection">Test
-                                                                    Type</InputLabel>
-                                                                <Select native={ true } value={ testType }
-                                                                    name={ 'test-type-selection' }
-                                                                    onChange={ handleTestTypeChange }
-                                                                    inputProps={ {
-                                                                        name: 'Test Type',
-                                                                        id: 'test-types',
-                                                                    } }>
-                                                                    <option aria-label="None" value=""
-                                                                        key={ 'tt_none' }/>
-                                                                    { testTypes.map((value) => (
-                                                                        <option key={ 'tt_' + value.id.toString() }
-                                                                            value={ value.id.toString() }>{ value.name }</option>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <Toolbar>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <Typography variant={ 'h6' }>
+                                Create a new Test
+                            </Typography>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                        </Grid>
+                        <Grid item={ true }>
+                        </Grid>
+                    </Grid>
+                </Toolbar>
+            </AppBar>
+            <div className={ classes.root }>
+                <Stepper activeStep={ activeStep } alternativeLabel={ true }>
+                    { steps.map((label) => (
+                        <Step key={ label }>
+                            <StepLabel>{ label }</StepLabel>
+                        </Step>
+                    )) }
+                </Stepper>
+                <div>
+                    { activeStep === steps.length ? (
+                        <div>
+                            <Typography className={ classes.instructions }>Test is being created wait a moment and
+                                you
+                                get redirected</Typography>
+                        </div>
+                    ) : (
+                        <div>
+                            <Grid container={ true } className={ classes.root } spacing={ 2 }>
+                                <Grid item={ true } xs={ 12 }>
+                                    <Grid container={ true } justifyContent="center" spacing={ 2 }>
+                                        <Grid item={ true }>
+                                            { activeStep === 0 && (
+                                                <Grid container={ true } justifyContent="center" spacing={ 2 }
+                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                    <Grid item={ true } sx={ 6 }>
+                                                        <FormControl className={ classes.formControl }>
+                                                            <TextField required={ true } id="test-name" label="Name"
+                                                                value={ testName }
+                                                                onChange={ handleTestNameChange }/>
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid item={ true } sx={ 6 }>
+                                                        <FormControl className={ classes.formControl }>
+                                                            <InputLabel htmlFor="test-type-selection">Test
+                                                                Type</InputLabel>
+                                                            <Select native={ true } value={ testType }
+                                                                name={ 'test-type-selection' }
+                                                                onChange={ handleTestTypeChange }
+                                                                inputProps={ {
+                                                                    name: 'Test Type',
+                                                                    id: 'test-types',
+                                                                } }>
+                                                                <option aria-label="None" value=""
+                                                                    key={ 'tt_none' }/>
+                                                                { testTypes.map((value) => (
+                                                                    <option key={ 'tt_' + value.id.toString() }
+                                                                        value={ value.id.toString() }>{ value.name }</option>
+                                                                )) }
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid item={ true } sx={ 6 }>
+                                                        <Grid container={ true } spacing={ 2 }
+                                                            alignItems={ 'center' }
+                                                            direction={ 'row' }>
+                                                            <Grid item={ true }>
+                                                                <RadioGroup
+                                                                    name="execution-type-selection"
+                                                                    aria-label="spacing"
+                                                                    value={ executionType.toString() }
+                                                                    onChange={ handleExecutionTypeChange }
+                                                                    row={ true }
+                                                                >
+                                                                    { executionTypes.map((value) => (
+                                                                        <FormControlLabel
+                                                                            key={ 'exec_' + value.id }
+                                                                            value={ value.id.toString() }
+                                                                            control={ <Radio/> }
+                                                                            label={ value.name }
+                                                                        />
                                                                     )) }
-                                                                </Select>
-                                                            </FormControl>
-                                                        </Grid>
-                                                        <Grid item={ true } sx={ 6 }>
-                                                            <Grid container={ true } spacing={ 2 }
-                                                                alignItems={ 'center' }
-                                                                direction={ 'row' }>
-                                                                <Grid item={ true }>
-                                                                    <RadioGroup
-                                                                        name="execution-type-selection"
-                                                                        aria-label="spacing"
-                                                                        value={ executionType.toString() }
-                                                                        onChange={ handleExecutionTypeChange }
-                                                                        row={ true }
-                                                                    >
-                                                                        { executionTypes.map((value) => (
-                                                                            <FormControlLabel
-                                                                                key={ 'exec_' + value.id }
-                                                                                value={ value.id.toString() }
-                                                                                control={ <Radio/> }
-                                                                                label={ value.name }
-                                                                            />
-                                                                        )) }
-                                                                    </RadioGroup>
-                                                                    <Typography variant={ 'subtitle1' }>
-                                                                        Concurrent = runs each test on a different free
-                                                                        device to get faster results<br/>
-                                                                        Simultaneously = runs every test on every device
-                                                                        to get a better accuracy
-                                                                    </Typography>
-                                                                </Grid>
+                                                                </RadioGroup>
+                                                                <Typography variant={ 'subtitle1' }>
+                                                                    Concurrent = runs each test on a different free
+                                                                    device to get faster results<br/>
+                                                                    Simultaneously = runs every test on every device
+                                                                    to get a better accuracy
+                                                                </Typography>
                                                             </Grid>
                                                         </Grid>
                                                     </Grid>
-                                                ) }
-                                                { activeStep === 1 && (
-                                                    <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                        alignItems={ 'center' } direction={ 'column' }>
-                                                        { testType === TestType.Unity && (
-                                                            <div>
-                                                                <Grid item={ true }>
-                                                                    <RadioGroup
-                                                                        name="unity-test-execution-selection"
-                                                                        aria-label="spacing"
-                                                                        value={ unityTestExecution.toString() }
-                                                                        onChange={ handleUnityTestExecutionChange }
-                                                                        row={ true }
-                                                                    >
-                                                                        { unityTestExecutionTypes.map((value) => (
-                                                                            <FormControlLabel
-                                                                                key={ 'unityt_' + value.id }
-                                                                                value={ value.id.toString() }
-                                                                                control={ <Radio/> }
-                                                                                label={ value.name }
-                                                                            />
-                                                                        )) }
-                                                                    </RadioGroup>
-                                                                </Grid>
-                                                                <Grid item={ true }>
-                                                                    { unityTestExecution === 1 && (
-                                                                        <div>
-                                                                            <TestMethodSelection classes={ classes }
-                                                                                onSelectionChanged={ handleFunctionSelection }/>
-                                                                        </div>
-                                                                    ) }
-                                                                </Grid>
-                                                            </div>
-                                                        ) }
+                                                </Grid>
+                                            ) }
+                                            { activeStep === 1 && (
+                                                <Grid container={ true } justifyContent="center" spacing={ 2 }
+                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                    { testType === TestType.Unity && (
+                                                        <div>
+                                                            <Grid item={ true }>
+                                                                <RadioGroup
+                                                                    name="unity-test-execution-selection"
+                                                                    aria-label="spacing"
+                                                                    value={ unityTestExecution.toString() }
+                                                                    onChange={ handleUnityTestExecutionChange }
+                                                                    row={ true }
+                                                                >
+                                                                    { unityTestExecutionTypes.map((value) => (
+                                                                        <FormControlLabel
+                                                                            key={ 'unityt_' + value.id }
+                                                                            value={ value.id.toString() }
+                                                                            control={ <Radio/> }
+                                                                            label={ value.name }
+                                                                        />
+                                                                    )) }
+                                                                </RadioGroup>
+                                                            </Grid>
+                                                            <Grid item={ true }>
+                                                                { unityTestExecution === 1 && (
+                                                                    <div>
+                                                                        <TestMethodSelection classes={ classes }
+                                                                            onSelectionChanged={ handleFunctionSelection }/>
+                                                                    </div>
+                                                                ) }
+                                                            </Grid>
+                                                        </div>
+                                                    ) }
+                                                </Grid>
+                                            ) }
+                                            { activeStep === 2 && (
+                                                <Grid container={ true } justifyContent="center" spacing={ 2 }
+                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                    <Grid item={ true }>
+                                                        <RadioGroup
+                                                            name="device-selection"
+                                                            aria-label="spacing"
+                                                            value={ deviceType.toString() }
+                                                            onChange={ handleDeviceTypeChange }
+                                                            row={ true }
+                                                        >
+                                                            { deviceTypes.map((value) => (
+                                                                <FormControlLabel
+                                                                    key={ 'device_' + value.id }
+                                                                    value={ value.id.toString() }
+                                                                    control={ <Radio/> }
+                                                                    label={ value.name }
+                                                                />
+                                                            )) }
+                                                        </RadioGroup>
                                                     </Grid>
-                                                ) }
-                                                { activeStep === 2 && (
-                                                    <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                        alignItems={ 'center' } direction={ 'column' }>
-                                                        <Grid item={ true }>
-                                                            <RadioGroup
-                                                                name="device-selection"
-                                                                aria-label="spacing"
-                                                                value={ deviceType.toString() }
-                                                                onChange={ handleDeviceTypeChange }
-                                                                row={ true }
-                                                            >
-                                                                { deviceTypes.map((value) => (
-                                                                    <FormControlLabel
-                                                                        key={ 'device_' + value.id }
-                                                                        value={ value.id.toString() }
-                                                                        control={ <Radio/> }
-                                                                        label={ value.name }
-                                                                    />
-                                                                )) }
-                                                            </RadioGroup>
-                                                        </Grid>
+                                                </Grid>
+                                            ) }
+                                            { activeStep === 2 && deviceType === 1 && (
+                                                <Grid container={ true } justifyContent="center" spacing={ 2 }
+                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                    <Grid item={ true }>
+                                                        <Typography variant={ 'h6' }>
+                                                            Select Devices
+                                                        </Typography>
                                                     </Grid>
-                                                ) }
-                                                { activeStep === 2 && deviceType === 1 && (
-                                                    <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                        alignItems={ 'center' } direction={ 'column' }>
-                                                        <Grid item={ true }>
-                                                            <Typography variant={ 'h6' }>
-                                                                Select Devices
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item={ true }>
-                                                            <DeviceSelection selectedDevices={ selectedDevices }
-                                                                onSelectionChanged={ handleDeviceSelectionChanged }/>
-                                                        </Grid>
+                                                    <Grid item={ true }>
+                                                        <DeviceSelection selectedDevices={ selectedDevices }
+                                                            onSelectionChanged={ handleDeviceSelectionChanged }/>
                                                     </Grid>
-                                                ) }
-                                            </Grid>
+                                                </Grid>
+                                            ) }
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                <div>
-                                    <Button
-                                        disabled={ activeStep === 0 }
-                                        onClick={ handleBack }
-                                        className={ classes.backButton }
-                                    >
-                                        Back
-                                    </Button>
-                                    <Button variant="contained" color="primary" onClick={ handleNext }>
-                                        { activeStep === steps.length - 1 ? 'Create' : 'Next' }
-                                    </Button>
-                                </div>
-                            </div>
-                        ) }
-                    </div>
+                            </Grid>
+                            <Grid container={ true } justify={ 'flex-end' }>
+                                <Grid item={ true } >
+                                    <Box sx={ { p: 2, m: 2 } }>
+                                        <Button
+                                            disabled={ activeStep === 0 }
+                                            onClick={ handleBack }
+                                            className={ classes.backButton }
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button variant="contained" color="primary" onClick={ handleNext }>
+                                            { activeStep === steps.length - 1 ? 'Create' : 'Next' }
+                                        </Button>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </div>
+                    ) }
                 </div>
-            </Paper>
-        </div>
+            </div>
+        </Paper>
     );
 };
 

@@ -1,4 +1,4 @@
-import { FC, useContext, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import {
     Box,
@@ -29,11 +29,6 @@ import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@material-ui/icons';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
-import Hidden from '@material-ui/core/Hidden';
-import IconButton from '@material-ui/core/IconButton';
-import MenuIcon from '@material-ui/icons/Menu';
-import Tooltip from '@material-ui/core/Tooltip';
-import NotificationsIcon from '@material-ui/icons/Notifications';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -178,30 +173,35 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
     };
 
     return (
-        <div>
-            <Typography variant={ 'h5' }>
-                Test: {testRun.Test.Name}
-            </Typography>
-            <br/>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <Toolbar>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            { prevRunId > 0 && <Button variant="contained" color="primary"
+                                href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                                <KeyboardArrowLeft/> Prev
+                            </Button>
+                            }
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                            <Typography variant={ 'h6' }>
+                                Test: { testRun.Test.Name } Run: { testRun.ID }
+                            </Typography>
+                        </Grid>
+                        <Grid item={ true }>
+                            { nextRunId > 0 && <Button variant="contained" color="primary"
+                                href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                                Next <KeyboardArrowRight/>
+                            </Button>
+                            }
+                        </Grid>
+                    </Grid>
+                </Toolbar>
+            </AppBar>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
-                    { prevRunId > 0 && <Button variant="contained" color="primary"
-                        href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
-                        <KeyboardArrowLeft/> Prev
-                    </Button>
-                    }
-                </Grid>
-                <Grid container={ true } item={ true } xs={ 6 } justify="flex-end">
-                    { nextRunId > 0 && <Button variant="contained" color="primary"
-                        href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
-                        Next <KeyboardArrowRight/>
-                    </Button>
-                    }
-                </Grid>
-            </Grid>
-            <Grid container={ true }>
-                <Grid item={ true } xs={ 6 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>App Details</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -273,7 +273,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                 <Grid item={ true } xs={ 2 }>
                 </Grid>
                 <Grid item={ true } xs={ 4 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Results</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -299,7 +299,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <TableContainer>
@@ -343,7 +343,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box component={ Paper } sx={ { p: 2, m: 2 } }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Executor Log</Typography>
                         <Divider/>
                         <TableContainer>
@@ -369,7 +369,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
             </Grid>
-        </div>
+        </Paper>
     );
 };
 

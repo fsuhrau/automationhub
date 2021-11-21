@@ -26,7 +26,7 @@ const TestProtocol: FC = () => {
         }).catch(ex => {
             console.log(ex);
         });
-    }, [testId, protocolId]);
+    }, [testId, runId, protocolId]);
 
     return (
         <div>

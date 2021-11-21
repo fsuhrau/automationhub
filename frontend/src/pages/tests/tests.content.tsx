@@ -48,16 +48,14 @@ const Tests: FC<TestsProps> = (props) => {
 
     return (
         <AppContext.Provider value={ { title: 'Tests' } }>
-            <Typography variant={ 'h4' }>
-                Tests
-            </Typography>
-            <br/>
             <Paper className={ classes.paper }>
                 <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
                     <Toolbar>
                         <Grid container={ true } spacing={ 2 } alignItems="center">
                             <Grid item={ true }>
-                                <SearchIcon className={ classes.block } color="inherit"/>
+                                <Typography variant={ 'h6' }>
+                                    Tests
+                                </Typography>
                             </Grid>
                             <Grid item={ true } xs={ true }>
                             </Grid>

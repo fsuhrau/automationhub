@@ -98,16 +98,14 @@ const AppsPage: FC<AppsProps> = (props) => {
 
     return (
         <div>
-            <Typography variant={ 'h4' }>
-                Apps
-            </Typography>
-            <br/>
             <Paper className={ classes.paper }>
                 <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
                     <Toolbar>
                         <Grid container={ true } spacing={ 2 } alignItems="center">
                             <Grid item={ true }>
-                                <SearchIcon className={ classes.block } color="inherit"/>
+                                <Typography variant={ 'h6' }>
+                                    Apps
+                                </Typography>
                             </Grid>
                             <Grid item={ true } xs={ true }>
                             </Grid>

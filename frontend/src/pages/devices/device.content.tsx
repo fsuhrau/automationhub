@@ -3,6 +3,9 @@ import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DeviceTableComponent from '../../components/device-table.component';
 import { Typography } from '@material-ui/core';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import Grid from '@material-ui/core/Grid';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -34,15 +37,24 @@ const Devices: FC<DevicesProps> = props => {
     const { classes } = props;
 
     return (
-        <div>
-            <Typography variant={ 'h4' }>
-                Devices
-            </Typography>
-            <br/>
-            <Paper className={ classes.paper }>
-                <DeviceTableComponent/>
-            </Paper>
-        </div>
+        <Paper className={ classes.paper }>
+            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <Toolbar>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <Typography variant={ 'h6' }>
+                                Devices
+                            </Typography>
+                        </Grid>
+                        <Grid item={ true } xs={ true }>
+                        </Grid>
+                        <Grid item={ true }>
+                        </Grid>
+                    </Grid>
+                </Toolbar>
+            </AppBar>
+            <DeviceTableComponent/>
+        </Paper>
     );
 };
 
