@@ -16,7 +16,7 @@ export const createTest = (data: ICreateTestData): Promise<AxiosResponse<ITestDa
     return http.post('/test', data);
 };
 
-export const updateTest = (data: ITestData, id: string): Promise<AxiosResponse<ITestData>> => {
+export const updateTest = (id: number, data: ITestData): Promise<AxiosResponse<ITestData>> => {
     return http.put(`/test/${id}`, data);
 };
 

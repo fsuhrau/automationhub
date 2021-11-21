@@ -56,7 +56,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
 function ToArray(en: any): Array<Object> {
-    return Object.keys(en).filter(StringIsNumber).map(key => ({id: key, name: en[ key ]}));
+    return Object.keys(en).filter(StringIsNumber).map(key => ({ id: key, name: en[ key ] }));
 }
 
 function getExecutionTypes(): Array<Object> {
@@ -72,11 +72,11 @@ function getSteps(): Array<string> {
 }
 
 function getUnityTestsConfig(): Array<Object> {
-    return [{id: 0, name: 'Run all Tests'}, {id: 1, name: 'Run only Selected Tests'}];
+    return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
 }
 
 function getDeviceOption(): Array<Object> {
-    return [{id: 0, name: 'All Devices'}, {id: 1, name: 'Selected Devices Only'}];
+    return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
 const AddTestPage: FC = () => {
@@ -161,7 +161,7 @@ const AddTestPage: FC = () => {
 
     return (
         <div>
-            <Typography variant={ "h4" }>
+            <Typography variant={ 'h4' }>
                 Create a new Test
             </Typography>
             <br/>
@@ -189,12 +189,12 @@ const AddTestPage: FC = () => {
                                             <Grid item={ true }>
                                                 { activeStep === 0 && (
                                                     <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                          alignItems={ 'center' } direction={ 'column' }>
+                                                        alignItems={ 'center' } direction={ 'column' }>
                                                         <Grid item={ true } sx={ 6 }>
                                                             <FormControl className={ classes.formControl }>
                                                                 <TextField required={ true } id="test-name" label="Name"
-                                                                           value={ testName }
-                                                                           onChange={ handleTestNameChange }/>
+                                                                    value={ testName }
+                                                                    onChange={ handleTestNameChange }/>
                                                             </FormControl>
                                                         </Grid>
                                                         <Grid item={ true } sx={ 6 }>
@@ -202,25 +202,25 @@ const AddTestPage: FC = () => {
                                                                 <InputLabel htmlFor="test-type-selection">Test
                                                                     Type</InputLabel>
                                                                 <Select native={ true } value={ testType }
-                                                                        name={ 'test-type-selection' }
-                                                                        onChange={ handleTestTypeChange }
-                                                                        inputProps={ {
-                                                                            name: 'Test Type',
-                                                                            id: 'test-types',
-                                                                        } }>
+                                                                    name={ 'test-type-selection' }
+                                                                    onChange={ handleTestTypeChange }
+                                                                    inputProps={ {
+                                                                        name: 'Test Type',
+                                                                        id: 'test-types',
+                                                                    } }>
                                                                     <option aria-label="None" value=""
-                                                                            key={ 'tt_none' }/>
+                                                                        key={ 'tt_none' }/>
                                                                     { testTypes.map((value) => (
                                                                         <option key={ 'tt_' + value.id.toString() }
-                                                                                value={ value.id.toString() }>{ value.name }</option>
+                                                                            value={ value.id.toString() }>{ value.name }</option>
                                                                     )) }
                                                                 </Select>
                                                             </FormControl>
                                                         </Grid>
                                                         <Grid item={ true } sx={ 6 }>
                                                             <Grid container={ true } spacing={ 2 }
-                                                                  alignItems={ 'center' }
-                                                                  direction={ 'row' }>
+                                                                alignItems={ 'center' }
+                                                                direction={ 'row' }>
                                                                 <Grid item={ true }>
                                                                     <RadioGroup
                                                                         name="execution-type-selection"
@@ -251,7 +251,7 @@ const AddTestPage: FC = () => {
                                                 ) }
                                                 { activeStep === 1 && (
                                                     <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                          alignItems={ 'center' } direction={ 'column' }>
+                                                        alignItems={ 'center' } direction={ 'column' }>
                                                         { testType === TestType.Unity && (
                                                             <div>
                                                                 <Grid item={ true }>
@@ -276,7 +276,7 @@ const AddTestPage: FC = () => {
                                                                     { unityTestExecution === 1 && (
                                                                         <div>
                                                                             <TestMethodSelection classes={ classes }
-                                                                                                 onSelectionChanged={ handleFunctionSelection }/>
+                                                                                onSelectionChanged={ handleFunctionSelection }/>
                                                                         </div>
                                                                     ) }
                                                                 </Grid>
@@ -286,7 +286,7 @@ const AddTestPage: FC = () => {
                                                 ) }
                                                 { activeStep === 2 && (
                                                     <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                          alignItems={ 'center' } direction={ 'column' }>
+                                                        alignItems={ 'center' } direction={ 'column' }>
                                                         <Grid item={ true }>
                                                             <RadioGroup
                                                                 name="device-selection"
@@ -309,7 +309,7 @@ const AddTestPage: FC = () => {
                                                 ) }
                                                 { activeStep === 2 && deviceType === 1 && (
                                                     <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                          alignItems={ 'center' } direction={ 'column' }>
+                                                        alignItems={ 'center' } direction={ 'column' }>
                                                         <Grid item={ true }>
                                                             <Typography variant={ 'h6' }>
                                                                 Select Devices
@@ -317,7 +317,7 @@ const AddTestPage: FC = () => {
                                                         </Grid>
                                                         <Grid item={ true }>
                                                             <DeviceSelection selectedDevices={ selectedDevices }
-                                                                             onSelectionChanged={ handleDeviceSelectionChanged }/>
+                                                                onSelectionChanged={ handleDeviceSelectionChanged }/>
                                                         </Grid>
                                                     </Grid>
                                                 ) }

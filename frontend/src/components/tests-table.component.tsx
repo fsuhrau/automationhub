@@ -11,13 +11,14 @@ import ITestData from '../types/test';
 import { executeTest, getAllTests } from '../services/test.service';
 import {
     Button,
+    ButtonGroup,
     Dialog,
     DialogActions,
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Link,
-    TextField, Typography,
+    TextField,
+    Typography,
 } from '@material-ui/core';
 import { PlayArrow } from '@material-ui/icons';
 import AppSelection from './app-selection.component';
@@ -40,10 +41,10 @@ const TestsTable: FC<TestProps> = (props) => {
 
     // dialog
     const [open, setOpen] = useState(false);
-    const handleClickOpen = (): void => {
+    const handleRunClickOpen = (): void => {
         setOpen(true);
     };
-    const handleClose = (): void => {
+    const handleRunClose = (): void => {
         setOpen(false);
     };
 
@@ -64,25 +65,31 @@ const TestsTable: FC<TestProps> = (props) => {
 
     const typeString = (type: number): string => {
         switch (type) {
-            case 0: return 'Unity';
-            case 1: return 'Cocos';
-            case 2: return 'Serenity';
-            case 3: return 'Scenario';
+            case 0:
+                return 'Unity';
+            case 1:
+                return 'Cocos';
+            case 2:
+                return 'Serenity';
+            case 3:
+                return 'Scenario';
         }
         return '';
     };
 
     const executionString = (type: number): string => {
         switch (type) {
-            case 0: return 'Concurrent';
-            case 1: return 'Simultaneously';
+            case 0:
+                return 'Concurrent';
+            case 1:
+                return 'Simultaneously';
         }
         return '';
     };
 
     const onRunTest = (id: number, appid: number): void => {
         executeTest(id, appid, envParameter).then(response => {
-            history.push(`/web/test/${id}/run/${response.data.ID}`);
+            history.push(`/web/test/${ id }/run/${ response.data.ID }`);
         }).catch(error => {
             console.log(error);
         });
@@ -121,47 +128,48 @@ const TestsTable: FC<TestProps> = (props) => {
 
     return (
         <div>
-            <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+            <Dialog open={ open } onClose={ handleRunClose } aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">App Selection</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Select an existing App to execute the tests.<br />
-                        Or Upload a new one.<br />
-                        <br />
+                        Select an existing App to execute the tests.<br/>
+                        Or Upload a new one.<br/>
+                        <br/>
                     </DialogContentText>
-                    <AppSelection upload={true} classes={classes} onSelectionChanged={onAppSelectionChanged} />
-                    You can change parameters of your app by providing key value pairs in an environment like format:<br />
-                    <br />
-                    <Typography variant={'subtitle2'}>
-                        server=http://localhost:8080<br />
+                    <AppSelection upload={ true } classes={ classes } onSelectionChanged={ onAppSelectionChanged }/>
+                    You can change parameters of your app by providing key value pairs in an environment like
+                    format:<br/>
+                    <br/>
+                    <Typography variant={ 'subtitle2' }>
+                        server=http://localhost:8080<br/>
                         user=autohub
                     </Typography>
-                    <br />
+                    <br/>
                     <TextField
                         id="outlined-multiline-static"
                         label="Parameter"
                         fullWidth={ true }
-                        multiline={true}
-                        rows={4}
+                        multiline={ true }
+                        rows={ 4 }
                         defaultValue=""
                         variant="outlined"
                         onChange={ onEnvParamsChanged }
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose} color="primary">
+                    <Button onClick={ handleRunClose } color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={() => {
+                    <Button onClick={ () => {
                         onRunTest(selectedTestID, selectedAppID);
-                        handleClose();
-                    }} color="primary" variant={'contained'} disabled={ selectedAppID === 0 }>
+                        handleRunClose();
+                    } } color="primary" variant={ 'contained' } disabled={ selectedAppID === 0 }>
                         Start
                     </Button>
                 </DialogActions>
             </Dialog>
-            <TableContainer component={Paper}>
-                <Table className={classes.table} size="small" aria-label="a dense table">
+            <TableContainer component={ Paper }>
+                <Table className={ classes.table } size="small" aria-label="a dense table">
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
@@ -173,25 +181,26 @@ const TestsTable: FC<TestProps> = (props) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {tests.map((test) => <TableRow key={test.Name}>
-                            <TableCell component="th" scope="row">
-                                <Link href={`test/${test.ID}/runs/last` } underline="none">
-                                    {test.Name}
-                                </Link>
-                            </TableCell>
-                            <TableCell align="right">{typeString(test.TestConfig.Type)}</TableCell>
-                            <TableCell align="right">{executionString(test.TestConfig.ExecutionType)}</TableCell>
-                            <TableCell align="right">{getDevices(test)}</TableCell>
-                            <TableCell align="right">{getTests(test)}</TableCell>
+                        { tests.map((test) => <TableRow key={ test.Name }>
+                            <TableCell component="th" scope="row">{ test.Name }</TableCell>
+                            <TableCell align="right">{ typeString(test.TestConfig.Type) }</TableCell>
+                            <TableCell align="right">{ executionString(test.TestConfig.ExecutionType) }</TableCell>
+                            <TableCell align="right">{ getDevices(test) }</TableCell>
+                            <TableCell align="right">{ getTests(test) }</TableCell>
                             <TableCell align="right">
-                                <Button variant="outlined" color="primary" size="small" endIcon={<PlayArrow />} onClick={ () => {
-                                    setSelectedTestID(test.ID as number);
-                                    handleClickOpen();
-                                }}>
-                                    Run
-                                </Button>
+                                <ButtonGroup color="primary" aria-label="outlined primary button group">
+                                    <Button variant="outlined" color="primary" size="small" href={ `test/${ test.ID }` }>Show</Button>
+                                    <Button variant="outlined" color="primary" size="small" href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
+                                    <Button variant="outlined" color="primary" size="small" endIcon={ <PlayArrow/> }
+                                        onClick={ () => {
+                                            setSelectedTestID(test.ID as number);
+                                            handleRunClickOpen();
+                                        } }>Run</Button>
+                                </ButtonGroup>
+
+
                             </TableCell>
-                        </TableRow>)}
+                        </TableRow>) }
                     </TableBody>
                 </Table>
             </TableContainer>

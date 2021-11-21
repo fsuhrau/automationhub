@@ -16,7 +16,7 @@ import TableBody from '@material-ui/core/TableBody';
 import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 import Moment from 'react-moment';
-import { Typography } from "@material-ui/core";
+import { Typography } from '@material-ui/core';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -45,7 +45,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 export type AppsProps = WithStyles<typeof styles>;
 
 const AppsPage: FC<AppsProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
 
     const history = useHistory();
 
@@ -98,7 +98,7 @@ const AppsPage: FC<AppsProps> = (props) => {
 
     return (
         <div>
-            <Typography variant={ "h4" }>
+            <Typography variant={ 'h4' }>
                 Apps
             </Typography>
             <br/>
@@ -113,7 +113,7 @@ const AppsPage: FC<AppsProps> = (props) => {
                             </Grid>
                             <Grid item={ true }>
                                 { false && <Button color="primary" variant="contained"
-                                                   onClick={ newAppClick }>
+                                    onClick={ newAppClick }>
                                     New App
                                 </Button>
                                 }

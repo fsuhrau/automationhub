@@ -8,4 +8,5 @@ type TestConfigDevice struct {
 	gorm.Model
 	TestConfigID uint
 	DeviceID     uint
+	Device       Device
 }

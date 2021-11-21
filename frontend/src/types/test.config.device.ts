@@ -1,3 +1,5 @@
+import IDeviceData from './device';
+
 export default interface ITestConfigDeviceData {
     ID?: number,
     TestConfigID: number,
@@ -5,4 +7,5 @@ export default interface ITestConfigDeviceData {
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,
+    Device?: IDeviceData | null,
 }

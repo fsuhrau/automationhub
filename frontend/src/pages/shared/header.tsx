@@ -37,7 +37,7 @@ interface DefaultHeaderProps extends WithStyles<typeof styles> {
 }
 
 const DefaultHeader: FC<DefaultHeaderProps> = (props) => {
-    const {classes, onDrawerToggle} = props;
+    const { classes, onDrawerToggle } = props;
 
     return (
         <React.Fragment>

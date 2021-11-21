@@ -132,7 +132,7 @@ func (s *ApiService) getTest(session *Session, c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var test models.Test
-	if err := s.db.First(&test, testId).Error; err != nil {
+	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}

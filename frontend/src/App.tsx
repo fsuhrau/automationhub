@@ -17,7 +17,9 @@ import AppsPage from './pages/apps/apps.content';
 import { SSEProvider } from 'react-hooks-sse';
 import { AppContext } from './context/app.context';
 import { TestContextProvider } from './context/test.context';
-import DefaultHeader from "./pages/shared/header";
+import DefaultHeader from './pages/shared/header';
+import EditTestPage from './pages/tests/edit.test.content';
+import TestPage from './pages/tests/test.content';
 
 Moment.globalLocale = 'de';
 
@@ -174,7 +176,7 @@ const styles = createStyles({
 export type AppProps = WithStyles<typeof styles>;
 
 const App: FC<AppProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = (): void => {
@@ -182,7 +184,7 @@ const App: FC<AppProps> = (props) => {
     };
 
     return <SSEProvider endpoint="/api/sse/">
-        <AppContext.Provider value={ {title: ''} }>
+        <AppContext.Provider value={ { title: '' } }>
             <Router>
                 <ThemeProvider theme={ theme }>
                     <div className={ classes.root }>
@@ -190,14 +192,14 @@ const App: FC<AppProps> = (props) => {
                         <nav className={ classes.drawer }>
                             <Hidden smUp={ true } implementation="js">
                                 <Navigator
-                                    PaperProps={ {style: {width: drawerWidth}} }
+                                    PaperProps={ { style: { width: drawerWidth } } }
                                     variant="temporary"
                                     open={ mobileOpen }
                                     onClose={ handleDrawerToggle }
                                 />
                             </Hidden>
                             <Hidden xsDown={ true } implementation="css">
-                                <Navigator PaperProps={ {style: {width: drawerWidth}} }/>
+                                <Navigator PaperProps={ { style: { width: drawerWidth } } }/>
                             </Hidden>
                         </nav>
                         <div className={ classes.app }>
@@ -221,6 +223,16 @@ const App: FC<AppProps> = (props) => {
                                     <Route path="/web/test/:testId/run/:runId">
                                         <TestContextProvider>
                                             <TestRunPage/>
+                                        </TestContextProvider>
+                                    </Route>
+                                    <Route path={ '/web/test/:testId/edit' }>
+                                        <TestContextProvider>
+                                            <TestPage edit={true}/>
+                                        </TestContextProvider>
+                                    </Route>
+                                    <Route path={ '/web/test/:testId' }>
+                                        <TestContextProvider>
+                                            <TestPage edit={false}/>
                                         </TestContextProvider>
                                     </Route>
                                     <Route path="/web/results">

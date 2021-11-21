@@ -9,7 +9,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import TestsTable from '../../components/tests-table.component';
 import { useHistory } from 'react-router-dom';
 import { AppContext } from '../../context/app.context';
-import { Typography } from "@material-ui/core";
+import { Typography } from '@material-ui/core';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -38,7 +38,7 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 export type TestsProps = WithStyles<typeof styles>;
 
 const Tests: FC<TestsProps> = (props) => {
-    const {classes} = props;
+    const { classes } = props;
 
     const history = useHistory();
 
@@ -47,8 +47,8 @@ const Tests: FC<TestsProps> = (props) => {
     }
 
     return (
-        <AppContext.Provider value={ {title: 'Tests'} }>
-            <Typography variant={ "h4" }>
+        <AppContext.Provider value={ { title: 'Tests' } }>
+            <Typography variant={ 'h4' }>
                 Tests
             </Typography>
             <br/>
@@ -63,7 +63,7 @@ const Tests: FC<TestsProps> = (props) => {
                             </Grid>
                             <Grid item={ true }>
                                 <Button color="primary" variant="contained"
-                                        onClick={ newTestClick }>
+                                    onClick={ newTestClick }>
                                     New Test
                                 </Button>
                             </Grid>
