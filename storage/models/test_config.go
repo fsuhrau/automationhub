@@ -28,7 +28,7 @@ type TestConfig struct {
 	Unity         *TestConfigUnity
 	// Cocos 	*CocosTestConfig
 	// Serenity *SerenityTestConfig
-	//Scenario *ScenarioTestConfig
+	Scenario *TestConfigScenario
 }
 
 func (t *TestConfig) GetDeviceIds() []uint {

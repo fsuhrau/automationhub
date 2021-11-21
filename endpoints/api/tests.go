@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/models"
+	"github.com/fsuhrau/automationhub/tester"
+	"github.com/fsuhrau/automationhub/tester/scenario"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -174,7 +176,7 @@ func (s *ApiService) runTest(c *gin.Context) {
 	}
 
 	var test models.Test
-	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
+	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").First(&test, testId).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -197,18 +199,29 @@ func (s *ApiService) runTest(c *gin.Context) {
 	}
 
 	var run *models.TestRun
-	if test.TestConfig.Type == models.TestTypeUnity {
-		tr := unity.New(s.db, s.hostIP, s.devicesManager, s)
-		if err := tr.Initialize(test, environmentParams); err != nil {
+
+	var testRunner tester.Interface
+
+	switch test.TestConfig.Type {
+	case models.TestTypeUnity:
+		testRunner = unity.New(s.db, s.hostIP, s.devicesManager, s)
+		if err := s.db.Preload("UnityTestFunctions").Where("test_config_id = ?", test.TestConfig.ID).First(&test.TestConfig.Unity).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
-		var err error
-		run, err = tr.Run(devices, app)
-		if err != nil {
-			s.error(c, http.StatusInternalServerError, err) // Todo status code
-			return
-		}
+	case models.TestTypeScenario:
+		testRunner = scenario.New(s.db, s.hostIP, s.devicesManager, s)
+	}
+
+	if err := testRunner.Initialize(test, environmentParams); err != nil {
+		s.error(c, http.StatusInternalServerError, err) // Todo status code
+		return
+	}
+	var err error
+	run, err = testRunner.Run(devices, app)
+	if err != nil {
+		s.error(c, http.StatusInternalServerError, err) // Todo status code
+		return
 	}
 
 	c.JSON(http.StatusOK, run)

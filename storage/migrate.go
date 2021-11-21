@@ -58,5 +58,11 @@ func migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&models.ProtocolPerformanceEntry{}); err != nil {
 		fmt.Printf("ProtocolPerformanceEntry: %v\n", err)
 	}
+	if err := db.AutoMigrate(&models.ScenarioStep{}); err != nil {
+		fmt.Printf("ScenarioStep: %v\n", err)
+	}
+	if err := db.AutoMigrate(&models.TestConfigScenario{}); err != nil {
+		fmt.Printf("TestConfigScenario: %v\n", err)
+	}
 	return nil
 }

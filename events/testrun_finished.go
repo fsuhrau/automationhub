@@ -4,6 +4,7 @@ var TestRunFinished testRunFinished
 
 type TestRunFinishedPayload struct {
 	TestRunID uint
+	TestName  string
 	Success   bool
 	Succeeded int
 	Unstable  int

@@ -1,9 +1,9 @@
-package unity
+package scenario
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
@@ -12,10 +12,7 @@ import (
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
 	"net"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 )
 
 type workerChannel chan action.TestStart
@@ -40,7 +37,7 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 }
 
 func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
-	if test.TestConfig.Type != models.TestTypeUnity {
+	if test.TestConfig.Type != models.TestTypeScenario {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
 	tr.env = env
@@ -84,9 +81,13 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	tr.InstallApp(tr.appParams, devices)
 
 	tr.LogInfo("start app on devices and wait for connection")
-	if err := tr.StatApp(tr.appParams, devices, nil, nil); err == sync.TimeoutError {
+	if err := tr.StatApp(tr.appParams, devices, func(d device.Device) {
+		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
+
+	}, nil); err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
+
 
 	var testList []models.UnityTestFunction
 	if tr.Config.Unity.RunAllTests {
@@ -177,6 +178,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	}
 }
 
+func (tr *testsRunner) OnDeviceConnected(d device.Device) {
+
+}
+
 func (tr *testsRunner) Run(devs []models.Device, appData models.App) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
@@ -209,6 +214,7 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 }
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
+/*
 	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
 		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
@@ -233,4 +239,60 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 	} else {
 		tr.LogInfo("test execution finished")
 	}
+ */
+}
+
+func (tr *testsRunner) executeSequence(d device.Device, index int, steps []models.ScenarioStep) {
+
+	currentStep := steps[index]
+
+	switch currentStep.StepType {
+	case models.StepTypeInstallApp:
+		tr.stepInstallApp(d, index, steps)
+	case models.StepTypeUninstallApp:
+		tr.stepUninstallApp(d, index, steps)
+	case models.StepTypeStartApp:
+		tr.stepStartApp(d, index, steps)
+	case models.StepTypeStopApp:
+		tr.stepStopApp(d, index, steps)
+	case models.StepTypeCheckpoint:
+		tr.stepCheckpoint(d, index, steps)
+	case models.StepTypeExecuteTest:
+		tr.stepExecuteTest(d, index, steps)
+	}
+}
+
+func (tr *testsRunner) stepInstallApp(d device.Device, index int, steps []models.ScenarioStep) {
+
+//	currentStep := steps[index]
+//	currentStep.AppIdentifier
+//	app.Parameter{}
+//	d.InstallApp()
+
+	tr.executeSequence(d, index+1, steps)
+}
+
+func (tr *testsRunner) stepUninstallApp(d device.Device, index int, steps []models.ScenarioStep) {
+
+	tr.executeSequence(d, index+1, steps)
+}
+
+func (tr *testsRunner) stepStartApp(d device.Device, index int, steps []models.ScenarioStep) {
+
+	tr.executeSequence(d, index+1, steps)
+}
+
+func (tr *testsRunner) stepStopApp(d device.Device, index int, steps []models.ScenarioStep) {
+
+	tr.executeSequence(d, index+1, steps)
+}
+
+func (tr *testsRunner) stepCheckpoint(d device.Device, index int, steps []models.ScenarioStep) {
+
+	tr.executeSequence(d, index+1, steps)
+}
+
+func (tr *testsRunner) stepExecuteTest(d device.Device, index int, steps []models.ScenarioStep) {
+
+	tr.executeSequence(d, index+1, steps)
 }

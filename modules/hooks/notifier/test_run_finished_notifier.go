@@ -24,11 +24,16 @@ func buildMessage(payload events.TestRunFinishedPayload) string {
 }
 
 func buildTitle(payload events.TestRunFinishedPayload) string {
+	if len(payload.TestName) > 0 {
+		return fmt.Sprintf("TestRun finished: %s", payload.TestName)
+	}
+
 	if testRun, ok := payload.TestRun.(*models.TestRun); ok {
 		if testRun.Test != nil {
 			return fmt.Sprintf("TestRun finished: %s", testRun.Test.Name)
 		}
 	}
+
 	return "TestRun finished"
 }
 

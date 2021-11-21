@@ -46,6 +46,10 @@ func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	var req Request
 	c.Bind(&req)
 	arr := strings.Split(req.TestName, " ")
+	if len(arr) != 2 {
+		s.error(c, http.StatusNotFound, fmt.Errorf("invalid method signature"))
+		return
+	}
 
 	deviceID := c.Param("device_id")
 	_ = deviceID

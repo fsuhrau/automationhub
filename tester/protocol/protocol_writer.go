@@ -31,11 +31,12 @@ func (p *logProtocol) Close() {
 type ProtocolWriter struct {
 	db        *gorm.DB
 	run       *models.TestRun
+	testName  string
 	protocols []*logProtocol
 }
 
-func NewProtocolWriter(db *gorm.DB, run *models.TestRun) *ProtocolWriter {
-	return &ProtocolWriter{db: db, run: run}
+func NewProtocolWriter(db *gorm.DB, testName string, run *models.TestRun) *ProtocolWriter {
+	return &ProtocolWriter{db: db, testName: testName, run: run}
 }
 
 func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*logProtocol, error) {
@@ -52,7 +53,7 @@ func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*logProtoc
 
 	writer := NewLogWriter(w.db, protocol.ID)
 
-	p := &logProtocol{w.db,protocol, writer}
+	p := &logProtocol{w.db, protocol, writer}
 	w.protocols = append(w.protocols, p)
 
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
@@ -85,10 +86,11 @@ func (w *ProtocolWriter) Close() {
 
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{
 		TestRunID: w.run.ID,
-		TestRun: w.run,
-		Success: failedCount == 0 && unstableCount == 0,
+		TestRun:   w.run,
+		TestName: w.testName,
+		Success:   failedCount == 0 && unstableCount == 0,
 		Succeeded: successCount,
-		Unstable: unstableCount,
-		Failed: failedCount,
+		Unstable:  unstableCount,
+		Failed:    failedCount,
 	})
 }
