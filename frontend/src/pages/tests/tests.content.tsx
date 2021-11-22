@@ -60,7 +60,7 @@ const Tests: FC<TestsProps> = (props) => {
                             <Grid item={ true } xs={ true }>
                             </Grid>
                             <Grid item={ true }>
-                                <Button color="primary" variant="contained"
+                                <Button variant="contained" color="primary" size="small"
                                     onClick={ newTestClick }>
                                     New Test
                                 </Button>

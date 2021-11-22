@@ -115,19 +115,19 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                         <Grid item={ true } xs={ true }>
                         </Grid>
                         <Grid item={ true }>
-                            <Button variant="outlined" color="primary" size="small"
+                            <Button variant="contained" color="primary" size="small"
                                 href={ `${ test.ID }/edit` }>Edit</Button>
                         </Grid>
                     </Grid>
                 </Toolbar>
             </AppBar>
             <Box sx={ { p: 2, m: 2 } }>
-                <Grid container={ true } >
+                <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
                         <Typography variant={ 'h6' }>Test Configuration</Typography>
                         <Divider/>
                         <br/>
-                        <Grid container={ true }>
+                        <Grid container={ true } >
                             <Grid item={ true } xs={ 2 }>
                                 Type:
                             </Grid>
@@ -140,10 +140,12 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                             <Grid item={ true } xs={ 10 }>
                                 { getTestExecutionName(test.TestConfig.ExecutionType) }
                                 <br/>
-                                Concurrent = runs each test on a different free
-                                device to get faster results<br/>
-                                Simultaneously = runs every test on every device
-                                to get a better accuracy
+                                <Typography variant={'caption'}>
+                                    Concurrent = runs each test on a different free
+                                    device to get faster results<br/>
+                                    Simultaneously = runs every test on every device
+                                    to get a better accuracy
+                                </Typography>
                             </Grid>
                             <Grid item={ true } xs={ 2 }>
                                 Devices:

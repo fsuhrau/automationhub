@@ -170,7 +170,7 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                         <Grid item={ true } xs={ true }>
                         </Grid>
                         <Grid item={ true }>
-                            <Button variant="contained" color="primary" onClick={ updateTestData }>
+                            <Button variant="contained" color="primary" size="small" onClick={ updateTestData }>
                                 Save
                             </Button>
                         </Grid>

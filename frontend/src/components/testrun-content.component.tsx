@@ -178,7 +178,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
-                            { prevRunId > 0 && <Button variant="contained" color="primary"
+                            { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
                                 href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
@@ -190,7 +190,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                             </Typography>
                         </Grid>
                         <Grid item={ true }>
-                            { nextRunId > 0 && <Button variant="contained" color="primary"
+                            { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
                                 href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
