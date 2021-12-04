@@ -20,6 +20,7 @@ type Devices interface {
 	Run(ctx context.Context) error
 	StopObserver()
 	FindDevice(params *app.Parameter) device.Device
+	RegisterDevice(data device.RegisterData) (device.Device, error)
 }
 
 type Sessions interface {

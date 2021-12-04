@@ -11,6 +11,6 @@ type Handler interface {
 	StopDevice(string) error
 	GetDevices() ([]Device, error)
 	RefreshDevices(DeviceUpdateFunc) error
-
 	HasDevice(Device) bool
+	RegisterDevice(data RegisterData) (Device, error)
 }

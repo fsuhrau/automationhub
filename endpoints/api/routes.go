@@ -1,13 +1,21 @@
 package api
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net"
+	"net/http"
 )
+
+var wsupgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type ApiService struct {
 	logger          *logrus.Entry
@@ -56,6 +64,9 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api.GET("/device/:device_id", HandleWithSession(s.getDeviceStatus))
 	api.POST("/device/:device_id/tests", HandleWithSession(s.deviceRunTests))
 	api.GET("/devices", HandleWithSession(s.getDevices))
+	api.GET("/device/connect", func(c *gin.Context) {
+		s.socketHandler(c, c.Writer, c.Request)
+	})
 
 	api.POST("/test", HandleWithSession(s.newTest))
 	api.GET("/data/test/data/:name", HandleWithSession(s.getData))
@@ -69,4 +80,18 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 	api.GET("/tests", HandleWithSession(s.getTests))
 
 	return nil
+}
+
+func (s *ApiService) socketHandler(c *gin.Context, w http.ResponseWriter, r *http.Request) {
+	conn, err := wsupgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Failed to set websocket upgrade: %+v", err)
+		return
+	}
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		fmt.Println("Fail to get register request: %+v", err)
+		return
+	}
+	s.registerDevices(msg, conn, c)
 }

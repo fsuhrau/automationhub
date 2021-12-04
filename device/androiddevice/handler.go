@@ -3,6 +3,7 @@ package androiddevice
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"regexp"
 	"time"
@@ -205,6 +206,10 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 		}
 	}
 	return false
+}
+
+func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
+	return nil, fmt.Errorf("register device not implemented")
 }
 
 // public void createUsbTunnel(String deviceId, int localPort, int remotePort) {

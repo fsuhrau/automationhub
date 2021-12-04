@@ -2,6 +2,7 @@ package iossim
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"regexp"
@@ -175,4 +176,8 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 		}
 	}
 	return false
+}
+
+func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
+	return nil, fmt.Errorf("register device not implemented")
 }

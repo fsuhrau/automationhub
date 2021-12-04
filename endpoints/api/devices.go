@@ -1,12 +1,16 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
+	device2 "github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -32,6 +36,36 @@ func (s *ApiService) getDevices(session *Session, c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, devices)
+}
+
+func (s *ApiService) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
+
+	type Request struct {
+		Type     string
+		DeviceID string
+		IP       string
+		Version  string
+		OS       string
+		Name     string
+	}
+
+	clientIp := net.ParseIP(c.ClientIP())
+
+	var req Request
+
+	json.Unmarshal(msg, &req)
+
+	register := device2.RegisterData{
+		DeviceOSVersion: req.Version,
+		Name:            req.Name,
+		DeviceOS:        req.OS,
+		DeviceID:        req.DeviceID,
+		ManagerType:     req.Type,
+		DeviceIP:        clientIp,
+		Conn:            conn,
+	}
+
+	s.devicesManager.RegisterDevice(register)
 }
 
 func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {

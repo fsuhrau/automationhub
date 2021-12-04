@@ -1,6 +1,7 @@
 package macos
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"net"
 	"time"
@@ -73,4 +74,8 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 		}
 	}
 	return false
+}
+
+func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
+	return nil, fmt.Errorf("register device not implemented")
 }
