@@ -21,6 +21,6 @@ func RegisterNewTestProtocolListener(publisher sse.Publisher) {
 func (u newTestProtocolNotifier) Handle(payload events.NewTestProtocolPayload) {
 	u.publisher.PublishEvent(sse.Event{
 		Channel: fmt.Sprintf("test_run_%d_protocol", payload.TestRunID),
-		Content: payload,
+		Content: payload.Protocol,
 	})
 }

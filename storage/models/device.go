@@ -29,9 +29,9 @@ type Device struct {
 	GPU              string
 	ABI              string
 	OpenGLESVersion  float32
-	Status           device.State
 	Manager          string
 	StatusLog        []DeviceLog
-	Dev              interface{} `gorm:"-"`
-	Connection       interface{} `gorm:"-"`
+	Status           device.State `gorm:"-"`
+	Dev              interface{}  `gorm:"-"`
+	Connection       interface{}  `gorm:"-"`
 }

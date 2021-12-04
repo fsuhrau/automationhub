@@ -8,6 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/storage/models"
+	tester_action "github.com/fsuhrau/automationhub/tester/action"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
@@ -91,8 +92,9 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	var testList []models.UnityTestFunction
 	if tr.Config.Unity.RunAllTests {
 		tr.LogInfo("RunAllTests active requesting PlayMode tests")
+		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
 		a := &action.TestsGet{}
-		if err := tr.DeviceManager.SendAction(devices[0].Device, a); err != nil {
+		if err := actionExecutor.Execute(devices[0].Device, a, 2*time.Minute); err != nil {
 			tr.LogError("send action to select all tests failed: %v", err)
 			return
 		}
@@ -209,7 +211,7 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 }
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
-	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
+	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
 		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
 	}

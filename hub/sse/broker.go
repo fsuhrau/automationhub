@@ -2,7 +2,6 @@ package sse
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
 )
 
 type Broker struct {
@@ -43,16 +42,16 @@ func (stream *Broker) listen() {
 		// Add new available client
 		case client := <-stream.NewClients:
 			stream.TotalClients[client] = true
-			log.Printf("Client added. %d registered clients", len(stream.TotalClients))
+			// log.Printf("Client added. %d registered clients", len(stream.TotalClients))
 
 		// Remove closed client
 		case client := <-stream.ClosedClients:
 			delete(stream.TotalClients, client)
-			log.Printf("Removed client. %d registered clients", len(stream.TotalClients))
+			// log.Printf("Removed client. %d registered clients", len(stream.TotalClients))
 
 		// Broadcast message to client
 		case eventMsg := <-stream.Events:
-			log.Printf("Send Event to %d clients", len(stream.TotalClients))
+			// log.Printf("Send Event to %d clients", len(stream.TotalClients))
 			for clientMessageChan := range stream.TotalClients {
 				clientMessageChan <- eventMsg
 			}
@@ -78,6 +77,8 @@ func (stream *Broker) ServeHTTP() gin.HandlerFunc {
 			<-c.Done()
 			stream.ClosedClients <- clientChan
 		}()
+
+		c.Set("SSE", clientChan)
 
 		c.Next()
 	}

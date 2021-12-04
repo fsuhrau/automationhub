@@ -29,3 +29,5 @@
 endpoints/web/data/
 test/
 /bin
+
+dist/

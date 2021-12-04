@@ -25,12 +25,12 @@ func (s *ApiService) initSSE(api *gin.RouterGroup) {
 	sseApi.Use(s.sseBroker.ServeHTTP())
 	sseApi.GET("/", func(c *gin.Context) {
 		log.Printf("register for streaming")
+		cha, _ := c.Get("SSE")
+		clientChannel, _ := cha.(sse.ClientChan)
 		c.Stream(func(w io.Writer) bool {
-			if msg, ok := <-s.sseBroker.Events; ok {
-				c.SSEvent(msg.Channel, msg.Content)
-				return true
-			}
-			return false
+			msg := <-clientChannel
+			c.SSEvent(msg.Channel, msg.Content)
+			return true
 		})
 	})
 }

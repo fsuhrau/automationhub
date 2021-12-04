@@ -9,10 +9,14 @@ import (
 	"time"
 )
 
+const (
+	DefaultTimeout = 3 * time.Minute
+)
+
 type testExecutor struct {
 	devicesManager manager.Devices
 	fin            chan bool
-	wg sync.ExtendedWaitGroup
+	wg             sync.ExtendedWaitGroup
 }
 
 func NewExecutor(devices manager.Devices) *testExecutor {
@@ -24,7 +28,7 @@ func NewExecutor(devices manager.Devices) *testExecutor {
 
 func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout time.Duration) error {
 	dev.AddActionHandler(e)
-	defer func () {
+	defer func() {
 		dev.RemoveActionHandler(e)
 	}()
 
@@ -46,7 +50,7 @@ func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout
 		return err
 	}
 
-	if err := e.wg.WaitUntil(time.Now().Add(30 * time.Second)); err != nil {
+	if err := e.wg.WaitUntil(time.Now().Add(DefaultTimeout)); err != nil {
 		dev.Error("testrunner", err.Error())
 		return err
 	}

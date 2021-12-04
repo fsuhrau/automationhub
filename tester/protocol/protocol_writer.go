@@ -26,6 +26,7 @@ func (p *logProtocol) Close() {
 	p.p.TestResult = state
 	p.p.EndedAt = &endTime
 	p.db.Updates(&p.p)
+	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: p.p.TestRunID, Protocol: p.p})
 }
 
 type ProtocolWriter struct {
@@ -39,10 +40,10 @@ func NewProtocolWriter(db *gorm.DB, testName string, run *models.TestRun) *Proto
 	return &ProtocolWriter{db: db, testName: testName, run: run}
 }
 
-func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*logProtocol, error) {
+func (w *ProtocolWriter) NewProtocol(dev models.Device , testname string) (*logProtocol, error) {
 	protocol := &models.TestProtocol{
 		TestRunID: w.run.ID,
-		DeviceID:  &deviceID,
+		DeviceID:  &dev.ID,
 		TestName:  testname,
 		StartedAt: time.Now(),
 	}
@@ -50,6 +51,7 @@ func (w *ProtocolWriter) NewProtocol(deviceID uint, testname string) (*logProtoc
 	if err := w.db.Create(protocol).Error; err != nil {
 		return nil, err
 	}
+	protocol.Device = &dev
 
 	writer := NewLogWriter(w.db, protocol.ID)
 
