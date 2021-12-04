@@ -22,8 +22,12 @@ func (s *ApiService) getDevices(session *Session, c *gin.Context) {
 	for i := range devices {
 		dev := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 		devices[i].Dev = dev
-		if dev != nil && dev.Connection() != nil {
-			devices[i].Connection = dev.Connection().ConnectionParameter
+		devices[i].Status = device2.StateUnknown
+		if dev != nil {
+			devices[i].Status = dev.DeviceState()
+			if dev.Connection() != nil {
+				devices[i].Connection = dev.Connection().ConnectionParameter
+			}
 		}
 	}
 
@@ -37,7 +41,7 @@ func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {
 func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	type Request struct {
 		TestName string
-		Env string
+		Env      string
 	}
 	type Response struct {
 		Success bool
@@ -99,9 +103,9 @@ func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	envParams := extractParams(req.Env)
 
 	runTestAction := action.TestStart{
-		Class: arr[0],
+		Class:  arr[0],
 		Method: arr[1],
-		Env: envParams,
+		Env:    envParams,
 	}
 
 	executor := unity.NewExecutor(s.devicesManager)

@@ -27,6 +27,7 @@ type DeviceManager struct {
 	deviceHandlers map[string]device.Handler
 	stop           bool
 	log            *logrus.Entry
+	deviceCache    map[string]*models.Device
 }
 
 func NewDeviceManager(logger *logrus.Logger, db *gorm.DB) *DeviceManager {
@@ -35,6 +36,7 @@ func NewDeviceManager(logger *logrus.Logger, db *gorm.DB) *DeviceManager {
 	}),
 		db:             db,
 		deviceHandlers: make(map[string]device.Handler),
+		deviceCache:    make(map[string]*models.Device),
 	}
 }
 
@@ -66,24 +68,6 @@ func (dm *DeviceManager) Devices() ([]device.Device, error) {
 	}
 	return devices, nil
 }
-
-/*
-func (dm *DeviceManager) GetDevice(id uint) (device.Device, error) {
-	var dev models.Device
-	if err := dm.db.First(&dev, dev).Error; err != nil {
-		return nil, err
-	}
-	for _, m := range dm.deviceHandlers {
-		devices, _ := m.GetDevices()
-		for _, i := range devices {
-			if i.DeviceID() == dev.DeviceIdentifier {
-				return i, nil
-			}
-		}
-	}
-	return nil, fmt.Errorf("device not found")
-}
-*/
 
 func (dm *DeviceManager) Start(dev device.Device) error {
 	for _, m := range dm.deviceHandlers {
@@ -120,10 +104,6 @@ func evaluateDevice(dev device.Device, properties *device.Properties) bool {
 		return false
 	}
 
-	// if len(properties.Architecture) > 0 && dev.() != properties.OS {
-	// 	return false
-	// }
-
 	return true
 }
 
@@ -139,48 +119,14 @@ func (dm *DeviceManager) FindDevice(params *app.Parameter) device.Device {
 	return nil
 }
 
-/*
-func (dm *DeviceManager) LockDevice(session manager.Session, properties *device.Properties) (*manager.DeviceLock, error) {
+func (dm *DeviceManager) RegisterDevice(data device.RegisterData) (device.Device, error) {
 	for _, mng := range dm.deviceHandlers {
-		devices, _ := mng.GetDevices()
-		for i := range devices {
-
-			metsRequirements := evaluateDevice(devices[i], properties)
-
-			if metsRequirements && !dm.isLocked(devices[i]) {
-				dm.log.Debugf("LockDevice %v for session %s", devices[i], session.GetSessionID())
-				lock := &manager.DeviceLock{
-					Device: devices[i],
-				}
-				dm.LockedDevices[session.GetSessionID()] = lock
-				session.SetDeviceLock(lock)
-				return lock, nil
-			}
+		if mng.Name() == data.ManagerType {
+			return mng.RegisterDevice(data)
 		}
 	}
-	return nil, device.ManagerNotFoundError
+	return nil, fmt.Errorf("device for type not found")
 }
-/*
-func (dm *DeviceManager) UnlockDevice(session manager.Session) error {
-
-	if d, ok := dm.LockedDevices[session.GetSessionID()]; ok {
-		dm.log.Debugf("UnockDevice %v from session %s", d, session.GetSessionID())
-		if d.Device.Connection() != nil  {
-			dm.log.Debugf("Cose Connection for device %v from session %s", d, session.GetSessionID())
-			d.Device.Connection().Close()
-		}
-		if err := d.Device.StopApp(session.GetAppParameter()); err != nil {
-			logrus.Errorf("Stop App failed: %v", err)
-		}
-
-		dm.Stop(d.Device)
-
-		delete(dm.LockedDevices, session.GetSessionID())
-		return nil
-	}
-	return fmt.Errorf("no locked device found for session")
-}
-*/
 
 func (dm *DeviceManager) Run(ctx context.Context) error {
 	dm.log.Debug("Starting device manager")
@@ -214,14 +160,26 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 	return nil
 }
 
-func (dm *DeviceManager) updateDeviceState(dev device.Device) {
+func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
+	if m, ok := dm.deviceCache[deviceID]; ok {
+		return m
+	}
+
 	deviceData := models.Device{
-		DeviceIdentifier: dev.DeviceID(),
+		DeviceIdentifier: deviceID,
+		Status: device.StateUnknown,
 	}
-	if err := dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", dev.DeviceID()).Error; err != nil {
-		logrus.Errorf("%v", err)
-		return
+
+	if err := dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", deviceID).Error; err != nil {
+		logrus.Errorf("fail to create new device: %v", err)
 	}
+	dm.deviceCache[deviceID] = &deviceData
+	return dm.deviceCache[deviceID]
+}
+
+func (dm *DeviceManager) updateDeviceState(dev device.Device) {
+	deviceData := dm.getDevice(dev.DeviceID())
+
 	needsUpdate := false
 	if deviceData.Name != dev.DeviceName() {
 		deviceData.Name = dev.DeviceName()
@@ -254,7 +212,7 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 		}
 		dm.db.Create(&log)
 		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
-			DeviceID: deviceData.ID,
+			DeviceID:    deviceData.ID,
 			DeviceState: uint(dev.DeviceState()),
 		})
 	}
@@ -281,41 +239,6 @@ func (dm *DeviceManager) SocketListener() error {
 	}()
 	return nil
 }
-
-/*
-func (dm *DeviceManager) lookupDevice(connect *action.Connect, remoteAddress string) *manager.DeviceLock {
-
-	if connect == nil {
-		return nil
-	}
-
-	// by DEVICE_ID
-	if len(connect.DeviceID) > 0 {
-		for _, dev := range dm.LockedDevices {
-			if dev.Device.DeviceID() == connect.DeviceID {
-				return dev
-			}
-		}
-	}
-
-	// by SESSION_ID
-	if len(connect.SessionID) > 0 {
-		if dev, ok := dm.LockedDevices[connect.SessionID]; ok {
-			return dev
-		}
-	}
-
-	// by ip
-	for _, dev := range dm.LockedDevices {
-		if strings.Contains(remoteAddress, dev.Device.DeviceIP().String()) {
-			return dev
-		}
-	}
-
-	// not found ...
-	return nil
-}
-*/
 
 func (dm *DeviceManager) handleConnection(c net.Conn) {
 	if err := c.SetDeadline(time.Now().Add(DeviceConnectionTimeout)); err != nil {
