@@ -17,6 +17,7 @@ import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 import Moment from 'react-moment';
 import { Typography } from '@material-ui/core';
+import { AndroidRounded, Apple } from "@material-ui/icons";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -125,12 +126,12 @@ const AppsPage: FC<AppsProps> = (props) => {
                             <TableRow>
                                 <TableCell>ID</TableCell>
                                 <TableCell>Created</TableCell>
+                                <TableCell>OS</TableCell>
                                 <TableCell>Name</TableCell>
-                                <TableCell>Platform</TableCell>
-                                <TableCell>Bundle Identifier</TableCell>
+                                <TableCell>Bundle Identifier / Activity</TableCell>
                                 <TableCell align="right">Version</TableCell>
-                                <TableCell>Activity</TableCell>
                                 <TableCell align="right">Size</TableCell>
+                                <TableCell>Tags</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -140,12 +141,12 @@ const AppsPage: FC<AppsProps> = (props) => {
                                     { app.ID }
                                 </TableCell>
                                 <TableCell><Moment format="YYYY/MM/DD HH:mm:ss">{ app.CreatedAt }</Moment></TableCell>
+                                <TableCell>{ app.Platform === "android" ? (<AndroidRounded />) : (<Apple/>) }</TableCell>
                                 <TableCell>{ app.Name }</TableCell>
-                                <TableCell>{ app.Platform }</TableCell>
-                                <TableCell>{ app.Identifier }</TableCell>
+                                <TableCell>{ app.Identifier } { app.LaunchActivity }</TableCell>
                                 <TableCell align="right">{ app.Version }</TableCell>
-                                <TableCell>{ app.LaunchActivity }</TableCell>
                                 <TableCell align="right">{ ppSize(app.Size) }</TableCell>
+                                <TableCell>{ app.Tags }</TableCell>
                                 <TableCell>
                                     <Button variant="contained" color="secondary" size="small" onClick={ () => {
                                         handleDeleteApp(app.ID as number);

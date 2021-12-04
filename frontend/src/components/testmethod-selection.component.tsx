@@ -10,6 +10,7 @@ import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 import IAppFunctionData from '../types/app.function';
 import { TextField, Typography } from '@material-ui/core';
+import { getTestFunctions } from "../services/unity.service";
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -89,7 +90,6 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
     useEffect(() => {
         if (testJson !== '') {
             const testFunctions: IAppFunctionData[] = JSON.parse(testJson);
-            console.log(testFunctions);
             setLeft(testFunctions);
             setRight([]);
         }
@@ -101,7 +101,6 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
 
     const changeJsonFunction = (event: ChangeEvent<HTMLTextAreaElement>): void => {
         if (event.target.value !== null && event.target.value !== '') {
-            console.log(event.target.value);
             setTestJson(event.target.value);
         }
     };
@@ -140,6 +139,13 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
             </List>
         </Paper>
     );
+
+    useEffect(() => {
+        getTestFunctions().then(response => {
+            setLeft(response.data);
+            setRight([]);
+        })
+    }, []);
 
     return (
         <Grid container={ true }

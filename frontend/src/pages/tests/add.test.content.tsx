@@ -29,6 +29,7 @@ import TestMethodSelection from '../../components/testmethod-selection.component
 import IAppFunctionData from '../../types/app.function';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
+import { getTestFunctions } from "../../services/unity.service";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({

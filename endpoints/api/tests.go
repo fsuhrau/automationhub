@@ -140,6 +140,30 @@ func (s *ApiService) getTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
+func (s *ApiService) updateTest(session *Session, c *gin.Context) {
+	testId := c.Param("test_id")
+	var newTestData models.Test
+	c.Bind(&newTestData)
+
+	var test models.Test
+	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
+		s.error(c, http.StatusNotFound, err)
+		return
+	}
+
+	test.Name = newTestData.Name
+	test.TestConfig.ExecutionType = newTestData.TestConfig.ExecutionType
+	test.TestConfig.AllDevices = newTestData.TestConfig.AllDevices
+
+	if err := s.db.Save(&test).Error; err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, test)
+}
+
+
 func extractParams(param string) map[string]string {
 	var env map[string]string
 	env = make(map[string]string)
