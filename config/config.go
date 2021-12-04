@@ -20,7 +20,7 @@ type Manager struct {
 
 type Device struct {
 	ID         string     `mapstructure:"id"`
-	IsTablet   bool       `mapstructure:"table"`
+	IsTablet   bool       `mapstructure:"tablet"`
 	Name       string     `mapstructure:"name"`
 	PIN        string     `mapstructure:"pin"`
 	Connection Connection `mapstructure:"connection"`
@@ -36,6 +36,7 @@ type Hook struct {
 
 type Service struct {
 	Autodetect    bool               `mapstructure:"autodetect_ip"`
+	AutoDiscovery bool               `mapstructure:"auto_discovery"`
 	HostIP        string             `mapstructure:"host_ip"`
 	ServerURL     string             `mapstructure:"server_url"`
 	Port          uint16             `mapstructure:"port"`

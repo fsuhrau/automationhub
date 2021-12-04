@@ -21,7 +21,9 @@ func (s *Service) RunMaster() error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go ZeroConfServer(ctx, "", s.hostIP.String())
+	if s.cfg.AutoDiscovery {
+		go ZeroConfServer(ctx, "", s.hostIP.String())
+	}
 /*
 	remoteLoggingService := remlog.NewService(s.logger)
 	if err := remoteLoggingService.Run(func(msg string) {
