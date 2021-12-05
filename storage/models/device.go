@@ -20,6 +20,7 @@ type Device struct {
 	DeviceIdentifier string
 	DeviceType       DeviceType
 	Name             string
+	HardwareModel    string
 	RAM              float32
 	SOC              string
 	DisplaySize      string

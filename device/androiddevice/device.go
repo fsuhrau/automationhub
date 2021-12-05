@@ -59,6 +59,10 @@ func (d *Device) DeviceOSName() string {
 	return d.deviceOSName
 }
 
+func (d *Device) DeviceModel() string {
+	return d.deviceModel
+}
+
 func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
 }

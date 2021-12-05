@@ -8,7 +8,13 @@ managers:
   unity_editor:               # unity_editor manager
     enabled: true             # enable to disable it
     use_os_screenshot: false
-  android_device:             # handle android devices
+  ios_device:               # unity_editor manager
+    enabled: true             # enable to disable it
+    use_os_screenshot: false
+  ios_sim:
+    enabled: true             # enable to disable it
+    use_os_screenshot: false
+  android_device:             # handle android devices iter managers
     enabled: true
     use_os_screenshot: false  # create a screenshot via os or via software client
     devices:                  # defines some custom settings for devices
@@ -21,7 +27,7 @@ managers:
         tablet: true           # is marked as a tablet
         connection:
           type: remote         # is connected via adb remote
-          ip: 1.2.3.4          # ip of the device prefered static to make connection more relyable
+          ip: 1.2.3.4          # ip of the device preferred static to make connection more reliable
 hooks:                                   # define some hooks to get notifications about the current test state
   - provider: slack                      # send test results via slack hook
     token: xoxb-xxxxxxslackt_auth_token  # needs a slack bot auth token

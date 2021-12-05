@@ -151,7 +151,7 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 			// dm.log.Debugf("refreshing device lists...")
 			for _, m := range dm.deviceHandlers {
 				if err := m.RefreshDevices(dm.updateDeviceState); err != nil {
-					dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
+					// dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
 				}
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -191,6 +191,11 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 	}
 	if deviceData.OSVersion != dev.DeviceOSVersion() {
 		deviceData.OSVersion = dev.DeviceOSVersion()
+		needsUpdate = true
+	}
+
+	if deviceData.HardwareModel != dev.DeviceModel() {
+		deviceData.HardwareModel = dev.DeviceModel()
 		needsUpdate = true
 	}
 

@@ -35,6 +35,10 @@ type Device struct {
 	sendChannel chan []byte
 }
 
+func (d *Device) DeviceModel() string {
+	return ""
+}
+
 func (d *Device) DeviceOSName() string {
 	return d.deviceOSName
 }

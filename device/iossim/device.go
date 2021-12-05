@@ -34,6 +34,10 @@ type Device struct {
 	lastUpdateAt     time.Time
 }
 
+func (d *Device) DeviceModel() string {
+	return ""
+}
+
 func (d *Device) DeviceOSName() string {
 	return d.deviceOSName
 }

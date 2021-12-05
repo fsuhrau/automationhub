@@ -14,6 +14,7 @@ type Device interface {
 	DeviceOSName() string
 	DeviceOSVersion() string
 	DeviceName() string
+	DeviceModel() string
 
 	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error
