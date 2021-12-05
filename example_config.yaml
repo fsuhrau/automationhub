@@ -1,0 +1,29 @@
+restart: true        # perform a restart for every test
+autodetect_ip: false # try to find the correct ip automatically
+host_ip: 192.168.0.1 # the ip for connecting devices to the hub
+port: 0              # port to listen on
+
+managers:
+  # managers handle devices and its connection
+  unity_editor:               # unity_editor manager
+    enabled: true             # enable to disable it
+    use_os_screenshot: false
+  android_device:             # handle android devices
+    enabled: true
+    use_os_screenshot: false  # create a screenshot via os or via software client
+    devices:                  # defines some custom settings for devices
+      - id: SAMGLX10          # id if the devices
+        pin: 1234             # pin of the device needed to unlock it
+        connection:           # defines connection parameters
+          type: usb           # device is connected via USB directly to the hub
+      - id: 1.2.3.4:5555
+        name: ODroid2K
+        tablet: true           # is marked as a tablet
+        connection:
+          type: remote         # is connected via adb remote
+          ip: 1.2.3.4          # ip of the device prefered static to make connection more relyable
+hooks:                                   # define some hooks to get notifications about the current test state
+  - provider: slack                      # send test results via slack hook
+    token: xoxb-xxxxxxslackt_auth_token  # needs a slack bot auth token
+    username: botname
+    channel: channel_to_post_in          # the channel to post the message in
