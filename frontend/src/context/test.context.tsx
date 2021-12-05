@@ -1,14 +1,14 @@
 import { createContext, ReactElement, useState } from 'react';
 import ITestData from '../types/test';
 
-type ContextProps = {
+type TestContextProps = {
     test: ITestData,
     setTest: (t: ITestData) => {},
 };
 
-export const TestContext = createContext<ContextProps>({});
-
-export const TestContextProvider = (props): ReactElement => {
+export const TestContext = createContext<Partial<TestContextProps>>({});
+/*
+export const TestContextProvider = (props: TestContextProps): ReactElement => {
     const { children } = props;
     const [ test, setTest ] = useState<ITestData>();
     return (
@@ -17,3 +17,4 @@ export const TestContextProvider = (props): ReactElement => {
         </TestContext.Provider>
     );
 };
+*/

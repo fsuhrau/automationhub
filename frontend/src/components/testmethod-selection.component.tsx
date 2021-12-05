@@ -10,7 +10,7 @@ import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 import IAppFunctionData from '../types/app.function';
 import { TextField, Typography } from '@material-ui/core';
-import { getTestFunctions } from "../services/unity.service";
+import { getTestFunctions } from '../services/unity.service';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -144,7 +144,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
         getTestFunctions().then(response => {
             setLeft(response.data);
             setRight([]);
-        })
+        });
     }, []);
 
     return (

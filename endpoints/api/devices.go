@@ -68,9 +68,45 @@ func (s *ApiService) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Co
 	s.devicesManager.RegisterDevice(register)
 }
 
-func (s *ApiService) getDeviceStatus(session *Session, c *gin.Context) {
+func (s *ApiService) getDevice(session *Session, c *gin.Context) {
 
+	deviceID := c.Param("device_id")
+	_ = deviceID
+	var device models.Device
+	if err := s.db.Find(&device, "id = ?", deviceID).Error; err != nil {
+		s.error(c, http.StatusNotFound, err)
+		return
+	}
+
+	dev := s.devicesManager.GetDevice(device.DeviceIdentifier)
+	device.Dev = dev
+	device.Status = device2.StateUnknown
+	if dev != nil {
+		device.Status = dev.DeviceState()
+		if dev.Connection() != nil {
+			device.Connection = dev.Connection().ConnectionParameter
+		}
+	}
+
+	c.JSON(http.StatusOK, device)
 }
+
+func (s *ApiService) deleteDevice(session *Session, c *gin.Context) {
+	deviceID := c.Param("device_id")
+
+	var device models.Device
+	if err := s.db.First(&device, deviceID).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+	if err := s.db.Delete(&device).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 
 func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
 	type Request struct {

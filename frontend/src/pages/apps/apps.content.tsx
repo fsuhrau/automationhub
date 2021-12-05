@@ -17,7 +17,7 @@ import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 import Moment from 'react-moment';
 import { Typography } from '@material-ui/core';
-import { AndroidRounded, Apple } from "@material-ui/icons";
+import { AndroidRounded, Apple } from '@material-ui/icons';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -141,7 +141,7 @@ const AppsPage: FC<AppsProps> = (props) => {
                                     { app.ID }
                                 </TableCell>
                                 <TableCell><Moment format="YYYY/MM/DD HH:mm:ss">{ app.CreatedAt }</Moment></TableCell>
-                                <TableCell>{ app.Platform === "android" ? (<AndroidRounded />) : (<Apple/>) }</TableCell>
+                                <TableCell>{ app.Platform === 'android' ? (<AndroidRounded />) : (<Apple/>) }</TableCell>
                                 <TableCell>{ app.Name }</TableCell>
                                 <TableCell>{ app.Identifier } { app.LaunchActivity }</TableCell>
                                 <TableCell align="right">{ app.Version }</TableCell>

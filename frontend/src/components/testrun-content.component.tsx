@@ -74,10 +74,10 @@ interface NewProtocolPayload {
 }
 
 const TestRunContent: FC<TestRunContentProps> = (props) => {
-    const {testRun, nextRunId, prevRunId, classes} = props;
+    const { testRun, nextRunId, prevRunId, classes } = props;
 
     const testContext = useContext(TestContext);
-    const {test, setTest} = testContext;
+    const { test, setTest } = testContext;
 
     const history = useHistory();
 
@@ -88,11 +88,11 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
             if (state.findIndex(value => value.ID == changes.data.ID) >= 0) {
                 return state.map(value => {
                     return value.ID === changes.data.ID ? changes.data : value;
-                })
+                });
             } else {
-                return [...state, changes.data]
+                return [...state, changes.data];
             }
-        }
+        },
     });
 
     const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${ testRun.ID }_log`, null);
@@ -176,7 +176,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
                             { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                                href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                             }
@@ -188,7 +188,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                         </Grid>
                         <Grid item={ true }>
                             { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                                href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
                             }
@@ -198,7 +198,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
             </AppBar>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>App Details</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -270,7 +270,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                 <Grid item={ true } xs={ 2 }>
                 </Grid>
                 <Grid item={ true } xs={ 4 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Results</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -296,7 +296,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <TableContainer>
@@ -340,7 +340,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Executor Log</Typography>
                         <Divider/>
                         <TableContainer>
@@ -354,7 +354,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                                 </TableHead>
                                 <TableBody>
                                     { log.map((entry) => <TableRow key={ entry.ID }>
-                                        <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
+                                        <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
                                             <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
                                         </TableCell>
                                         <TableCell>{ entry.Level }</TableCell>

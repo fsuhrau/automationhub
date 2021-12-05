@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Typography } from '@material-ui/core';
+import { Backdrop, CircularProgress, Typography } from '@material-ui/core';
 import ITestData from '../../types/test';
 import EditTestPage from './edit.test.content';
 import { getTest } from '../../services/test.service';
@@ -10,9 +10,13 @@ interface TestPageProps {
     edit: boolean
 }
 
-const TestPage: FC<TestPageProps> = (props) =>  {
+interface ParamTypes {
+    testId: string
+}
+
+const TestPageLoader: FC<TestPageProps> = (props) =>  {
     const { edit } = props;
-    const { testId } = useParams();
+    const { testId } = useParams<ParamTypes>();
     const [test, setTest] = useState<ITestData>();
 
     useEffect(() => {
@@ -26,10 +30,12 @@ const TestPage: FC<TestPageProps> = (props) =>  {
         <div>
             { test
                 ? (edit ? <EditTestPage test={ test }/> : <ShowTestPage test={ test }/> )
-                : <Typography variant={ 'h1' }>Loading</Typography>
+                : <Backdrop open={true} >
+                    <CircularProgress color="inherit" />
+                </Backdrop>
             }
         </div>
     );
 };
 
-export default TestPage;
+export default TestPageLoader;

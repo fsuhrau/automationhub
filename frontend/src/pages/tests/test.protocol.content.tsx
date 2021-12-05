@@ -4,12 +4,16 @@ import { useParams } from 'react-router-dom';
 import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
 import ITestRunData from '../../types/test.run';
-import { Typography } from '@material-ui/core';
+import { Backdrop, CircularProgress, Typography } from '@material-ui/core';
+
+interface ParamTypes {
+    testId: string
+    runId: string
+    protocolId: string
+}
 
 const TestProtocol: FC = () => {
-    const { testId } = useParams<number>();
-    const { runId } = useParams<number>();
-    const { protocolId } = useParams<number>();
+    const { testId, runId, protocolId } = useParams<ParamTypes>();
 
     const [protocol, setProtocol] = useState<ITestProtocolData>();
     const [run, setRun] = useState<ITestRunData>();
@@ -32,7 +36,9 @@ const TestProtocol: FC = () => {
         <div>
             { protocol && run
                 ? <TestProtocolContent run={ run } protocol={ protocol }/>
-                : <Typography variant={ 'h1' }>Loading</Typography>
+                :  <Backdrop open={true} >
+                    <CircularProgress color="inherit" />
+                </Backdrop>
             }
         </div>
     );

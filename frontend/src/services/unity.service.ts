@@ -1,8 +1,7 @@
-import { AxiosResponse } from 'axios';
-import axios from 'axios';
-import IAppFunctionData from "../types/app.function";
+import axios, { AxiosResponse } from 'axios';
+import IAppFunctionData from '../types/app.function';
 
-var unityService = axios.create({
+const unityService = axios.create({
     baseURL: 'http://localhost:7109/',
     headers: {
         'Content-type': 'application/json',

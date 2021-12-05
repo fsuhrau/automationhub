@@ -37,10 +37,14 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
 
 type TestRunsProps = WithStyles<typeof styles>;
 
+interface ParamTypes {
+    testId: string
+}
+
 const TestRuns: FC<TestRunsProps> = (props) => {
     const { classes } = props;
 
-    const { testId } = useParams<number>();
+    const { testId } = useParams<ParamTypes>();
 
     const [testRuns, setTestRuns] = useState<ITestRunData[]>([]);
 

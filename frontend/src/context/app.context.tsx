@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-type ContextProps = {
+type AppContextProps = {
 };
 
-export const AppContext = createContext<Partial<ContextProps>>({ });
+export const AppContext = createContext<Partial<AppContextProps>>({ });

@@ -16,14 +16,15 @@ import {
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle,
+    DialogTitle, IconButton,
     TextField,
     Typography,
 } from '@material-ui/core';
-import { PlayArrow } from '@material-ui/icons';
+import { ArrowForward, PlayArrow } from '@material-ui/icons';
 import { useSSE } from 'react-hooks-sse';
 import AppSelection from './app-selection.component';
 import { executeTest } from '../services/test.service';
+import { useHistory } from 'react-router-dom';
 
 const styles = (): ReturnType<typeof createStyles> =>
     createStyles({
@@ -40,6 +41,8 @@ interface DeviceChangePayload {
 }
 
 const DeviceTable: FC<DeviceProps> = (props) => {
+    const history = useHistory();
+
     const { classes } = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
@@ -109,6 +112,10 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     const onTestNameChanged = (event: ChangeEvent<HTMLInputElement>): void => {
         seTestName(event.target.value);
     };
+
+    function openDetails(id: number): void {
+        history.push(`/web/device/${id}`);
+    }
 
     return (
         <div>
@@ -196,6 +203,12 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                                     } }>
                                     Run
                                 </Button>) }
+                                <IconButton color="primary" size={'small'}
+                                    onClick={ (e) => {
+                                        openDetails(device.ID);
+                                    } }>
+                                    <ArrowForward/>
+                                </IconButton>
                             </TableCell>
                         </TableRow>) }
                     </TableBody>

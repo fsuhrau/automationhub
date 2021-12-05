@@ -10,16 +10,16 @@ import TestContent from './pages/tests/tests.content';
 import DevicesContent from './pages/devices/device.content';
 import Content from './Content';
 import AddTestPage from './pages/tests/add.test.content';
-import TestRunPage from './pages/tests/test.run.content';
+import TestRunPage from './pages/tests/test.run.page.loader';
 import TestProtocolPage from './pages/tests/test.protocol.content';
 import Moment from 'react-moment';
 import AppsPage from './pages/apps/apps.content';
 import { SSEProvider } from 'react-hooks-sse';
 import { AppContext } from './context/app.context';
-import { TestContextProvider } from './context/test.context';
 import DefaultHeader from './pages/shared/header';
-import EditTestPage from './pages/tests/edit.test.content';
-import TestPage from './pages/tests/test.content';
+import TestPageLoader from './pages/tests/test.page.loader';
+import DevicesManagerContent from './pages/devices/devices.manager.content';
+import DevicePageLoader from './pages/devices/device.page.loader';
 
 Moment.globalLocale = 'de';
 
@@ -216,24 +216,16 @@ const App: FC<AppProps> = (props) => {
                                         <TestProtocolPage/>
                                     </Route>
                                     <Route path="/web/test/:testId/runs/last">
-                                        <TestContextProvider>
-                                            <TestRunPage/>
-                                        </TestContextProvider>
+                                        <TestRunPage/>
                                     </Route>
                                     <Route path="/web/test/:testId/run/:runId">
-                                        <TestContextProvider>
-                                            <TestRunPage/>
-                                        </TestContextProvider>
+                                        <TestRunPage/>
                                     </Route>
                                     <Route path={ '/web/test/:testId/edit' }>
-                                        <TestContextProvider>
-                                            <TestPage edit={true}/>
-                                        </TestContextProvider>
+                                        <TestPageLoader edit={ true }/>
                                     </Route>
                                     <Route path={ '/web/test/:testId' }>
-                                        <TestContextProvider>
-                                            <TestPage edit={false}/>
-                                        </TestContextProvider>
+                                        <TestPageLoader edit={ false }/>
                                     </Route>
                                     <Route path="/web/results">
                                         <Content/>
@@ -249,6 +241,12 @@ const App: FC<AppProps> = (props) => {
                                     </Route>
                                     <Route path="/web/users">
                                         <Content/>
+                                    </Route>
+                                    <Route path="/web/device/:deviceId">
+                                        <DevicePageLoader edit={ false }/>
+                                    </Route>
+                                    <Route path="/web/devices/manager">
+                                        <DevicesManagerContent/>
                                     </Route>
                                     <Route path="/web/devices">
                                         <DevicesContent/>
