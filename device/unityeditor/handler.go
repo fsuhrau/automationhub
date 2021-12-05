@@ -55,8 +55,8 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 
 	for i := range m.devices {
 		if now.Sub(m.devices[i].lastUpdateAt) > 1*time.Minute {
-			if m.devices[i].deviceState != device.StateRemoteDisconnected {
-				m.devices[i].deviceState = device.StateRemoteDisconnected
+			if m.devices[i].deviceState != device.StateUnknown {
+				m.devices[i].deviceState = device.StateUnknown
 				m.devices[i].updated = true
 			}
 		}

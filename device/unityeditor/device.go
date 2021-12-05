@@ -183,6 +183,6 @@ func (d *Device) HandleSocketFunction() {
 		fmt.Println(string(msg))
 	}
 
-	d.deviceState = device.StateRemoteDisconnected
+	d.deviceState = device.StateUnknown
 	d.updated = true
 }
