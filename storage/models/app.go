@@ -18,6 +18,7 @@ type App struct {
 	Hash           string
 	Size           int
 	AppFunctions   []AppFunction
+	Tags           string
 }
 
 func (a *App) AfterCreate(tx *gorm.DB) (err error) {

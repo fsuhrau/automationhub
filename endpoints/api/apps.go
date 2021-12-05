@@ -67,6 +67,28 @@ func (s *ApiService) createApp(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, app)
 }
 
+func (s *ApiService) updateApp(session *Session, c *gin.Context) {
+	appId := c.Param("app_id")
+
+	var newApp models.App
+	c.Bind(&newApp)
+
+	var app models.App
+
+	if err := s.db.Find(&app, appId).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	app.Tags = newApp.Tags
+	if err := s.db.Save(&app).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, app)
+}
+
 func (s *ApiService) uploadApp(session *Session, c *gin.Context) {
 	file, err := c.FormFile("test_target")
 	if err != nil {

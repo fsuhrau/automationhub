@@ -56,6 +56,7 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 
 	api.POST("/app", HandleWithSession(s.createApp))
 	api.GET("/app/:app_id", HandleWithSession(s.getApp))
+	api.PUT("/app/:app_id", HandleWithSession(s.updateApp))
 	api.DELETE("/app/:app_id", HandleWithSession(s.deleteApp))
 	api.GET("/app/:app_id/functions", HandleWithSession(s.getAppFunctions))
 	api.POST("/app/upload", HandleWithSession(s.uploadApp))

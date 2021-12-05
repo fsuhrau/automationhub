@@ -183,7 +183,7 @@ const App: FC<AppProps> = (props) => {
         setMobileOpen(!mobileOpen);
     };
 
-    return <SSEProvider endpoint="/api/sse/">
+    return <SSEProvider endpoint="/api/sse">
         <AppContext.Provider value={ { title: '' } }>
             <Router>
                 <ThemeProvider theme={ theme }>

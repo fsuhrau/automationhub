@@ -30,19 +30,20 @@ import (
 )
 
 var (
-	appPath string
-	appID   int
-	testID  int
-	params  string
-	async   *bool
-	success bool
+	appPath  string
+	appID    int
+	testID   int
+	params   string
+	async    *bool
+	success  bool
 	testName string
+	tags     string
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --test \"name\" --async",
+	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --test \"name\" --tags \"tag1,tag2,tag3\" --async",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -55,6 +56,13 @@ var runCmd = &cobra.Command{
 			}
 			appID = int(app.ID)
 			logrus.Infof("upload finished new appId: %d", appID)
+
+			if len(tags) > 0 {
+				app.Tags = tags
+				if err := client.UpdateApp(context.Background(), app); err != nil {
+					return err
+				}
+			}
 		}
 
 		if testID == 0 && len(testName) > 0 {
@@ -124,10 +132,10 @@ func waitForResult(wg *sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan
 				wg.Done()
 				return
 			}
-			case log := <- runLogChannel:
-				var ev events.NewTestLogEntryPayload
-				json.Unmarshal(log.Data, &ev)
-				logrus.Infof("log: %v", ev)
+		case log := <-runLogChannel:
+			var ev events.NewTestLogEntryPayload
+			json.Unmarshal(log.Data, &ev)
+			logrus.Infof("log: %v", ev)
 		}
 	}
 }
@@ -141,6 +149,8 @@ func init() {
 	runCmd.PersistentFlags().IntVar(&testID, "testid", 0, "testid 123")
 	runCmd.PersistentFlags().StringVar(&testName, "test", "", "test \"testname\"")
 	runCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter")
+	runCmd.PersistentFlags().StringVar(&tags, "tags", "", "tag \"tag1,tag2,tag3\"")
+
 
 	// Here you will define your flags and configuration settings.
 

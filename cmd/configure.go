@@ -139,7 +139,7 @@ var configureCmd = &cobra.Command{
 		d, _ := os.Getwd()
 		fmt.Println("your config was written to" + filepath.Join(d, input))
 		fmt.Println("")
-		fmt.Println(fmt.Sprintf("you can start the hub now via 'automationhub --config %s'", filepath.Join(d, input)))
+		fmt.Println(fmt.Sprintf("you can start the hub now via 'automationhub master --config %s'", filepath.Join(d, input)))
 		return nil
 	},
 }

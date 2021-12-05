@@ -1,12 +1,5 @@
 package config
 
-/*
-IOSSim        bool `mapstructure:"iossim"`
-MacOS         bool `mapstructure:"macos"`
-IOSDevice     bool `mapstructure:"iosdevice"`
-AndroidDevice bool `mapstructure:"androiddevice"`
-*/
-
 type Connection struct {
 	Type string `mapstructure:"type"`
 	IP   string `mapstructure:"ip"`
@@ -35,11 +28,11 @@ type Hook struct {
 }
 
 type Service struct {
+	// Port          uint16             `mapstructure:"port"`
 	Autodetect    bool               `mapstructure:"autodetect_ip"`
 	AutoDiscovery bool               `mapstructure:"auto_discovery"`
 	HostIP        string             `mapstructure:"host_ip"`
 	ServerURL     string             `mapstructure:"server_url"`
-	Port          uint16             `mapstructure:"port"`
 	DeviceManager map[string]Manager `mapstructure:"managers"`
 	Hooks         []Hook             `mapstructure:"hooks"`
 }

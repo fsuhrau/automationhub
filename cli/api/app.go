@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -18,6 +19,27 @@ func (c *Client) UploadApp(filepath string) (*models.App, error) {
 	}
 
 	return c.uploadApp(values)
+}
+
+func (c *Client) UpdateApp(ctx context.Context, app *models.App) error {
+
+	data, err := json.Marshal(app)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/app/%d", c.BaseURL, app.ID), bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	req = req.WithContext(ctx)
+
+	var a models.App
+	if err := c.sendRequest(req, &a); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) uploadApp(values map[string]io.Reader) (*models.App, error) {

@@ -11,6 +11,7 @@ export default interface IAppData {
     Additional: string,
     Hash: string,
     Size: number,
+    Tags: string,
     AppFunctions: IAppFunctionData[],
     CreatedAt: Date,
     UpdatedAt: Date,

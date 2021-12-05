@@ -56,7 +56,6 @@ const TestsTable: FC<TestProps> = (props) => {
 
     useEffect(() => {
         getAllTests().then(response => {
-            console.log(response.data);
             setTests(response.data);
         }).catch(e => {
             console.log(e);
