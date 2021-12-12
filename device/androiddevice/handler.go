@@ -4,36 +4,60 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/storage"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"regexp"
 	"time"
-
-	"github.com/fsuhrau/automationhub/config"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
 var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`)
 
+const (
+	Manager = "android_device"
+)
+
 type Handler struct {
-	devices      map[string]*Device
-	deviceConfig config.Interface
+	devices       map[string]*Device
+	deviceStorage storage.Device
+	init bool
 }
 
-func NewHandler(deviceConfig config.Interface) *Handler {
-	return &Handler{devices: make(map[string]*Device), deviceConfig: deviceConfig}
+func NewHandler(ds storage.Device) *Handler {
+	return &Handler{
+		devices:       make(map[string]*Device),
+		deviceStorage: ds,
+	}
 }
 
 func (m *Handler) Name() string {
-	return "android_device"
+	return Manager
 }
 
 func (m *Handler) Init() error {
-	devices := m.deviceConfig.GetDevicesForManager(m.Name())
-	for i := range devices {
-		// connect all remote devices
-		if devices[i].Connection.Type == "remote" {
-			cmd := exec.NewCommand("adb", "connect", devices[i].Connection.IP)
+	m.init = true
+	defer func() {
+		m.init = false
+	}()
+	devs, err := m.deviceStorage.GetDevices(Manager)
+	if err != nil {
+		return err
+	}
+	for i := range devs {
+		deviceId := devs[i].DeviceIdentifier
+		dev := &Device{
+			deviceOSName:  "android",
+			installedApps: make(map[string]string),
+		}
+		dev.SetConfig(&devs[i])
+		m.devices[deviceId] = dev
+
+		// connect all remote devs
+		if devs[i].ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
+			connectionString := GetConnectionString(devs[i].ConnectionParameter)
+			cmd := exec.NewCommand("adb", "connect", connectionString)
 			// cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				return err
@@ -41,15 +65,15 @@ func (m *Handler) Init() error {
 		}
 	}
 
-	if err := m.RefreshDevices(func(dev device.Device) {
-	}); err != nil {
+	if err := m.RefreshDevices(); err != nil {
 		return err
 	}
 
-	for i := range devices {
-		// connect all remote devices
-		if devices[i].Connection.Type == "remote" {
-			cmd := exec.NewCommand("adb", "disconnect", devices[i].Connection.IP)
+	for i := range devs {
+		// connect all remote devs
+		if devs[i].ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
+			connectionString := GetConnectionString(devs[i].ConnectionParameter)
+			cmd := exec.NewCommand("adb", "disconnect", connectionString)
 			// cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				return err
@@ -77,7 +101,11 @@ func (m *Handler) StartDevice(deviceID string) error {
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
 			if v.deviceState == device.StateRemoteDisconnected {
-				cmd := exec.NewCommand("adb", "connect", v.cfg.Connection.IP)
+				dev, err := m.deviceStorage.GetDevice(Manager, deviceID)
+				if err != nil {
+					return device.DeviceNotFoundError
+				}
+				cmd := exec.NewCommand("adb", "connect", GetConnectionString(dev.ConnectionParameter))
 				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					return err
@@ -100,8 +128,8 @@ func (m *Handler) StopDevice(deviceID string) error {
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
 			found = true
-			if v.cfg != nil && v.cfg.Connection.Type == "remote" {
-				cmd := exec.NewCommand("adb", "disconnect", v.cfg.Connection.IP)
+			if v.GetConfig() != nil && v.GetConfig().ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
+				cmd := exec.NewCommand("adb", "disconnect", GetConnectionString(v.GetConfig().ConnectionParameter))
 				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
 					return err
@@ -126,7 +154,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
+func (m *Handler) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
@@ -152,20 +180,20 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 		transportID := matches[0][6]
 
 		if _, ok := m.devices[deviceID]; ok {
-			m.devices[deviceID].deviceName = name
-			m.devices[deviceID].deviceID = deviceID
-			m.devices[deviceID].SetDeviceState("StateBooted")
-			m.devices[deviceID].product = product
-			m.devices[deviceID].deviceUSB = deviceUSB
-			m.devices[deviceID].deviceModel = model
-			m.devices[deviceID].transportID = transportID
-			m.devices[deviceID].lastUpdateAt = lastUpdate
-			updateFunc(m.devices[deviceID])
-		} else {
-			var cfg *config.Device
-			if m.deviceConfig != nil {
-				cfg = m.deviceConfig.GetDeviceConfig(deviceID)
+			dev := m.devices[deviceID]
+			dev.deviceName = name
+			dev.deviceID = deviceID
+			dev.SetDeviceState("StateBooted")
+			dev.product = product
+			dev.deviceUSB = deviceUSB
+			dev.deviceModel = model
+			dev.transportID = transportID
+			dev.lastUpdateAt = lastUpdate
+			if m.init {
+				m.devices[deviceID].UpdateDeviceInfos()
 			}
+			m.deviceStorage.Update(m.Name(), dev)
+		} else {
 			m.devices[deviceID] = &Device{
 				deviceName:    name,
 				deviceID:      deviceID,
@@ -174,24 +202,23 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 				deviceModel:   model,
 				transportID:   transportID,
 				deviceOSName:  "android",
-				cfg:           cfg,
 				lastUpdateAt:  lastUpdate,
 				installedApps: make(map[string]string),
 			}
 			m.devices[deviceID].UpdateDeviceInfos()
 			m.devices[deviceID].SetDeviceState("StateBooted")
-			updateFunc(m.devices[deviceID])
+			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
 		}
 	}
 
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
-			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+			if m.devices[i].GetConfig() != nil && m.devices[i].GetConfig().ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
 				m.devices[i].SetDeviceState("StateRemoteDisconnected")
-				updateFunc(m.devices[i])
+				m.deviceStorage.Update(m.Name(), m.devices[i])
 			} else {
 				m.devices[i].SetDeviceState("StateUnknown")
-				updateFunc(m.devices[i])
+				m.deviceStorage.Update(m.Name(), m.devices[i])
 			}
 		}
 	}
@@ -211,23 +238,3 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
 	return nil, fmt.Errorf("register device not implemented")
 }
-
-// public void createUsbTunnel(String deviceId, int localPort, int remotePort) {
-// 	BlockingProcess process = new BlockingProcess((n, line) -> LOGGER.debug(line),
-// 		"adb", "-s", deviceId, "forward", "tcp:" + localPort, "tcp:" + remotePort);
-
-// 	if (process.hasExited() && process.getExitValue() != 0) {
-// 		LOGGER.error("Cannot open USB tunnel for {} with src: {} dst: {}, see the log for error messages", deviceId, localPort, remotePort);
-// 	}
-// }
-
-// public void stopTunnel(String deviceId, int localPort) {
-// 	new BlockingProcess((n, line) -> LOGGER.debug(line),
-// 		"adb", "-s", deviceId, "forward", "--remove", String.valueOf(localPort));
-// }
-
-// @Override
-// public InetSocketAddress getInetSocketAddress(String deviceUuid) throws IOException {
-// 	int localPort = NetworkUtility.findUnusedLocalPort();
-// 	return new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort);
-// }

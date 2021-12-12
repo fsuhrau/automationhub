@@ -1,22 +1,8 @@
 package config
 
-type Connection struct {
-	Type string `mapstructure:"type"`
-	IP   string `mapstructure:"ip"`
-}
-
 type Manager struct {
 	Enabled         bool     `mapstructure:"enabled"`
 	UseOSScreenshot bool     `mapstructure:"use_os_screenshot"`
-	Devices         []Device `mapstructure:"devices"`
-}
-
-type Device struct {
-	ID         string     `mapstructure:"id"`
-	IsTablet   bool       `mapstructure:"tablet"`
-	Name       string     `mapstructure:"name"`
-	PIN        string     `mapstructure:"pin"`
-	Connection Connection `mapstructure:"connection"`
 }
 
 type Hook struct {

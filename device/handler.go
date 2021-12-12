@@ -1,7 +1,5 @@
 package device
 
-type DeviceUpdateFunc func(dev Device)
-
 type Handler interface {
 	Name() string
 	Init() error
@@ -10,7 +8,7 @@ type Handler interface {
 	StartDevice(string) error
 	StopDevice(string) error
 	GetDevices() ([]Device, error)
-	RefreshDevices(DeviceUpdateFunc) error
+	RefreshDevices() error
 	HasDevice(Device) bool
 	RegisterDevice(data RegisterData) (Device, error)
 }

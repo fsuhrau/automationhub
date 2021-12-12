@@ -163,7 +163,6 @@ func (s *ApiService) updateTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
-
 func extractParams(param string) map[string]string {
 	var env map[string]string
 	env = make(map[string]string)
@@ -223,7 +222,6 @@ func (s *ApiService) runTest(c *gin.Context) {
 	}
 
 	var run *models.TestRun
-
 	var testRunner tester.Interface
 
 	switch test.TestConfig.Type {
@@ -282,7 +280,6 @@ func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
 
 	// get next
 	s.db.Table("test_runs").Where("test_id = ? and id > ?", testId, resp.TestRun.ID).Order("created_at asc").Limit(1).Select("id").Scan(&resp.NextRunId)
-
 
 	c.JSON(http.StatusOK, resp)
 }

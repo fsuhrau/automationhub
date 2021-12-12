@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	AttributePin = "PIN"
 )
 
 var (
@@ -17,6 +22,15 @@ type Device struct {
 	writer        device.LogWriter
 	actionHandler []action.ActionHandler
 	locked        bool
+	Config        *models.Device
+}
+
+func (d *Device) GetConfig() *models.Device {
+	return d.Config
+}
+
+func (d *Device) SetConfig(config *models.Device) {
+	d.Config = config
 }
 
 func (d *Device) SetConnection(connection *device.Connection) {

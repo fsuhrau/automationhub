@@ -54,10 +54,12 @@ var masterCmd = &cobra.Command{
 			return err
 		}
 
+		ds := storage.NewDeviceStore(db)
+
 		logger := logrus.New()
 		deviceManager := hub.NewDeviceManager(logger, db)
 		sessionManager := hub.NewSessionManager(logger, deviceManager)
-		server := hub.NewService(logger, hostIP, deviceManager, sessionManager, serviceConfig)
+		server := hub.NewService(logger, hostIP, deviceManager, sessionManager, serviceConfig, ds)
 		server.AddEndpoint(api.New(logger, db, hostIP, deviceManager, sessionManager))
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
 		server.AddEndpoint(web.New())

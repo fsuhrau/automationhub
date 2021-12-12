@@ -3,14 +3,9 @@ package hub
 import (
 	"context"
 	"fmt"
-	"github.com/fsuhrau/automationhub/device/unityeditor"
 	"net"
 
 	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/device/androiddevice"
-	"github.com/fsuhrau/automationhub/device/iosdevice"
-	"github.com/fsuhrau/automationhub/device/iossim"
-	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -161,27 +156,28 @@ func (s *Service) RunSlave() error {
 	// }
 
 	// start device observer thread
-	if d, ok := serviceConfig.DeviceManager["android_device"]; ok && d.Enabled {
+	/*
+	if d, ok := serviceConfig.DeviceManager[androiddevice.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager android_device")
-		s.deviceManager.AddHandler(androiddevice.NewHandler(&d))
+		s.deviceManager.AddHandler(androiddevice.NewHandler())
 	}
-	if d, ok := serviceConfig.DeviceManager["ios_sim"]; ok && d.Enabled {
+	if d, ok := serviceConfig.DeviceManager[iossim.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_sim")
 		s.deviceManager.AddHandler(iossim.NewHandler(&d, s.hostIP))
 	}
-	if d, ok := serviceConfig.DeviceManager["ios_device"]; ok && d.Enabled {
+	if d, ok := serviceConfig.DeviceManager[iosdevice.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_device")
 		s.deviceManager.AddHandler(iosdevice.NewHandler(&d))
 	}
-	if d, ok := serviceConfig.DeviceManager["macos"]; ok && d.Enabled {
+	if d, ok := serviceConfig.DeviceManager[macos.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager macos")
 		s.deviceManager.AddHandler(macos.NewHandler(&d, s.hostIP))
 	}
-	if d, ok := serviceConfig.DeviceManager["unity_editor"]; ok && d.Enabled {
+	if d, ok := serviceConfig.DeviceManager[unityeditor.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager unity_editor")
 		s.deviceManager.AddHandler(unityeditor.NewHandler(&d, s.hostIP))
 	}
-
+	*/
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}

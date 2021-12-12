@@ -150,7 +150,7 @@ func (dm *DeviceManager) Run(ctx context.Context) error {
 			}
 			// dm.log.Debugf("refreshing device lists...")
 			for _, m := range dm.deviceHandlers {
-				if err := m.RefreshDevices(dm.updateDeviceState); err != nil {
+				if err := m.RefreshDevices(); err != nil {
 					// dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
 				}
 			}
@@ -177,7 +177,7 @@ func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
 	return dm.deviceCache[deviceID]
 }
 
-func (dm *DeviceManager) updateDeviceState(dev device.Device) {
+func (dm *DeviceManager) updateDeviceState(manager string, dev device.Device) {
 	deviceData := dm.getDevice(dev.DeviceID())
 
 	needsUpdate := false
@@ -196,6 +196,11 @@ func (dm *DeviceManager) updateDeviceState(dev device.Device) {
 
 	if deviceData.HardwareModel != dev.DeviceModel() {
 		deviceData.HardwareModel = dev.DeviceModel()
+		needsUpdate = true
+	}
+
+	if deviceData.Manager != manager {
+		deviceData.Manager = manager
 		needsUpdate = true
 	}
 

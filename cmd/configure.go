@@ -18,6 +18,10 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/androiddevice"
+	"github.com/fsuhrau/automationhub/device/iosdevice"
+	"github.com/fsuhrau/automationhub/device/iossim"
+	"github.com/fsuhrau/automationhub/device/unityeditor"
 	"net"
 	"os"
 	"path/filepath"
@@ -72,7 +76,7 @@ var configureCmd = &cobra.Command{
 			fmt.Println("")
 			input = validateInput(reader, "Capture Native Screenshots? (y/n)", []string{"y", "n"})
 			manager.UseOSScreenshot = input == "y"
-			cfg.DeviceManager["android_device"] = manager
+			cfg.DeviceManager[androiddevice.Manager] = manager
 		}
 
 		fmt.Println("")
@@ -86,7 +90,7 @@ var configureCmd = &cobra.Command{
 			fmt.Println("Simulated Screenshots are generated in app and can't capture external dialogs which makes it more difficult to see whats broken.")
 			input = validateInput(reader, "Capture Native Screenshots? (y/n)", []string{"y", "n"})
 			manager.UseOSScreenshot = input == "y"
-			cfg.DeviceManager["ios_device"] = manager
+			cfg.DeviceManager[iosdevice.Manager] = manager
 		}
 
 		fmt.Println("")
@@ -102,7 +106,7 @@ var configureCmd = &cobra.Command{
 			fmt.Println("")
 			input = validateInput(reader, "Capture Native Screenshots? (y/n)", []string{"y", "n"})
 			manager.UseOSScreenshot = input == "y"
-			cfg.DeviceManager["ios_sim"] = manager
+			cfg.DeviceManager[iossim.Manager] = manager
 		}
 
 		fmt.Println("")
@@ -114,7 +118,7 @@ var configureCmd = &cobra.Command{
 				Enabled: true,
 			}
 			manager.UseOSScreenshot = false
-			cfg.DeviceManager["unity_editor"] = manager
+			cfg.DeviceManager[unityeditor.Manager] = manager
 		}
 
 		y, err := yaml.Marshal(&cfg)

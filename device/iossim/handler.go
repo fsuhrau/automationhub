@@ -3,15 +3,19 @@ package iossim
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/storage"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/fsuhrau/automationhub/config"
-
 	"github.com/fsuhrau/automationhub/device"
+)
+
+const (
+	Manager = "ios_sim"
 )
 
 var OSVersionLookupRegex = regexp.MustCompile(`com.apple.CoreSimulator.SimRuntime.([a-z]+OS)-([0-9]+-[0-9]+)`)
@@ -30,18 +34,29 @@ type SimulatorDescriptions struct {
 type Handler struct {
 	devices      map[string]*Device
 	hostIP       net.IP
-	deviceConfig config.Interface
+	deviceStorage storage.Device
 }
 
-func NewHandler(deviceConfig config.Interface, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
+func NewHandler(ds storage.Device, ip net.IP) *Handler {
+	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
-	return "ios_sim"
+	return Manager
 }
 
 func (m *Handler) Init() error {
+	devs, err := m.deviceStorage.GetDevices(Manager)
+	if err != nil {
+		return err
+	}
+
+	for i := range devs {
+		deviceId := devs[i].DeviceIdentifier
+		dev := &Device{}
+		dev.SetConfig(&devs[i])
+		m.devices[deviceId] = dev
+	}
 	return nil
 }
 
@@ -97,7 +112,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
+func (m *Handler) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("xcrun", "simctl", "list", "devices", "--json")
 	output, err := cmd.Output()
@@ -126,36 +141,30 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 				m.devices[device.UDID].deviceIP = m.hostIP
 				m.devices[device.UDID].lastUpdateAt = lastUpdate
 				m.devices[device.UDID].SetDeviceState(device.State)
-				updateFunc(m.devices[device.UDID])
+				m.deviceStorage.Update(m.Name(), m.devices[device.UDID])
 			} else {
-				var cfg *config.Device
-				if m.deviceConfig != nil {
-					cfg = m.deviceConfig.GetDeviceConfig(device.UDID)
-				}
-
 				m.devices[device.UDID] = &Device{
 					deviceName:      device.Name,
 					deviceID:        device.UDID,
 					deviceOSName:    deviceOSName,
 					deviceOSVersion: osVersion,
 					deviceIP:        m.hostIP,
-					cfg:             cfg,
 					lastUpdateAt:    lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
-				updateFunc(m.devices[device.UDID])
+				m.deviceStorage.Update(m.Name(), m.devices[device.UDID])
 			}
 		}
 	}
 
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
-			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+			if m.devices[i].GetConfig() != nil && m.devices[i].GetConfig().ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
 				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 			} else {
 				m.devices[i].SetDeviceState("StateUnknown")
 			}
-			updateFunc(m.devices[i])
+			m.deviceStorage.Update(m.Name(), m.devices[i])
 		}
 	}
 

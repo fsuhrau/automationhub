@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/generic"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
@@ -19,7 +18,7 @@ import (
 
 var restart bool = true
 
-const CONNECTION_TIMEOUT = 10 * time.Second
+const ConnectionTimeout = 10 * time.Second
 
 type Device struct {
 	generic.Device
@@ -30,7 +29,6 @@ type Device struct {
 	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
-	cfg              *config.Device
 	lastUpdateAt     time.Time
 }
 
@@ -163,7 +161,7 @@ func (d *Device) Execute(string) {
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
-	return CONNECTION_TIMEOUT
+	return ConnectionTimeout
 }
 
 func (d *Device) RunNativeScript(script []byte)  {

@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/config"
 	"github.com/sirupsen/logrus"
 
 	"github.com/disintegration/imaging"
@@ -23,8 +22,8 @@ import (
 )
 
 const (
-	IOS_DEPLOY_BIN     = "ios-deploy" // "/usr/local/bin/ios-deploy"
-	CONNECTION_TIMEOUT = 120 * time.Second
+	IosDeployBin      = "ios-deploy" // "/usr/local/bin/ios-deploy"
+	ConnectionTimeout = 120 * time.Second
 )
 
 type Device struct {
@@ -37,7 +36,6 @@ type Device struct {
 	deviceIP                net.IP
 	recordingSessionProcess *exec.Cmd
 	runningAppProcess       *exec.Cmd
-	cfg                     *config.Device
 	lastUpdateAt            time.Time
 }
 
@@ -85,24 +83,24 @@ func (d *Device) UpdateDeviceInfos() error {
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
-	cmd := exec2.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
+	cmd := exec2.NewCommand(IosDeployBin, "--id", d.DeviceID(), "--exists", "--bundle_id", params.Identifier)
 	output, _ := cmd.Output()
 	out := string(output)
 	return strings.Contains(out, "true"), nil
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
-	cmd := exec2.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--bundle", params.AppPath)
+	cmd := exec2.NewCommand(IosDeployBin, "--id", d.DeviceID(), "--bundle", params.AppPath)
 	return cmd.Run()
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	cmd := exec2.NewCommand(IOS_DEPLOY_BIN, "--id", d.DeviceID(), "--uninstall_only", "--bundle_id", params.Identifier)
+	cmd := exec2.NewCommand(IosDeployBin, "--id", d.DeviceID(), "--uninstall_only", "--bundle_id", params.Identifier)
 	return cmd.Run()
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	d.runningAppProcess = exec2.NewCommand(IOS_DEPLOY_BIN, "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
+	d.runningAppProcess = exec2.NewCommand(IosDeployBin, "--json", "--id", d.DeviceID(), "--noinstall", "--noninteractive", "--no-wifi", "--bundle", params.AppPath, "--bundle_id", params.Identifier, "--args", fmt.Sprintf("SESSION_ID %s HOST %s", sessionId, hostIP.String()))
 	if false {
 		d.runningAppProcess.Stdout = os.Stdout
 	}
@@ -183,7 +181,7 @@ func (d *Device) Execute(string) {
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
-	return CONNECTION_TIMEOUT
+	return ConnectionTimeout
 }
 
 func (d *Device) RunNativeScript(script []byte)  {

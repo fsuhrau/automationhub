@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/modules/hooks"
 	"github.com/fsuhrau/automationhub/modules/hooks/notifier"
 	"github.com/fsuhrau/automationhub/modules/hooks/slack"
+	"github.com/fsuhrau/automationhub/storage"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -28,10 +29,11 @@ type Service struct {
 	router         *gin.Engine
 	cfg            config.Service
 	hooks          []hooks.Hook
+	sd             storage.Device
 	// sessions       map[string]*Session
 }
 
-func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessions manager.Sessions, cfg config.Service) *Service {
+func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessions manager.Sessions, cfg config.Service, sd storage.Device) *Service {
 	level, err := logrus.ParseLevel(viper.GetString("log"))
 	if err != nil {
 		logrus.Infof("Parse Log Level: %s", err)
@@ -52,7 +54,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessi
 		MaxAge:           12 * time.Hour,
 	}))
 
-	return &Service{logger: logger, hostIP: ip, sessionManager: sessions, deviceManager: devices, router: router, cfg: cfg}
+	return &Service{logger: logger, hostIP: ip, sessionManager: sessions, deviceManager: devices, router: router, cfg: cfg, sd: sd}
 }
 
 func newRouter(logger *logrus.Logger) *gin.Engine {

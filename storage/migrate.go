@@ -64,5 +64,11 @@ func migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&models.TestConfigScenario{}); err != nil {
 		fmt.Printf("TestConfigScenario: %v\n", err)
 	}
+	if err := db.AutoMigrate(&models.DeviceParameter{}); err != nil {
+		fmt.Printf("DeviceParameter: %v\n", err)
+	}
+	if err := db.AutoMigrate(&models.ConnectionParameter{}); err != nil {
+		fmt.Printf("ConnectionParameter: %v\n", err)
+	}
 	return nil
 }

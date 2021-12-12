@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"github.com/google/uuid"
 	"image"
@@ -18,7 +19,6 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/tools/android"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/viper"
@@ -32,7 +32,7 @@ var (
 	DeviceAwakeRegex = regexp.MustCompile(`.*mHoldingDisplaySuspendBlocker=(true|false).*`)
 )
 
-const CONNECTION_TIMEOUT = 2 * time.Minute
+const ConnectionTimeout = 2 * time.Minute
 
 type Device struct {
 	generic.Device
@@ -50,7 +50,6 @@ type Device struct {
 	deviceAPILevel      int64
 	testRecordingPath   string
 	recordingSession    *exec.Cmd
-	cfg                 *config.Device
 	lastUpdateAt        time.Time
 	installedApps       map[string]string
 }
@@ -81,6 +80,10 @@ func (d *Device) DeviceIP() net.IP {
 
 func (d *Device) DeviceState() device.State {
 	return d.deviceState
+}
+
+func GetConnectionString(parameter models.ConnectionParameter) string {
+	return fmt.Sprintf("%s:%d", parameter.IP, parameter.Port)
 }
 
 func (d *Device) SetDeviceState(state string) {
@@ -182,9 +185,9 @@ func (d *Device) unlockScreen() error {
 		return err
 	}
 	if isLocked {
-		if d.cfg != nil && len(d.cfg.PIN) > 0 {
-			for i := range d.cfg.PIN {
-				offset := int(d.cfg.PIN[i] - '0')
+		if pin := d.GetConfig().GetAttribute(generic.AttributePin); len(pin) > 0 {
+			for i := range pin {
+				offset := int(pin[i] - '0')
 				_ = d.pressKey(KEYCODE_NUMPAD_0 + offset)
 			}
 			_ = d.pressKey(KEYCODE_NUMPAD_ENTER)
@@ -353,7 +356,7 @@ func (d *Device) Tap(x, y int64) error {
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
-	return CONNECTION_TIMEOUT
+	return ConnectionTimeout
 }
 
 func (d *Device) getScreenXml() (*xmlquery.Node, error) {

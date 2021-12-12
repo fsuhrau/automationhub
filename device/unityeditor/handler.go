@@ -1,25 +1,29 @@
 package unityeditor
 
 import (
-	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/storage"
 	"net"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
+const (
+	Manager = "unity_editor"
+)
+
 type Handler struct {
 	devices      map[string]*Device
 	hostIP       net.IP
-	deviceConfig config.Interface
+	deviceStorage storage.Device
 }
 
-func NewHandler(deviceConfig config.Interface, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
+func NewHandler(ds storage.Device, ip net.IP) *Handler {
+	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
-	return "unity_editor"
+	return Manager
 }
 
 func (m *Handler) Init() error {
@@ -50,7 +54,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
+func (m *Handler) RefreshDevices() error {
 	now := time.Now().UTC()
 
 	for i := range m.devices {
@@ -61,7 +65,7 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 			}
 		}
 		if m.devices[i].updated {
-			updateFunc(m.devices[i])
+			m.deviceStorage.Update(m.Name(), m.devices[i])
 			m.devices[i].updated = false
 		}
 	}

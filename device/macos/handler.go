@@ -2,25 +2,29 @@ package macos
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/storage"
 	"net"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
+const (
+	Manager = "macos"
+)
+
 type Handler struct {
 	devices      map[string]*Device
 	hostIP       net.IP
-	deviceConfig config.Interface
+	deviceStorage storage.Device
 }
 
-func NewHandler(deviceConfig config.Interface, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceConfig: deviceConfig}
+func NewHandler(ds storage.Device, ip net.IP) *Handler {
+	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
-	return "macos"
+	return Manager
 }
 
 func (m *Handler) Init() error {
@@ -51,7 +55,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
+func (m *Handler) RefreshDevices() error {
 	if len(m.devices) == 0 {
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
 			deviceName:      "MacOS",
@@ -62,7 +66,7 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 			lastUpdateAt:    time.Now().UTC(),
 		}
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")
-		updateFunc(m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
+		m.deviceStorage.Update(m.Name(), m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
 	}
 	return nil
 }

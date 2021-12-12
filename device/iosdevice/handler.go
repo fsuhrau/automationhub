@@ -3,17 +3,21 @@ package iosdevice
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/storage"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"strings"
 	"time"
 
-	"github.com/fsuhrau/automationhub/config"
-
 	"github.com/fsuhrau/automationhub/device"
 )
 
+const (
+	Manager = "ios_device"
+)
+
 var (
-	DEVICE_LIST_TIMEOUT_SECS = 2
+	DeviceListTimeoutSecs = 2
 )
 
 type IOSDevice struct {
@@ -36,18 +40,29 @@ type Detect struct {
 
 type Handler struct {
 	devices      map[string]*Device
-	deviceConfig config.Interface
+	deviceStorage storage.Device
 }
 
-func NewHandler(deviceConfig config.Interface) *Handler {
-	return &Handler{devices: make(map[string]*Device), deviceConfig: deviceConfig}
+func NewHandler(ds storage.Device) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
-	return "ios_device"
+	return Manager
 }
 
 func (m *Handler) Init() error {
+	devs, err := m.deviceStorage.GetDevices(Manager)
+	if err != nil {
+		return err
+	}
+
+	for i := range devs {
+		deviceId := devs[i].DeviceIdentifier
+		dev := &Device{}
+		dev.SetConfig(&devs[i])
+		m.devices[deviceId] = dev
+	}
 	return nil
 }
 
@@ -99,9 +114,9 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
+func (m *Handler) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
-	cmd := exec.NewCommand(IOS_DEPLOY_BIN, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DEVICE_LIST_TIMEOUT_SECS), "-j")
+	cmd := exec.NewCommand(IosDeployBin, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DeviceListTimeoutSecs), "-j")
 	// cmd.Stderr = os.Stderr
 	output, err := cmd.Output()
 	if err != nil {
@@ -123,33 +138,28 @@ func (m *Handler) RefreshDevices(updateFunc device.DeviceUpdateFunc) error {
 			m.devices[device.Device.DeviceIdentifier].deviceOSVersion = device.Device.ProductVersion
 			m.devices[device.Device.DeviceIdentifier].lastUpdateAt = lastUpdate
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
-			updateFunc(m.devices[device.Device.DeviceIdentifier])
+			m.deviceStorage.Update(m.Name(), m.devices[device.Device.DeviceIdentifier])
 		} else {
-			var cfg *config.Device
-			if m.deviceConfig != nil {
-				cfg = m.deviceConfig.GetDeviceConfig(device.Device.DeviceIdentifier)
-			}
 			m.devices[device.Device.DeviceIdentifier] = &Device{
 				deviceName:      device.Device.DeviceName,
 				deviceID:        device.Device.DeviceIdentifier,
 				deviceOSName:    device.Device.ModelSDK,
 				deviceOSVersion: device.Device.ProductVersion,
-				cfg:             cfg,
 				lastUpdateAt:    lastUpdate,
 			}
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
-			updateFunc(m.devices[device.Device.DeviceIdentifier])
+			m.deviceStorage.Update(m.Name(), m.devices[device.Device.DeviceIdentifier])
 		}
 	}
 
 	for i := range m.devices {
 		if m.devices[i].lastUpdateAt != lastUpdate {
-			if m.devices[i].cfg != nil && m.devices[i].cfg.Connection.Type == "remote" {
+			if m.devices[i].GetConfig() != nil && m.devices[i].GetConfig().ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
 				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 			} else {
 				m.devices[i].SetDeviceState("StateUnknown")
 			}
-			updateFunc(m.devices[i])
+			m.deviceStorage.Update(m.Name(), m.devices[i])
 		}
 	}
 

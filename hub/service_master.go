@@ -46,25 +46,25 @@ func (s *Service) RunMaster() error {
 	}
 */
 	// start device observer thread
-	if d, ok := s.cfg.DeviceManager["android_device"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager[androiddevice.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager android_device")
-		s.deviceManager.AddHandler(androiddevice.NewHandler(&d))
+		s.deviceManager.AddHandler(androiddevice.NewHandler(s.sd))
 	}
-	if d, ok := s.cfg.DeviceManager["ios_sim"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager[iossim.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_sim")
-		s.deviceManager.AddHandler(iossim.NewHandler(&d, s.hostIP))
+		s.deviceManager.AddHandler(iossim.NewHandler(s.sd, s.hostIP))
 	}
-	if d, ok := s.cfg.DeviceManager["ios_device"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager[iosdevice.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_device")
-		s.deviceManager.AddHandler(iosdevice.NewHandler(&d))
+		s.deviceManager.AddHandler(iosdevice.NewHandler(s.sd))
 	}
-	if d, ok := s.cfg.DeviceManager["macos"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager[macos.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager macos")
-		s.deviceManager.AddHandler(macos.NewHandler(&d, s.hostIP))
+		s.deviceManager.AddHandler(macos.NewHandler(s.sd, s.hostIP))
 	}
-	if d, ok := s.cfg.DeviceManager["unity_editor"]; ok && d.Enabled {
+	if d, ok := s.cfg.DeviceManager[unityeditor.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager unity_editor")
-		s.deviceManager.AddHandler(unityeditor.NewHandler(&d, s.hostIP))
+		s.deviceManager.AddHandler(unityeditor.NewHandler(s.sd, s.hostIP))
 	}
 
 	// s.deviceManager.AddHandler(remove.NewHandler(&serviceConfig, s.hostIP))
