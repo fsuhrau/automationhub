@@ -54,7 +54,7 @@ func (m *Handler) Init() error {
 	for i := range devs {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
-		dev.SetConfig(&devs[i])
+		dev.SetConfig(devs[i])
 		m.devices[deviceId] = dev
 	}
 	return nil
@@ -152,6 +152,18 @@ func (m *Handler) RefreshDevices() error {
 					lastUpdateAt:    lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
+				dev := models.Device{
+					DeviceIdentifier: device.UDID,
+					DeviceType: models.DeviceTypePhone,
+					Name: device.Name,
+					Manager: Manager,
+					OS: deviceOSName,
+					OSVersion: osVersion,
+					ConnectionParameter: models.ConnectionParameter{
+						ConnectionType: models.ConnectionTypeUSB,
+					},
+				}
+				m.deviceStorage.NewDevice(m.Name(), dev)
 				m.deviceStorage.Update(m.Name(), m.devices[device.UDID])
 			}
 		}

@@ -51,23 +51,27 @@ func (d *deviceStore) GetDevice(manager, deviceId string) (*models.Device, error
 
 	for _, dev := range devices {
 		if dev.DeviceIdentifier == deviceId {
-			return &dev, nil
+			return dev, nil
 		}
 	}
 	return nil, fmt.Errorf("device with id: %s not found", deviceId)
 }
 
-func (d *deviceStore) NewDevice(manager string, device models.Device) error {
-	_, err := d.GetDevice(manager, device.DeviceIdentifier)
+func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
+	_, err := d.GetDevice(manager, dev.DeviceIdentifier)
 	if err == nil {
 		return fmt.Errorf("device with the same id exists already")
 	}
 
-	if err := d.db.Create(&device).Error; err != nil {
+	if err := d.db.Create(&dev).Error; err != nil {
 		return err
 	}
 
-	d.devices[manager] = append(d.devices[manager], device)
+	if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
+		return err
+	}
+
+	d.devices[manager] = append(d.devices[manager], &dev)
 	return nil
 }
 

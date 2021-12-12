@@ -60,7 +60,7 @@ func (m *Handler) Init() error {
 	for i := range devs {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
-		dev.SetConfig(&devs[i])
+		dev.SetConfig(devs[i])
 		m.devices[deviceId] = dev
 	}
 	return nil
@@ -147,6 +147,18 @@ func (m *Handler) RefreshDevices() error {
 				deviceOSVersion: device.Device.ProductVersion,
 				lastUpdateAt:    lastUpdate,
 			}
+			dev := models.Device{
+				DeviceIdentifier: device.Device.DeviceIdentifier,
+				DeviceType: models.DeviceTypePhone,
+				Name: device.Device.DeviceName,
+				Manager: Manager,
+				OS: device.Device.ModelSDK,
+				OSVersion: m.devices[device.Device.DeviceIdentifier].deviceOSVersion,
+				ConnectionParameter: models.ConnectionParameter{
+					ConnectionType: models.ConnectionTypeUSB,
+				},
+			}
+			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
 			m.deviceStorage.Update(m.Name(), m.devices[device.Device.DeviceIdentifier])
 		}

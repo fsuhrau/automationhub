@@ -2,6 +2,7 @@ package unityeditor
 
 import (
 	"github.com/fsuhrau/automationhub/storage"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"net"
 	"time"
 
@@ -103,6 +104,18 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			conn:            data.Conn,
 			updated:         true,
 		}
+		dev := models.Device{
+			DeviceIdentifier: data.DeviceID,
+			DeviceType: models.DeviceTypeUnityEditor,
+			Name: data.Name,
+			Manager: Manager,
+			OS: data.DeviceOS,
+			OSVersion: data.DeviceOSVersion,
+			ConnectionParameter: models.ConnectionParameter{
+				ConnectionType: models.ConnectionTypeRemote,
+			},
+		}
+		m.deviceStorage.NewDevice(m.Name(), dev)
 	}
 	go m.devices[data.DeviceID].HandleSocketFunction()
 	return m.devices[data.DeviceID], nil

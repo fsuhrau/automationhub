@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
 	"net"
@@ -175,57 +174,6 @@ func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
 	}
 	dm.deviceCache[deviceID] = &deviceData
 	return dm.deviceCache[deviceID]
-}
-
-func (dm *DeviceManager) updateDeviceState(manager string, dev device.Device) {
-	deviceData := dm.getDevice(dev.DeviceID())
-
-	needsUpdate := false
-	if deviceData.Name != dev.DeviceName() {
-		deviceData.Name = dev.DeviceName()
-		needsUpdate = true
-	}
-	if deviceData.OS != dev.DeviceOSName() {
-		deviceData.OS = dev.DeviceOSName()
-		needsUpdate = true
-	}
-	if deviceData.OSVersion != dev.DeviceOSVersion() {
-		deviceData.OSVersion = dev.DeviceOSVersion()
-		needsUpdate = true
-	}
-
-	if deviceData.HardwareModel != dev.DeviceModel() {
-		deviceData.HardwareModel = dev.DeviceModel()
-		needsUpdate = true
-	}
-
-	if deviceData.Manager != manager {
-		deviceData.Manager = manager
-		needsUpdate = true
-	}
-
-	statusUpdate := false
-	if deviceData.Status != dev.DeviceState() {
-		deviceData.Status = dev.DeviceState()
-		statusUpdate = true
-	}
-
-	if needsUpdate || statusUpdate {
-		dm.db.Updates(deviceData)
-	}
-
-	if statusUpdate {
-		log := models.DeviceLog{
-			DeviceID: deviceData.ID,
-			Status:   dev.DeviceState(),
-			Payload:  "",
-		}
-		dm.db.Create(&log)
-		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
-			DeviceID:    deviceData.ID,
-			DeviceState: uint(dev.DeviceState()),
-		})
-	}
 }
 
 func (dm *DeviceManager) SocketListener() error {

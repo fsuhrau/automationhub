@@ -51,7 +51,7 @@ func (m *Handler) Init() error {
 			deviceOSName:  "android",
 			installedApps: make(map[string]string),
 		}
-		dev.SetConfig(&devs[i])
+		dev.SetConfig(devs[i])
 		m.devices[deviceId] = dev
 
 		// connect all remote devs
@@ -183,12 +183,12 @@ func (m *Handler) RefreshDevices() error {
 			dev := m.devices[deviceID]
 			dev.deviceName = name
 			dev.deviceID = deviceID
-			dev.SetDeviceState("StateBooted")
 			dev.product = product
 			dev.deviceUSB = deviceUSB
 			dev.deviceModel = model
 			dev.transportID = transportID
 			dev.lastUpdateAt = lastUpdate
+			dev.SetDeviceState("StateBooted")
 			if m.init {
 				m.devices[deviceID].UpdateDeviceInfos()
 			}
@@ -207,7 +207,21 @@ func (m *Handler) RefreshDevices() error {
 			}
 			m.devices[deviceID].UpdateDeviceInfos()
 			m.devices[deviceID].SetDeviceState("StateBooted")
+			dev := models.Device{
+				DeviceIdentifier: deviceID,
+				DeviceType: models.DeviceTypePhone,
+				Name: name,
+				Manager: Manager,
+				HardwareModel: model,
+				OS: "android",
+				OSVersion: m.devices[deviceID].deviceOSVersion,
+				ConnectionParameter: models.ConnectionParameter{
+					ConnectionType: models.ConnectionTypeUSB,
+				},
+			}
+			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
+			m.devices[deviceID].Config = &dev
 		}
 	}
 

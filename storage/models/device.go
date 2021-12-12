@@ -21,7 +21,7 @@ const (
 	ConnectionTypeRemote
 )
 
-type Devices []Device
+type Devices []*Device
 
 type Device struct {
 	gorm.Model
@@ -43,6 +43,7 @@ type Device struct {
 	Parameter           []DeviceParameter
 	StatusLog           []DeviceLog
 	ConnectionParameter ConnectionParameter
+	IsAcknowledged      bool
 	Status              device.State `gorm:"-"`
 	Dev                 interface{}  `gorm:"-"`
 	Connection          interface{}  `gorm:"-"`
