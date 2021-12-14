@@ -26,7 +26,7 @@ Moment.globalLocale = 'de';
 const Copyright: FC = () => (
     <Typography variant="body2" color="textSecondary" align="center">
         { 'Copyright © ' }
-        <Link color="inherit" href="https://www.automation-hub.com/">
+        <Link color="inherit">
             AutomationHUB
         </Link>{ ' ' }
         { new Date().getFullYear() }
@@ -241,6 +241,9 @@ const App: FC<AppProps> = (props) => {
                                     </Route>
                                     <Route path="/web/users">
                                         <Content/>
+                                    </Route>
+                                    <Route path="/web/device/:deviceId/edit">
+                                        <DevicePageLoader edit={ true }/>
                                     </Route>
                                     <Route path="/web/device/:deviceId">
                                         <DevicePageLoader edit={ false }/>

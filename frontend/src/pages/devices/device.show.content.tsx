@@ -1,15 +1,16 @@
-import React, { FC, useState } from 'react';
+import React, { FC } from 'react';
 import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Divider, Typography } from '@material-ui/core';
+import { Box, Checkbox, Divider, FormControlLabel, Typography } from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import IDeviceData from '../../types/device';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { deleteDevice } from '../../services/device.service';
 import { useHistory } from 'react-router-dom';
+import { DeviceType } from '../../types/device.type.enum';
+import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 
 const styles = (theme: Theme): ReturnType<typeof createStyles> =>
     createStyles({
@@ -44,10 +45,11 @@ const styles = (theme: Theme): ReturnType<typeof createStyles> =>
         },
     });
 
-interface DeviceEditProps extends WithStyles<typeof styles> {
+interface DeviceShowProps extends WithStyles<typeof styles> {
     device: IDeviceData
 }
-const DeviceEditContent: FC<DeviceEditProps> = props => {
+
+const DeviceShowContent: FC<DeviceShowProps> = props => {
     const history = useHistory();
 
     const { device, classes } = props;
@@ -64,7 +66,7 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
                             <Typography variant={ 'h6' }>
-                                Device: { device.Name } ({device.DeviceIdentifier})
+                                Device: { device.Name } ({ device.DeviceIdentifier })
                             </Typography>
                         </Grid>
                         <Grid item={ true } xs={ true }>
@@ -89,7 +91,7 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                         <Typography variant={ 'h6' }>Device Infos</Typography>
                         <Divider/>
                         <br/>
-                        <Grid container={ true } >
+                        <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 ID:
                             </Grid>
@@ -118,7 +120,7 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 Type:
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
-                                { device.DeviceType }
+                                { DeviceType[ device.DeviceType ] }
                             </Grid>
                             <Grid item={ true } xs={ 2 }>
                                 Operation System:
@@ -127,16 +129,71 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 { device.OS }<br/>
                                 { device.OSVersion }
                             </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                <FormControlLabel
+                                    control={<Checkbox readOnly={ true } checked={device.IsAcknowledged} name="ack" />}
+                                    label="Acknowledged"
+                                />
+                            </Grid>
                         </Grid>
                     </Grid>
                 </Grid>
-                <Accordion expanded={expanded === 'hardware_panel'} onChange={handleChange('hardware_panel')}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1bh-content" id="panel1bh-header">
-                        <Typography className={classes.heading}>Hardware</Typography>
-                        <Typography className={classes.secondaryHeading}></Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Grid container={ true } spacing={ 2 } alignItems="center">
+                <Grid container={ true }>
+                    <Grid item={ true } xs={ 12 }>
+                        <Typography variant={ 'h6' }>Connection</Typography>
+                        <Divider/>
+                        <br/>
+                        <Grid container={ true }>
+                            <Grid item={ true } xs={ 2 }>
+                                Type
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { DeviceConnectionType[ device.ConnectionParameter.ConnectionType ] }
+                            </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                IP:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { device.ConnectionParameter.IP }
+                            </Grid>
+                            <Grid item={ true } xs={ 2 }>
+                                Port:
+                            </Grid>
+                            <Grid item={ true } xs={ 10 }>
+                                { device.ConnectionParameter.Port }
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+                <Grid container={ true }>
+                    <Grid item={ true } xs={ 12 }>
+                        <Typography variant={ 'h6' }>Parameter</Typography>
+                        <Divider/>
+                        <br/>
+                        <Grid container={ true }>
+                            { device.Parameter.map(value => (
+                                <>
+                                    <Grid item={ true } xs={ 2 }>
+                                        { value.Key }
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { value.Value }
+                                    </Grid>
+                                </>
+                            ),
+                            ) }
+                        </Grid>
+                    </Grid>
+                </Grid>
+                <br/>
+                <Grid container={ true }>
+                    <Grid item={ true } xs={ 12 }>
+                        <Typography className={ classes.heading }>Hardware</Typography>
+                        <Divider/>
+                        <br/>
+                        <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 RAM:
                             </Grid>
@@ -162,15 +219,15 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 { device.ABI }
                             </Grid>
                         </Grid>
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion expanded={expanded === 'graphic_panel'} onChange={handleChange('graphic_panel')}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1bh-content" id="panel1bh-header">
-                        <Typography className={classes.heading}>Graphic</Typography>
-                        <Typography className={classes.secondaryHeading}></Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Grid container={ true } spacing={ 2 } alignItems="center">
+                    </Grid>
+                </Grid>
+                <br/>
+                <Grid container={ true }>
+                    <Grid item={ true } xs={ 12 }>
+                        <Typography className={ classes.heading }>Graphic</Typography>
+                        <Divider/>
+                        <br/>
+                        <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 Display:
                             </Grid>
@@ -190,11 +247,12 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 { device.OpenGLESVersion }
                             </Grid>
                         </Grid>
-                    </AccordionDetails>
-                </Accordion>
+                    </Grid>
+                </Grid>
+                <br/>
             </Box>
         </Paper>
     );
 };
 
-export default withStyles(styles)(DeviceEditContent);
+export default withStyles(styles)(DeviceShowContent);

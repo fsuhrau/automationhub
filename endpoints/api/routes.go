@@ -64,6 +64,7 @@ func (s *ApiService) RegisterRoutes(r *gin.Engine) error {
 
 	api.GET("/device/:device_id", HandleWithSession(s.getDevice))
 	api.DELETE("/device/:device_id", HandleWithSession(s.deleteDevice))
+	api.PUT("/device/:device_id", HandleWithSession(s.updateDevice))
 	api.POST("/device/:device_id/tests", HandleWithSession(s.deviceRunTests))
 	api.GET("/devices", HandleWithSession(s.getDevices))
 	api.GET("/device/connect", func(c *gin.Context) {

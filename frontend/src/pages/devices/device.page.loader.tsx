@@ -2,8 +2,9 @@ import { FC, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography } from '@material-ui/core';
 import IDeviceData from '../../types/device';
-import DeviceEditContent from './device.edit.component';
+import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';
+import DeviceShowContent from './device.show.content';
 
 interface DevicePageProps {
     edit: boolean
@@ -30,7 +31,7 @@ const DevicePageLoader: FC<DevicePageProps> = (props) => {
     return (
         <div>
             { device
-                ? <DeviceEditContent device={ device } />
+                ? (edit ? <DeviceEditContent device={ device } /> : <DeviceShowContent device={ device } />)
                 : <Typography variant={ 'h1' }>Loading</Typography>
             }
         </div>

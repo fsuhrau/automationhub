@@ -73,7 +73,8 @@ func (s *ApiService) getDevice(session *Session, c *gin.Context) {
 	deviceID := c.Param("device_id")
 	_ = deviceID
 	var device models.Device
-	if err := s.db.Find(&device, "id = ?", deviceID).Error; err != nil {
+
+	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").Find(&device, "id = ?", deviceID).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -104,6 +105,46 @@ func (s *ApiService) deleteDevice(session *Session, c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusOK)
+}
+
+func (s *ApiService) updateDevice(session *Session, c *gin.Context) {
+	deviceID := c.Param("device_id")
+
+	var dev models.Device
+	c.Bind(&dev)
+
+	var device models.Device
+	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").First(&device, deviceID).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	var ids []uint
+	for i := range device.Parameter {
+		exists := false
+		for d := range dev.Parameter {
+			if device.Parameter[i].Key == dev.Parameter[d].Key {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			ids = append(ids, device.Parameter[i].ID)
+		}
+	}
+
+	if len(ids) > 0 {
+		if err := s.db.Delete(&models.DeviceParameter{}, "id in (?)", ids).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	if err := s.db.Updates(&dev).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
 	c.Status(http.StatusOK)
 }
 
