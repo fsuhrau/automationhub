@@ -1,6 +1,7 @@
-import React, { FC } from 'react';
+import React from 'react';
 import Paper from '@mui/material/Paper';
 import {
+    Alert,
     Box,
     Button,
     FormControl,
@@ -54,7 +55,7 @@ function getDeviceOption(): Array<Object> {
     return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
-const AddTestPage: FC = () => {
+const AddTestPage: React.FC = () => {
 
     const history = useHistory();
 
@@ -157,7 +158,7 @@ const AddTestPage: FC = () => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <div>
+            <Box sx={ { width: '100%', padding: 5 } }>
                 <Stepper activeStep={ activeStep } alternativeLabel={ true }>
                     { steps.map((label) => (
                         <Step key={ label }>
@@ -165,7 +166,7 @@ const AddTestPage: FC = () => {
                         </Step>
                     )) }
                 </Stepper>
-                <div>
+                <Box sx={ { width: '100%', padding: 5 } }>
                     { activeStep === steps.length ? (
                         <div>
                             <Typography variant={'body1'}>Test is being created wait a moment and
@@ -174,9 +175,9 @@ const AddTestPage: FC = () => {
                         </div>
                     ) : (
                         <div>
-                            <Grid container={ true } spacing={ 2 }>
+                            <Grid container={ true } spacing={ 5 }>
                                 <Grid item={ true } xs={ 12 }>
-                                    <Grid container={ true } justifyContent="center" spacing={ 2 }>
+                                    <Grid container={ true } justifyContent="center" spacing={ 5 }>
                                         <Grid item={ true }>
                                             { activeStep === 0 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
@@ -229,12 +230,11 @@ const AddTestPage: FC = () => {
                                                                         />
                                                                     )) }
                                                                 </RadioGroup>
-                                                                <Typography variant={ 'subtitle1' }>
+                                                                <Alert severity="info">
                                                                     Concurrent = runs each test on a different free
                                                                     device to get faster results<br/>
                                                                     Simultaneously = runs every test on every device
-                                                                    to get a better accuracy
-                                                                </Typography>
+                                                                    to get a better accuracy</Alert>
                                                             </Grid>
                                                         </Grid>
                                                     </Grid>
@@ -244,8 +244,8 @@ const AddTestPage: FC = () => {
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
                                                     alignItems={ 'center' } direction={ 'column' }>
                                                     { testType === TestType.Unity && (
-                                                        <div>
-                                                            <Grid item={ true }>
+                                                        <>
+                                                            <Grid item={ true } >
                                                                 <RadioGroup
                                                                     name="unity-test-execution-selection"
                                                                     aria-label="spacing"
@@ -270,7 +270,7 @@ const AddTestPage: FC = () => {
                                                                     </div>
                                                                 ) }
                                                             </Grid>
-                                                        </div>
+                                                        </>
                                                     ) }
                                                 </Grid>
                                             ) }
@@ -315,25 +315,25 @@ const AddTestPage: FC = () => {
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <Grid container={ true } justifyContent={'flex-end'} >
-                                <Grid item={ true }>
-                                    <Box sx={ { p: 2, m: 2 } }>
-                                        <Button
-                                            disabled={ activeStep === 0 }
-                                            onClick={ handleBack }
-                                        >
-                                            Back
-                                        </Button>
-                                        <Button variant="contained" color="primary" onClick={ handleNext }>
-                                            { activeStep === steps.length - 1 ? 'Create' : 'Next' }
-                                        </Button>
-                                    </Box>
-                                </Grid>
-                            </Grid>
                         </div>
                     ) }
-                </div>
-            </div>
+                </Box>
+            </Box>
+            <Grid container={ true } justifyContent={'flex-end'} >
+                <Grid item={ true }>
+                    <Box sx={ { p: 2, m: 2 } }>
+                        <Button
+                            disabled={ activeStep === 0 }
+                            onClick={ handleBack }
+                        >
+                            Back
+                        </Button>
+                        <Button variant="contained" color="primary" onClick={ handleNext }>
+                            { activeStep === steps.length - 1 ? 'Create' : 'Next' }
+                        </Button>
+                    </Box>
+                </Grid>
+            </Grid>
         </Paper>
     );
 };

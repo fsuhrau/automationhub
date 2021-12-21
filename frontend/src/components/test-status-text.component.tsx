@@ -1,4 +1,5 @@
-import { FC } from 'react';
+import React from 'react';
+
 import { TestResultState } from '../types/test.result.state.enum';
 import { Typography } from '@mui/material';
 
@@ -6,7 +7,7 @@ export interface TestStatusTextProps {
     status: TestResultState
 }
 
-const TestStatusTextComponent: FC<TestStatusTextProps> = (props) => {
+const TestStatusTextComponent: React.FC<TestStatusTextProps> = (props) => {
     const { status } = props;
 
     return (

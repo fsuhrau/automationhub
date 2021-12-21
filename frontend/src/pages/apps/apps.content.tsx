@@ -1,10 +1,9 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
-import SearchIcon from '@mui/icons-material/Search';
 import { useHistory } from 'react-router-dom';
 import TableContainer from '@mui/material/TableContainer';
 import Table from '@mui/material/Table';
@@ -18,7 +17,7 @@ import Moment from 'react-moment';
 import { Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
 
-const AppsPage: FC = () => {
+const AppsPage: React.FC = () => {
 
     const history = useHistory();
 

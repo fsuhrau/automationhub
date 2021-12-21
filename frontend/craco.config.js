@@ -19,7 +19,7 @@ module.exports = {
                 },
                 esbuildLoaderOptions: {
                     // Optional. Defaults to auto-detect loader.
-                    loader: 'jsx', // Set the value to 'tsx' if you use typescript
+                    loader: 'tsx', // Set the value to 'tsx' if you use typescript
                     target: 'es2015',
                 },
                 esbuildMinimizerOptions: {

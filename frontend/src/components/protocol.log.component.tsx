@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardMedia, Chip, Popover } from '@mui/material';
 import IProtocolEntryData from '../types/protocol.entry';
 import { DataGrid, GridCellValue, GridColDef } from '@mui/x-data-grid';
@@ -73,7 +73,7 @@ interface TestProtocolContentProps {
     entries: IProtocolEntryData[]
 }
 
-export default function ProtocolLogComponent(props: TestProtocolContentProps) {
+const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestProtocolContentProps) => {
     const classes = useStyles();
     const { entries } = props;
 
@@ -267,4 +267,6 @@ export default function ProtocolLogComponent(props: TestProtocolContentProps) {
             />
         </div>
     );
-}
+};
+
+export default ProtocolLogComponent;

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import IDeviceData from '../../types/device';
@@ -14,7 +14,7 @@ interface ParamTypes {
     deviceId: string
 }
 
-const DevicePageLoader: FC<DevicePageProps> = (props) => {
+const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     const { deviceId } = useParams<ParamTypes>();
 
     const { edit } = props;

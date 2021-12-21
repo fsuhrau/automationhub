@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import React from 'react';
 import Paper from '@mui/material/Paper';
 import DeviceTableComponent from '../../components/device-table.component';
 import { IconButton, Typography } from '@mui/material';
@@ -8,7 +8,7 @@ import Grid from '@mui/material/Grid';
 import { useHistory } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 
-const Devices: FC = () => {
+const Devices: React.FC = () => {
     const history = useHistory();
 
     function onManageDevices(): void {

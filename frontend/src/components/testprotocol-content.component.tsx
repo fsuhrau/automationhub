@@ -1,4 +1,4 @@
-import React, { FC, ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import ITestRunData from '../types/test.run';
@@ -52,29 +52,6 @@ function TabPanel(props: TabPanelProps): ReactElement {
     );
 }
 
-const useStyles = makeStyles(theme => ({
-    paper: {
-        maxWidth: 1200,
-        margin: 'auto',
-        overflow: 'hidden',
-    },
-    searchBar: {
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-    },
-    block: {
-        display: 'block',
-    },
-    addUser: {
-        marginRight: '1px',
-    },
-    contentWrapper: {
-        margin: '40px 16px',
-    },
-    table: {
-        minWidth: 650,
-    },
-}));
-
 function a11yProps(index: number): Map<string, string> {
     return new Map([
         ['id', `simple-tab-${ index }`],
@@ -92,8 +69,7 @@ interface TestProtocolContentProps {
     protocol: ITestProtocolData
 }
 
-const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
-    const classes = useStyles();
+const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
     const { run, protocol } = props;
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
@@ -207,8 +183,13 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
     }, [performanceEntries]);
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -219,28 +200,28 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                         </Grid>
 
                         <Grid item={ true }>
-                            <DateRange className={ classes.block } color="inherit"/>
+                            <DateRange sx={{ display: 'block' }} color="inherit"/>
                         </Grid>
                         <Grid item={ true }>
                             <Moment format="YYYY/MM/DD HH:mm:ss">{ protocol.StartedAt }</Moment>
                         </Grid>
 
                         <Grid item={ true }>
-                            <AvTimer className={ classes.block } color="inherit"/>
+                            <AvTimer sx={{ display: 'block' }} color="inherit"/>
                         </Grid>
                         <Grid item={ true }>
                             { getDuration(protocol) }
                         </Grid>
 
                         <Grid item={ true }>
-                            <PhoneAndroid className={ classes.block } color="inherit"/>
+                            <PhoneAndroid sx={{ display: 'block' }} color="inherit"/>
                         </Grid>
                         <Grid item={ true }>
                             { protocol.Device?.Name }
                         </Grid>
 
                         <Grid item={ true }>
-                            <Speed className={ classes.block } color="inherit"/>
+                            <Speed sx={{ display: 'block' }} color="inherit"/>
                         </Grid>
                         <Grid item={ true } xs={ true }>
                             { protocol.TestName }
@@ -249,7 +230,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                 </Toolbar>
             </AppBar>
             <Box sx={ { width: '100%' } }>
-                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+                <AppBar position="static" color="default" elevation={ 0 }>
                     <Box sx={ { borderBottom: 1, borderColor: 'divider' } }>
                         <Tabs
                             value={ value }
@@ -258,7 +239,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                             textColor="inherit"
                         >
                             <Tab label="Status" { ...a11yProps(0) } />
-                            <Tab label="Executer" { ...a11yProps(1) } />
+                            <Tab label="Executor" { ...a11yProps(1) } />
                             <Tab label="Logs" { ...a11yProps(2) } />
                             <Tab label="Screenshots" { ...a11yProps(3) } />
                             <Tab label="Video/Replay" { ...a11yProps(4) } />
@@ -267,51 +248,50 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     </Box>
                 </AppBar>
                 <TabPanel value={ value } index={ 0 }>
-                    <Grid container={ true } direction="column" spacing={ 6 }>
+                    <Grid container={ true } direction="column" spacing={ 2 }>
+                        { protocol?.TestResult == TestResultState.TestResultFailed &&
+                        <Box width='100%' color="white" bgcolor="palevioletred" padding={ 2 } margin={-1}>
+                            <Grid container={ true } spacing={ 6 } justifyContent="center" alignItems="center">
+                                <Grid item={ true }>
+                                    { lastStep && <Typography><Moment
+                                        format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message }
+                                    </Typography> }
+                                    { lastError && <Typography><Moment
+                                        format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message }
+                                    </Typography> }
+                                </Grid>
+                                <Grid item={ true }>
+                                    { lastScreen && <div>
+                                        <Button aria-describedby={ 'last_screen_' + lastScreen.ID }
+                                            variant="contained" onClick={ showScreenPopup }>
+                                            Show
+                                        </Button>
+                                        <Popover
+                                            id={ lastScreenID }
+                                            open={ lastScreenOpen }
+                                            anchorEl={ anchorScreenEl }
+                                            onClose={ hideScreenPopup }
+                                            anchorOrigin={ {
+                                                vertical: 'bottom',
+                                                horizontal: 'left',
+                                            } }
+                                        >
+                                            <Card>
+                                                <CardMedia
+                                                    component="img"
+                                                    height="400"
+                                                    image={ `/api/data/${ lastScreen.Data }` }
+                                                    alt="green iguana"
+                                                />
+                                            </Card>
+                                        </Popover>
+                                    </div> }
+                                </Grid>
+                            </Grid>
+                        </Box>
+                        }
                         <Grid item={ true }>
-                            <Grid container={ true } spacing={ 6 }>
-                                { protocol?.TestResult == TestResultState.TestResultFailed &&
-                                <Box width='100%' height='100%' color="white" bgcolor="palevioletred" padding={ 2 }>
-                                    <Grid container={ true } spacing={ 6 } justifyContent="center"
-                                        alignItems="center">
-                                        <Grid item={ true }>
-                                            { lastStep && <Typography><Moment
-                                                format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message }
-                                            </Typography> }
-                                            { lastError && <Typography><Moment
-                                                format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message }
-                                            </Typography> }
-                                        </Grid>
-                                        <Grid item={ true }>
-                                            { lastScreen && <div>
-                                                <Button aria-describedby={ 'last_screen_' + lastScreen.ID }
-                                                    variant="contained" onClick={ showScreenPopup }>
-                                                    Show
-                                                </Button>
-                                                <Popover
-                                                    id={ lastScreenID }
-                                                    open={ lastScreenOpen }
-                                                    anchorEl={ anchorScreenEl }
-                                                    onClose={ hideScreenPopup }
-                                                    anchorOrigin={ {
-                                                        vertical: 'bottom',
-                                                        horizontal: 'left',
-                                                    } }
-                                                >
-                                                    <Card>
-                                                        <CardMedia
-                                                            component="img"
-                                                            height="400"
-                                                            image={ `/api/data/${ lastScreen.Data }` }
-                                                            alt="green iguana"
-                                                        />
-                                                    </Card>
-                                                </Popover>
-                                            </div> }
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-                                }
+                            <Grid container={ true } spacing={ 0 }>
                             </Grid>
                         </Grid>
                         <Grid item={ true }>

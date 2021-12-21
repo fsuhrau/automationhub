@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import React, { useState } from 'react';
 import Paper from '@mui/material/Paper';
 import {
     Box,
@@ -41,7 +41,7 @@ interface DeviceEditProps {
     device: IDeviceData
 }
 
-const DeviceEditContent: FC<DeviceEditProps> = props => {
+const DeviceEditContent: React.FC<DeviceEditProps> = props => {
 
     const history = useHistory();
 

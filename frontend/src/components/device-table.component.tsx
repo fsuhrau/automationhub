@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -29,7 +29,7 @@ interface DeviceChangePayload {
     DeviceState: number
 }
 
-const DeviceTable: FC = () => {
+const DeviceTable: React.FC = () => {
     const history = useHistory();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);

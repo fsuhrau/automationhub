@@ -1,4 +1,5 @@
-import React, { FC, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+
 import {
     Box,
     Button,
@@ -45,7 +46,7 @@ interface NewProtocolPayload {
     Protocol: ITestProtocolData,
 }
 
-const TestRunContent: FC<TestRunContentProps> = (props) => {
+const TestRunContent: React.FC<TestRunContentProps> = (props) => {
 
     const { testRun, nextRunId, prevRunId } = props;
 

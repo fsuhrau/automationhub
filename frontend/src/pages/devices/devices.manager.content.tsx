@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import { IconButton, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
@@ -15,7 +15,7 @@ import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import { useHistory } from 'react-router-dom';
 
-const DevicesManagerContent: FC = () => {
+const DevicesManagerContent: React.FC = () => {
 
     const history = useHistory();
 

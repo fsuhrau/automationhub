@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, ReactElement, useEffect, useState } from 'react';
+import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
 import {
     Box,
@@ -13,26 +13,6 @@ import {
 import IAppData from '../types/app';
 import { getAllApps, uploadNewApp } from '../services/app.service';
 import Select from '@mui/material/Select';
-import { makeStyles } from '@mui/styles';
-
-const useStyles = makeStyles(theme => ({
-    root: {
-        margin: 'auto',
-    },
-    paper: {
-        width: 200,
-        height: 230,
-        overflow: 'auto',
-    },
-    input: {
-        display: 'none',
-    },
-    formControl: {
-        margin: '1px',
-        minWidth: 120,
-    },
-}));
-
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
@@ -55,8 +35,7 @@ interface AppSelectionProps {
     upload: boolean;
 }
 
-const AppSelection: FC<AppSelectionProps> = (props) => {
-    const classes = useStyles();
+const AppSelection: React.FC<AppSelectionProps> = (props) => {
     const { onSelectionChanged, upload } = props;
 
     const [app, setApp] = useState<IAppData>();
@@ -115,10 +94,9 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
             justifyContent="center"
             alignItems="center"
             direction={ 'column' }
-            className={ classes.root }
         >
             <Grid item={ true }>
-                <FormControl className={ classes.formControl }>
+                <FormControl>
                     <InputLabel id="demo-simple-select-label">App</InputLabel>
                     <Select
                         labelId="demo-simple-select-label"
@@ -139,7 +117,6 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                     spacing={ 2 }
                     justifyContent="center"
                     alignItems="center"
-                    className={ classes.root }
                 >
                     { upload && (
                         <Grid item={ true }>
@@ -152,7 +129,6 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                         <Grid item={ true }>
                             <input
                                 accept="*.apk,*.ipa"
-                                className={ classes.input }
                                 id="app-upload"
                                 multiple={ true }
                                 type="file"

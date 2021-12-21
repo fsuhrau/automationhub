@@ -1,3 +1,5 @@
+import React from 'react';
+
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
@@ -8,7 +10,6 @@ import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { FC } from 'react';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
@@ -17,7 +18,7 @@ interface HeaderProps {
     onDrawerToggle: () => void;
 }
 
-const Header: FC<HeaderProps> = (props: HeaderProps) => {
+const Header: React.FC<HeaderProps> = (props: HeaderProps) => {
     const { onDrawerToggle } = props;
     return (
         <>

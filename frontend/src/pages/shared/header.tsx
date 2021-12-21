@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -14,7 +14,7 @@ interface DefaultHeaderProps {
     onDrawerToggle: () => void;
 }
 
-const DefaultHeader: FC<DefaultHeaderProps> = (props) => {
+const DefaultHeader: React.FC<DefaultHeaderProps> = (props) => {
 
     const { onDrawerToggle } = props;
 

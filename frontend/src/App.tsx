@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { useState } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
@@ -9,8 +9,8 @@ import TestContent from './pages/tests/tests.content';
 import DevicesContent from './pages/devices/device.content';
 import Content from './Content';
 import AddTestPage from './pages/tests/add.test.content';
-import TestRunPage from './pages/tests/test.run.page.loader';
-import TestProtocolPage from './pages/tests/test.protocol.content';
+import TestRunPageLoader from './pages/tests/test.run.page.loader';
+import TestProtocolLoader from './pages/tests/test.protocol.loader';
 import Moment from 'react-moment';
 import AppsPage from './pages/apps/apps.content';
 import { SSEProvider } from 'react-hooks-sse';
@@ -24,16 +24,16 @@ import { Box } from '@mui/system';
 
 Moment.globalLocale = 'de';
 
-const Copyright: FC = () => (
-    <Typography variant="body2" color="text.secondary" align="center">
+const Copyright: React.FC = () => {
+    return (<Typography variant="body2" color="text.secondary" align="center">
         { 'Copyright © ' }
         <Link color="inherit">
             AutomationHUB
         </Link>{ ' ' }
         { new Date().getFullYear() }
         { '.' }
-    </Typography>
-);
+    </Typography>);
+};
 
 let theme = createTheme({
     palette: {
@@ -77,11 +77,6 @@ let theme = createTheme({
         h6: {
             fontWeight: 500,
             fontSize: 18,
-            letterSpacing: 0.5,
-        },
-        caption: {
-            fontWeight: 500,
-            fontSize: 25,
             letterSpacing: 0.5,
         },
     },
@@ -233,7 +228,7 @@ declare module '@mui/material/Paper' {
 
 const drawerWidth = 256;
 
-const App: FC = () => {
+const App: React.FC = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
 
@@ -275,13 +270,13 @@ const App: FC = () => {
                                         <AddTestPage/>
                                     </Route>
                                     <Route path={ '/web/test/:testId/run/:runId/:protocolId' }>
-                                        <TestProtocolPage/>
+                                        <TestProtocolLoader/>
                                     </Route>
                                     <Route path="/web/test/:testId/runs/last">
-                                        <TestRunPage/>
+                                        <TestRunPageLoader/>
                                     </Route>
                                     <Route path="/web/test/:testId/run/:runId">
-                                        <TestRunPage/>
+                                        <TestRunPageLoader/>
                                     </Route>
                                     <Route path={ '/web/test/:testId/edit' }>
                                         <TestPageLoader edit={ true }/>

@@ -1,10 +1,10 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getTestProtocol } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
 import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
 import ITestRunData from '../../types/test.run';
-import { Backdrop, CircularProgress, Typography } from '@mui/material';
+import { Backdrop, CircularProgress } from '@mui/material';
 
 interface ParamTypes {
     testId: string
@@ -12,7 +12,7 @@ interface ParamTypes {
     protocolId: string
 }
 
-const TestProtocol: FC = () => {
+const TestProtocolLoader: React.FC = () => {
     const { testId, runId, protocolId } = useParams<ParamTypes>();
 
     const [protocol, setProtocol] = useState<ITestProtocolData>();
@@ -44,4 +44,4 @@ const TestProtocol: FC = () => {
     );
 };
 
-export default TestProtocol;
+export default TestProtocolLoader;

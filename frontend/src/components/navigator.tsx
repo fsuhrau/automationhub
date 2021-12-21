@@ -1,5 +1,4 @@
-import React, { FC } from 'react';
-import clsx from 'clsx';
+import React from 'react';
 import Divider from '@mui/material/Divider';
 import Drawer, { DrawerProps } from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -13,7 +12,6 @@ import PhonelinkSetupIcon from '@mui/icons-material/PhonelinkSetup';
 import { DistributiveOmit } from '@mui/types';
 import { NavLink } from 'react-router-dom';
 import { Box, Link, ListItemButton } from '@mui/material';
-import { makeStyles } from '@mui/styles';
 
 const categories = [
     {
@@ -52,7 +50,7 @@ const itemCategory = {
 
 export type NavigatorProps = DistributiveOmit<DrawerProps, 'classes'>;
 
-const Navigator: FC<NavigatorProps> = (props) => {
+const Navigator: React.FC<NavigatorProps> = (props) => {
 
     const { ...other } = props;
 

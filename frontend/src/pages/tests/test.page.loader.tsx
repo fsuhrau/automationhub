@@ -1,6 +1,6 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Backdrop, CircularProgress, Typography } from '@mui/material';
+import { Backdrop, CircularProgress } from '@mui/material';
 import ITestData from '../../types/test';
 import EditTestPage from './edit.test.content';
 import { getTest } from '../../services/test.service';
@@ -14,7 +14,7 @@ interface ParamTypes {
     testId: string
 }
 
-const TestPageLoader: FC<TestPageProps> = (props) =>  {
+const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
     const { edit } = props;
     const { testId } = useParams<ParamTypes>();
     const [test, setTest] = useState<ITestData>();
@@ -28,12 +28,7 @@ const TestPageLoader: FC<TestPageProps> = (props) =>  {
     }, [testId]);
     return (
         <div>
-            { test
-                ? (edit ? <EditTestPage test={ test }/> : <ShowTestPage test={ test }/> )
-                : <Backdrop open={true} >
-                    <CircularProgress color="inherit" />
-                </Backdrop>
-            }
+            { test ? (edit ? (<EditTestPage test={ test }/>) : (<ShowTestPage test={ test }/>) ) : (<Backdrop open={true} ><CircularProgress color="inherit" /></Backdrop>) }
         </div>
     );
 };

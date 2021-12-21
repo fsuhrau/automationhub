@@ -1,4 +1,5 @@
-import { ChangeEvent, FC, useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
+
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -24,7 +25,7 @@ import AppSelection from './app-selection.component';
 import IAppData from '../types/app';
 import { useHistory } from 'react-router-dom';
 
-const TestsTable: FC = () => {
+const TestsTable: React.FC = () => {
 
     const history = useHistory();
 

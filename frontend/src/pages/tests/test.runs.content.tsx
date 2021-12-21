@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import { getAllRuns } from '../../services/test.run.service';
@@ -6,39 +6,12 @@ import { useParams } from 'react-router-dom';
 import { Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
-import { makeStyles } from '@mui/styles';
-
-const useStyles = makeStyles(theme => ({
-    paper: {
-        maxWidth: 1200,
-        margin: 'auto',
-        overflow: 'hidden',
-    },
-    searchBar: {
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-    },
-    searchInput: {
-        fontSize: theme.typography.fontSize,
-    },
-    block: {
-        display: 'block',
-    },
-    addUser: {
-        marginRight: theme.spacing(1),
-    },
-    contentWrapper: {
-        margin: '40px 16px',
-    },
-    table: {
-        minWidth: 650,
-    },
-}));
 
 interface ParamTypes {
     testId: string
 }
 
-const TestRuns: FC = () => {
+const TestRuns: React.FC = () => {
 
     const { testId } = useParams<ParamTypes>();
 

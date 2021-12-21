@@ -1,6 +1,7 @@
-import React, { ChangeEvent, FC, useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import {
+    Alert,
     Box,
     Button,
     Divider,
@@ -23,41 +24,6 @@ import { updateTest } from '../../services/test.service';
 import DeviceSelection from '../../components/device-selection.component';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { makeStyles } from '@mui/styles';
-
-const useStyles = makeStyles(theme => ({
-    paper: {
-        maxWidth: 1200,
-        margin: 'auto',
-        overflow: 'hidden',
-    },
-    searchBar: {
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-    },
-    searchInput: {
-        fontSize: theme.typography.fontSize,
-    },
-    root: {
-        width: '100%',
-    },
-    backButton: {
-        marginRight: theme.spacing(1),
-    },
-    instructions: {
-        marginTop: theme.spacing(1),
-        marginBottom: theme.spacing(1),
-    },
-    formControl: {
-        margin: theme.spacing(1),
-        minWidth: 120,
-    },
-    selectEmpty: {
-        marginTop: theme.spacing(2),
-    },
-    contentWrapper: {
-        margin: '40px 16px',
-    },
-}));
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -85,7 +51,7 @@ interface TestContentProps {
     test: ITestData
 }
 
-const EditTestPage: FC<TestContentProps> = (props: TestContentProps) => {
+const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const history = useHistory();
 
@@ -233,12 +199,12 @@ const EditTestPage: FC<TestContentProps> = (props: TestContentProps) => {
                                     )) }
                                 </RadioGroup>
                                 <br/>
-                                <Typography variant={ 'subtitle1' }>
+                                <Alert severity="info">
                                     Concurrent = runs each test on a different free
                                     device to get faster results<br/>
                                     Simultaneously = runs every test on every device
-                                    to get a better accuracy
-                                </Typography>
+                                    to get a better accuracy</Alert>
+                                <br/>
                             </Grid>
                             <Grid item={ true } xs={ 2 }>
                                 Devices:

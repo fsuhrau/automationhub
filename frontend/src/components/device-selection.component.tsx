@@ -1,4 +1,4 @@
-import React, { FC, ReactElement, useEffect } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import Grid from '@mui/material/Grid';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -10,21 +10,6 @@ import Paper from '@mui/material/Paper';
 import IDeviceData from '../types/device';
 import { getAllDevices } from '../services/device.service';
 import { Typography } from '@mui/material';
-import { makeStyles } from '@mui/styles';
-
-const useStyles = makeStyles(theme => ({
-    root: {
-        margin: 'auto',
-    },
-    paper: {
-        width: 200,
-        height: 230,
-        overflow: 'auto',
-    },
-    button: {
-        margin: '0px',
-    },
-}));
 
 interface DeviceSelectionProps {
     onSelectionChanged: (devices: IDeviceData[]) => void;
@@ -39,8 +24,7 @@ function intersection(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
     return a.filter((value) => b.indexOf(value) !== -1);
 }
 
-const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
-    const classes = useStyles();
+const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
     const { selectedDevices, onSelectionChanged } = props;
 
     const [checked, setChecked] = React.useState<IDeviceData[]>([]);
@@ -100,7 +84,7 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
     }, [right, onSelectionChanged]);
 
     const customList = (items: IDeviceData[]): ReactElement => (
-        <Paper className={classes.paper}>
+        <Paper sx={{ minWidth: 400, maxWidth: 400, minHeight: 400, maxHeight: 400, margin: 'auto', overflow: 'auto' }}>
             <List dense={true} component="div" role="list">
                 {items.map((value) => {
                     const labelId = `transfer-list-item-${value.ID}-label`;
@@ -130,7 +114,6 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
             spacing={2}
             justifyContent="center"
             alignItems="center"
-            className={classes.root}
         >
             <Grid item={true}>
                 <Typography variant={'subtitle1'}>Available Devices</Typography>
@@ -141,7 +124,6 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        className={classes.button}
                         onClick={handleAllRight}
                         disabled={left.length === 0}
                         aria-label="move all right"
@@ -151,7 +133,6 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        className={classes.button}
                         onClick={handleCheckedRight}
                         disabled={leftChecked.length === 0}
                         aria-label="move selected right"
@@ -161,7 +142,6 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        className={classes.button}
                         onClick={handleCheckedLeft}
                         disabled={rightChecked.length === 0}
                         aria-label="move selected left"
@@ -171,7 +151,6 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        className={classes.button}
                         onClick={handleAllLeft}
                         disabled={right.length === 0}
                         aria-label="move all left"

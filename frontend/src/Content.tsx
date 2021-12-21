@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -11,7 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
-const Content: FC = () => {
+const Content: React.FC = () => {
     return (
         <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
             <AppBar

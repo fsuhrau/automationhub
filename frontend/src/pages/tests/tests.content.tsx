@@ -1,3 +1,5 @@
+import React from 'react';
+
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
@@ -7,34 +9,8 @@ import TestsTable from '../../components/tests-table.component';
 import { useHistory } from 'react-router-dom';
 import { AppContext } from '../../context/app.context';
 import { Typography } from '@mui/material';
-import { makeStyles } from '@mui/styles';
-import { FC } from 'react';
 
-/*
-const useStyles = makeStyles(theme => ({
-    paper: {
-        maxWidth: 1200,
-        margin: 'auto',
-        overflow: 'hidden',
-    },
-    searchBar: {
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-    },
-    searchInput: {
-        fontSize: theme.typography.fontSize,
-    },
-    block: {
-        display: 'block',
-    },
-    addUser: {
-        marginRight: theme.spacing(1),
-    },
-    contentWrapper: {
-        margin: '40px 16px',
-    },
-}));
-*/
-const Tests: FC = () => {
+const Tests: React.FC = () => {
 
     const history = useHistory();
 
@@ -61,7 +37,7 @@ const Tests: FC = () => {
                             <Grid item={ true } xs={ true }>
                             </Grid>
                             <Grid item={ true }>
-                                <Button variant="contained" color="primary" size="small"
+                                <Button variant="text" color="primary" size="small"
                                     onClick={ newTestClick }>
                                     New Test
                                 </Button>

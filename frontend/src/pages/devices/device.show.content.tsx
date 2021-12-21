@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React from 'react';
 import Paper from '@mui/material/Paper';
 import { Box, ButtonGroup, Checkbox, Divider, FormControlLabel, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
@@ -15,7 +15,7 @@ interface DeviceShowProps {
     device: IDeviceData
 }
 
-const DeviceShowContent: FC<DeviceShowProps> = (props: DeviceShowProps) => {
+const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) => {
 
     const history = useHistory();
 
@@ -45,7 +45,7 @@ const DeviceShowContent: FC<DeviceShowProps> = (props: DeviceShowProps) => {
                         </Grid>
                         <Grid item={ true }>
                             <ButtonGroup variant="text" aria-label="text button group">
-                                <Button href={ `${ device.ID }/edit` } >Edit</Button>
+                                <Button href={ `${ device.ID }/edit` }>Edit</Button>
                                 <Button color="secondary" onClick={ () => {
                                     deleteDevice(device.ID as number).then((result) =>
                                         history.push('/web/devices'),
@@ -124,18 +124,23 @@ const DeviceShowContent: FC<DeviceShowProps> = (props: DeviceShowProps) => {
                             <Grid item={ true } xs={ 10 }>
                                 { DeviceConnectionType[ device.ConnectionParameter.ConnectionType ] }
                             </Grid>
-                            <Grid item={ true } xs={ 2 }>
-                                IP:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { device.ConnectionParameter.IP }
-                            </Grid>
-                            <Grid item={ true } xs={ 2 }>
-                                Port:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { device.ConnectionParameter.Port }
-                            </Grid>
+                            {
+                                device.ConnectionParameter.ConnectionType == DeviceConnectionType.Remote && (<>
+                                    <Grid item={ true } xs={ 2 }>
+                                        IP:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { device.ConnectionParameter.IP }
+                                    </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Port:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { device.ConnectionParameter.Port }
+                                    </Grid>
+                                </>
+                                )
+                            }
                         </Grid>
                     </Grid>
                 </Grid>
