@@ -1,6 +1,5 @@
 import React, { ChangeEvent, FC, useEffect, useState } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import Paper from '@mui/material/Paper';
 import {
     Box,
     Button,
@@ -12,7 +11,7 @@ import {
     RadioGroup,
     TextField,
     Typography,
-} from '@material-ui/core';
+} from '@mui/material';
 import { TestExecutionType } from '../../types/test.execution.type.enum';
 import { TestType } from '../../types/test.type.enum';
 import IDeviceData from '../../types/device';
@@ -22,43 +21,43 @@ import IAppFunctionData from '../../types/app.function';
 import ITestData from '../../types/test';
 import { updateTest } from '../../services/test.service';
 import DeviceSelection from '../../components/device-selection.component';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import { makeStyles } from '@mui/styles';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        root: {
-            width: '100%',
-        },
-        backButton: {
-            marginRight: theme.spacing(1),
-        },
-        instructions: {
-            marginTop: theme.spacing(1),
-            marginBottom: theme.spacing(1),
-        },
-        formControl: {
-            margin: theme.spacing(1),
-            minWidth: 120,
-        },
-        selectEmpty: {
-            marginTop: theme.spacing(2),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    paper: {
+        maxWidth: 1200,
+        margin: 'auto',
+        overflow: 'hidden',
+    },
+    searchBar: {
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+    },
+    searchInput: {
+        fontSize: theme.typography.fontSize,
+    },
+    root: {
+        width: '100%',
+    },
+    backButton: {
+        marginRight: theme.spacing(1),
+    },
+    instructions: {
+        marginTop: theme.spacing(1),
+        marginBottom: theme.spacing(1),
+    },
+    formControl: {
+        margin: theme.spacing(1),
+        minWidth: 120,
+    },
+    selectEmpty: {
+        marginTop: theme.spacing(2),
+    },
+    contentWrapper: {
+        margin: '40px 16px',
+    },
+}));
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -82,13 +81,15 @@ function getDeviceOption(): Array<Object> {
     return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
-interface TestContentProps extends WithStyles<typeof styles> {
+interface TestContentProps {
     test: ITestData
 }
 
-const EditTestPage: FC<TestContentProps> = (props) => {
-    const { test, classes } = props;
+const EditTestPage: FC<TestContentProps> = (props: TestContentProps) => {
+
     const history = useHistory();
+
+    const { test } = props;
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
@@ -130,7 +131,7 @@ const EditTestPage: FC<TestContentProps> = (props) => {
         if (test.TestConfig.Unity !== null) {
             test.TestConfig.Unity.RunAllTests = unityTestExecution == 0;
         }
-        updateTest(test.ID, test).then(response => {
+        updateTest(test.ID as number, test).then(response => {
             console.log(response.data);
             history.push('/web/tests');
         }).catch(ex => {
@@ -158,8 +159,13 @@ const EditTestPage: FC<TestContentProps> = (props) => {
     }, [test]);
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -188,7 +194,7 @@ const EditTestPage: FC<TestContentProps> = (props) => {
                                 Name:
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
-                                <FormControl className={ classes.formControl }>
+                                <FormControl>
                                     <TextField required={ true } id="test-name" label="Name"
                                         value={ testName }
                                         onChange={ onTestNameChanged }/>
@@ -302,8 +308,7 @@ const EditTestPage: FC<TestContentProps> = (props) => {
 
                                         { unityTestExecution === 1 && (
                                             <div>
-                                                <TestMethodSelection classes={ classes }
-                                                    onSelectionChanged={ handleFunctionSelection }/>
+                                                <TestMethodSelection onSelectionChanged={ handleFunctionSelection }/>
                                             </div>
                                         ) }
                                     </Grid>
@@ -316,4 +321,4 @@ const EditTestPage: FC<TestContentProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(EditTestPage);
+export default EditTestPage;

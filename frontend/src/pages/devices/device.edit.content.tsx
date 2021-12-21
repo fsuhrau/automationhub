@@ -1,59 +1,31 @@
-import React, { FC } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { FC, useState } from 'react';
+import Paper from '@mui/material/Paper';
 import {
-    Box, Checkbox,
+    Box,
+    Checkbox,
     Divider,
-    FormControl, FormControlLabel,
+    FormControl,
+    FormControlLabel,
     IconButton,
+    Input,
+    InputLabel,
+    MenuItem,
     Select,
+    SelectChangeEvent,
     TextField,
     Typography,
-} from '@material-ui/core';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
+} from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import { updateDevice } from '../../services/device.service';
 import { useHistory } from 'react-router-dom';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 import IDeviceParameter from '../../types/device.parameter';
-import { Add, Remove } from '@material-ui/icons';
+import { Add, Remove } from '@mui/icons-material';
 import { DeviceType } from '../../types/device.type.enum';
-
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-        heading: {
-            fontSize: theme.typography.pxToRem(15),
-            flexBasis: '33.33%',
-            flexShrink: 0,
-        },
-        secondaryHeading: {
-            fontSize: theme.typography.pxToRem(15),
-            color: theme.palette.text.secondary,
-        },
-    });
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -65,26 +37,25 @@ function getConnectionType(): Array<{ id: DeviceConnectionType, name: string }> 
     return ToArray(DeviceConnectionType) as Array<{ id: DeviceConnectionType, name: string }>;
 }
 
-interface DeviceEditProps extends WithStyles<typeof styles> {
+interface DeviceEditProps {
     device: IDeviceData
 }
 
 const DeviceEditContent: FC<DeviceEditProps> = props => {
+
     const history = useHistory();
 
-    const { device, classes } = props;
+    const { device } = props;
 
-    const connectionTypes = getConnectionType();
-
-    const [parameter, setParameter] = React.useState<IDeviceParameter[]>(device.Parameter);
+    const [parameter, setParameter] = useState<IDeviceParameter[]>(device.Parameter);
     const updateParameterKey = (index: number, value: string) => {
         const newParams = [...parameter];
-        newParams[index].Key = value;
+        newParams[ index ].Key = value;
         setParameter(newParams);
     };
     const updateParameterValue = (index: number, value: string) => {
         const newParams = [...parameter];
-        newParams[index].Value = value;
+        newParams[ index ].Value = value;
         setParameter(newParams);
     };
 
@@ -99,19 +70,36 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
         setParameter([...parameter]);
     };
 
-    const [acknowledged, setAcknowledged] = React.useState<boolean>(device.IsAcknowledged);
+    const [acknowledged, setAcknowledged] = useState<boolean>(device.IsAcknowledged);
+
+    const connectionTypes = getConnectionType();
+    const [connectionType, setConnectionType] = useState<DeviceConnectionType>(device.ConnectionParameter.ConnectionType);
+    const handleConnectionTypeChange = (event: SelectChangeEvent) => {
+        setConnectionType(+event.target.value as DeviceConnectionType);
+    };
+
+    const [ipAddress, setIPAddress] = useState<string>(device.ConnectionParameter.IP);
+    const [port, setPort] = useState<number>(device.ConnectionParameter.Port);
 
     const saveChanges = () => {
         device.Parameter = parameter;
         device.IsAcknowledged = acknowledged;
+        device.ConnectionParameter.ConnectionType = connectionType;
+        device.ConnectionParameter.IP = ipAddress;
+        device.ConnectionParameter.Port = port;
         updateDevice(device, device.ID).then(response => {
-            history.push(`/web/device/${device.ID}`);
+            history.push(`/web/device/${ device.ID }`);
         });
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={ { maxWidth: 1200, margin: 'auto', overflow: 'hidden' } }>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={ 0 }
+                sx={ { borderBottom: '1px solid rgba(0, 0, 0, 0.12)' } }
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -129,7 +117,7 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
             <Box sx={ { p: 2, m: 2 } }>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography variant={ 'h6' }>Device Infos</Typography>
+                        <Typography variant={ 'h1' }>Device Infos</Typography>
                         <Divider/>
                         <br/>
                         <Grid container={ true }>
@@ -161,7 +149,7 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 Type:
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
-                                { DeviceType[device.DeviceType] }
+                                { DeviceType[ device.DeviceType ] }
                             </Grid>
                             <Grid item={ true } xs={ 2 }>
                                 Operation System:
@@ -175,7 +163,9 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
                                 <FormControlLabel
-                                    control={<Checkbox checked={acknowledged} onChange={(event, checked)  => setAcknowledged(checked) } name="ack" />}
+                                    control={ <Checkbox checked={ acknowledged }
+                                        onChange={ (event, checked) => setAcknowledged(checked) }
+                                        name="ack"/> }
                                     label="Acknowledged"
                                 />
                             </Grid>
@@ -192,52 +182,65 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                                 Type
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
-                                <FormControl className={ classes.formControl }>
-                                    <Select native={ true }
-                                        value={ device.ConnectionParameter.ConnectionType }
-                                        name={ 'connection-type-selection' }
-                                        onChange={ event => device.ConnectionParameter.ConnectionType = (+(event.target.value as string) as DeviceConnectionType) }
-                                        inputProps={ {
-                                            name: 'Connection Type',
-                                            id: 'connection-types',
-                                        } }>
+                                <FormControl variant="filled" sx={ { m: 1, minWidth: 120 } }>
+                                    <InputLabel id="demo-simple-select-filled-label">Connection Type</InputLabel>
+                                    <Select
+                                        labelId="demo-simple-select-filled-label"
+                                        id="demo-simple-select-filled"
+                                        value={ connectionType.toString() }
+                                        onChange={ handleConnectionTypeChange }
+                                    >
                                         { connectionTypes.map((value: { id: DeviceConnectionType, name: string }) => (
-                                            <option key={ 'ct_' + value.id.toString() }
-                                                value={ value.id.toString() }>{ value.name }</option>
+                                            <MenuItem value={ value.id }>{ value.name }</MenuItem>
                                         )) }
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item={ true } xs={ 2 }>
-                                IP:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                <TextField id="connection_ip" value={ device.ConnectionParameter.IP }
-                                    onChange={ event => device.ConnectionParameter.IP = event.target.value }/>
-                            </Grid>
-                            <Grid item={ true } xs={ 2 }>
-                                Port:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                <TextField id="connection_port" value={ device.ConnectionParameter.Port }
-                                    onChange={ event => device.ConnectionParameter.Port = +event.target.value }/>
-                            </Grid>
+                            { connectionType == DeviceConnectionType.Remote && (
+                                <>
+                                    <Grid item={ true } xs={ 2 }>
+                                        IP:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        <FormControl>
+                                            <Input id="connection_ip" aria-describedby="ip-address"
+                                                value={ ipAddress }
+                                                onChange={ event => setIPAddress(event.target.value) }/>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Port:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        <FormControl>
+                                            <Input id="connection_ip" aria-describedby="ip-address"
+                                                value={ port }
+                                                onChange={ event => setPort(+event.target.value) }/>
+                                        </FormControl>
+                                    </Grid>
+                                </>
+                            )}
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid container={ true }>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid item={ true } xs={ 12 } component="form"
+                        sx={ {
+                            '& .MuiTextField-root': { m: 1, width: '25ch' },
+                        } }>
                         <Typography variant={ 'h6' }>Parameter</Typography>
                         <Divider/>
-                        <br />
+                        <br/>
                         <Grid container={ true }>
-                            { parameter.map((value, index)  => (
+                            { parameter.map((value, index) => (
                                 <>
                                     <Grid item={ true } xs={ 2 }>
-                                        <TextField id={`update_parameter_key_${index}`} value={ value.Key }  onChange={ event => updateParameterKey(index, event.target.value) }/>
+                                        <TextField id={ `update_parameter_key_${ index }` } value={ value.Key }
+                                            onChange={ event => updateParameterKey(index, event.target.value) }/>
                                     </Grid>
                                     <Grid item={ true } xs={ 2 }>
-                                        <TextField id={`update_parameter_value_${index}`} value={ value.Value }  onChange={ event => updateParameterValue(index, event.target.value) }/>
+                                        <TextField id={ `update_parameter_value_${ index }` } value={ value.Value }
+                                            onChange={ event => updateParameterValue(index, event.target.value) }/>
                                     </Grid>
                                     <Grid item={ true } xs={ 8 }>
                                         <IconButton color="secondary" aria-label="remove" component="span"
@@ -262,9 +265,9 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                 <br/>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography className={ classes.heading }>Hardware</Typography>
+                        <Typography variant={ 'h1' }>Hardware</Typography>
                         <Divider/>
-                        <br />
+                        <br/>
                         <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 RAM:
@@ -296,9 +299,9 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                 <br/>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography className={ classes.heading }>Graphic</Typography>
+                        <Typography variant={ 'h1' }>Graphic</Typography>
                         <Divider/>
-                        <br />
+                        <br/>
                         <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 Display:
@@ -322,12 +325,12 @@ const DeviceEditContent: FC<DeviceEditProps> = props => {
                     </Grid>
                 </Grid>
                 <br/>
-                <Grid container={ true } justify="flex-end">
-                    <Button variant="contained" color="primary" size="small" onClick={saveChanges}>Save</Button>
+                <Grid container={ true } justifyContent="flex-end">
+                    <Button variant="contained" color="primary" size="small" onClick={ saveChanges }>Save</Button>
                 </Grid>
             </Box>
         </Paper>
     );
 };
 
-export default withStyles(styles)(DeviceEditContent);
+export default DeviceEditContent;

@@ -1,12 +1,11 @@
-import { ChangeEvent, FC, MouseEvent, useEffect, useState } from 'react';
-import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
 import IDeviceData from '../types/device';
 import { getAllDevices, runTest } from '../services/device.service';
@@ -16,34 +15,23 @@ import {
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle, IconButton,
+    DialogTitle,
+    IconButton,
     TextField,
     Typography,
-} from '@material-ui/core';
-import { ArrowForward, PlayArrow } from '@material-ui/icons';
+} from '@mui/material';
+import { ArrowForward, PlayArrow } from '@mui/icons-material';
 import { useSSE } from 'react-hooks-sse';
-import AppSelection from './app-selection.component';
-import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
-
-const styles = (): ReturnType<typeof createStyles> =>
-    createStyles({
-        table: {
-            minWidth: 650,
-        },
-    });
-
-export type DeviceProps = WithStyles<typeof styles>;
 
 interface DeviceChangePayload {
     DeviceID: number,
     DeviceState: number
 }
 
-const DeviceTable: FC<DeviceProps> = (props) => {
+const DeviceTable: FC = () => {
     const history = useHistory();
 
-    const { classes } = props;
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
@@ -114,7 +102,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     };
 
     function openDetails(id: number): void {
-        history.push(`/web/device/${id}`);
+        history.push(`/web/device/${ id }`);
     }
 
     return (
@@ -125,7 +113,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                     <DialogContentText>
                         Enter Test to execute
                     </DialogContentText>
-                    <Typography variant={ 'subtitle1'}>
+                    <Typography variant={ 'subtitle1' }>
                         Parameter:
                     </Typography>
                     <Typography variant={ 'subtitle2' }>
@@ -169,7 +157,7 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                 </DialogActions>
             </Dialog>
             <TableContainer component={ Paper }>
-                <Table className={ classes.table } size="small" aria-label="a dense table">
+                <Table size="small" aria-label="a dense table">
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
@@ -196,14 +184,15 @@ const DeviceTable: FC<DeviceProps> = (props) => {
                             <TableCell>{ deviceState(device.Status) }</TableCell>
                             <TableCell>{ device.Connection?.appID }</TableCell>
                             <TableCell align="right">
-                                { device.Connection && ( <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
-                                    onClick={ (e) => {
-                                        setSelectedDeviceID(device.ID as number);
-                                        handleClickOpen();
-                                    } }>
-                                    Run
-                                </Button>) }
-                                <IconButton color="primary" size={'small'}
+                                { device.Connection && (
+                                    <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
+                                        onClick={ (e) => {
+                                            setSelectedDeviceID(device.ID as number);
+                                            handleClickOpen();
+                                        } }>
+                                        Run
+                                    </Button>) }
+                                <IconButton color="primary" size={ 'small' }
                                     onClick={ (e) => {
                                         openDetails(device.ID);
                                     } }>
@@ -218,4 +207,4 @@ const DeviceTable: FC<DeviceProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(DeviceTable);
+export default DeviceTable;

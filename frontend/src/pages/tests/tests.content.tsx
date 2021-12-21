@@ -1,44 +1,40 @@
-import { FC } from 'react';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import SearchIcon from '@material-ui/icons/Search';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import TestsTable from '../../components/tests-table.component';
 import { useHistory } from 'react-router-dom';
 import { AppContext } from '../../context/app.context';
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
+import { makeStyles } from '@mui/styles';
+import { FC } from 'react';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-    });
-
-export type TestsProps = WithStyles<typeof styles>;
-
-const Tests: FC<TestsProps> = (props) => {
-    const { classes } = props;
+/*
+const useStyles = makeStyles(theme => ({
+    paper: {
+        maxWidth: 1200,
+        margin: 'auto',
+        overflow: 'hidden',
+    },
+    searchBar: {
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+    },
+    searchInput: {
+        fontSize: theme.typography.fontSize,
+    },
+    block: {
+        display: 'block',
+    },
+    addUser: {
+        marginRight: theme.spacing(1),
+    },
+    contentWrapper: {
+        margin: '40px 16px',
+    },
+}));
+*/
+const Tests: FC = () => {
 
     const history = useHistory();
 
@@ -48,8 +44,13 @@ const Tests: FC<TestsProps> = (props) => {
 
     return (
         <AppContext.Provider value={ { title: 'Tests' } }>
-            <Paper className={ classes.paper }>
-                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+            <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+                <AppBar
+                    position="static"
+                    color="default"
+                    elevation={0}
+                    sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                >
                     <Toolbar>
                         <Grid container={ true } spacing={ 2 } alignItems="center">
                             <Grid item={ true }>
@@ -74,4 +75,4 @@ const Tests: FC<TestsProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(Tests);
+export default Tests;

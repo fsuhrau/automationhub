@@ -1,33 +1,32 @@
 import React, { ChangeEvent, FC, ReactElement, useEffect } from 'react';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import Checkbox from '@material-ui/core/Checkbox';
-import Button from '@material-ui/core/Button';
-import Paper from '@material-ui/core/Paper';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Checkbox from '@mui/material/Checkbox';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
 import IAppFunctionData from '../types/app.function';
-import { TextField, Typography } from '@material-ui/core';
+import { TextField, Typography } from '@mui/material';
 import { getTestFunctions } from '../services/unity.service';
+import { makeStyles } from '@mui/styles';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        root: {
-            margin: 'auto',
-        },
-        paper: {
-            width: 300,
-            height: 330,
-            overflow: 'auto',
-        },
-        button: {
-            margin: theme.spacing(0.5, 0),
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    root: {
+        margin: 'auto',
+    },
+    paper: {
+        width: 300,
+        height: 330,
+        overflow: 'auto',
+    },
+    button: {
+        margin: '1px',
+    },
+}));
 
-interface TestMethodSelectionProps extends WithStyles<typeof styles> {
+interface TestMethodSelectionProps {
     onSelectionChanged: (functions: IAppFunctionData[]) => void;
 }
 
@@ -40,7 +39,8 @@ function intersection(a: IAppFunctionData[], b: IAppFunctionData[]): IAppFunctio
 }
 
 const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
-    const { classes, onSelectionChanged } = props;
+    const classes = useStyles();
+    const { onSelectionChanged } = props;
 
     const [checked, setChecked] = React.useState<IAppFunctionData[]>([]);
 
@@ -107,16 +107,16 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
 
     function trimClass(className: string): string {
         const elements = className.split('.');
-        return elements[elements.length - 1];
+        return elements[ elements.length - 1 ];
     }
 
     function trimMethod(methodSignature: string): string {
         const elements = methodSignature.split(' ');
-        return elements[elements.length - 1];
+        return elements[ elements.length - 1 ];
     }
 
     const customList = (items: IAppFunctionData[]): ReactElement => (
-        <Paper className={ classes.paper } style={{ overflow: 'auto' }}>
+        <Paper className={ classes.paper } style={ { overflow: 'auto' } }>
             <List dense={ true } component="div" role="list">
                 { items.map((value) => {
                     const labelId = `transfer-list-item-${ value.ID }-label`;
@@ -131,7 +131,8 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
                                     inputProps={ { 'aria-labelledby': labelId } }
                                 />
                             </ListItemIcon>
-                            <ListItemText id={ labelId } primary={ `${ trimClass(value.Class) } ${ trimMethod(value.Method) }` }/>
+                            <ListItemText id={ labelId }
+                                primary={ `${ trimClass(value.Class) } ${ trimMethod(value.Method) }` }/>
                         </ListItem>
                     );
                 }) }
@@ -158,7 +159,7 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
                 <TextField
                     id="outlined-multiline-static"
                     label="Paste Test Functions here"
-                    multiline={true}
+                    multiline={ true }
                     rows={ 6 }
                     defaultValue={ testJson }
                     variant="outlined"
@@ -232,4 +233,4 @@ const TestMethodSelection: FC<TestMethodSelectionProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(TestMethodSelection);
+export default TestMethodSelection;

@@ -1,85 +1,59 @@
 import { FC } from 'react';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import Tooltip from '@material-ui/core/Tooltip';
-import IconButton from '@material-ui/core/IconButton';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import SearchIcon from '@material-ui/icons/Search';
-import RefreshIcon from '@material-ui/icons/Refresh';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
+import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-    });
-
-export type ContentProps = WithStyles<typeof styles>;
-
-const Content: FC<ContentProps> = (props) => {
-    const { classes } = props;
-
+const Content: FC = () => {
     return (
-        <Paper className={classes.paper}>
-            <AppBar className={classes.searchBar} position="static" color="default" elevation={0}>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
-                    <Grid container={true} spacing={2} alignItems="center">
-                        <Grid item={true}>
-                            <SearchIcon className={classes.block} color="inherit"/>
+                    <Grid container={ true } spacing={ 2 } alignItems="center">
+                        <Grid item={ true }>
+                            <SearchIcon color="inherit" sx={{ display: 'block' }} />
                         </Grid>
-                        <Grid item={true} xs={true}>
+                        <Grid item={ true } xs={ true }>
                             <TextField
                                 fullWidth={true}
-                                placeholder="Search by email address, phone number, or user UID your mam"
+                                placeholder=""
                                 InputProps={{
                                     disableUnderline: true,
-                                    className: classes.searchInput,
+                                    sx: { fontSize: 'default' },
                                 }}
+                                variant="standard"
                             />
                         </Grid>
-                        <Grid item={true}>
-                            <Button variant="contained" color="primary" className={classes.addUser}>
+                        <Grid item={ true }>
+                            <Button variant="contained" sx={{ mr: 1 }}>
                                 Add user
                             </Button>
                             <Tooltip title="Reload">
                                 <IconButton>
-                                    <RefreshIcon className={classes.block} color="inherit"/>
+                                    <RefreshIcon color="inherit" sx={{ display: 'block' }} />
                                 </IconButton>
                             </Tooltip>
                         </Grid>
                     </Grid>
                 </Toolbar>
             </AppBar>
-
-            <div className={classes.contentWrapper}>
-                <Typography color="textSecondary" align="center">
-                    No users for this project yet
-                </Typography>
-            </div>
+            <Typography color="textSecondary" align="center">
+                No users for this project yet
+            </Typography>
         </Paper>
     );
 };
 
-export default withStyles(styles)(Content);
+export default Content;

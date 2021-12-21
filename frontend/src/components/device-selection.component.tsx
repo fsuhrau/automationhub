@@ -1,34 +1,32 @@
 import React, { FC, ReactElement, useEffect } from 'react';
-import { Theme, createStyles, WithStyles, withStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import Checkbox from '@material-ui/core/Checkbox';
-import Button from '@material-ui/core/Button';
-import Paper from '@material-ui/core/Paper';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Checkbox from '@mui/material/Checkbox';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
 import IDeviceData from '../types/device';
 import { getAllDevices } from '../services/device.service';
-import { Typography } from '@material-ui/core';
-import { findAllByAltText } from '@testing-library/react';
+import { Typography } from '@mui/material';
+import { makeStyles } from '@mui/styles';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        root: {
-            margin: 'auto',
-        },
-        paper: {
-            width: 200,
-            height: 230,
-            overflow: 'auto',
-        },
-        button: {
-            margin: theme.spacing(0.5, 0),
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    root: {
+        margin: 'auto',
+    },
+    paper: {
+        width: 200,
+        height: 230,
+        overflow: 'auto',
+    },
+    button: {
+        margin: '0px',
+    },
+}));
 
-interface DeviceSelectionProps extends WithStyles<typeof styles> {
+interface DeviceSelectionProps {
     onSelectionChanged: (devices: IDeviceData[]) => void;
     selectedDevices: IDeviceData[];
 }
@@ -42,7 +40,8 @@ function intersection(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
 }
 
 const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
-    const { classes, selectedDevices, onSelectionChanged } = props;
+    const classes = useStyles();
+    const { selectedDevices, onSelectionChanged } = props;
 
     const [checked, setChecked] = React.useState<IDeviceData[]>([]);
 
@@ -189,4 +188,4 @@ const DeviceSelection: FC<DeviceSelectionProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(DeviceSelection);
+export default DeviceSelection;

@@ -1,6 +1,5 @@
 import React, { FC } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { createStyles, Theme, withStyles } from '@material-ui/core/styles';
+import Paper from '@mui/material/Paper';
 import {
     Box,
     Button,
@@ -8,16 +7,15 @@ import {
     FormControlLabel,
     Grid,
     InputLabel,
-    makeStyles,
     Radio,
     RadioGroup,
-    Select,
+    Select, SelectChangeEvent,
     Step,
     StepLabel,
     Stepper,
     TextField,
     Typography,
-} from '@material-ui/core';
+} from '@mui/material';
 import { TestExecutionType } from '../../types/test.execution.type.enum';
 import { TestType } from '../../types/test.type.enum';
 import DeviceSelection from '../../components/device-selection.component';
@@ -27,42 +25,9 @@ import ICreateTestData from '../../types/request.create.test';
 import { createTest } from '../../services/test.service';
 import TestMethodSelection from '../../components/testmethod-selection.component';
 import IAppFunctionData from '../../types/app.function';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import { getTestFunctions } from '../../services/unity.service';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
 
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        root: {
-            width: '100%',
-        },
-        backButton: {
-            marginRight: theme.spacing(1),
-        },
-        instructions: {
-            marginTop: theme.spacing(1),
-            marginBottom: theme.spacing(1),
-        },
-        formControl: {
-            margin: theme.spacing(1),
-            minWidth: 120,
-        },
-        selectEmpty: {
-            marginTop: theme.spacing(2),
-        },
-    }),
-);
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
 function ToArray(en: any): Array<Object> {
@@ -90,21 +55,22 @@ function getDeviceOption(): Array<Object> {
 }
 
 const AddTestPage: FC = () => {
-    const classes = useStyles();
+
     const history = useHistory();
+
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
 
     const testTypes = getTestTypes();
     const [testType, setTestType] = React.useState<TestType>(TestType.Unity);
-    const handleTestTypeChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
+    const handleTestTypeChange = (event: SelectChangeEvent<TestType>): void => {
         const type = (+event.target.value as TestType);
         setTestType(type);
     };
 
     const executionTypes = getExecutionTypes();
     const [executionType, setExecutionType] = React.useState<TestExecutionType>(TestExecutionType.Concurrent);
-    const handleExecutionTypeChange = (event: React.ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
+    const handleExecutionTypeChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const type = (+event.target.value as TestExecutionType);
         setExecutionType(type);
     };
@@ -170,8 +136,13 @@ const AddTestPage: FC = () => {
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -186,7 +157,7 @@ const AddTestPage: FC = () => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <div className={ classes.root }>
+            <div>
                 <Stepper activeStep={ activeStep } alternativeLabel={ true }>
                     { steps.map((label) => (
                         <Step key={ label }>
@@ -197,28 +168,28 @@ const AddTestPage: FC = () => {
                 <div>
                     { activeStep === steps.length ? (
                         <div>
-                            <Typography className={ classes.instructions }>Test is being created wait a moment and
+                            <Typography variant={'body1'}>Test is being created wait a moment and
                                 you
                                 get redirected</Typography>
                         </div>
                     ) : (
                         <div>
-                            <Grid container={ true } className={ classes.root } spacing={ 2 }>
+                            <Grid container={ true } spacing={ 2 }>
                                 <Grid item={ true } xs={ 12 }>
                                     <Grid container={ true } justifyContent="center" spacing={ 2 }>
                                         <Grid item={ true }>
                                             { activeStep === 0 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
                                                     alignItems={ 'center' } direction={ 'column' }>
-                                                    <Grid item={ true } sx={ 6 }>
-                                                        <FormControl className={ classes.formControl }>
+                                                    <Grid item={ true } xs={ 6 }>
+                                                        <FormControl>
                                                             <TextField required={ true } id="test-name" label="Name"
                                                                 value={ testName }
                                                                 onChange={ handleTestNameChange }/>
                                                         </FormControl>
                                                     </Grid>
-                                                    <Grid item={ true } sx={ 6 }>
-                                                        <FormControl className={ classes.formControl }>
+                                                    <Grid item={ true } xs={ 6 }>
+                                                        <FormControl>
                                                             <InputLabel htmlFor="test-type-selection">Test
                                                                 Type</InputLabel>
                                                             <Select native={ true } value={ testType }
@@ -237,7 +208,7 @@ const AddTestPage: FC = () => {
                                                             </Select>
                                                         </FormControl>
                                                     </Grid>
-                                                    <Grid item={ true } sx={ 6 }>
+                                                    <Grid item={ true } xs={ 6 }>
                                                         <Grid container={ true } spacing={ 2 }
                                                             alignItems={ 'center' }
                                                             direction={ 'row' }>
@@ -295,8 +266,7 @@ const AddTestPage: FC = () => {
                                                             <Grid item={ true }>
                                                                 { unityTestExecution === 1 && (
                                                                     <div>
-                                                                        <TestMethodSelection classes={ classes }
-                                                                            onSelectionChanged={ handleFunctionSelection }/>
+                                                                        <TestMethodSelection onSelectionChanged={ handleFunctionSelection }/>
                                                                     </div>
                                                                 ) }
                                                             </Grid>
@@ -345,13 +315,12 @@ const AddTestPage: FC = () => {
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <Grid container={ true } justify={ 'flex-end' }>
-                                <Grid item={ true } >
+                            <Grid container={ true } justifyContent={'flex-end'} >
+                                <Grid item={ true }>
                                     <Box sx={ { p: 2, m: 2 } }>
                                         <Button
                                             disabled={ activeStep === 0 }
                                             onClick={ handleBack }
-                                            className={ classes.backButton }
                                         >
                                             Back
                                         </Button>
@@ -369,4 +338,4 @@ const AddTestPage: FC = () => {
     );
 };
 
-export default withStyles(useStyles)(AddTestPage);
+export default AddTestPage;

@@ -1,52 +1,24 @@
 import { FC, useEffect, useState } from 'react';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import SearchIcon from '@material-ui/icons/Search';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import SearchIcon from '@mui/icons-material/Search';
 import { useHistory } from 'react-router-dom';
-import TableContainer from '@material-ui/core/TableContainer';
-import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
-import TableBody from '@material-ui/core/TableBody';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData from '../../types/app';
 import Moment from 'react-moment';
-import { Typography } from '@material-ui/core';
-import { AndroidRounded, Apple } from '@material-ui/icons';
+import { Typography } from '@mui/material';
+import { AndroidRounded, Apple } from '@mui/icons-material';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-    });
-
-export type AppsProps = WithStyles<typeof styles>;
-
-const AppsPage: FC<AppsProps> = (props) => {
-    const { classes } = props;
+const AppsPage: FC = () => {
 
     const history = useHistory();
 
@@ -99,8 +71,13 @@ const AppsPage: FC<AppsProps> = (props) => {
 
     return (
         <div>
-            <Paper className={ classes.paper }>
-                <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+            <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+                <AppBar
+                    position="static"
+                    color="default"
+                    elevation={0}
+                    sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                >
                     <Toolbar>
                         <Grid container={ true } spacing={ 2 } alignItems="center">
                             <Grid item={ true }>
@@ -121,7 +98,7 @@ const AppsPage: FC<AppsProps> = (props) => {
                     </Toolbar>
                 </AppBar>
                 <TableContainer component={ Paper }>
-                    <Table className={ classes.table } size="small" aria-label="a dense table">
+                    <Table size="small" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
                                 <TableCell>ID</TableCell>
@@ -163,4 +140,4 @@ const AppsPage: FC<AppsProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(AppsPage);
+export default AppsPage;

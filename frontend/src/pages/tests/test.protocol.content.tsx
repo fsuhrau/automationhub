@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
 import ITestRunData from '../../types/test.run';
-import { Backdrop, CircularProgress, Typography } from '@material-ui/core';
+import { Backdrop, CircularProgress, Typography } from '@mui/material';
 
 interface ParamTypes {
     testId: string

@@ -1,23 +1,19 @@
 import React, { FC } from 'react';
 import clsx from 'clsx';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import Divider from '@material-ui/core/Divider';
-import Drawer, { DrawerProps } from '@material-ui/core/Drawer';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import HomeIcon from '@material-ui/icons/Home';
-import PeopleIcon from '@material-ui/icons/People';
-import DnsRoundedIcon from '@material-ui/icons/DnsRounded';
-import PermMediaOutlinedIcon from '@material-ui/icons/PhotoSizeSelectActual';
-import SettingsEthernetIcon from '@material-ui/icons/SettingsEthernet';
-import TimerIcon from '@material-ui/icons/Timer';
-import SettingsIcon from '@material-ui/icons/Settings';
-import PhonelinkSetupIcon from '@material-ui/icons/PhonelinkSetup';
-import { Omit } from '@material-ui/types';
+import Divider from '@mui/material/Divider';
+import Drawer, { DrawerProps } from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import HomeIcon from '@mui/icons-material/Home';
+import DnsRoundedIcon from '@mui/icons-material/DnsRounded';
+import PermMediaOutlinedIcon from '@mui/icons-material/PhotoSizeSelectActual';
+import PhonelinkSetupIcon from '@mui/icons-material/PhonelinkSetup';
+import { DistributiveOmit } from '@mui/types';
 import { NavLink } from 'react-router-dom';
-import { Link } from '@material-ui/core';
+import { Box, Link, ListItemButton } from '@mui/material';
+import { makeStyles } from '@mui/styles';
 
 const categories = [
     {
@@ -39,116 +35,69 @@ const categories = [
     },
 ];
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        categoryHeader: {
-            paddingTop: theme.spacing(2),
-            paddingBottom: theme.spacing(2),
-        },
-        categoryHeaderPrimary: {
-            color: theme.palette.common.white,
-        },
-        item: {
-            paddingTop: 1,
-            paddingBottom: 1,
-            color: 'rgba(255, 255, 255, 0.7)',
-            textDecoration: 'none',
-            '&:hover,&:focus': {
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-            },
-        },
-        itemCategory: {
-            backgroundColor: '#232f3e',
-            boxShadow: '0 -1px 0 #404854 inset',
-            paddingTop: theme.spacing(2),
-            paddingBottom: theme.spacing(2),
-        },
-        firebase: {
-            fontSize: 24,
-            color: theme.palette.common.white,
-        },
-        activeLink: {
-            '& $item': {
-                color: '#4fc3f7',
-            },
-        },
-        itemPrimary: {
-            fontSize: 'inherit',
-        },
-        itemIcon: {
-            minWidth: 'auto',
-            marginRight: theme.spacing(2),
-        },
-        divider: {
-            marginTop: theme.spacing(2),
-        },
-    });
+const item = {
+    py: '2px',
+    px: 3,
+    color: 'rgba(255, 255, 255, 0.7)',
+    '&:hover, &:focus': {
+        bgcolor: 'rgba(255, 255, 255, 0.08)',
+    },
+};
 
-export interface NavigatorProps extends Omit<DrawerProps, 'classes'>, WithStyles<typeof styles> {
-}
+const itemCategory = {
+    boxShadow: '0 -1px 0 rgb(255,255,255,0.1) inset',
+    py: 1.5,
+    px: 3,
+};
+
+export type NavigatorProps = DistributiveOmit<DrawerProps, 'classes'>;
 
 const Navigator: FC<NavigatorProps> = (props) => {
-    const { classes, ...other } = props;
+
+    const { ...other } = props;
 
     return (
-        <Drawer variant="permanent" {...other}>
-            <List disablePadding={true}>
-                <ListItem className={clsx(classes.firebase, classes.item, classes.itemCategory)}>
+        <Drawer variant="permanent" { ...other }>
+            <List disablePadding={ true }>
+                <ListItem sx={{ ...item, ...itemCategory, fontSize: 22, color: '#fff' }}>
                     Automation Hub
                 </ListItem>
-                <ListItem className={clsx(classes.item, classes.itemCategory)}>
-                    <ListItemIcon className={classes.itemIcon}>
+                <ListItem sx={{ ...item, ...itemCategory }}>
+                    <ListItemIcon>
                         <HomeIcon/>
                     </ListItemIcon>
-                    <ListItemText
-                        classes={{
-                            primary: classes.itemPrimary,
-                        }}
-                    >
+                    <ListItemText>
                         Project Overview
                     </ListItemText>
                 </ListItem>
-                {categories.map(({ id, children }) => (
-                    <React.Fragment key={id}>
-                        <ListItem className={classes.categoryHeader}>
-                            <ListItemText
-                                classes={{
-                                    primary: classes.categoryHeaderPrimary,
-                                }}
-                            >
-                                {id}
+                { categories.map(({ id, children }) => (
+                    <Box key={id} sx={{ bgcolor: '#101F33' }}>
+                        <ListItem sx={{ py: 2, px: 3 }} >
+                            <ListItemText sx={{ color: '#fff' }}>
+                                { id }
                             </ListItemText>
                         </ListItem>
-                        {children.map(({ id: childId, ref, icon }) => (
+                        { children.map(({ id: childId, ref, icon }) => (
                             <Link
-                                key={childId}
-                                component={NavLink}
-                                to={ref}
-                                activeClassName={classes.activeLink}
+                                key={ childId }
+                                component={ NavLink }
+                                to={ ref }
                                 underline="none"
                             >
-                                <ListItem
-                                    key={childId}
-                                    button={true}
-                                    className={classes.item}
-                                >
-                                    <ListItemIcon className={classes.itemIcon}>{icon}</ListItemIcon>
-                                    <ListItemText
-                                        classes={{
-                                            primary: classes.itemPrimary,
-                                        }}
-                                    >
-                                        {childId}
-                                    </ListItemText>
+                                <ListItem disablePadding={true} key={childId}>
+                                    <ListItemButton sx={item}>
+                                        <ListItemIcon>{icon}</ListItemIcon>
+                                        <ListItemText>{childId}</ListItemText>
+                                    </ListItemButton>
                                 </ListItem>
                             </Link>
-                        ))}
-                        <Divider className={classes.divider}/>
-                    </React.Fragment>
-                ))}
+                        )) }
+                        <Divider sx={{ mt: 2 }} />
+                    </Box>
+                )) }
             </List>
         </Drawer>
     );
 };
 
-export default withStyles(styles)(Navigator);
+export default Navigator;

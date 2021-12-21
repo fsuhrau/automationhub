@@ -1,5 +1,4 @@
 import React, { FC, useContext, useEffect, useState } from 'react';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import {
     Box,
     Button,
@@ -14,7 +13,7 @@ import {
     TableHead,
     TableRow,
     Typography,
-} from '@material-ui/core';
+} from '@mui/material';
 import ITestRunData from '../types/test.run';
 import { TestResultState } from '../types/test.result.state.enum';
 import TestStatusIconComponent from '../components/test-status-icon.component';
@@ -26,38 +25,11 @@ import ITestProtocolData from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
-import { KeyboardArrowLeft, KeyboardArrowRight } from '@material-ui/icons';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-        table: {
-            minWidth: 650,
-        },
-    });
-
-interface TestRunContentProps extends WithStyles<typeof styles> {
+interface TestRunContentProps {
     testRun: ITestRunData
     nextRunId: number
     prevRunId: number
@@ -74,7 +46,8 @@ interface NewProtocolPayload {
 }
 
 const TestRunContent: FC<TestRunContentProps> = (props) => {
-    const { testRun, nextRunId, prevRunId, classes } = props;
+
+    const { testRun, nextRunId, prevRunId } = props;
 
     const testContext = useContext(TestContext);
     const { test, setTest } = testContext;
@@ -170,8 +143,13 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -300,7 +278,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <TableContainer>
-                            <Table className={ classes.table } size="small" aria-label="a dense table">
+                            <Table size="small" aria-label="a dense table">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Test</TableCell>
@@ -344,7 +322,7 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
                         <Typography variant={ 'h6' }>Executor Log</Typography>
                         <Divider/>
                         <TableContainer>
-                            <Table className={ classes.table } size="small" aria-label="a dense table">
+                            <Table size="small" aria-label="a dense table">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Date</TableCell>
@@ -370,4 +348,4 @@ const TestRunContent: FC<TestRunContentProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(TestRunContent);
+export default TestRunContent;

@@ -1,48 +1,47 @@
 import React, { FC } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import { Box, Button, Divider, Grid, Typography } from '@material-ui/core';
+import Paper from '@mui/material/Paper';
+import { Box, Button, Divider, Grid, Typography } from '@mui/material';
 import { TestExecutionType } from '../../types/test.execution.type.enum';
 import { TestType } from '../../types/test.type.enum';
 import { useHistory } from 'react-router-dom';
 import ITestData from '../../types/test';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import { makeStyles } from '@mui/styles';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        root: {
-            width: '100%',
-        },
-        backButton: {
-            marginRight: theme.spacing(1),
-        },
-        instructions: {
-            marginTop: theme.spacing(1),
-            marginBottom: theme.spacing(1),
-        },
-        formControl: {
-            margin: theme.spacing(1),
-            minWidth: 120,
-        },
-        selectEmpty: {
-            marginTop: theme.spacing(2),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    paper: {
+        maxWidth: 1200,
+        margin: 'auto',
+        overflow: 'hidden',
+    },
+    searchBar: {
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+    },
+    searchInput: {
+        fontSize: theme.typography.fontSize,
+    },
+    root: {
+        width: '100%',
+    },
+    backButton: {
+        marginRight: theme.spacing(1),
+    },
+    instructions: {
+        marginTop: theme.spacing(1),
+        marginBottom: theme.spacing(1),
+    },
+    formControl: {
+        margin: theme.spacing(1),
+        minWidth: 120,
+    },
+    selectEmpty: {
+        marginTop: theme.spacing(2),
+    },
+    contentWrapper: {
+        margin: '40px 16px',
+    },
+}));
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -66,13 +65,13 @@ function getDeviceOption(): Array<Object> {
     return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
-interface TestContentProps extends WithStyles<typeof styles> {
+interface TestContentProps {
     test: ITestData
 }
 
-
 const ShowTestPage: FC<TestContentProps> = (props) => {
-    const { test, classes } = props;
+
+    const { test } = props;
     const history = useHistory();
 
     const testTypes = getTestTypes();
@@ -103,8 +102,13 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={0}
+                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -127,7 +131,7 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                         <Typography variant={ 'h6' }>Test Configuration</Typography>
                         <Divider/>
                         <br/>
-                        <Grid container={ true } >
+                        <Grid container={ true }>
                             <Grid item={ true } xs={ 2 }>
                                 Type:
                             </Grid>
@@ -140,7 +144,7 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
                             <Grid item={ true } xs={ 10 }>
                                 { getTestExecutionName(test.TestConfig.ExecutionType) }
                                 <br/>
-                                <Typography variant={'caption'}>
+                                <Typography variant={ 'caption' }>
                                     Concurrent = runs each test on a different free
                                     device to get faster results<br/>
                                     Simultaneously = runs every test on every device
@@ -190,4 +194,4 @@ const ShowTestPage: FC<TestContentProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(ShowTestPage);
+export default ShowTestPage;

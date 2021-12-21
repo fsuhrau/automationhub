@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 import IDeviceData from '../../types/device';
 import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';

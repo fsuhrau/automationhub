@@ -1,6 +1,5 @@
 import { ChangeEvent, FC, ReactElement, useEffect, useState } from 'react';
-import { createStyles, Theme, WithStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
+import Grid from '@mui/material/Grid';
 import {
     Box,
     Button,
@@ -8,35 +7,31 @@ import {
     InputLabel,
     LinearProgress,
     LinearProgressProps,
-    MenuItem,
+    MenuItem, SelectChangeEvent,
     Typography,
-    withStyles,
-} from '@material-ui/core';
+} from '@mui/material';
 import IAppData from '../types/app';
 import { getAllApps, uploadNewApp } from '../services/app.service';
-import Select from '@material-ui/core/Select';
+import Select from '@mui/material/Select';
+import { makeStyles } from '@mui/styles';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        root: {
-            margin: 'auto',
-        },
-        paper: {
-            width: 200,
-            height: 230,
-            overflow: 'auto',
-        },
-        button: {
-            margin: theme.spacing(0.5, 0),
-        },
-        input: {
-            display: 'none',
-        },
-        formControl: {
-            margin: theme.spacing(1),
-            minWidth: 120,
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    root: {
+        margin: 'auto',
+    },
+    paper: {
+        width: 200,
+        height: 230,
+        overflow: 'auto',
+    },
+    input: {
+        display: 'none',
+    },
+    formControl: {
+        margin: '1px',
+        minWidth: 120,
+    },
+}));
 
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
@@ -55,13 +50,14 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
 }
 
 
-interface AppSelectionProps extends WithStyles<typeof styles> {
+interface AppSelectionProps {
     onSelectionChanged: (app: IAppData) => void;
     upload: boolean;
 }
 
 const AppSelection: FC<AppSelectionProps> = (props) => {
-    const { classes, onSelectionChanged, upload } = props;
+    const classes = useStyles();
+    const { onSelectionChanged, upload } = props;
 
     const [app, setApp] = useState<IAppData>();
     const [apps, setApps] = useState<IAppData[]>([]);
@@ -102,7 +98,7 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
         }
     };
 
-    const handleChange = (e: ChangeEvent<{ name?: string | undefined, value: unknown }>): void => {
+    const handleChange = (e: SelectChangeEvent<number>): void => {
         e.preventDefault();
         if (e.target.value !== undefined) {
             const appId = e.target.value as number;
@@ -130,7 +126,7 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                         value={ selectedAppID }
                         onChange={ event => handleChange(event) }
                     >
-                        <MenuItem value={0}>Select an App</MenuItem>
+                        <MenuItem value={ 0 }>Select an App</MenuItem>
                         { apps.map((a) =>
                             <MenuItem value={ a.ID }>{ a.Platform } { a.Name } ({ a.Version })</MenuItem>,
                         ) }
@@ -146,32 +142,32 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
                     className={ classes.root }
                 >
                     { upload && (
-                    <Grid item={ true }>
-                        <Box sx={ { width: '200px' } }>
-                            <LinearProgressWithLabel value={ uploadProgress } />
-                        </Box>
-                    </Grid>
+                        <Grid item={ true }>
+                            <Box sx={ { width: '200px' } }>
+                                <LinearProgressWithLabel value={ uploadProgress }/>
+                            </Box>
+                        </Grid>
                     ) }
                     { upload && (
-                    <Grid item={ true }>
-                        <input
-                            accept="*.apk,*.ipa"
-                            className={ classes.input }
-                            id="app-upload"
-                            multiple={ true }
-                            type="file"
-                            onChange={ (e) => {
-                                selectUploadFile(e);
-                            }
-                            }/>
-                        <label htmlFor="app-upload">
-                            <Button variant="outlined"
-                                color="primary"
-                                component="span">
-                                Upload New
-                            </Button>
-                        </label>
-                    </Grid>
+                        <Grid item={ true }>
+                            <input
+                                accept="*.apk,*.ipa"
+                                className={ classes.input }
+                                id="app-upload"
+                                multiple={ true }
+                                type="file"
+                                onChange={ (e) => {
+                                    selectUploadFile(e);
+                                }
+                                }/>
+                            <label htmlFor="app-upload">
+                                <Button variant="outlined"
+                                    color="primary"
+                                    component="span">
+                                    Upload New
+                                </Button>
+                            </label>
+                        </Grid>
                     ) }
                 </Grid>
             </Grid>
@@ -179,4 +175,4 @@ const AppSelection: FC<AppSelectionProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(AppSelection);
+export default AppSelection;

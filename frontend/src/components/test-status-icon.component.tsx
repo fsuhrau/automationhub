@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { TestResultState } from '../types/test.result.state.enum';
-import { ArrowRightRounded, Cancel, CheckCircle, Explicit } from '@material-ui/icons';
+import { ArrowRightRounded, Cancel, CheckCircle, Explicit } from '@mui/icons-material';
 
 export interface TestStatusIconProps {
     status: TestResultState

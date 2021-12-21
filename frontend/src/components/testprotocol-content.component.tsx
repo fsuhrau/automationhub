@@ -1,20 +1,19 @@
 import React, { FC, ReactElement, useEffect, useState } from 'react';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
 import ITestRunData from '../types/test.run';
 import { TestResultState } from '../types/test.result.state.enum';
 import ITestProtocolData from '../types/test.protocol';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import { AvTimer, DateRange, PhoneAndroid, Speed } from '@material-ui/icons';
-import { Box, Button, Card, CardMedia, Popover, Tab, Tabs } from '@material-ui/core';
-import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
-import TableBody from '@material-ui/core/TableBody';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import { AvTimer, DateRange, PhoneAndroid, Speed } from '@mui/icons-material';
+import { Box, Button, Card, CardMedia, Popover, Tab, Tabs } from '@mui/material';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 import Moment from 'react-moment';
 import moment from 'moment';
 import IProtocolEntryData from '../types/protocol.entry';
@@ -25,6 +24,7 @@ import ProtocolLogComponent from './protocol.log.component';
 import ProtocolScreensComponent from './protocol.screens.component';
 import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
 import { Chart, LineSeries, Tooltip, ValueAxis } from '@devexpress/dx-react-chart-material-ui';
+import { makeStyles } from '@mui/styles';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -52,33 +52,28 @@ function TabPanel(props: TabPanelProps): ReactElement {
     );
 }
 
-
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-        table: {
-            minWidth: 650,
-        },
-    });
+const useStyles = makeStyles(theme => ({
+    paper: {
+        maxWidth: 1200,
+        margin: 'auto',
+        overflow: 'hidden',
+    },
+    searchBar: {
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+    },
+    block: {
+        display: 'block',
+    },
+    addUser: {
+        marginRight: '1px',
+    },
+    contentWrapper: {
+        margin: '40px 16px',
+    },
+    table: {
+        minWidth: 650,
+    },
+}));
 
 function a11yProps(index: number): Map<string, string> {
     return new Map([
@@ -92,13 +87,14 @@ interface NewTestProtocolLogPayload {
     Entry: IProtocolEntryData,
 }
 
-interface TestProtocolContentProps extends WithStyles<typeof styles> {
+interface TestProtocolContentProps {
     run: ITestRunData
     protocol: ITestProtocolData
 }
 
 const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
-    const { run, protocol, classes } = props;
+    const classes = useStyles();
+    const { run, protocol } = props;
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
     const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -258,6 +254,8 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                         <Tabs
                             value={ value }
                             onChange={ handleChange }
+                            indicatorColor="primary"
+                            textColor="inherit"
                         >
                             <Tab label="Status" { ...a11yProps(0) } />
                             <Tab label="Executer" { ...a11yProps(1) } />
@@ -385,7 +383,7 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     </Grid>
                 </TabPanel>
                 <TabPanel value={ value } index={ 1 }>
-                    <Table className={ classes.table } size="small" aria-label="a dense table">
+                    <Table size="small" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
                                 <TableCell>Date</TableCell>
@@ -405,10 +403,10 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
                     </Table>
                 </TabPanel>
                 <TabPanel value={ value } index={ 2 }>
-                    <ProtocolLogComponent entries={ entries } classes={ classes }/>
+                    <ProtocolLogComponent entries={ entries } />
                 </TabPanel>
                 <TabPanel value={ value } index={ 3 }>
-                    <ProtocolScreensComponent classes={ classes } entries={ screenEntries }/>
+                    <ProtocolScreensComponent entries={ screenEntries }/>
                 </TabPanel>
                 <TabPanel value={ value } index={ 4 }>
                     Video (not implemented)
@@ -459,4 +457,4 @@ const TestProtocolContent: FC<TestProtocolContentProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(TestProtocolContent);
+export default TestProtocolContent;

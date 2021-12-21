@@ -1,58 +1,25 @@
 import React, { FC } from 'react';
-import Paper from '@material-ui/core/Paper';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { Box, Checkbox, Divider, FormControlLabel, Typography } from '@material-ui/core';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Grid from '@material-ui/core/Grid';
-import Button from '@material-ui/core/Button';
+import Paper from '@mui/material/Paper';
+import { Box, ButtonGroup, Checkbox, Divider, FormControlLabel, Typography } from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import { deleteDevice } from '../../services/device.service';
 import { useHistory } from 'react-router-dom';
 import { DeviceType } from '../../types/device.type.enum';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        paper: {
-            maxWidth: 1200,
-            margin: 'auto',
-            overflow: 'hidden',
-        },
-        searchBar: {
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-        },
-        searchInput: {
-            fontSize: theme.typography.fontSize,
-        },
-        block: {
-            display: 'block',
-        },
-        addUser: {
-            marginRight: theme.spacing(1),
-        },
-        contentWrapper: {
-            margin: '40px 16px',
-        },
-        heading: {
-            fontSize: theme.typography.pxToRem(15),
-            flexBasis: '33.33%',
-            flexShrink: 0,
-        },
-        secondaryHeading: {
-            fontSize: theme.typography.pxToRem(15),
-            color: theme.palette.text.secondary,
-        },
-    });
-
-interface DeviceShowProps extends WithStyles<typeof styles> {
+interface DeviceShowProps {
     device: IDeviceData
 }
 
-const DeviceShowContent: FC<DeviceShowProps> = props => {
+const DeviceShowContent: FC<DeviceShowProps> = (props: DeviceShowProps) => {
+
     const history = useHistory();
 
-    const { device, classes } = props;
+    const { device } = props;
     const [expanded, setExpanded] = React.useState<string | false>(false);
 
     const handleChange = (panel: string) => (event: React.ChangeEvent<{}>, isExpanded: boolean) => {
@@ -60,8 +27,13 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
     };
 
     return (
-        <Paper className={ classes.paper }>
-            <AppBar className={ classes.searchBar } position="static" color="default" elevation={ 0 }>
+        <Paper sx={ { maxWidth: 1200, margin: 'auto', overflow: 'hidden' } }>
+            <AppBar
+                position="static"
+                color="default"
+                elevation={ 0 }
+                sx={ { borderBottom: '1px solid rgba(0, 0, 0, 0.12)' } }
+            >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
@@ -72,23 +44,22 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
                         <Grid item={ true } xs={ true }>
                         </Grid>
                         <Grid item={ true }>
-                            <Button variant="contained" color="primary" size="small"
-                                href={ `${ device.ID }/edit` }>Edit</Button>
+                            <ButtonGroup variant="text" aria-label="text button group">
+                                <Button href={ `${ device.ID }/edit` } >Edit</Button>
+                                <Button color="secondary" onClick={ () => {
+                                    deleteDevice(device.ID as number).then((result) =>
+                                        history.push('/web/devices'),
+                                    );
+                                } }> Delete</Button>
+                            </ButtonGroup>
                         </Grid>
-                        <Button variant="contained" color="secondary" size="small" onClick={ () => {
-                            deleteDevice(device.ID as number).then((result) =>
-                                history.push('/web/devices'),
-                            );
-                        } }>
-                            Delete
-                        </Button>
                     </Grid>
                 </Toolbar>
             </AppBar>
             <Box sx={ { p: 2, m: 2 } }>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography variant={ 'h6' }>Device Infos</Typography>
+                        <Typography variant={ 'h1' }>Device Infos</Typography>
                         <Divider/>
                         <br/>
                         <Grid container={ true }>
@@ -133,7 +104,8 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
                                 <FormControlLabel
-                                    control={<Checkbox readOnly={ true } checked={device.IsAcknowledged} name="ack" />}
+                                    control={ <Checkbox readOnly={ true } checked={ device.IsAcknowledged }
+                                        name="ack"/> }
                                     label="Acknowledged"
                                 />
                             </Grid>
@@ -190,7 +162,7 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
                 <br/>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography className={ classes.heading }>Hardware</Typography>
+                        <Typography variant={ 'h1' }>Hardware</Typography>
                         <Divider/>
                         <br/>
                         <Grid container={ true }>
@@ -224,7 +196,7 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
                 <br/>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
-                        <Typography className={ classes.heading }>Graphic</Typography>
+                        <Typography variant={ 'h1' }>Graphic</Typography>
                         <Divider/>
                         <br/>
                         <Grid container={ true }>
@@ -255,4 +227,4 @@ const DeviceShowContent: FC<DeviceShowProps> = props => {
     );
 };
 
-export default withStyles(styles)(DeviceShowContent);
+export default DeviceShowContent;

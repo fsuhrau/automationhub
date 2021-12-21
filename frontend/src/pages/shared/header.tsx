@@ -1,50 +1,56 @@
 import React, { FC } from 'react';
-import AppBar from '@material-ui/core/AppBar';
-import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
-import NotificationsIcon from '@material-ui/icons/Notifications';
-import Toolbar from '@material-ui/core/Toolbar';
-import Tooltip from '@material-ui/core/Tooltip';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import AppBar from '@mui/material/AppBar';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
+import MenuIcon from '@mui/icons-material/Menu';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
 
-const styles = (theme: Theme): ReturnType<typeof createStyles> =>
-    createStyles({
-        secondaryBar: {
-            zIndex: 0,
-        },
-        menuButton: {
-            marginLeft: -theme.spacing(1),
-        },
-        iconButtonAvatar: {
-            padding: 4,
-        },
-        link: {
-            textDecoration: 'none',
-            color: lightColor,
-            '&:hover': {
-                color: theme.palette.common.white,
-            },
-        },
-        button: {
-            borderColor: lightColor,
-        },
-    });
-
-interface DefaultHeaderProps extends WithStyles<typeof styles> {
+interface DefaultHeaderProps {
     onDrawerToggle: () => void;
 }
 
 const DefaultHeader: FC<DefaultHeaderProps> = (props) => {
-    const { classes, onDrawerToggle } = props;
+
+    const { onDrawerToggle } = props;
 
     return (
         <React.Fragment>
             <AppBar color="primary" position="sticky" elevation={ 0 }>
                 <Toolbar>
                     <Grid container={ true } spacing={ 1 } alignItems="center">
+                        <Grid sx={ { display: { sm: 'none', xs: 'block' } } } item={true}>
+                            <IconButton
+                                color="inherit"
+                                aria-label="open drawer"
+                                onClick={ onDrawerToggle }
+                                edge="start"
+                            >
+                                <MenuIcon/>
+                            </IconButton>
+                        </Grid>
                         <Grid item={ true } xs={ true }/>
+                        <Grid item={ true }>
+                            <Link
+                                href="/doc"
+                                variant="body2"
+                                sx={ {
+                                    textDecoration: 'none',
+                                    color: lightColor,
+                                    '&:hover': {
+                                        color: 'common.white',
+                                    },
+                                } }
+                                rel="noopener noreferrer"
+                                target="_blank"
+                            >
+                                Go to docs
+                            </Link>
+                        </Grid>
                         <Grid item={ true }>
                             <Tooltip title="Alerts • No alerts">
                                 <IconButton color="inherit">
@@ -52,12 +58,6 @@ const DefaultHeader: FC<DefaultHeaderProps> = (props) => {
                                 </IconButton>
                             </Tooltip>
                         </Grid>
-                        { /*<Grid item>
-                            <IconButton color="inherit" className={ classes.iconButtonAvatar }>
-                                <Avatar src="/static/images/avatar/1.jpg" alt="My Avatar"/>
-                            </IconButton>
-                        </Grid> */
-                        }
                     </Grid>
                 </Toolbar>
             </AppBar>
@@ -65,4 +65,4 @@ const DefaultHeader: FC<DefaultHeaderProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(DefaultHeader);
+export default DefaultHeader;

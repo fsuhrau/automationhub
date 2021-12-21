@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Backdrop, CircularProgress, Typography } from '@material-ui/core';
+import { Backdrop, CircularProgress, Typography } from '@mui/material';
 import ITestData from '../../types/test';
 import EditTestPage from './edit.test.content';
 import { getTest } from '../../services/test.service';

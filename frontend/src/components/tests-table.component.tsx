@@ -1,12 +1,11 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
-import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 import ITestData from '../types/test';
 import { executeTest, getAllTests } from '../services/test.service';
 import {
@@ -19,23 +18,13 @@ import {
     DialogTitle,
     TextField,
     Typography,
-} from '@material-ui/core';
-import { PlayArrow } from '@material-ui/icons';
+} from '@mui/material';
+import { PlayArrow } from '@mui/icons-material';
 import AppSelection from './app-selection.component';
 import IAppData from '../types/app';
 import { useHistory } from 'react-router-dom';
 
-const styles = (): ReturnType<typeof createStyles> =>
-    createStyles({
-        table: {
-            minWidth: 650,
-        },
-    });
-
-export type TestProps = WithStyles<typeof styles>;
-
-const TestsTable: FC<TestProps> = (props) => {
-    const { classes } = props;
+const TestsTable: FC = () => {
 
     const history = useHistory();
 
@@ -135,7 +124,7 @@ const TestsTable: FC<TestProps> = (props) => {
                         Or Upload a new one.<br/>
                         <br/>
                     </DialogContentText>
-                    <AppSelection upload={ true } classes={ classes } onSelectionChanged={ onAppSelectionChanged }/>
+                    <AppSelection upload={ true } onSelectionChanged={ onAppSelectionChanged }/>
                     You can change parameters of your app by providing key value pairs in an environment like
                     format:<br/>
                     <br/>
@@ -168,7 +157,7 @@ const TestsTable: FC<TestProps> = (props) => {
                 </DialogActions>
             </Dialog>
             <TableContainer component={ Paper }>
-                <Table className={ classes.table } size="small" aria-label="a dense table">
+                <Table size="small" aria-label="a dense table">
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
@@ -187,10 +176,12 @@ const TestsTable: FC<TestProps> = (props) => {
                             <TableCell align="right">{ getDevices(test) }</TableCell>
                             <TableCell align="right">{ getTests(test) }</TableCell>
                             <TableCell align="right">
-                                <ButtonGroup color="primary" aria-label="outlined primary button group">
-                                    <Button variant="outlined" color="primary" size="small" href={ `test/${ test.ID }` }>Show</Button>
-                                    <Button variant="outlined" color="primary" size="small" href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
-                                    <Button variant="outlined" color="primary" size="small" endIcon={ <PlayArrow/> }
+                                <ButtonGroup color="primary" aria-label="text button group">
+                                    <Button variant="text" size="small"
+                                        href={ `test/${ test.ID }` }>Show</Button>
+                                    <Button variant="text" size="small"
+                                        href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
+                                    <Button variant="text" size="small" endIcon={ <PlayArrow/> }
                                         onClick={ () => {
                                             setSelectedTestID(test.ID as number);
                                             handleRunClickOpen();
@@ -207,4 +198,4 @@ const TestsTable: FC<TestProps> = (props) => {
     );
 };
 
-export default withStyles(styles)(TestsTable);
+export default TestsTable;
