@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func (s *ApiService) getDevices(session *Session, c *gin.Context) {
+func (s *Service) getDevices(c *gin.Context) {
 	var devices []models.Device
 	if err := s.db.Find(&devices).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
@@ -38,7 +38,7 @@ func (s *ApiService) getDevices(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, devices)
 }
 
-func (s *ApiService) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
+func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
 
 	type Request struct {
 		Type     string
@@ -68,7 +68,7 @@ func (s *ApiService) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Co
 	s.devicesManager.RegisterDevice(register)
 }
 
-func (s *ApiService) getDevice(session *Session, c *gin.Context) {
+func (s *Service) getDevice(c *gin.Context) {
 
 	deviceID := c.Param("device_id")
 	_ = deviceID
@@ -92,7 +92,7 @@ func (s *ApiService) getDevice(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, device)
 }
 
-func (s *ApiService) deleteDevice(session *Session, c *gin.Context) {
+func (s *Service) deleteDevice(c *gin.Context) {
 	deviceID := c.Param("device_id")
 
 	var device models.Device
@@ -108,7 +108,7 @@ func (s *ApiService) deleteDevice(session *Session, c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (s *ApiService) updateDevice(session *Session, c *gin.Context) {
+func (s *Service) updateDevice(c *gin.Context) {
 	deviceID := c.Param("device_id")
 
 	var dev models.Device
@@ -149,7 +149,7 @@ func (s *ApiService) updateDevice(session *Session, c *gin.Context) {
 }
 
 
-func (s *ApiService) deviceRunTests(session *Session, c *gin.Context) {
+func (s *Service) deviceRunTests(c *gin.Context) {
 	type Request struct {
 		TestName string
 		Env      string

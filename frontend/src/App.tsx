@@ -27,7 +27,10 @@ Moment.globalLocale = 'de';
 const Copyright: React.FC = () => {
     return (<Typography variant="body2" color="text.secondary" align="center">
         { 'Copyright © ' }
-        <Link color="inherit">
+        <Link color="inherit"
+            href="https://www.github.com/fsuhrau/automationhub"
+            target="_blank"
+        >
             AutomationHUB
         </Link>{ ' ' }
         { new Date().getFullYear() }

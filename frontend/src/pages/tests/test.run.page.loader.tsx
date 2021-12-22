@@ -11,7 +11,7 @@ interface ParamTypes {
 }
 
 const TestRunPageLoader: React.FC = () => {
-    const {testId, runId} = useParams<ParamTypes>();
+    const { testId, runId } = useParams<ParamTypes>();
 
     const [testRun, setTestRun] = useState<ITestRunData>();
     const [nextRunId, setNextRunId] = useState<number>();
@@ -40,7 +40,7 @@ const TestRunPageLoader: React.FC = () => {
     return (
         testRun
             ? <TestRunContent testRun={ testRun } nextRunId={ nextRunId } prevRunId={ prevRunId }/>
-            : <Backdrop sx={ {zIndex: 1, color: '#fff'} } open={ true }><CircularProgress color="inherit"/></Backdrop>
+            : <Backdrop sx={ { zIndex: 1, color: '#fff' } } open={ true }><CircularProgress color="inherit"/></Backdrop>
     );
 };
 

@@ -31,3 +31,4 @@ test/
 /bin
 
 dist/
+/github.json

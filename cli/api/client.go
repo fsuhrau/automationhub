@@ -12,14 +12,14 @@ import (
 
 type Client struct {
 	BaseURL    string
-	apiKey     string
+	apiToken   string
 	HTTPClient *http.Client
 }
 
-func NewClient(url, apiKey string) *Client {
+func NewClient(url, apiToken string) *Client {
 	return &Client{
-		BaseURL: fmt.Sprintf("%s/api", url),
-		apiKey: apiKey,
+		BaseURL:  fmt.Sprintf("%s/api", url),
+		apiToken: apiToken,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
 		},
@@ -29,7 +29,7 @@ func NewClient(url, apiKey string) *Client {
 func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json; charset=utf-8")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	req.Header.Set("X-Auth-Token", c.apiToken)
 
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {

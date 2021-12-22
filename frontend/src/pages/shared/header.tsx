@@ -36,7 +36,7 @@ const DefaultHeader: React.FC<DefaultHeaderProps> = (props) => {
                         <Grid item={ true } xs={ true }/>
                         <Grid item={ true }>
                             <Link
-                                href="/doc"
+                                href="https://www.github.com/fsuhrau/automationhub"
                                 variant="body2"
                                 sx={ {
                                     textDecoration: 'none',

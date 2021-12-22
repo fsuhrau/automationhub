@@ -8,7 +8,7 @@ type ErrorResponse struct {
 	Message string
 }
 
-func (s *ApiService) error(c *gin.Context, status int, err error) {
+func (s *Service) error(c *gin.Context, status int, err error) {
 	c.JSON(status, &ErrorResponse{
 		Message:   err.Error(),
 	})

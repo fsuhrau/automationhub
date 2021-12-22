@@ -30,7 +30,6 @@ type Service struct {
 	cfg            config.Service
 	hooks          []hooks.Hook
 	sd             storage.Device
-	// sessions       map[string]*Session
 }
 
 func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessions manager.Sessions, cfg config.Service, sd storage.Device) *Service {
@@ -48,8 +47,8 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessi
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
-		AllowOrigins:     []string{"http://localhost:7109", "http://localhost:3000", "http://localhost:8002", "https://automationhub.com"},
-		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"},
+		AllowOrigins:     []string{"http://localhost:7109", "http://localhost:3000", "http://localhost:8002"},
+		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With", "X-Auth-Token"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},
 		MaxAge:           12 * time.Hour,
 	}))

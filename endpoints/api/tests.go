@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *ApiService) getTests(session *Session, c *gin.Context) {
+func (s *Service) getTests(c *gin.Context) {
 	var tests []models.Test
 	if err := s.db.Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -20,7 +20,7 @@ func (s *ApiService) getTests(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, tests)
 }
 
-func (s *ApiService) newTest(session *Session, c *gin.Context) {
+func (s *Service) newTest(c *gin.Context) {
 	type TestFunc struct {
 		Assembly string
 		Class    string
@@ -128,7 +128,7 @@ func (s *ApiService) newTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusCreated, test)
 }
 
-func (s *ApiService) getTest(session *Session, c *gin.Context) {
+func (s *Service) getTest(c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var test models.Test
@@ -140,7 +140,7 @@ func (s *ApiService) getTest(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
-func (s *ApiService) updateTest(session *Session, c *gin.Context) {
+func (s *Service) updateTest(c *gin.Context) {
 	testId := c.Param("test_id")
 	var newTestData models.Test
 	c.Bind(&newTestData)
@@ -182,7 +182,7 @@ type RunTestRequest struct {
 	Params string
 }
 
-func (s *ApiService) runTest(c *gin.Context) {
+func (s *Service) runTest(c *gin.Context) {
 	testId := c.Param("test_id")
 	var req RunTestRequest
 	if err := c.Bind(&req); err != nil {
@@ -249,7 +249,7 @@ func (s *ApiService) runTest(c *gin.Context) {
 	c.JSON(http.StatusOK, run)
 }
 
-func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
+func (s *Service) getTestRuns(c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var testRuns []models.TestRun
@@ -261,7 +261,7 @@ func (s *ApiService) getTestRuns(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, testRuns)
 }
 
-func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
+func (s *Service) getLastTestRun(c *gin.Context) {
 	type Response struct {
 		TestRun   models.TestRun
 		PrevRunId uint
@@ -284,7 +284,7 @@ func (s *ApiService) getLastTestRun(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
+func (s *Service) getTestRun(c *gin.Context) {
 	type Response struct {
 		TestRun   models.TestRun
 		PrevRunId uint
@@ -309,7 +309,7 @@ func (s *ApiService) getTestRun(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (s *ApiService) getTestRunProtocol(session *Session, c *gin.Context) {
+func (s *Service) getTestRunProtocol(c *gin.Context) {
 	runId := c.Param("run_id")
 	protocolId := c.Param("protocol_id")
 
@@ -322,7 +322,7 @@ func (s *ApiService) getTestRunProtocol(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, run)
 }
 
-func (s *ApiService) getData(session *Session, c *gin.Context) {
+func (s *Service) getData(c *gin.Context) {
 	name := c.Param("name")
 	c.File(fmt.Sprintf("test/data/" + name))
 }

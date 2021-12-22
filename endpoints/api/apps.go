@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func (s *ApiService) getApps(session *Session, c *gin.Context) {
+func (s *Service) getApps(c *gin.Context) {
 	var apps []models.App
 	if err := s.db.Find(&apps).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -21,7 +21,7 @@ func (s *ApiService) getApps(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, apps)
 }
 
-func (s *ApiService) getApp(session *Session, c *gin.Context) {
+func (s *Service) getApp(c *gin.Context) {
 	appId := c.Param("app_id")
 	var app models.App
 	if err := s.db.First(&app, appId).Error; err != nil {
@@ -31,7 +31,7 @@ func (s *ApiService) getApp(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, app)
 }
 
-func (s *ApiService) deleteApp(session *Session, c *gin.Context) {
+func (s *Service) deleteApp(c *gin.Context) {
 	appId := c.Param("app_id")
 	var app models.App
 	if err := s.db.First(&app, appId).Error; err != nil {
@@ -51,7 +51,7 @@ func (s *ApiService) deleteApp(session *Session, c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (s *ApiService) getAppFunctions(session *Session, c *gin.Context) {
+func (s *Service) getAppFunctions(c *gin.Context) {
 	appId := c.Param("app_id")
 	var funcs []models.AppFunction
 	if err := s.db.Find(&funcs, "app_id = ?", appId).Error; err != nil {
@@ -61,13 +61,13 @@ func (s *ApiService) getAppFunctions(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, funcs)
 }
 
-func (s *ApiService) createApp(session *Session, c *gin.Context) {
+func (s *Service) createApp(c *gin.Context) {
 	var app models.App
 	c.Bind(&app)
 	c.JSON(http.StatusOK, app)
 }
 
-func (s *ApiService) updateApp(session *Session, c *gin.Context) {
+func (s *Service) updateApp(c *gin.Context) {
 	appId := c.Param("app_id")
 
 	var newApp models.App
@@ -89,7 +89,7 @@ func (s *ApiService) updateApp(session *Session, c *gin.Context) {
 	c.JSON(http.StatusOK, app)
 }
 
-func (s *ApiService) uploadApp(session *Session, c *gin.Context) {
+func (s *Service) uploadApp(c *gin.Context) {
 	file, err := c.FormFile("test_target")
 	if err != nil {
 		s.error(c, http.StatusBadRequest, fmt.Errorf("get form err: %s", err.Error()))

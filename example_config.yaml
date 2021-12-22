@@ -1,7 +1,26 @@
 restart: true        # perform a restart for every test
 autodetect_ip: false # try to find the correct ip automatically
 host_ip: 192.168.0.1 # the ip for connecting devices to the hub
-port: 0              # port to listen on
+port: 8002           # port to listen on
+auth:
+  token:
+    auth_token: "1235123"                     # token used for api access (cli) via "X-Auth-Token" header
+    # only one additional provide can be active next to token
+  github:
+    redirect_url: http://localhost:8002/web/  # redirect url for oauth
+    credentials: ./example.json                  # credentials json check example.json
+    scopes:
+      - repo                                  # scopes to request permissions for
+    secret: "123"                             # secret for session cookie
+  oauth2:
+    auth_url: https://login.de/login                    # oauth2 request url
+    token_url: https://login.de/api/oauth2/access_token # token url for second part of oauth2
+    redirect_url: http://localhost:8002/web/            # redirect url used as callback from oauth server
+    user_url: https://login.de/api/user                 # url to get user informations
+    credentials: ./example.json                         # credentials for json check example.json
+    scopes:
+      - repo
+    secret: "123"
 
 managers:
   # managers handle devices and its connection

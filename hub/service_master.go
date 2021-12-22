@@ -2,6 +2,7 @@ package hub
 
 import (
 	"context"
+	"fmt"
 	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/device/unityeditor"
@@ -67,8 +68,6 @@ func (s *Service) RunMaster() error {
 		s.deviceManager.AddHandler(unityeditor.NewHandler(s.sd, s.hostIP))
 	}
 
-	// s.deviceManager.AddHandler(remove.NewHandler(&serviceConfig, s.hostIP))
-
 	if err := s.deviceManager.Run(ctx); err != nil {
 		return err
 	}
@@ -83,6 +82,9 @@ func (s *Service) RunMaster() error {
 //	go grpcConnect()
 
 	runOn := ":8002"
+	if s.cfg.Port != 0 {
+		runOn = fmt.Sprintf(":%d", s.cfg.Port)
+	}
 	err := s.router.Run(runOn)
 	logrus.Infof("Stopping Server")
 	if err != nil {

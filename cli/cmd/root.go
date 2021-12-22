@@ -26,8 +26,8 @@ import (
 
 var (
 	cfgFile string
-	apiURL  string
-	apiKey  string
+	apiURL   string
+	apiToken string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -60,7 +60,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
 	rootCmd.PersistentFlags().StringVar(&apiURL, "url", "", "url to api")
-	rootCmd.PersistentFlags().StringVar(&apiKey, "apikey", "", "key to authenticate")
+	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "token for authentication")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

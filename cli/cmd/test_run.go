@@ -47,7 +47,7 @@ var runCmd = &cobra.Command{
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(apiURL, apiKey)
+		client := api.NewClient(apiURL, apiToken)
 		if len(appPath) > 0 {
 			logrus.Info("uploading app")
 			app, err := client.UploadApp(appPath)

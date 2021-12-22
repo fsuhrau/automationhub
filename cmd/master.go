@@ -60,9 +60,9 @@ var masterCmd = &cobra.Command{
 		deviceManager := hub.NewDeviceManager(logger, db)
 		sessionManager := hub.NewSessionManager(logger, deviceManager)
 		server := hub.NewService(logger, hostIP, deviceManager, sessionManager, serviceConfig, ds)
-		server.AddEndpoint(api.New(logger, db, hostIP, deviceManager, sessionManager))
+		server.AddEndpoint(web.New(serviceConfig))
+		server.AddEndpoint(api.New(logger, db, hostIP, deviceManager, sessionManager, serviceConfig))
 		server.AddEndpoint(selenium.New(logger, nil, deviceManager, sessionManager))
-		server.AddEndpoint(web.New())
 		// server.AddEndpoint(inspector.New(logger, deviceManager, sessionManager))
 		server.RegisterHooks(serviceConfig.Hooks)
 

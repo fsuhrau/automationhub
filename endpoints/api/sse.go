@@ -6,11 +6,11 @@ import (
 	"io"
 )
 
-func (s *ApiService) PublishEvent(event sse.Event) {
+func (s *Service) PublishEvent(event sse.Event) {
 	s.sseBroker.Events <- event
 }
 
-func (s *ApiService) initSSE(api *gin.RouterGroup) {
+func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterEventDeviceStatusListener(s)
 	RegisterEventAppCreatedListener(s)
 	RegisterEventTestCreatedListener(s)
