@@ -3,7 +3,7 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import ITestRunData from '../types/test.run';
 import { TestResultState } from '../types/test.result.state.enum';
-import ITestProtocolData from '../types/test.protocol';
+import ITestProtocolData, { duration } from '../types/test.protocol';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -109,22 +109,6 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
         });
     }, [protocolEntry]);
 
-    const getDuration = (p: ITestProtocolData): string => {
-        if (p.EndedAt !== null && p.EndedAt !== undefined) {
-            const duration = (new Date(p.EndedAt)).valueOf() - (new Date(p.StartedAt)).valueOf();
-            const m = moment.utc(duration);
-            const secs = duration / 1000;
-            if (secs > 60 * 60) {
-                return m.format('h') + 'Std ' + m.format('m') + 'Min ' + m.format('s') + 'Sec';
-            }
-            if (secs > 60) {
-                return m.format('m') + 'Min ' + m.format('s') + 'Sec';
-            }
-            return m.format('s') + 'Sec';
-        }
-        return 'running';
-    };
-
     const updateStatusEntries = (): void => {
         const length = entries.length;
         let numSteps = 0;
@@ -210,7 +194,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                             <AvTimer sx={{ display: 'block' }} color="inherit"/>
                         </Grid>
                         <Grid item={ true }>
-                            { getDuration(protocol) }
+                            { duration(protocol.StartedAt, protocol.EndedAt) }
                         </Grid>
 
                         <Grid item={ true }>
@@ -306,7 +290,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                 Execution
                                             </Typography>
                                             <Typography variant="h5" style={ { whiteSpace: 'nowrap' } }>
-                                                { getDuration(protocol) }
+                                                { duration(protocol.StartedAt, protocol.EndedAt) }
                                             </Typography>
                                         </Grid>
                                     </Grid>

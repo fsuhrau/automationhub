@@ -154,6 +154,32 @@ func (s *Service) updateTest(c *gin.Context) {
 	test.Name = newTestData.Name
 	test.TestConfig.ExecutionType = newTestData.TestConfig.ExecutionType
 	test.TestConfig.AllDevices = newTestData.TestConfig.AllDevices
+	for i := range test.TestConfig.Devices {
+		stillNeeded := false
+		for d := range newTestData.TestConfig.Devices {
+			if test.TestConfig.Devices[i].DeviceID == newTestData.TestConfig.Devices[d].DeviceID {
+				stillNeeded = true
+				break
+			}
+		}
+		if !stillNeeded {
+			s.db.Delete(&test.TestConfig.Devices)
+		}
+	}
+	for i := range newTestData.TestConfig.Devices {
+		needCreation := true
+		for d := range test.TestConfig.Devices {
+			if test.TestConfig.Devices[d].DeviceID == newTestData.TestConfig.Devices[i].DeviceID {
+				needCreation = false
+			}
+		}
+
+		if needCreation {
+			newTestData.TestConfig.Devices[i].TestConfigID = test.TestConfig.ID
+			s.db.Create(&newTestData.TestConfig.Devices[i])
+		}
+	}
+	test.TestConfig.Devices = newTestData.TestConfig.Devices
 
 	if err := s.db.Save(&test).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)

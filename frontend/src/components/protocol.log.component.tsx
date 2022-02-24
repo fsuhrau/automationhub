@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Card, CardMedia, Chip, Popover } from '@mui/material';
+import { Box, Button, Card, CardMedia, Chip, Popover, Popper, Typography } from '@mui/material';
 import IProtocolEntryData from '../types/protocol.entry';
-import { DataGrid, GridCellValue, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridCellValue, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { makeStyles } from '@mui/styles';
+import CellExpand from "./cell.expand.component";
 
 const useStyles = makeStyles(theme => ({
     chip: {
@@ -77,19 +78,6 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     const classes = useStyles();
     const { entries } = props;
 
-    const [anchorLogScreenEl, setAnchorLogScreenEl] = useState<HTMLButtonElement | null>(null);
-
-    const showLogScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
-        setAnchorLogScreenEl(event.currentTarget);
-    };
-
-    const hideLogScreenPopup = (): void => {
-        setAnchorLogScreenEl(null);
-    };
-
-    const logScreenOpen = Boolean(anchorLogScreenEl);
-    const logScreenID = logScreenOpen ? 'simple-popover' : undefined;
-
     const timeFrom = (value: GridCellValue): string => {
         return new Date((value as number) * 1000).toISOString().substr(11, 8);
     };
@@ -98,6 +86,12 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         const str = (value as number).toFixed(4);
         return str.substring(str.length - 4);
     };
+
+    const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
+        return (
+            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data} />
+        )
+    }
 
     const columns: GridColDef[] = [
         {
@@ -143,38 +137,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
             sortable: false,
             filterable: false,
             disableColumnMenu: true,
-            renderCell: (params) => {
-                if (params.value === '') {
-                    return (
-                        <div>
-                            <Button aria-describedby={ params.row.ID } variant="contained"
-                                onClick={ showLogScreenPopup }>
-                                Show
-                            </Button>
-                            <Popover
-                                id={ logScreenID }
-                                open={ logScreenOpen }
-                                anchorEl={ anchorLogScreenEl }
-                                onClose={ hideLogScreenPopup }
-                                anchorOrigin={ {
-                                    vertical: 'bottom',
-                                    horizontal: 'left',
-                                } }
-                            >
-                                <Card>
-                                    <CardMedia
-                                        component="img"
-                                        height="400"
-                                        image={ `/api/data/${ params.row.Data }` }
-                                        alt="green iguana"
-                                    />
-                                </Card>
-                            </Popover>
-                        </div>
-                    );
-                }
-                return (<div>{ params.value }</div>);
-            },
+            renderCell: renderCellExpand,
         },
     ];
 

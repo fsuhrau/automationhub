@@ -14,6 +14,7 @@ func GetDB() (*gorm.DB, error) {
 	var err error
 	db, err = gorm.Open(sqlite.Open("ah.db"), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
+		// Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		return nil, err

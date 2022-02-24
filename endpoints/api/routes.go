@@ -7,12 +7,14 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net"
 	"net/http"
+	"time"
 )
 
 var wsupgrader = websocket.Upgrader{
@@ -51,8 +53,13 @@ func (s *Service) handleSessionAccess(fallbackFunc gin.HandlerFunc) gin.HandlerF
 		}
 
 		// TODO: handle token authentication via web interface
-		if s.cfg.Auth.Token != nil && len(s.cfg.Auth.Token.AuthToken) > 0 {
-			if token != s.cfg.Auth.Token.AuthToken {
+		if s.cfg.Auth.Token != nil {
+			var accessToken models.AccessToken
+			if err := s.db.First(&accessToken, "token = ?", token).Error; err != nil {
+				context.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			if accessToken.ExpiresAt != nil && accessToken.ExpiresAt.Before(time.Now()) {
 				context.AbortWithStatus(http.StatusUnauthorized)
 			}
 		}
@@ -73,6 +80,12 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 	}
 
 	s.initSSE(api)
+
+	api.GET("/stats", s.getStats)
+
+	api.POST("/settings/access_token", s.createAccessToken)
+	api.GET("/settings/access_tokens", s.getAccessTokens)
+	api.DELETE("/settings/access_token/:token_id", s.deleteAccessToken)
 
 	api.POST("/app", s.createApp)
 	api.GET("/app/:app_id", s.getApp)

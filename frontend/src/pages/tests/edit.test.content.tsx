@@ -24,6 +24,7 @@ import { updateTest } from '../../services/test.service';
 import DeviceSelection from '../../components/device-selection.component';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import ITestConfigDeviceData from "../../types/test.config.device";
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -96,6 +97,15 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         test.TestConfig.ExecutionType = executionType;
         if (test.TestConfig.Unity !== null) {
             test.TestConfig.Unity.RunAllTests = unityTestExecution == 0;
+            var devices: ITestConfigDeviceData[] = []
+            selectedDevices.map(dev => {
+                let deviceConfig: ITestConfigDeviceData = {
+                    TestConfigID: test.TestConfig.ID,
+                    DeviceID: dev.ID,
+                }
+                devices.push(deviceConfig);
+            })
+            test.TestConfig.Devices = devices;
         }
         updateTest(test.ID as number, test).then(response => {
             console.log(response.data);

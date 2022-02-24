@@ -2,7 +2,6 @@ package unityeditor
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/gorilla/websocket"
 	"net"
@@ -26,8 +25,8 @@ type Device struct {
 	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
-	lastUpdateAt time.Time
-	updated      bool
+	lastUpdateAt     time.Time
+	updated          bool
 
 	// Create client
 	client      *http.Client
@@ -118,10 +117,10 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 
 func (d *Device) StopApp(params *app.Parameter) error {
 	type request struct {
-		Action    string
+		Action string
 	}
 	req := request{
-		Action:    "stop",
+		Action: "stop",
 	}
 	buffer, _ := json.Marshal(req)
 	d.sendChannel <- buffer
@@ -184,7 +183,7 @@ func (d *Device) HandleSocketFunction() {
 			break
 		}
 		d.lastUpdateAt = time.Now().UTC()
-		fmt.Println(string(msg))
+		_ = msg
 	}
 
 	d.deviceState = device.StateUnknown

@@ -70,5 +70,8 @@ func migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(&models.ConnectionParameter{}); err != nil {
 		fmt.Printf("ConnectionParameter: %v\n", err)
 	}
+	if err := db.AutoMigrate(&models.AccessToken{}); err != nil {
+		fmt.Printf("AccessToken: %v\n", err)
+	}
 	return nil
 }

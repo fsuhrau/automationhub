@@ -22,7 +22,7 @@ import Moment from 'react-moment';
 import { useSSE } from 'react-hooks-sse';
 import ITesRunLogEntryData from '../types/test.run.log.entry';
 import moment from 'moment';
-import ITestProtocolData from '../types/test.protocol';
+import ITestProtocolData, { duration } from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
@@ -111,24 +111,6 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
         setRunsFailed(rf);
         setRunsSuccess(rs);
     }
-
-    const getDuration = (startedAt: Date, endedAt: Date | undefined): string => {
-        if (endedAt !== null && endedAt !== undefined) {
-            const start = new Date(startedAt);
-            const end = new Date(endedAt);
-            const duration = end.valueOf() - start.valueOf();
-            const m = moment.utc(duration);
-            const secs = duration / 1000;
-            if (secs > 60 * 60) {
-                return m.format('h') + 'Std ' + m.format('m') + 'Min ' + m.format('s') + 'Sec';
-            }
-            if (secs > 60) {
-                return m.format('m') + 'Min ' + m.format('s') + 'Sec';
-            }
-            return m.format('s') + 'Sec';
-        }
-        return 'running';
-    };
 
     useEffect(() => {
         setLog(testRun.Log);
@@ -306,7 +288,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                                                 align="right">{ protocol.Device?.OS } { protocol.Device?.OSVersion }
                                             </TableCell>
                                             <TableCell>
-                                                { getDuration(protocol.StartedAt, protocol.EndedAt) }
+                                                { duration(protocol.StartedAt, protocol.EndedAt) }
                                             </TableCell>
                                             <TableCell align="right">
                                                 <TestStatusIconComponent status={ protocol.TestResult }/>

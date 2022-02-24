@@ -14,7 +14,6 @@ type Hook struct {
 }
 
 type Token struct {
-	AuthToken string `mapstructure:"auth_token"`
 }
 
 type Auth struct {

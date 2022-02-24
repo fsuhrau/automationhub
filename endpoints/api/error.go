@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type ErrorResponse struct {
@@ -9,7 +10,8 @@ type ErrorResponse struct {
 }
 
 func (s *Service) error(c *gin.Context, status int, err error) {
+	logrus.Error(err)
 	c.JSON(status, &ErrorResponse{
-		Message:   err.Error(),
+		Message: err.Error(),
 	})
 }

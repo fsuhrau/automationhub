@@ -12,7 +12,8 @@ import AddTestPage from './pages/tests/add.test.content';
 import TestRunPageLoader from './pages/tests/test.run.page.loader';
 import TestProtocolLoader from './pages/tests/test.protocol.loader';
 import Moment from 'react-moment';
-import AppsPage from './pages/apps/apps.content';
+import AppsPage from './pages/apps/apps.page';
+import SettingsPage from './pages/settings/settings.page'
 import { SSEProvider } from 'react-hooks-sse';
 import { AppContext } from './context/app.context';
 import DefaultHeader from './pages/shared/header';
@@ -21,6 +22,7 @@ import DevicesManagerContent from './pages/devices/devices.manager.content';
 import DevicePageLoader from './pages/devices/device.page.loader';
 import { useMediaQuery } from '@mui/material';
 import { Box } from '@mui/system';
+import MainPage from "./pages/main/main.page";
 
 Moment.globalLocale = 'de';
 
@@ -294,7 +296,7 @@ const App: React.FC = () => {
                                         <Content/>
                                     </Route>
                                     <Route path="/web/settings">
-                                        <Content/>
+                                        <SettingsPage/>
                                     </Route>
                                     <Route path="/web/apps">
                                         <AppsPage/>
@@ -313,6 +315,9 @@ const App: React.FC = () => {
                                     </Route>
                                     <Route path="/web/devices">
                                         <DevicesContent/>
+                                    </Route>
+                                    <Route path="/web">
+                                        <MainPage/>
                                     </Route>
                                 </Switch>
                             </Box>

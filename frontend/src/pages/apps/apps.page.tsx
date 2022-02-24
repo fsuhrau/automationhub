@@ -12,7 +12,7 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import { deleteApp, getAllApps } from '../../services/app.service';
-import IAppData from '../../types/app';
+import IAppData, { prettySize } from '../../types/app';
 import Moment from 'react-moment';
 import { Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
@@ -46,26 +46,6 @@ const AppsPage: React.FC = () => {
                 return newState;
             });
         });
-    };
-
-    const ppSize = (bytes: number): string => {
-        const KB = 1024;
-        const MB = KB * 1024;
-        const GB = MB * 1024;
-
-        if (bytes >= GB) {
-            return `${ (bytes / GB).toFixed(2) }GB`;
-        }
-
-        if (bytes >= MB) {
-            return `${ (bytes / MB).toFixed(2) }MB`;
-        }
-
-        if (bytes >= KB) {
-            return `${ (bytes / KB).toFixed(2) }KB`;
-        }
-
-        return `${ bytes }B`;
     };
 
     return (
@@ -121,7 +101,7 @@ const AppsPage: React.FC = () => {
                                 <TableCell>{ app.Name }</TableCell>
                                 <TableCell>{ app.Identifier } { app.LaunchActivity }</TableCell>
                                 <TableCell align="right">{ app.Version }</TableCell>
-                                <TableCell align="right">{ ppSize(app.Size) }</TableCell>
+                                <TableCell align="right">{ prettySize(app.Size) }</TableCell>
                                 <TableCell>{ app.Tags }</TableCell>
                                 <TableCell>
                                     <Button variant="contained" color="secondary" size="small" onClick={ () => {
