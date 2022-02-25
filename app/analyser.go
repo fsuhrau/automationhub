@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='([a-zA-Z0-9._-]+)' versionCode='([a-zA-Z0-9._-]+)' versionName='([a-zA-Z0-9._-]+)'.*`)
+	AndroidAPKInfosRegex = regexp.MustCompile(`package: name='([a-zA-Z0-9._-]+)' versionCode='([a-zA-Z0-9._-]+)' versionName='([a-zA-Z0-9._/-]+)'.*`)
 	//  compileSdkVersion='(.*)' compileSdkVersionCodename='(.*)' <- TODO check if we can it also on older adb versions
-	LaunchActivityRegex  = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9._-]+)'\s+label='(.*)'\sicon='.*'`)
+	LaunchActivityRegex = regexp.MustCompile(`launchable-activity:\s+name='([a-zA-Z0-9._-]+)'\s+label='(.*)'\sicon='.*'`)
 )
 
 func fileExists(filename string) bool {
@@ -28,7 +28,7 @@ func fileExists(filename string) bool {
 }
 
 type analyser struct {
-	appPath string
+	appPath   string
 	parameter Parameter
 }
 
@@ -41,7 +41,7 @@ func NewAnalyser(appPath string) *analyser {
 	}
 }
 
-func (a *analyser)GetParameter() *Parameter {
+func (a *analyser) GetParameter() *Parameter {
 	return &a.parameter
 }
 
@@ -162,6 +162,7 @@ func (a *analyser) analyseAPK() error {
 	}
 	return nil
 }
+
 /*
 func (a *analyser) Unity() error {
 

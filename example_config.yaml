@@ -4,7 +4,6 @@ host_ip: 192.168.0.1 # the ip for connecting devices to the hub
 port: 8002           # port to listen on
 auth:
   token:
-    auth_token: "1235123"                     # token used for api access (cli) via "X-Auth-Token" header
     # only one additional provide can be active next to token
   github:
     redirect_url: http://localhost:8002/web/  # redirect url for oauth

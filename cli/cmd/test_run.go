@@ -22,7 +22,7 @@ import (
 	"github.com/fsuhrau/automationhub/cli/api"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/utils/sync"
-	"github.com/r3labs/sse/v2"
+	sse "github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
@@ -43,7 +43,7 @@ var (
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run --url http://localhost:8002 --appid 50 --testid 9 --test \"name\" --tags \"tag1,tag2,tag3\" --async",
+	Short: "run --url http://localhost:8002 --appid 50 --app path_to_app --testid 9 --test \"name\" --tags \"tag1,tag2,tag3\" --params \"param1=1;parameter2=2\" --async",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -148,9 +148,8 @@ func init() {
 	runCmd.PersistentFlags().IntVar(&appID, "appid", 0, "appid 123")
 	runCmd.PersistentFlags().IntVar(&testID, "testid", 0, "testid 123")
 	runCmd.PersistentFlags().StringVar(&testName, "test", "", "test \"testname\"")
-	runCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter")
+	runCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter \"param1=1;param2=2\"")
 	runCmd.PersistentFlags().StringVar(&tags, "tags", "", "tag \"tag1,tag2,tag3\"")
-
 
 	// Here you will define your flags and configuration settings.
 

@@ -59,8 +59,14 @@ func (s *Service) handleSessionAccess(fallbackFunc gin.HandlerFunc) gin.HandlerF
 				context.AbortWithStatus(http.StatusUnauthorized)
 				return
 			}
+			if accessToken.Token != token {
+				context.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
 			if accessToken.ExpiresAt != nil && accessToken.ExpiresAt.Before(time.Now()) {
 				context.AbortWithStatus(http.StatusUnauthorized)
+				return
 			}
 		}
 	}

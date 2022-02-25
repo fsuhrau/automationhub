@@ -7,7 +7,7 @@ import {
     FormControl,
     FormControlLabel,
     Grid,
-    InputLabel,
+    InputLabel, MenuItem,
     Radio,
     RadioGroup,
     Select, SelectChangeEvent,
@@ -190,21 +190,17 @@ const AddTestPage: React.FC = () => {
                                                         </FormControl>
                                                     </Grid>
                                                     <Grid item={ true } xs={ 6 }>
-                                                        <FormControl>
-                                                            <InputLabel htmlFor="test-type-selection">Test
-                                                                Type</InputLabel>
-                                                            <Select native={ true } value={ testType }
-                                                                name={ 'test-type-selection' }
-                                                                onChange={ handleTestTypeChange }
-                                                                inputProps={ {
-                                                                    name: 'Test Type',
-                                                                    id: 'test-types',
-                                                                } }>
-                                                                <option aria-label="None" value=""
-                                                                    key={ 'tt_none' }/>
+                                                        <FormControl fullWidth={true}>
+                                                            <InputLabel id="test-type-selection">Test Type</InputLabel>
+                                                            <Select
+                                                                defaultValue={testTypes[0].id}
+                                                                labelId="test-type-selection"
+                                                                id="test-type"
+                                                                label="Test Type"
+                                                                onChange={handleTestTypeChange}
+                                                            >
                                                                 { testTypes.map((value) => (
-                                                                    <option key={ 'tt_' + value.id.toString() }
-                                                                        value={ value.id.toString() }>{ value.name }</option>
+                                                                    <MenuItem key={ 'tt_' + value.id.toString() } value={ value.id.toString() }>{ value.name }</MenuItem>
                                                                 )) }
                                                             </Select>
                                                         </FormControl>

@@ -25,6 +25,7 @@ import { LocalizationProvider } from "@mui/lab";
 import CopyToClipboard from "../../components/copy.clipboard.component";
 import { ContentCopy } from "@mui/icons-material";
 import IconButton from '@mui/material/IconButton';
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 
 const SettingsPage: React.FC = () => {
@@ -187,11 +188,11 @@ const SettingsPage: React.FC = () => {
                                     <TableCell align="right">{accessToken.ExpiresAt !== null ? (<Moment
                                         format="YYYY/MM/DD HH:mm:ss">{ accessToken.ExpiresAt }</Moment>) : ("Unlimited") }</TableCell>
                                     <TableCell>
-                                        <Button variant="contained" color="secondary" size="small" onClick={ () => {
+                                        <IconButton color="secondary" size="small" onClick={ () => {
                                             handleDeleteAccessToken(accessToken.ID as number);
                                         } }>
-                                            Delete
-                                        </Button>
+                                            <DeleteForeverIcon/>
+                                        </IconButton>
                                     </TableCell>
                                 </TableRow>) }
 

@@ -4,10 +4,12 @@ import {
     Box,
     Button,
     FormControl,
+    Input,
     InputLabel,
     LinearProgress,
     LinearProgressProps,
-    MenuItem, SelectChangeEvent,
+    MenuItem,
+    SelectChangeEvent,
     Typography,
 } from '@mui/material';
 import IAppData from '../types/app';
@@ -16,11 +18,11 @@ import Select from '@mui/material/Select';
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
-        <Box sx={ { display: 'flex', alignItems: 'center' } }>
-            <Box sx={ { width: '100%', mr: 1 } }>
+        <Box sx={ {display: 'flex', alignItems: 'center'} }>
+            <Box sx={ {width: '100%', mr: 1} }>
                 <LinearProgress variant="determinate" { ...props } />
             </Box>
-            <Box sx={ { minWidth: 35 } }>
+            <Box sx={ {minWidth: 35} }>
                 <Typography variant="body2">{ `${ Math.round(
                     props.value,
                 ) }%` }</Typography>
@@ -36,7 +38,7 @@ interface AppSelectionProps {
 }
 
 const AppSelection: React.FC<AppSelectionProps> = (props) => {
-    const { onSelectionChanged, upload } = props;
+    const {onSelectionChanged, upload} = props;
 
     const [app, setApp] = useState<IAppData>();
     const [apps, setApps] = useState<IAppData[]>([]);
@@ -97,12 +99,13 @@ const AppSelection: React.FC<AppSelectionProps> = (props) => {
         >
             <Grid item={ true }>
                 <FormControl>
-                    <InputLabel id="demo-simple-select-label">App</InputLabel>
+                    <InputLabel id="app-selection-label">App</InputLabel>
                     <Select
-                        labelId="demo-simple-select-label"
-                        id="demo-simple-select"
+                        labelId="app-selection-label"
+                        id="app-selection"
                         value={ selectedAppID }
                         onChange={ event => handleChange(event) }
+                        label={ "App" }
                     >
                         <MenuItem value={ 0 }>Select an App</MenuItem>
                         { apps.map((a) =>
@@ -120,26 +123,20 @@ const AppSelection: React.FC<AppSelectionProps> = (props) => {
                 >
                     { upload && (
                         <Grid item={ true }>
-                            <Box sx={ { width: '200px' } }>
+                            <Box sx={ {width: '200px'} }>
                                 <LinearProgressWithLabel value={ uploadProgress }/>
                             </Box>
                         </Grid>
                     ) }
                     { upload && (
                         <Grid item={ true }>
-                            <input
-                                accept="*.apk,*.ipa"
-                                id="app-upload"
-                                multiple={ true }
-                                type="file"
-                                onChange={ (e) => {
-                                    selectUploadFile(e);
-                                }
-                                }/>
+
                             <label htmlFor="app-upload">
-                                <Button variant="outlined"
-                                    color="primary"
-                                    component="span">
+                                <Input
+                                    id="app-upload"
+                                    type="file"
+                                    onChange={ selectUploadFile }/>
+                                <Button variant="contained" component="span">
                                     Upload New
                                 </Button>
                             </label>

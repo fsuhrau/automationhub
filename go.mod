@@ -25,7 +25,7 @@ require (
 	github.com/onsi/gomega v1.10.2 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.4.0
-	github.com/r3labs/sse/v2 v2.3.6
+	github.com/r3labs/sse/v2 v2.7.4
 	github.com/sirupsen/logrus v1.6.0
 	github.com/slack-go/slack v0.10.0
 	github.com/spf13/cobra v1.2.1
