@@ -14,8 +14,11 @@ import TableBody from '@mui/material/TableBody';
 import { deleteApp, getAllApps } from '../../services/app.service';
 import IAppData, { prettySize } from '../../types/app';
 import Moment from 'react-moment';
-import { Typography } from '@mui/material';
+import { ButtonGroup, Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
+import DownloadIcon from '@mui/icons-material/Download';
+import IconButton from "@mui/material/IconButton";
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 const AppsPage: React.FC = () => {
 
@@ -88,7 +91,7 @@ const AppsPage: React.FC = () => {
                                 <TableCell align="right">Version</TableCell>
                                 <TableCell align="right">Size</TableCell>
                                 <TableCell>Tags</TableCell>
-                                <TableCell>Actions</TableCell>
+                                <TableCell align="right">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -103,12 +106,16 @@ const AppsPage: React.FC = () => {
                                 <TableCell align="right">{ app.Version }</TableCell>
                                 <TableCell align="right">{ prettySize(app.Size) }</TableCell>
                                 <TableCell>{ app.Tags }</TableCell>
-                                <TableCell>
-                                    <Button variant="contained" color="secondary" size="small" onClick={ () => {
+                                <TableCell><ButtonGroup>
+                                    <IconButton color="primary" size="small" href={`/${app.AppPath}`}>
+                                        <DownloadIcon/>
+                                    </IconButton>
+                                    <IconButton color="secondary" size="small" onClick={ () => {
                                         handleDeleteApp(app.ID as number);
                                     } }>
-                                        Delete
-                                    </Button>
+                                        <DeleteForeverIcon/>
+                                    </IconButton>
+                                    </ButtonGroup>
                                 </TableCell>
                             </TableRow>) }
                         </TableBody>

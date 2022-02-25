@@ -33,14 +33,19 @@ func (s *wf) RegisterRoutes(r *gin.Engine) error {
 	}
 
 	authorized := r.Group("/web")
+	uploads := r.Group("/upload")
 
 	if s.cfg.Auth.AuthenticationRequired() {
 		if s.cfg.Auth.OAuth2 != nil {
 			authorized.Use(oauth2.Auth())
+			uploads.Use(oauth2.Auth())
 		} else if s.cfg.Auth.Github != nil {
 			authorized.Use(github.Auth())
+			uploads.Use(github.Auth())
 		}
 	}
+
+	uploads.Static("/", "./upload")
 
 	authorized.GET("/*filepath", func(context *gin.Context) {
 		url := context.Request.RequestURI
