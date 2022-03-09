@@ -163,6 +163,7 @@ message Test {
   string class = 2;
   string method = 3;
   map<string, string> parameter = 4;
+  repeated string categories = 5;
 }
 
 message Tests {

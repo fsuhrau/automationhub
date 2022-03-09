@@ -98,6 +98,14 @@ func (d *Device) Error(source, format string, params ...interface{}) {
 	}
 }
 
+func (d *Device) Exception(source, format string, params ...interface{}) {
+	if d.writer != nil {
+		d.writer.Error(source, format, params...)
+	} else {
+		logrus.Errorf(format, params...)
+	}
+}
+
 func (d *Device) AddActionHandler(handler action.ActionHandler) {
 	d.actionHandler = append(d.actionHandler, handler)
 }

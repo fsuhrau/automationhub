@@ -32,7 +32,7 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 		fin:       make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip,db)
+	testRunner.Init(deviceManager, ip, db)
 	return testRunner
 }
 
@@ -46,7 +46,7 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
@@ -81,13 +81,12 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	tr.InstallApp(tr.appParams, devices)
 
 	tr.LogInfo("start app on devices and wait for connection")
-	if err := tr.StatApp(tr.appParams, devices, func(d device.Device) {
+	if err := tr.StartApp(tr.appParams, devices, func(d device.Device) {
 		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
 
 	}, nil); err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
-
 
 	var testList []models.UnityTestFunction
 	if tr.Config.Unity.RunAllTests {
@@ -182,12 +181,16 @@ func (tr *testsRunner) OnDeviceConnected(d device.Device) {
 
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData models.App) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, appData *models.App) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
 	}
-	if err := tr.InitNewTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
+	var appID uint
+	if appData != nil {
+		appID = appData.ID
+	}
+	if err := tr.InitNewTestSession(appID, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
@@ -214,32 +217,32 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 }
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
-/*
-	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
-	if err != nil {
-		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
-	}
-	dev.Device.SetLogWriter(prot.Writer)
-	defer func() {
-		dev.Device.SetLogWriter(nil)
-		prot.Close()
-	}()
+	/*
+		prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
+		if err != nil {
+			tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
+		}
+		dev.Device.SetLogWriter(prot.Writer)
+		defer func() {
+			dev.Device.SetLogWriter(nil)
+			prot.Close()
+		}()
 
-	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
-	executor := NewExecutor(tr.DeviceManager)
-	if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
-		rawData, _, _, err := dev.Device.GetScreenshot()
-		nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
-		filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
-		dir, _ := filepath.Split(filePath)
-		os.MkdirAll(dir, os.ModePerm)
-		os.WriteFile(filePath, rawData, os.ModePerm)
-		dev.Device.Data("screen", filePath)
-		tr.LogError("test execution failed: %v", err)
-	} else {
-		tr.LogInfo("test execution finished")
-	}
- */
+		tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
+		executor := NewExecutor(tr.DeviceManager)
+		if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
+			rawData, _, _, err := dev.Device.GetScreenshot()
+			nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
+			filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
+			dir, _ := filepath.Split(filePath)
+			os.MkdirAll(dir, os.ModePerm)
+			os.WriteFile(filePath, rawData, os.ModePerm)
+			dev.Device.Data("screen", filePath)
+			tr.LogError("test execution failed: %v", err)
+		} else {
+			tr.LogInfo("test execution finished")
+		}
+	*/
 }
 
 func (tr *testsRunner) executeSequence(d device.Device, index int, steps []models.ScenarioStep) {
@@ -264,10 +267,10 @@ func (tr *testsRunner) executeSequence(d device.Device, index int, steps []model
 
 func (tr *testsRunner) stepInstallApp(d device.Device, index int, steps []models.ScenarioStep) {
 
-//	currentStep := steps[index]
-//	currentStep.AppIdentifier
-//	app.Parameter{}
-//	d.InstallApp()
+	//	currentStep := steps[index]
+	//	currentStep.AppIdentifier
+	//	app.Parameter{}
+	//	d.InstallApp()
 
 	tr.executeSequence(d, index+1, steps)
 }

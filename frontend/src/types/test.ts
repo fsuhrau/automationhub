@@ -1,8 +1,9 @@
 import ITestConfigData from './test.config';
 import ITestRunData from './test.run';
+import { PlatformType } from "./platform.type.enum";
 
 export default interface ITestData {
-    ID?: number,
+    ID: number,
     CompanyID: number,
     Name: string,
     TestConfig: ITestConfigData,

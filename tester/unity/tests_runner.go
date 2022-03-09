@@ -19,6 +19,10 @@ import (
 	"time"
 )
 
+const (
+	DefaultTestTimeout = 5 * time.Minute
+)
+
 type workerChannel chan action.TestStart
 type cancelChannel chan bool
 
@@ -36,7 +40,7 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 		fin:       make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip,db)
+	testRunner.Init(deviceManager, ip, db)
 	return testRunner
 }
 
@@ -50,7 +54,7 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
@@ -67,14 +71,21 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 		return
 	}
 
-	tr.appParams = app.Parameter{
-		AppID:          appData.ID,
-		Identifier:     appData.AppID,
-		AppPath:        appData.AppPath,
-		LaunchActivity: appData.LaunchActivity,
-		Name:           appData.Name,
-		Version:        appData.Version,
-		Hash:           appData.Hash,
+	if appData != nil {
+		tr.appParams = app.Parameter{
+			AppID:          appData.ID,
+			Identifier:     appData.AppID,
+			AppPath:        appData.AppPath,
+			LaunchActivity: appData.LaunchActivity,
+			Name:           appData.Name,
+			Version:        appData.Version,
+			Hash:           appData.Hash,
+		}
+	} else {
+		tr.appParams = app.Parameter{
+			AppID:          0,
+			LaunchActivity: "BootScene",
+		}
 	}
 
 	// stop app
@@ -85,7 +96,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	tr.InstallApp(tr.appParams, devices)
 
 	tr.LogInfo("start app on devices and wait for connection")
-	if err := tr.StatApp(tr.appParams, devices, nil, nil); err == sync.TimeoutError {
+	if err := tr.StartApp(tr.appParams, devices, nil, nil); err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
 
@@ -94,16 +105,31 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 		tr.LogInfo("RunAllTests active requesting PlayMode tests")
 		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
 		a := &action.TestsGet{}
-		if err := actionExecutor.Execute(devices[0].Device, a, 2*time.Minute); err != nil {
+		if err := actionExecutor.Execute(devices[0].Device, a, 5*time.Minute); err != nil {
 			tr.LogError("send action to select all tests failed: %v", err)
 			return
 		}
+		testCats := strings.Split(tr.Config.Unity.Categories, ",")
+		allCategories := len(testCats) == 0
 		for _, t := range a.Tests {
-			testList = append(testList, models.UnityTestFunction{
-				Assembly: t.Assembly,
-				Class:    t.Class,
-				Method:   t.Method,
-			})
+			add := false
+			if !allCategories {
+				for _, cc := range t.Categories {
+					for _, tc := range testCats {
+						if tc == cc {
+							add = true
+							break
+						}
+					}
+				}
+			}
+			if allCategories || add {
+				testList = append(testList, models.UnityTestFunction{
+					Assembly: t.Assembly,
+					Class:    t.Class,
+					Method:   t.Method,
+				})
+			}
 		}
 	} else {
 		tr.DB.Where("test_config_unity_id = ?", tr.Config.Unity.ID).Find(&testList)
@@ -179,12 +205,17 @@ func (tr *testsRunner) exec(devs []models.Device, appData models.App) {
 	}
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData models.App) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, appData *models.App) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
 	}
-	if err := tr.InitNewTestSession(appData.ID, strings.Join(params, "\n")); err != nil {
+
+	var appID uint
+	if appData != nil {
+		appID = appData.ID
+	}
+	if err := tr.InitNewTestSession(appID, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
@@ -223,14 +254,27 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
 	executor := NewExecutor(tr.DeviceManager)
-	if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
-		rawData, _, _, err := dev.Device.GetScreenshot()
+	err = executor.Execute(dev.Device, task, DefaultTestTimeout)
+	if err != nil || len(prot.Errors()) > 0 {
 		nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
 		filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
-		dir, _ := filepath.Split(filePath)
-		os.MkdirAll(dir, os.ModePerm)
-		os.WriteFile(filePath, rawData, os.ModePerm)
-		dev.Device.Data("screen", filePath)
+
+		rawData, _, _, err := dev.Device.GetScreenshot()
+		if rawData == nil {
+			var screenshotAction action.GetScreenshot
+			actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
+			if err := actionExecutor.Execute(dev.Device, &screenshotAction, 10*time.Second); err != nil {
+				tr.LogError("take screenshot failed: %v", err)
+			} else {
+				rawData = screenshotAction.ScreenshotData()
+			}
+		}
+		if rawData != nil {
+			dir, _ := filepath.Split(filePath)
+			os.MkdirAll(dir, os.ModePerm)
+			os.WriteFile(filePath, rawData, os.ModePerm)
+			dev.Device.Data("screen", filePath)
+		}
 		tr.LogError("test execution failed: %v", err)
 	} else {
 		tr.LogInfo("test execution finished")

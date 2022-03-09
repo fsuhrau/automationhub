@@ -166,7 +166,7 @@ func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
 
 	deviceData := models.Device{
 		DeviceIdentifier: deviceID,
-		Status: device.StateUnknown,
+		Status:           device.StateUnknown,
 	}
 
 	if err := dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", deviceID).Error; err != nil {
@@ -317,6 +317,18 @@ func getLevelOfLog(loglevel action.LogLevel) string {
 	return ""
 }
 
+func logError(dev device.Device, log *action.LogData) bool {
+	if log.Level == action.LogLevel_Exception {
+		dev.Exception(getTypeOfLog(log.Type), log.Message)
+		return true
+	} else if log.Level == action.LogLevel_Error {
+		dev.Error(getTypeOfLog(log.Type), log.Message)
+	} else {
+		dev.Log(getTypeOfLog(log.Type), log.Message)
+	}
+	return false
+}
+
 func (dm *DeviceManager) handleActions(d device.Device) {
 	dm.log.Info("handleActions")
 
@@ -334,41 +346,25 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 			if data.Err == nil {
 				resp := action.Response{}
 				_ = proto.Unmarshal(data.Data, &resp)
-				actionHandler := d.ActionHandlers()
-				if actionHandler != nil {
-					if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
-						if resp.GetLog().Level >= action.LogLevel_Error {
-							d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
-						} else {
-							d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
-						}
+				if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
+					logError(d, resp.GetLog())
+				}
+				if handler := d.ActionHandlers(); handler != nil {
+					for i := range handler {
+						handler[i].OnActionResponse(d, &resp)
 					}
-					for i := range actionHandler {
-						actionHandler[i].OnActionResponse(d, &resp)
-					}
+				} else if resp.ActionID != "" {
+					d.Connection().ActionChannel <- resp
 				} else {
-					if resp.ActionID != "" {
-						d.Connection().ActionChannel <- resp
-					} else {
-						if resp.ActionType == action.ActionType_Log && resp.GetLog() != nil {
-							if resp.GetLog().Level >= action.LogLevel_Error {
-								d.Error(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
-							} else {
-								d.Log(getTypeOfLog(resp.GetLog().Type), resp.GetLog().Message)
-							}
-						} else {
-							d.Log("unhandled", "Received: %v", resp.Payload)
-						}
-					}
+					d.Log("unhandled", "Received: %v", resp.Payload)
 				}
 			}
 		case status := <-d.Connection().ConnectionStateChannel:
 			if status == device.Disconnected {
 				dm.log.Info("handleActions disconnect")
-				actionHandler := d.ActionHandlers()
-				if actionHandler != nil {
-					for i := range actionHandler {
-						actionHandler[i].OnActionResponse(d, nil)
+				if handler := d.ActionHandlers(); handler != nil {
+					for i := range handler {
+						handler[i].OnActionResponse(d, nil)
 					}
 				}
 				return

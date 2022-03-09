@@ -107,6 +107,9 @@ func (c *Connection) Close() {
 }
 
 func (c *Connection) Send(content []byte) error {
+	if c == nil || c.Connection == nil {
+		return fmt.Errorf("device not connected")
+	}
 	var size []byte
 	size = make([]byte, 4)
 	binary.LittleEndian.PutUint32(size, uint32(len(content)))

@@ -29,6 +29,10 @@ func (p *logProtocol) Close() {
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: p.p.TestRunID, Protocol: p.p})
 }
 
+func (p *logProtocol) Errors() []error {
+	return p.Writer.errs
+}
+
 type ProtocolWriter struct {
 	db        *gorm.DB
 	run       *models.TestRun
@@ -40,7 +44,7 @@ func NewProtocolWriter(db *gorm.DB, testName string, run *models.TestRun) *Proto
 	return &ProtocolWriter{db: db, testName: testName, run: run}
 }
 
-func (w *ProtocolWriter) NewProtocol(dev models.Device , testname string) (*logProtocol, error) {
+func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logProtocol, error) {
 	protocol := &models.TestProtocol{
 		TestRunID: w.run.ID,
 		DeviceID:  &dev.ID,
@@ -89,7 +93,7 @@ func (w *ProtocolWriter) Close() {
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{
 		TestRunID: w.run.ID,
 		TestRun:   w.run,
-		TestName: w.testName,
+		TestName:  w.testName,
 		Success:   failedCount == 0 && unstableCount == 0,
 		Succeeded: successCount,
 		Unstable:  unstableCount,

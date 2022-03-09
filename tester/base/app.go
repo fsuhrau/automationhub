@@ -22,7 +22,7 @@ func (tr *TestRunner) InstallApp(params app.Parameter, devices []DeviceMap) {
 			go func(appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
 				tries := 0
 				for {
-					if tries > 1{
+					if tries > 1 {
 						tr.LogError("unable to install app: %v", err)
 						break
 					}
@@ -55,7 +55,7 @@ func (tr *TestRunner) StopApp(params app.Parameter, devices []DeviceMap) {
 	wg.Wait()
 }
 
-func (tr *TestRunner) StatApp(params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) error {
+func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) error {
 	var wg sync.ExtendedWaitGroup
 	for _, d := range devices {
 		if !d.Device.IsAppConnected() {
@@ -77,5 +77,5 @@ func (tr *TestRunner) StatApp(params app.Parameter, devices []DeviceMap, appStar
 			}(tr.DeviceManager, params, d.Device, tr.ProtocolWriter.SessionID(), &wg)
 		}
 	}
-	return wg.WaitWithTimeout(60 * time.Second)
+	return wg.WaitWithTimeout(2 * time.Minute)
 }

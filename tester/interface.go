@@ -6,5 +6,5 @@ import (
 
 type Interface interface {
 	Initialize(test models.Test, env map[string]string) error
-	Run(devs []models.Device, appData models.App) (*models.TestRun, error)
+	Run(devs []models.Device, appData *models.App) (*models.TestRun, error)
 }

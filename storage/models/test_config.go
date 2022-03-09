@@ -18,11 +18,24 @@ const (
 	SimultaneouslyExecutionType                      // every test on every device ( more accuracy )
 )
 
+type PlatformType uint
+
+const (
+	PlatformTypeiOS PlatformType = iota
+	PlatformTypeAndroid
+	PlatformTypeMac
+	PlatformTypeWindows
+	PlatformTypeLinux
+	PlatformTypeWeb
+	PlatformTypeEditor
+)
+
 type TestConfig struct {
 	gorm.Model
 	TestID        uint
 	ExecutionType ExecutionType
 	Type          TestType
+	Platform      PlatformType
 	AllDevices    bool
 	Devices       []TestConfigDevice
 	Unity         *TestConfigUnity

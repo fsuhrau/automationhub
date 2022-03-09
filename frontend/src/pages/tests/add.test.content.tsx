@@ -7,18 +7,22 @@ import {
     FormControl,
     FormControlLabel,
     Grid,
-    InputLabel, MenuItem,
+    InputLabel,
+    ListItem,
+    ListItemText,
+    MenuItem,
     Radio,
     RadioGroup,
-    Select, SelectChangeEvent,
+    Select,
+    SelectChangeEvent,
     Step,
     StepLabel,
     Stepper,
     TextField,
     Typography,
 } from '@mui/material';
-import { TestExecutionType } from '../../types/test.execution.type.enum';
-import { TestType } from '../../types/test.type.enum';
+import { getExecutionTypes, TestExecutionType } from '../../types/test.execution.type.enum';
+import { getTestTypes, TestType } from '../../types/test.type.enum';
 import DeviceSelection from '../../components/device-selection.component';
 import IDeviceData from '../../types/device';
 import { useHistory } from 'react-router-dom';
@@ -28,31 +32,24 @@ import TestMethodSelection from '../../components/testmethod-selection.component
 import IAppFunctionData from '../../types/app.function';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-
-const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
-
-function ToArray(en: any): Array<Object> {
-    return Object.keys(en).filter(StringIsNumber).map(key => ({ id: key, name: en[ key ] }));
-}
-
-function getExecutionTypes(): Array<Object> {
-    return ToArray(TestExecutionType);
-}
-
-function getTestTypes(): Array<Object> {
-    return ToArray(TestType);
-}
+import { getPlatformTypes, PlatformType } from "../../types/platform.type.enum";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import { Delete } from "@mui/icons-material";
 
 function getSteps(): Array<string> {
     return ['Select Test Type', 'Test Configuration', 'Device Selection'];
 }
 
 function getUnityTestsConfig(): Array<Object> {
-    return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
+    return [{id: 0, name: 'Run all Tests'}, {id: 1, name: 'Run all of Category'}, {
+        id: 2,
+        name: 'Run only Selected Tests'
+    }];
 }
 
 function getDeviceOption(): Array<Object> {
-    return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
+    return [{id: 0, name: 'All Devices'}, {id: 1, name: 'Selected Devices Only'}];
 }
 
 const AddTestPage: React.FC = () => {
@@ -74,6 +71,13 @@ const AddTestPage: React.FC = () => {
     const handleExecutionTypeChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const type = (+event.target.value as TestExecutionType);
         setExecutionType(type);
+    };
+
+    const platformTypes = getPlatformTypes();
+    const [platformType, setPlatformType] = React.useState<PlatformType>(PlatformType.iOS);
+    const handlePlatformTypeChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        const type = (+event.target.value as PlatformType);
+        setPlatformType(type);
     };
 
     const [testName, setTestName] = React.useState('');
@@ -100,6 +104,30 @@ const AddTestPage: React.FC = () => {
 
     const [unityTestFunctions, setUnityTestFunctions] = React.useState<IAppFunctionData[]>([]);
 
+    const [categories, setCategories] = React.useState<string[]>([]);
+
+    const [category, setCategory] = React.useState<string>("");
+    const onCategoryChange = (event: React.ChangeEvent<{ name?: string; value: string }>): void => {
+        setCategory(event.target.value);
+    };
+    const addCategory = () => {
+        if (category != "") {
+            setCategories(prevState => {
+                var newState = [...prevState];
+                newState.push(category);
+                return newState;
+            })
+            setCategory("")
+        }
+    }
+    const removeCategory = (index: number) => {
+        setCategories(prevState => {
+            var newState = [...prevState];
+            newState.splice(index, 1)
+            return newState
+        })
+    };
+
     const createNewTest = (): void => {
         const deviceIds: number[] = selectedDevices.map(value => value.ID) as number[];
 
@@ -107,8 +135,10 @@ const AddTestPage: React.FC = () => {
             Name: testName,
             TestType: testType,
             ExecutionType: executionType,
-            UnityAllTests: unityTestExecution === 0,
+            UnityAllTests: unityTestExecution === 0 || unityTestExecution === 1,
             UnitySelectedTests: unityTestFunctions,
+            Platform: platformType,
+            Categories: categories,
             AllDevices: deviceType === 0,
             SelectedDevices: deviceIds,
         };
@@ -137,12 +167,12 @@ const AddTestPage: React.FC = () => {
     };
 
     return (
-        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
             <AppBar
                 position="static"
                 color="default"
-                elevation={0}
-                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                elevation={ 0 }
+                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
             >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
@@ -158,7 +188,7 @@ const AddTestPage: React.FC = () => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={ { width: '100%', padding: 5 } }>
+            <Box sx={ {width: '100%', padding: 5} }>
                 <Stepper activeStep={ activeStep } alternativeLabel={ true }>
                     { steps.map((label) => (
                         <Step key={ label }>
@@ -166,10 +196,10 @@ const AddTestPage: React.FC = () => {
                         </Step>
                     )) }
                 </Stepper>
-                <Box sx={ { width: '100%', padding: 5 } }>
+                <Box sx={ {width: '100%', padding: 5} }>
                     { activeStep === steps.length ? (
                         <div>
-                            <Typography variant={'body1'}>Test is being created wait a moment and
+                            <Typography variant={ 'body1' }>Test is being created wait a moment and
                                 you
                                 get redirected</Typography>
                         </div>
@@ -180,35 +210,56 @@ const AddTestPage: React.FC = () => {
                                     <Grid container={ true } justifyContent="center" spacing={ 5 }>
                                         <Grid item={ true }>
                                             { activeStep === 0 && (
-                                                <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                <Grid container={ true } justifyContent="center" spacing={ 1 }
+                                                      alignItems={ 'center' }>
                                                     <Grid item={ true } xs={ 6 }>
-                                                        <FormControl>
+                                                        <FormControl fullWidth={ true }>
                                                             <TextField required={ true } id="test-name" label="Name"
-                                                                value={ testName }
-                                                                onChange={ handleTestNameChange }/>
+                                                                       value={ testName }
+                                                                       onChange={ handleTestNameChange }/>
                                                         </FormControl>
                                                     </Grid>
-                                                    <Grid item={ true } xs={ 6 }>
-                                                        <FormControl fullWidth={true}>
+                                                    <Grid item={ true } xs={ 12 }/>
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <FormControl fullWidth={ true }>
                                                             <InputLabel id="test-type-selection">Test Type</InputLabel>
                                                             <Select
-                                                                defaultValue={testTypes[0].id}
+                                                                defaultValue={ testTypes[ 0 ].id }
                                                                 labelId="test-type-selection"
                                                                 id="test-type"
                                                                 label="Test Type"
-                                                                onChange={handleTestTypeChange}
+                                                                onChange={ handleTestTypeChange }
                                                             >
                                                                 { testTypes.map((value) => (
-                                                                    <MenuItem key={ 'tt_' + value.id.toString() } value={ value.id.toString() }>{ value.name }</MenuItem>
+                                                                    <MenuItem key={ 'tt_' + value.id.toString() }
+                                                                              value={ value.id.toString() }>{ value.name }</MenuItem>
                                                                 )) }
                                                             </Select>
                                                         </FormControl>
                                                     </Grid>
+                                                    <Grid item={ true } xs={ 2 }>
+                                                        <FormControl fullWidth={ true }>
+                                                            <InputLabel
+                                                                id="platform-type-selection">Platform</InputLabel>
+                                                            <Select
+                                                                defaultValue={ platformTypes[ 0 ].id }
+                                                                labelId="platform-type-selection"
+                                                                id="platform-type"
+                                                                label="Platform"
+                                                                onChange={ handlePlatformTypeChange }
+                                                            >
+                                                                { platformTypes.map((value) => (
+                                                                    <MenuItem key={ 'tt_' + value.id.toString() }
+                                                                              value={ value.id.toString() }>{ value.name }</MenuItem>
+                                                                )) }
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Grid>
+                                                    <Grid item={ true } xs={ 12 }/>
                                                     <Grid item={ true } xs={ 6 }>
                                                         <Grid container={ true } spacing={ 2 }
-                                                            alignItems={ 'center' }
-                                                            direction={ 'row' }>
+                                                              alignItems={ 'center' }
+                                                              direction={ 'row' }>
                                                             <Grid item={ true }>
                                                                 <RadioGroup
                                                                     name="execution-type-selection"
@@ -238,10 +289,10 @@ const AddTestPage: React.FC = () => {
                                             ) }
                                             { activeStep === 1 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                      alignItems={ 'center' } direction={ 'column' }>
                                                     { testType === TestType.Unity && (
                                                         <>
-                                                            <Grid item={ true } >
+                                                            <Grid item={ true }>
                                                                 <RadioGroup
                                                                     name="unity-test-execution-selection"
                                                                     aria-label="spacing"
@@ -261,9 +312,46 @@ const AddTestPage: React.FC = () => {
                                                             </Grid>
                                                             <Grid item={ true }>
                                                                 { unityTestExecution === 1 && (
-                                                                    <div>
-                                                                        <TestMethodSelection onSelectionChanged={ handleFunctionSelection }/>
-                                                                    </div>
+                                                                    <Grid container={ true } justifyContent="center"
+                                                                          spacing={ 1 } alignItems={ 'center' }>
+                                                                        <Grid item={ true } xs={ 6 }>
+                                                                            <List dense={ false }>
+                                                                                { categories.map((element, index) => (
+                                                                                    <ListItem key={ element.toString() }
+                                                                                              secondaryAction={
+                                                                                                  <IconButton edge="end"
+                                                                                                              aria-label="delete"
+                                                                                                              onClick={ () => removeCategory(index) }>
+                                                                                                      <Delete/>
+                                                                                                  </IconButton>
+                                                                                              }>
+                                                                                        <ListItemText
+                                                                                            primary={ element }/>
+                                                                                    </ListItem>
+                                                                                )) }
+                                                                            </List>
+                                                                        </Grid>
+                                                                        <Grid item={ true } xs={ 12 }/>
+                                                                        <Grid item={ true } xs={ 8 }>
+                                                                            <FormControl>
+                                                                                <TextField required={ true }
+                                                                                           id="test-name"
+                                                                                           label="Category Name"
+                                                                                           value={ category }
+                                                                                           onChange={ onCategoryChange }/>
+                                                                            </FormControl>
+                                                                        </Grid>
+                                                                        <Grid item={ true } xs={ 2 }>
+                                                                            <Button variant={ "outlined" }
+                                                                                    onClick={ addCategory }>Add</Button>
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                ) }
+                                                                { unityTestExecution === 2 && (
+                                                                    <>
+                                                                        <TestMethodSelection
+                                                                            onSelectionChanged={ handleFunctionSelection }/>
+                                                                    </>
                                                                 ) }
                                                             </Grid>
                                                         </>
@@ -272,7 +360,7 @@ const AddTestPage: React.FC = () => {
                                             ) }
                                             { activeStep === 2 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                      alignItems={ 'center' } direction={ 'column' }>
                                                     <Grid item={ true }>
                                                         <RadioGroup
                                                             name="device-selection"
@@ -295,7 +383,7 @@ const AddTestPage: React.FC = () => {
                                             ) }
                                             { activeStep === 2 && deviceType === 1 && (
                                                 <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                                    alignItems={ 'center' } direction={ 'column' }>
+                                                      alignItems={ 'center' } direction={ 'column' }>
                                                     <Grid item={ true }>
                                                         <Typography variant={ 'h6' }>
                                                             Select Devices
@@ -303,7 +391,7 @@ const AddTestPage: React.FC = () => {
                                                     </Grid>
                                                     <Grid item={ true }>
                                                         <DeviceSelection selectedDevices={ selectedDevices }
-                                                            onSelectionChanged={ handleDeviceSelectionChanged }/>
+                                                                         onSelectionChanged={ handleDeviceSelectionChanged }/>
                                                     </Grid>
                                                 </Grid>
                                             ) }
@@ -315,9 +403,9 @@ const AddTestPage: React.FC = () => {
                     ) }
                 </Box>
             </Box>
-            <Grid container={ true } justifyContent={'flex-end'} >
+            <Grid container={ true } justifyContent={ 'flex-end' }>
                 <Grid item={ true }>
-                    <Box sx={ { p: 2, m: 2 } }>
+                    <Box sx={ {p: 2, m: 2} }>
                         <Button
                             disabled={ activeStep === 0 }
                             onClick={ handleBack }

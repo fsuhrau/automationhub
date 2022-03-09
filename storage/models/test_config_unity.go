@@ -7,4 +7,6 @@ type TestConfigUnity struct {
 	TestConfigID       uint
 	RunAllTests        bool
 	UnityTestFunctions []UnityTestFunction
+	Categories         string
+	PlayMode           bool
 }

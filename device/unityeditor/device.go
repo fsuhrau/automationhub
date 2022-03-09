@@ -14,7 +14,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-const CONNECTION_TIMEOUT = 60 * time.Minute
+const ConnectionTimeout = 60 * time.Minute
 
 type Device struct {
 	generic.Device
@@ -102,13 +102,13 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 
 	type request struct {
 		Action    string
-		HostIP    string
+		HostUrl   string
 		SessionID string
 	}
 	req := request{
 		Action:    "start",
 		SessionID: sessionId,
-		HostIP:    hostIP.String(),
+		HostUrl:   hostIP.String(),
 	}
 	buffer, _ := json.Marshal(req)
 	d.sendChannel <- buffer
@@ -153,7 +153,7 @@ func (d *Device) Execute(string) {
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
-	return CONNECTION_TIMEOUT
+	return ConnectionTimeout
 }
 
 func (d *Device) RunNativeScript(script []byte) {

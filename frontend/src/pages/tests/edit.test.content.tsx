@@ -13,8 +13,8 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { TestExecutionType } from '../../types/test.execution.type.enum';
-import { TestType } from '../../types/test.type.enum';
+import { getExecutionTypes, TestExecutionType } from '../../types/test.execution.type.enum';
+import { getTestTypes, TestType } from '../../types/test.type.enum';
 import IDeviceData from '../../types/device';
 import { useHistory } from 'react-router-dom';
 import TestMethodSelection from '../../components/testmethod-selection.component';
@@ -25,20 +25,7 @@ import DeviceSelection from '../../components/device-selection.component';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import ITestConfigDeviceData from "../../types/test.config.device";
-
-const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
-
-function ToArray(en: any): Array<Object> {
-    return Object.keys(en).filter(StringIsNumber).map(key => ({ id: key, name: en[ key ] }));
-}
-
-function getExecutionTypes(): Array<Object> {
-    return ToArray(TestExecutionType);
-}
-
-function getTestTypes(): Array<Object> {
-    return ToArray(TestType);
-}
+import { getPlatformTypes } from "../../types/platform.type.enum";
 
 function getUnityTestsConfig(): Array<Object> {
     return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
@@ -60,6 +47,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
+    const platformTypes = getPlatformTypes();
     const unityTestExecutionTypes = getUnityTestsConfig();
     const deviceTypes = getDeviceOption();
 

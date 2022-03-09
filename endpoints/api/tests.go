@@ -30,10 +30,12 @@ func (s *Service) newTest(c *gin.Context) {
 		Name               string
 		TestType           models.TestType
 		ExecutionType      models.ExecutionType
+		PlatformType       models.PlatformType
 		UnityAllTests      bool
 		UnitySelectedTests []TestFunc
 		AllDevices         bool
 		SelectedDevices    []uint
+		Categories         []string
 	}
 
 	var request Request
@@ -82,6 +84,7 @@ func (s *Service) newTest(c *gin.Context) {
 		Type:          request.TestType,
 		AllDevices:    request.AllDevices,
 		ExecutionType: request.ExecutionType,
+		Platform:      request.PlatformType,
 	}
 	if err := tx.Create(&config).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -93,6 +96,9 @@ func (s *Service) newTest(c *gin.Context) {
 		unityConfig := models.TestConfigUnity{
 			TestConfigID: config.ID,
 			RunAllTests:  request.UnityAllTests,
+		}
+		if len(request.Categories) > 0 {
+			unityConfig.Categories = strings.Join(request.Categories, ",")
 		}
 		if err := tx.Create(&unityConfig).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
@@ -218,16 +224,19 @@ func (s *Service) runTest(c *gin.Context) {
 
 	environmentParams := extractParams(req.Params)
 
-	var app models.App
-	if err := s.db.First(&app, req.AppID).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
-		return
-	}
-
 	var test models.Test
 	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").First(&test, testId).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
+	}
+
+	var app *models.App
+	if test.TestConfig.Platform != models.PlatformTypeEditor {
+		app = &models.App{}
+		if err := s.db.First(app, req.AppID).Error; err != nil {
+			s.error(c, http.StatusNotFound, err)
+			return
+		}
 	}
 
 	var devices []models.Device
@@ -297,10 +306,11 @@ func (s *Service) getLastTestRun(c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
+
 	// get prev
 	s.db.Table("test_runs").Where("test_id = ? and id < ?", testId, resp.TestRun.ID).Order("created_at desc").Limit(1).Select("id").Scan(&resp.PrevRunId)
 
@@ -321,7 +331,7 @@ func (s *Service) getTestRun(c *gin.Context) {
 	runId := c.Param("run_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

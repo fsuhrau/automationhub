@@ -84,7 +84,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
     const lastScreenID = lastScreenOpen ? 'simple-popover' : undefined;
 
     const [lastScreen, setLastScreen] = useState<IProtocolEntryData>();
-    const [lastError, setLastError] = useState<IProtocolEntryData>();
+    const [lastErrors, setLastErrors] = useState<IProtocolEntryData[]>([]);
     const [lastStep, setLastStep] = useState<IProtocolEntryData>();
 
     const [entries, setEntries] = useState<IProtocolEntryData[]>([]);
@@ -112,7 +112,8 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
     const updateStatusEntries = (): void => {
         const length = entries.length;
         let numSteps = 0;
-        for (let i = 0; i < length; i++) {
+        let errors: IProtocolEntryData[] = [];
+        for (let i = length -1; i > 0; i--) {
             if (lastScreen === undefined && entries[ i ].Source === 'screen') {
                 setLastScreen(entries[ i ]);
             }
@@ -122,10 +123,13 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                     setLastStep(entries[ i ]);
                 }
             }
-            if (lastError === undefined && entries[ i ].Level === 'error') {
-                setLastError(entries[ i ]);
+
+            if (entries[ i ].Level === 'error') {
+                errors.push(entries[ i ])
             }
         }
+
+        setLastErrors(errors);
         setSteps(numSteps);
     };
 
@@ -236,13 +240,13 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                         { protocol?.TestResult == TestResultState.TestResultFailed &&
                         <Box width='100%' color="white" bgcolor="palevioletred" padding={ 2 } margin={-1}>
                             <Grid container={ true } spacing={ 6 } justifyContent="center" alignItems="center">
-                                <Grid item={ true }>
+                                <Grid item={ true } xs={12}>
                                     { lastStep && <Typography><Moment
                                         format="YYYY/MM/DD HH:mm:ss">{ lastStep.CreatedAt }</Moment>: { lastStep.Message }
                                     </Typography> }
-                                    { lastError && <Typography><Moment
-                                        format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message }
-                                    </Typography> }
+                                    { lastErrors.map((lastError) => (<Typography>
+                                        <Moment format="YYYY/MM/DD HH:mm:ss">{ lastError.CreatedAt }</Moment>: { lastError.Message }
+                                    </Typography>))}
                                 </Grid>
                                 <Grid item={ true }>
                                     { lastScreen && <div>
@@ -335,7 +339,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                         Memory
                                                     </Typography>
                                                     <Typography variant="h5" component="h5">
-                                                        { (memory * 1024 * 1024).toFixed(2) }MB
+                                                        { (memory).toFixed(2) }MB
                                                     </Typography>
                                                 </Grid>
                                             </Grid>

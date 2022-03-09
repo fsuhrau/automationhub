@@ -8,5 +8,5 @@ type Test struct {
 	Name       string
 	TestConfig TestConfig
 	TestRuns   []TestRun
-	Last       *TestRun ``
+	Last       *TestRun
 }

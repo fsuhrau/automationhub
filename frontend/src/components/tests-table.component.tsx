@@ -20,10 +20,11 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { PlayArrow } from '@mui/icons-material';
+import { Edit, PlayArrow } from '@mui/icons-material';
 import AppSelection from './app-selection.component';
 import IAppData from '../types/app';
 import { useHistory } from 'react-router-dom';
+import { PlatformType } from "../types/platform.type.enum";
 
 const TestsTable: React.FC = () => {
 
@@ -39,7 +40,8 @@ const TestsTable: React.FC = () => {
     };
 
     // test handling
-    const [selectedTestID, setSelectedTestID] = useState<number>(0);
+    const [startDisabled, setStartDisabled] = useState<boolean>(true);
+    const [selectedTest, setSelectedTest] = useState<ITestData|null>(null);
     const [selectedAppID, setSelectedAppID] = useState<number>(0);
     const [envParameter, setEnvParameter] = useState<string>('');
     const [tests, setTests] = useState<ITestData[]>([]);
@@ -115,19 +117,26 @@ const TestsTable: React.FC = () => {
         setEnvParameter(event.target.value);
     };
 
+    useEffect(() => {
+        setStartDisabled(!(selectedTest?.TestConfig.Platform == PlatformType.Editor || selectedAppID > 0))
+    }, [selectedTest, selectedAppID]);
+
     return (
         <div>
             <Dialog open={ open } onClose={ handleRunClose } aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">App Selection</DialogTitle>
+                <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
-                        Select an existing App to execute the tests.<br/>
-                        Or Upload a new one.<br/>
-                        <br/>
-                    </DialogContentText>
-                    <AppSelection upload={ true } onSelectionChanged={ onAppSelectionChanged }/>
-                    You can change parameters of your app by providing key value pairs in an environment like
-                    format:<br/>
+                    {selectedTest && selectedTest.TestConfig.Platform != PlatformType.Editor && (
+                        <>
+                            <DialogContentText>
+                                Select an existing App to execute the tests.<br/>
+                                Or Upload a new one.<br/>
+                                <br/>
+                            </DialogContentText>
+                            <AppSelection upload={ true } onSelectionChanged={ onAppSelectionChanged }/>
+                        </>
+                    )}
+                    You can change parameters of your app by providing key value pairs in an environment like format:<br/>
                     <br/>
                     <Typography variant={ 'subtitle2' }>
                         server=http://localhost:8080<br/>
@@ -149,10 +158,9 @@ const TestsTable: React.FC = () => {
                     <Button onClick={ handleRunClose } color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={ () => {
-                        onRunTest(selectedTestID, selectedAppID);
+                    <Button onClick={ () => { selectedTest && onRunTest(selectedTest.ID, selectedAppID);
                         handleRunClose();
-                    } } color="primary" variant={ 'contained' } disabled={ selectedAppID === 0 }>
+                    } } color="primary" variant={ 'contained' } disabled={ startDisabled }>
                         Start
                     </Button>
                 </DialogActions>
@@ -184,7 +192,8 @@ const TestsTable: React.FC = () => {
                                         href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
                                     <Button variant="text" size="small" endIcon={ <PlayArrow/> }
                                         onClick={ () => {
-                                            setSelectedTestID(test.ID as number);
+                                            setSelectedTest(test);
+                                            //setSelectedTestID(test.ID as number);
                                             handleRunClickOpen();
                                         } }>Run</Button>
                                 </ButtonGroup>

@@ -21,7 +21,6 @@ import TestStatusIconComponent from '../components/test-status-icon.component';
 import Moment from 'react-moment';
 import { useSSE } from 'react-hooks-sse';
 import ITesRunLogEntryData from '../types/test.run.log.entry';
-import moment from 'moment';
 import ITestProtocolData, { duration } from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useHistory } from 'react-router-dom';
@@ -29,6 +28,7 @@ import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import { PlatformType } from "../types/platform.type.enum";
 
 interface TestRunContentProps {
     testRun: ITestRunData
@@ -48,10 +48,10 @@ interface NewProtocolPayload {
 
 const TestRunContent: React.FC<TestRunContentProps> = (props) => {
 
-    const { testRun, nextRunId, prevRunId } = props;
+    const {testRun, nextRunId, prevRunId} = props;
 
     const testContext = useContext(TestContext);
-    const { test, setTest } = testContext;
+    const {test, setTest} = testContext;
 
     const history = useHistory();
 
@@ -126,18 +126,18 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
     };
 
     return (
-        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
             <AppBar
                 position="static"
                 color="default"
-                elevation={0}
-                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                elevation={ 0 }
+                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
             >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
                             { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                                                       href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                             }
@@ -149,7 +149,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                         </Grid>
                         <Grid item={ true }>
                             { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                                                       href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
                             }
@@ -159,60 +159,64 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
             </AppBar>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
-                    <Box sx={ { p: 2, m: 2 } }>
-                        <Typography variant={ 'h6' }>App Details</Typography>
-                        <Divider/>
-                        <Grid container={ true }>
-                            <Grid item={ true } xs={ 2 }>
-                                Name:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Name }
-                            </Grid>
+                    <Box sx={ {p: 2, m: 2} }>
+                        { testRun.Test.TestConfig.Platform != PlatformType.Editor && (
+                            <>
+                                <Typography variant={ 'h6' }>App Details</Typography>
+                                <Divider/>
+                                <Grid container={ true }>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Name:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Name }
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Identifier:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Identifier }
-                            </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Identifier:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Identifier }
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Platform:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Platform }
-                            </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Platform:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Platform }
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Version:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Version }
-                            </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Version:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Version }
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Hash:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Hash }
-                            </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Hash:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Hash }
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Created:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
-                            </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Created:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
+                                    </Grid>
 
-                            <Grid item={ true } xs={ 2 }>
-                                Addons:
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.App?.Additional }
-                            </Grid>
-                        </Grid>
-                        <br/>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Addons:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.App?.Additional }
+                                    </Grid>
+                                </Grid>
+                                <br/>
+                            </>
+                        ) }
                         <Typography variant={ 'h6' }>Environment Parameter</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -231,7 +235,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                 <Grid item={ true } xs={ 2 }>
                 </Grid>
                 <Grid item={ true } xs={ 4 }>
-                    <Box sx={ { p: 2, m: 2 } }>
+                    <Box sx={ {p: 2, m: 2} }>
                         <Typography variant={ 'h6' }>Test Results</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -257,7 +261,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ { p: 2, m: 2 } }>
+                    <Box sx={ {p: 2, m: 2} }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <TableContainer>
@@ -301,7 +305,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ { p: 2, m: 2 } }>
+                    <Box sx={ {p: 2, m: 2} }>
                         <Typography variant={ 'h6' }>Executor Log</Typography>
                         <Divider/>
                         <TableContainer>
@@ -315,7 +319,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                                 </TableHead>
                                 <TableBody>
                                     { log.map((entry) => <TableRow key={ entry.ID }>
-                                        <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
+                                        <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
                                             <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
                                         </TableCell>
                                         <TableCell>{ entry.Level }</TableCell>

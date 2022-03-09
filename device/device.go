@@ -45,6 +45,7 @@ type Device interface {
 	LogPerformance(checkpoint string, cpu, fps, mem float32, other string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})
+	Exception(string, string, ...interface{})
 	AddActionHandler(action.ActionHandler)
 	RemoveActionHandler(action.ActionHandler)
 	ActionHandlers() []action.ActionHandler
