@@ -55,27 +55,30 @@ func (tr *TestRunner) StopApp(params app.Parameter, devices []DeviceMap) {
 	wg.Wait()
 }
 
-func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) error {
+func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) ([]DeviceMap, error) {
 	var wg sync.ExtendedWaitGroup
+	var connectedDevices []DeviceMap
 	for _, d := range devices {
 		if !d.Device.IsAppConnected() {
 			wg.Add(1)
-			go func(dm manager.Devices, appp app.Parameter, d device.Device, sessionId string, group *sync.ExtendedWaitGroup) {
-				if err := d.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.IP); err != nil {
+			go func(dm manager.Devices, appp app.Parameter, d DeviceMap, sessionId string, group *sync.ExtendedWaitGroup) {
+				if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.IP); err != nil {
 					tr.LogError("unable to start app: %v", err)
 				}
 				if appStartedFunc != nil {
-					appStartedFunc(d)
+					appStartedFunc(d.Device)
 				}
-				for !d.IsAppConnected() {
+				for !d.Device.IsAppConnected() {
 					time.Sleep(500 * time.Millisecond)
 				}
 				if connectedFunc != nil {
-					connectedFunc(d)
+					connectedFunc(d.Device)
 				}
+				connectedDevices = append(connectedDevices, d)
 				group.Done()
-			}(tr.DeviceManager, params, d.Device, tr.ProtocolWriter.SessionID(), &wg)
+			}(tr.DeviceManager, params, d, tr.ProtocolWriter.SessionID(), &wg)
 		}
 	}
-	return wg.WaitWithTimeout(2 * time.Minute)
+	err := wg.WaitWithTimeout(2 * time.Minute)
+	return connectedDevices, err
 }

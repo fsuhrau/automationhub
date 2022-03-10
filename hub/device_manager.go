@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	DeviceConnectionTimeout = 30 * time.Minute
+	DeviceConnectionTimeout = 5 * time.Minute
 )
 
 type DeviceManager struct {
@@ -238,26 +238,17 @@ func (dm *DeviceManager) handleConnection(c net.Conn) {
 		dm.log.Infof("Received Handshake from %v", remoteAddress)
 		dm.log.Debugf("Device with ID %s connected", dev.DeviceID())
 		connection := &device.Connection{
-			ConnectionParameter:    connectRequest,
-			Logger:                 dm.log,
-			Connection:             c,
-			ResponseChannel:        make(chan device.ResponseData, 100),
-			ActionChannel:          make(chan action.Response, 1),
-			ConnectionStateChannel: make(chan device.ConnectionState, 1),
+			ConnectionParameter: connectRequest,
+			Logger:              dm.log,
+			Connection:          c,
+			ResponseChannel:     make(chan device.ResponseData, 100),
+			ActionChannel:       make(chan action.Response, 1),
 		}
+		ctx := dev.NewContext()
 		dev.SetConnection(connection)
-		go connection.HandleMessages()
-		go dm.handleActions(dev)
+		go connection.HandleMessages(ctx)
+		go dm.handleActions(dev, ctx)
 	}
-	/*
-		dm.log.Debugf("SocketAccept content: %s", content)
-		if lock := dm.lookupDevice(session, remoteAddress); lock != nil {
-			dm.log.Infof("Received Handshake from %v", remoteAddress)
-			dm.log.Debugf("Device with ID %s connected", lock.Device.DeviceID())
-		} else {
-			dm.log.Errorf("no devide found for session: %s and device: %s", session.SessionID, session.DeviceID)
-		}
-	*/
 }
 
 func (dm *DeviceManager) StopObserver() {
@@ -329,7 +320,7 @@ func logError(dev device.Device, log *action.LogData) bool {
 	return false
 }
 
-func (dm *DeviceManager) handleActions(d device.Device) {
+func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 	dm.log.Info("handleActions")
 
 	defer func() {
@@ -359,16 +350,15 @@ func (dm *DeviceManager) handleActions(d device.Device) {
 					d.Log("unhandled", "Received: %v", resp.Payload)
 				}
 			}
-		case status := <-d.Connection().ConnectionStateChannel:
-			if status == device.Disconnected {
-				dm.log.Info("handleActions disconnect")
-				if handler := d.ActionHandlers(); handler != nil {
-					for i := range handler {
-						handler[i].OnActionResponse(d, nil)
-					}
+		case <-ctx.Done():
+			dm.log.Info("handleActions cancel")
+			fmt.Println("handleActions Canceled")
+			if handler := d.ActionHandlers(); handler != nil {
+				for i := range handler {
+					handler[i].OnActionResponse(d, nil)
 				}
-				return
 			}
+			return
 		}
 	}
 }

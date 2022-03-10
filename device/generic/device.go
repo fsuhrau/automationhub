@@ -1,6 +1,7 @@
 package generic
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -23,6 +24,8 @@ type Device struct {
 	actionHandler []action.ActionHandler
 	locked        bool
 	Config        *models.Device
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func (d *Device) GetConfig() *models.Device {
@@ -33,6 +36,11 @@ func (d *Device) SetConfig(config *models.Device) {
 	d.Config = config
 }
 
+func (d *Device) NewContext() context.Context {
+	d.ctx, d.cancel = context.WithCancel(context.Background())
+	return d.ctx
+}
+
 func (d *Device) SetConnection(connection *device.Connection) {
 	if connection != nil {
 		d.Log("device", "Device Connected: DeviceID: %s SessionID: %v AppType: %v, Version: %s", connection.ConnectionParameter.DeviceID, connection.ConnectionParameter.SessionID, connection.ConnectionParameter.AppType, connection.ConnectionParameter.Version)
@@ -40,6 +48,14 @@ func (d *Device) SetConnection(connection *device.Connection) {
 		d.Log("device", "Device Disconnected")
 	}
 	d.con = connection
+}
+
+func (d *Device) Cancel() {
+	if d.cancel != nil {
+		c := d.cancel
+		d.cancel = nil
+		c()
+	}
 }
 
 func (d *Device) Connection() *device.Connection {
@@ -58,6 +74,7 @@ func (d *Device) Unlock() error {
 	if !d.locked {
 		return DeviceUnlockedError
 	}
+	d.Cancel()
 	d.locked = false
 	return nil
 }
@@ -121,41 +138,3 @@ func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
 func (d *Device) ActionHandlers() []action.ActionHandler {
 	return d.actionHandler
 }
-
-/*
-	data := <-dev.Connection().ResponseChannel
-	resp := &action.Response{}
-	if err := proto.Unmarshal(data.Data, resp); err != nil {
-		dm.log.Errorf("SocketAccept ReadError: %v", err)
-	}
-	logrus.Infof("send bytes response: %v", resp)
-
-*/
-/*
-func (d *Device) SendAction(act action.Interface) error {
-	start := time.Now()
-	defer func(t time.Time) {
-		elapsed := time.Since(start)
-		d.Log("Send Action took: %s", elapsed.String())
-	}(start)
-
-	d.Log("Send Action: %s %v", reflect.TypeOf(act).Elem().Name(), act)
-	buf, err := act.Serialize()
-	if err != nil {
-		return fmt.Errorf("Could not marshal Action: %v", err)
-	}
-	if err := d.Connection().Send(buf); err != nil {
-		return err
-	}
-
-	if err != nil {
-		return err
-	}
-	dm.log.Debugf("ProcessResponse Action")
-	if err := act.ProcessResponse(response); err != nil {
-		return err
-	}
-	dev.Log("action response: %v", act)
-	return nil
-}
-*/

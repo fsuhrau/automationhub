@@ -3,6 +3,7 @@ package device
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"fmt"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -17,7 +18,7 @@ var (
 )
 
 const (
-	DefaultSocketTimeout = 60 * time.Minute
+	DefaultSocketTimeout = 1 * time.Minute
 	ReceiveBufferSize    = 20 * 1024
 )
 
@@ -42,7 +43,7 @@ func GetMessageSize(buffer []byte) uint32 {
 	return messageSize
 }
 
-func (c *Connection) HandleMessages() {
+func (c *Connection) HandleMessages(ctx context.Context) {
 	defer func() {
 		c.Logger.Info("HandleMessages finished")
 		if err := recover(); err != nil {
@@ -87,23 +88,22 @@ func (c *Connection) handleReadError(err error) {
 	}
 	var responseData ResponseData
 	responseData.Err = DeviceDisconnectedError
-
-	if c.Connection != nil {
-		c.Connection.Close()
-	}
 	if c.ResponseChannel != nil {
 		c.ResponseChannel <- responseData
 	}
-	close(c.ResponseChannel)
-	c.Connection = nil
-	c.ConnectionStateChannel <- Disconnected
+	c.Close()
 }
 
 func (c *Connection) Close() {
+
+	if c.ResponseChannel != nil {
+		close(c.ResponseChannel)
+	}
+
 	if c.Connection != nil {
 		_ = c.Connection.Close()
 	}
-	close(c.ConnectionStateChannel)
+	c.Connection = nil
 }
 
 func (c *Connection) Send(content []byte) error {

@@ -81,10 +81,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	tr.InstallApp(tr.appParams, devices)
 
 	tr.LogInfo("start app on devices and wait for connection")
-	if err := tr.StartApp(tr.appParams, devices, func(d device.Device) {
+	connectedDevices, err := tr.StartApp(tr.appParams, devices, func(d device.Device) {
 		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
-
-	}, nil); err == sync.TimeoutError {
+	}, nil)
+	if err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
 
@@ -92,7 +92,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	if tr.Config.Unity.RunAllTests {
 		tr.LogInfo("RunAllTests active requesting PlayMode tests")
 		a := &action.TestsGet{}
-		if err := tr.DeviceManager.SendAction(devices[0].Device, a); err != nil {
+		if err := tr.DeviceManager.SendAction(connectedDevices[0].Device, a); err != nil {
 			tr.LogError("send action to select all tests failed: %v", err)
 			return
 		}
@@ -112,11 +112,11 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	switch tr.Config.ExecutionType {
 	case models.SimultaneouslyExecutionType:
 		// each device gets its own input pool which needs to be processed
-		cancel := make(cancelChannel, len(devices))
+		cancel := make(cancelChannel, len(connectedDevices))
 		group := sync.ExtendedWaitGroup{}
 
 		var workers []workerChannel
-		for _, d := range devices {
+		for _, d := range connectedDevices {
 			channel := make(workerChannel, len(testList))
 			workers = append(workers, channel)
 			go tr.WorkerFunction(channel, d, cancel, &group)
@@ -134,7 +134,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 			}
 		}
 		group.Wait()
-		for i := 0; i < len(devices); i++ {
+		for i := 0; i < len(connectedDevices); i++ {
 			cancel <- true
 		}
 		close(cancel)
@@ -144,11 +144,11 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 
 	case models.ConcurrentExecutionType:
 		// have one input pool where each device can select a job
-		cancel := make(cancelChannel, len(devices))
+		cancel := make(cancelChannel, len(connectedDevices))
 		group := sync.ExtendedWaitGroup{}
 
 		parallelWorker := make(workerChannel, len(testList))
-		for _, d := range devices {
+		for _, d := range connectedDevices {
 			go tr.WorkerFunction(parallelWorker, d, cancel, &group)
 		}
 		for _, t := range testList {
@@ -162,7 +162,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 			parallelWorker <- a
 		}
 		group.Wait()
-		for i := 0; i < len(devices); i++ {
+		for i := 0; i < len(connectedDevices); i++ {
 			cancel <- true
 		}
 		close(cancel)
@@ -170,7 +170,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	}
 
 	tr.LogInfo("stop apps")
-	for _, d := range devices {
+	for _, d := range connectedDevices {
 		if err := d.Device.StopApp(&tr.appParams); err != nil {
 			tr.LogError("unable to start app: %v", err)
 		}

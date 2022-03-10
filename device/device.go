@@ -1,6 +1,7 @@
 package device
 
 import (
+	"context"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"net"
@@ -21,6 +22,8 @@ type Device interface {
 	UninstallApp(*app.Parameter) error
 	UpdateDeviceInfos() error
 
+	NewContext() context.Context
+	Cancel()
 	ConnectionTimeout() time.Duration
 	SetConnection(*Connection)
 	Connection() *Connection
