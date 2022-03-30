@@ -100,6 +100,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	if err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
+	if connectedDevices == nil {
+		tr.LogError("no devices connected can't execute tests...")
+		return
+	}
 
 	var testList []models.UnityTestFunction
 	if tr.Config.Unity.RunAllTests {

@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/antchfx/xmlquery v1.2.4
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
+	github.com/danielpaulus/go-ios v1.0.46 // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/gin-contrib/cors v1.3.1
@@ -31,6 +32,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	golang.org/x/crypto v0.0.0-20210812204632-0ba0e8f03122 // indirect
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0

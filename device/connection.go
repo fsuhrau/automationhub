@@ -95,6 +95,11 @@ func (c *Connection) handleReadError(err error) {
 }
 
 func (c *Connection) Close() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	if c.ResponseChannel != nil {
 		close(c.ResponseChannel)

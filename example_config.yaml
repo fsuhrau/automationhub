@@ -29,6 +29,8 @@ managers:
   ios_device:               # unity_editor manager
     enabled: true             # enable to disable it
     use_os_screenshot: false
+    webdriver:
+      bundleId: com.facebook.WebDriver
   ios_sim:
     enabled: true             # enable to disable it
     use_os_screenshot: false
