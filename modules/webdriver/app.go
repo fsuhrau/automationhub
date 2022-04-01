@@ -8,6 +8,22 @@ import (
 	"net/http"
 )
 
+type AppInfoValue struct {
+	ProcessArguments struct {
+		Env struct {
+		} `json:"env"`
+		Args []interface{} `json:"args"`
+	} `json:"processArguments"`
+	Name     string `json:"name"`
+	Pid      int    `json:"pid"`
+	BundleId string `json:"bundleId"`
+}
+
+type AppInfo struct {
+	Value     AppInfoValue `json:"value"`
+	SessionId string       `json:"sessionId"`
+}
+
 func (c *Client) Launch(bundleIdentifier string, shouldWaitForQuiescence bool, arguments []string) error {
 	type request struct {
 		ShouldWaitForQuiescence int      `json:"shouldWaitForQuiescence"`
@@ -32,7 +48,7 @@ func (c *Client) Launch(bundleIdentifier string, shouldWaitForQuiescence bool, a
 	})
 
 	requestBody := bytes.NewBuffer(jsonBody)
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/session/%s/wda/apps/launch", c.address, c.sessionId), requestBody)
+	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/apps/launch"), requestBody)
 	if err != nil {
 		return err
 	}
@@ -48,7 +64,12 @@ func (c *Client) Launch(bundleIdentifier string, shouldWaitForQuiescence bool, a
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	var res response
-	return json.Unmarshal(respBody, &res)
+	if err := json.Unmarshal(respBody, &res); err != nil {
+		var wdaError WDAError
+		_ = json.Unmarshal(respBody, &wdaError)
+		return fmt.Errorf("unable to launch: %s", wdaError.Value.Error)
+	}
+	return nil
 }
 
 func (c *Client) Terminate(bundleIdentifier string) error {
@@ -66,7 +87,7 @@ func (c *Client) Terminate(bundleIdentifier string) error {
 	})
 
 	requestBody := bytes.NewBuffer(jsonBody)
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/session/%s/wda/apps/terminate", c.address, c.sessionId), requestBody)
+	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/apps/terminate"), requestBody)
 	if err != nil {
 		return err
 	}
@@ -81,6 +102,37 @@ func (c *Client) Terminate(bundleIdentifier string) error {
 	// Read Response Body
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
-	var res response
-	return json.Unmarshal(respBody, &res)
+	var r response
+	if err := json.Unmarshal(respBody, &r); err != nil {
+		var wdaError WDAError
+		_ = json.Unmarshal(respBody, &wdaError)
+		return fmt.Errorf("unable to terminate: %s", wdaError.Value.Error)
+	}
+	return nil
+}
+
+func (c *Client) ActiveAppInfo() (*AppInfo, error) {
+
+	req, err := http.NewRequest("GET", c.getSessionUrl("/wda/activeAppInfo"), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+
+	// Fetch Request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read Response Body
+	respBody, _ := ioutil.ReadAll(resp.Body)
+
+	var res AppInfo
+	if err := json.Unmarshal(respBody, &res); err != nil {
+		var wdaError WDAError
+		_ = json.Unmarshal(respBody, &wdaError)
+		return nil, fmt.Errorf("unable to get app info: %s", wdaError.Value.Error)
+	}
+	return &res, nil
 }

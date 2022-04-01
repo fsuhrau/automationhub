@@ -27,7 +27,7 @@ type Status struct {
 }
 
 func (c *Client) Status() (*Status, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/status", c.address), nil)
+	req, err := http.NewRequest("GET", c.getUrl("/status"), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +39,10 @@ func (c *Client) Status() (*Status, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	var status Status
-	err = json.Unmarshal(body, &status)
+	if err := json.Unmarshal(body, &status); err != nil {
+		var wdaError WDAError
+		_ = json.Unmarshal(body, &wdaError)
+		return nil, fmt.Errorf("unable to get status: %s", wdaError.Value.Error)
+	}
 	return &status, err
 }

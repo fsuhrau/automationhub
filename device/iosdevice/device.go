@@ -142,8 +142,6 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	// d.StartXCUITestRunner()
-
 	if d.webDriver == nil {
 		return fmt.Errorf("webdriver not connected")
 	}
@@ -154,7 +152,14 @@ func (d *Device) StopApp(params *app.Parameter) error {
 	if d.webDriver == nil {
 		return fmt.Errorf("webdriver nocht connected")
 	}
-	return d.webDriver.Terminate(params.Identifier)
+	info, err := d.webDriver.ActiveAppInfo()
+	if err != nil {
+		return err
+	}
+	if info.Value.BundleId == params.Identifier {
+		return d.webDriver.Terminate(params.Identifier)
+	}
+	return nil
 }
 
 func (d *Device) IsAppConnected() bool {
@@ -234,10 +239,6 @@ func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }
 
-func (d *Device) RunNativeScript(script []byte) {
-
-}
-
 func (d *Device) StartXCUITestRunner() error {
 	device, err := ios.GetDevice(d.DeviceID())
 	if err != nil {
@@ -253,15 +254,10 @@ func (d *Device) StartXCUITestRunner() error {
 		err := testmanagerd.RunXCUIWithBundleIds(bundleID, testbundleID, xctestconfig, device, wdaArg, wdaEnv)
 		fmt.Println(err)
 	}()
-	time.Sleep(4 * time.Second)
 
-	// d.webDriver = webdriver.New(fmt.Sprintf("http://%s:8100", d.deviceIP.String()))
-	d.webDriver = webdriver.New("http://169.254.208.38:8100")
+	address := <-webdriver.WDAHook.Connected
+	d.webDriver = webdriver.New(address)
 	d.webDriver.CreateSession()
-	/*
-		settings, err := d.webDriver.GetSettings()
-		fmt.Println(settings)
-	*/
 	return nil
 }
 
@@ -271,4 +267,12 @@ func (d *Device) StopXCUITestRunner() error {
 	d.webDriver = nil
 	d.deviceState = device.StateRemoteDisconnected
 	return nil
+}
+
+func (d *Device) RunNativeScript(script []byte) {
+	scriptHandler := New(d.webDriver, d)
+	if err := scriptHandler.Execute(string(script)); err != nil {
+		d.Error("device", "Script Failed: %v", err)
+		d.webDriver.PressButton(KEYCODE_HOME)
+	}
 }

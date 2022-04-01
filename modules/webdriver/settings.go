@@ -40,7 +40,7 @@ type Settings struct {
 }
 
 func (c *Client) GetSettings() (*Settings, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/session/%s/appium/settings", c.address, c.sessionId), nil)
+	req, err := http.NewRequest("GET", c.getSessionUrl("/appium/settings"), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +52,18 @@ func (c *Client) GetSettings() (*Settings, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	var settings Settings
-	err = json.Unmarshal(body, &settings)
+	if err := json.Unmarshal(body, &settings); err != nil {
+		var wdaError WDAError
+		_ = json.Unmarshal(body, &wdaError)
+		return nil, fmt.Errorf("unable to get settings: %s", wdaError.Value.Error)
+	}
 	return &settings, err
 }
 
 func (c *Client) SetSettings(settings Settings) error {
 	jsonRequest, _ := json.Marshal(settings)
 	body := bytes.NewBuffer(jsonRequest)
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/session/%s/appium/settings", c.address, c.sessionId), body)
+	req, err := http.NewRequest("POST", c.getSessionUrl("/appium/settings"), body)
 	if err != nil {
 		return err
 	}
