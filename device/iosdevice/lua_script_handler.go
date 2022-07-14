@@ -24,6 +24,14 @@ func New(client *webdriver.Client, dev device.Device) *LuaScriptHandler {
 }
 
 func (l *LuaScriptHandler) Execute(script string) error {
+	defer func() {
+		if err := recover(); err != nil {
+			if l.dev != nil {
+				l.dev.Error("device", "script execution failed: %v", err)
+			}
+		}
+	}()
+
 	executor := lua.NewState()
 	defer executor.Close()
 	l.init(executor)

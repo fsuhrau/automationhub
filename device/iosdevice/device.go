@@ -262,7 +262,9 @@ func (d *Device) StartXCUITestRunner() error {
 }
 
 func (d *Device) StopXCUITestRunner() error {
-	d.webDriver.CloseSession()
+	if d.webDriver != nil {
+		d.webDriver.CloseSession()
+	}
 	_ = testmanagerd.CloseXCUITestRunner()
 	d.webDriver = nil
 	d.deviceState = device.StateRemoteDisconnected
@@ -273,6 +275,9 @@ func (d *Device) RunNativeScript(script []byte) {
 	scriptHandler := New(d.webDriver, d)
 	if err := scriptHandler.Execute(string(script)); err != nil {
 		d.Error("device", "Script Failed: %v", err)
+		if d.webDriver != nil {
+			d.webDriver.CloseSession()
+		}
 		d.webDriver.PressButton(KEYCODE_HOME)
 	}
 }
