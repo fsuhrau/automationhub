@@ -2,7 +2,7 @@ import IProtocolEntryData from './protocol.entry';
 import { TestResultState } from './test.result.state.enum';
 import IDeviceData from './device';
 import IProtocolPerformanceEntryData from './protocol.performance.entry';
-import moment from "moment";
+import moment from 'moment';
 
 export default interface ITestProtocolData {
     ID?: number | null,

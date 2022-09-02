@@ -18,11 +18,11 @@ import Select from '@mui/material/Select';
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
-        <Box sx={ {display: 'flex', alignItems: 'center'} }>
-            <Box sx={ {width: '100%', mr: 1} }>
+        <Box sx={ { display: 'flex', alignItems: 'center' } }>
+            <Box sx={ { width: '100%', mr: 1 } }>
                 <LinearProgress variant="determinate" { ...props } />
             </Box>
-            <Box sx={ {minWidth: 35} }>
+            <Box sx={ { minWidth: 35 } }>
                 <Typography variant="body2">{ `${ Math.round(
                     props.value,
                 ) }%` }</Typography>
@@ -38,7 +38,7 @@ interface AppSelectionProps {
 }
 
 const AppSelection: React.FC<AppSelectionProps> = (props) => {
-    const {onSelectionChanged, upload} = props;
+    const { onSelectionChanged, upload } = props;
 
     const [app, setApp] = useState<IAppData>();
     const [apps, setApps] = useState<IAppData[]>([]);
@@ -105,7 +105,7 @@ const AppSelection: React.FC<AppSelectionProps> = (props) => {
                         id="app-selection"
                         value={ selectedAppID }
                         onChange={ event => handleChange(event) }
-                        label={ "App" }
+                        label={ 'App' }
                     >
                         <MenuItem value={ 0 }>Select an App</MenuItem>
                         { apps.map((a) =>
@@ -123,7 +123,7 @@ const AppSelection: React.FC<AppSelectionProps> = (props) => {
                 >
                     { upload && (
                         <Grid item={ true }>
-                            <Box sx={ {width: '200px'} }>
+                            <Box sx={ { width: '200px' } }>
                                 <LinearProgressWithLabel value={ uploadProgress }/>
                             </Box>
                         </Grid>

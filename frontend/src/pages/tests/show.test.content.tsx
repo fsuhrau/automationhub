@@ -7,14 +7,16 @@ import { useHistory } from 'react-router-dom';
 import ITestData from '../../types/test';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { getPlatformName } from "../../types/platform.type.enum";
+import { getPlatformName } from '../../types/platform.type.enum';
 
-function getUnityTestsConfig(): Array<Object> {
-    return [{id: 0, name: 'Run all Tests'}, {id: 1, name: 'Run only Selected Tests'}];
+type KeyValue = { id:number, name:string };
+
+function getUnityTestsConfig(): Array<KeyValue> {
+    return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
 }
 
-function getDeviceOption(): Array<Object> {
-    return [{id: 0, name: 'All Devices'}, {id: 1, name: 'Selected Devices Only'}];
+function getDeviceOption(): Array<KeyValue> {
+    return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
 }
 
 interface TestContentProps {
@@ -23,7 +25,7 @@ interface TestContentProps {
 
 const ShowTestPage: React.FC<TestContentProps> = (props) => {
 
-    const {test} = props;
+    const { test } = props;
     const history = useHistory();
 
     const unityTestConfig = getUnityTestsConfig();
@@ -31,23 +33,23 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
 
     const getUnityTestConfigName = (b: boolean): string => {
         const id = b ? 0 : 1;
-        const item = unityTestConfig.find(i => i.id == id);
-        return item.name;
+        const item = unityTestConfig.find(i => i.id === id);
+        return item === undefined ? "" : item.name;
     };
 
     const getDeviceConfigName = (b: boolean): string => {
         const id = b ? 0 : 1;
-        const item = deviceConfig.find(i => i.id == id);
-        return item.name;
+        const item = deviceConfig.find(i => i.id === id);
+        return item === undefined ? "" : item.name;
     };
 
     return (
-        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
+        <Paper sx={ { maxWidth: 1200, margin: 'auto', overflow: 'hidden' } }>
             <AppBar
                 position="static"
                 color="default"
                 elevation={ 0 }
-                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
+                sx={ { borderBottom: '1px solid rgba(0, 0, 0, 0.12)' } }
             >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
@@ -60,12 +62,12 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                         </Grid>
                         <Grid item={ true }>
                             <Button variant="contained" color="primary" size="small"
-                                    href={ `${ test.ID }/edit` }>Edit</Button>
+                                href={ `${ test.ID }/edit` }>Edit</Button>
                         </Grid>
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={ {p: 2, m: 2} }>
+            <Box sx={ { p: 2, m: 2 } }>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
                         <Typography variant={ 'h6' }>Test Data</Typography>
@@ -101,11 +103,11 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                             </Grid>
                             <Grid item={ true } xs={ 10 }>
                                 { getDeviceConfigName(test.TestConfig.AllDevices) }
-                                { test.TestConfig.AllDevices === true && (<div>all</div>) }
-                                { test.TestConfig.AllDevices === false && (<div>
+                                { test.TestConfig.AllDevices && (<div>all</div>) }
+                                { !test.TestConfig.AllDevices && (<div>
                                     Devices:<br/>
-                                    { test.TestConfig.Devices.map((a) =>
-                                        <div>- { a.Device?.DeviceIdentifier }({ a.Device?.Name })<br/></div>,
+                                    { test.TestConfig.Devices.map((a, index) =>
+                                        <div key={`device_${a.ID}_${index}`}>- { a.Device?.DeviceIdentifier }({ a.Device?.Name })<br/></div>,
                                     ) }
                                 </div>) }
                             </Grid>
@@ -136,8 +138,8 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                                             </Grid>
                                             <Grid item={ true } xs={ 10 }>
                                                 Functions:<br/>
-                                                { test.TestConfig.Unity.UnityTestFunctions.map((a) =>
-                                                    <div>- { a.Class }/{ a.Method }<br/></div>,
+                                                { test.TestConfig.Unity.UnityTestFunctions.map((a, index) =>
+                                                    <div key={`test_function_${a.ID}_${index}`}>- { a.Class }/{ a.Method }<br/></div>,
                                                 ) }
                                             </Grid>
                                         </>) }

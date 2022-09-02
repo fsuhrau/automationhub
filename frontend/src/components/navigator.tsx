@@ -10,13 +10,13 @@ import DnsRoundedIcon from '@mui/icons-material/DnsRounded';
 import { DistributiveOmit } from '@mui/types';
 import { NavLink, useHistory } from 'react-router-dom';
 import { Box, IconButton, Link, ListItemButton, Tooltip } from '@mui/material';
-import { ArrowRight, Biotech, Devices, Settings } from "@mui/icons-material";
+import { ArrowRight, Biotech, Devices, Settings } from '@mui/icons-material';
 
 const categories = [
     {
         id: 'Test Center',
         children: [
-            {id: 'Tests', ref: '/web/tests', icon: <Biotech/>},
+            { id: 'Tests', ref: '/web/tests', icon: <Biotech/> },
             // { id: 'Results', ref: '/web/results', icon: <SettingsEthernetIcon/> },
             // { id: 'Performance', ref: '/web/performance', icon: <TimerIcon/> },
         ],
@@ -25,9 +25,9 @@ const categories = [
         id: 'Management',
         children: [
             // { id: 'Settings', ref: '/web/settings', icon: <SettingsIcon/> },
-            {id: 'Apps', ref: '/web/apps', icon: <DnsRoundedIcon/>},
+            { id: 'Apps', ref: '/web/apps', icon: <DnsRoundedIcon/> },
             // { id: 'User', ref: '/web/users', icon: <PeopleIcon/> },
-            {id: 'Devices', ref: '/web/devices', icon: <Devices/>},
+            { id: 'Devices', ref: '/web/devices', icon: <Devices/> },
         ],
     },
 ];
@@ -53,25 +53,25 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
 
     const history = useHistory();
 
-    const {...other} = props;
+    const { ...other } = props;
 
     return (
         <Drawer variant="permanent" { ...other }>
             <List disablePadding={ true } >
-                <ListItem sx={ {...item, ...itemCategory, fontSize: 22, bgcolor: '#101F33', color: '#fff'} } >
+                <ListItem sx={ { ...item, ...itemCategory, fontSize: 22, bgcolor: '#101F33', color: '#fff' } } >
                     Automation Hub
                 </ListItem>
-                <ListItem sx={{bgcolor: '#101F33'}}>
+                <ListItem sx={{ bgcolor: '#101F33' }}>
                     <ListItemButton
                         onClick={ () => {
                             history.push('/web');
                         } }
                     >
                         <ListItemIcon>
-                            <HomeIcon sx={ {color: 'rgba(255,255,255,0.8)'} } />
+                            <HomeIcon sx={ { color: 'rgba(255,255,255,0.8)' } } />
                         </ListItemIcon>
                         <ListItemText
-                            primaryTypographyProps={ {color: 'rgba(255,255,255,0.8)', fontWeight: 'medium'}}
+                            primaryTypographyProps={ { color: 'rgba(255,255,255,0.8)', fontWeight: 'medium' }}
                         >
                             Project&nbsp;Overview
                         </ListItemText>
@@ -95,14 +95,14 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
                         </IconButton>
                     </Tooltip>
                 </ListItem>
-                { categories.map(({id, children}) => (
+                { categories.map(({ id, children }) => (
                     <Box key={ id } >
-                        <ListItem sx={ {py: 2, px: 3} }>
-                            <ListItemText sx={ {color: '#fff'} }>
+                        <ListItem sx={ { py: 2, px: 3 } }>
+                            <ListItemText sx={ { color: '#fff' } }>
                                 { id }
                             </ListItemText>
                         </ListItem>
-                        { children.map(({id: childId, ref, icon}) => (
+                        { children.map(({ id: childId, ref, icon }) => (
                             <Link
                                 key={ childId }
                                 component={ NavLink }
@@ -117,7 +117,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
                                 </ListItem>
                             </Link>
                         )) }
-                        <Divider sx={ {mt: 2} }/>
+                        <Divider sx={ { mt: 2 } }/>
                     </Box>
                 )) }
             </List>

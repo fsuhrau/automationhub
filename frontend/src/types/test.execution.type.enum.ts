@@ -1,4 +1,4 @@
-import { ToArray } from "../helper/enum_to_array";
+import { ToArray } from '../helper/enum_to_array';
 
 export enum TestExecutionType {
     Concurrent,
@@ -7,7 +7,7 @@ export enum TestExecutionType {
 
 export const getExecutionTypes = (): Array<Object> => {
     return ToArray(TestExecutionType);
-}
+};
 
 export const getTestExecutionName = (type: TestExecutionType): string => {
     return TestExecutionType[type];

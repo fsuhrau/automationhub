@@ -17,7 +17,7 @@ import Moment from 'react-moment';
 import { ButtonGroup, Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
 import DownloadIcon from '@mui/icons-material/Download';
-import IconButton from "@mui/material/IconButton";
+import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 const AppsPage: React.FC = () => {
@@ -115,7 +115,7 @@ const AppsPage: React.FC = () => {
                                     } }>
                                         <DeleteForeverIcon/>
                                     </IconButton>
-                                    </ButtonGroup>
+                                </ButtonGroup>
                                 </TableCell>
                             </TableRow>) }
                         </TableBody>

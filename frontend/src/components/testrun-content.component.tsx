@@ -28,7 +28,7 @@ import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { PlatformType } from "../types/platform.type.enum";
+import { PlatformType } from '../types/platform.type.enum';
 
 interface TestRunContentProps {
     testRun: ITestRunData
@@ -48,10 +48,10 @@ interface NewProtocolPayload {
 
 const TestRunContent: React.FC<TestRunContentProps> = (props) => {
 
-    const {testRun, nextRunId, prevRunId} = props;
+    const { testRun, nextRunId, prevRunId } = props;
 
     const testContext = useContext(TestContext);
-    const {test, setTest} = testContext;
+    const { test, setTest } = testContext;
 
     const history = useHistory();
 
@@ -126,18 +126,18 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
     };
 
     return (
-        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
+        <Paper sx={ { maxWidth: 1200, margin: 'auto', overflow: 'hidden' } }>
             <AppBar
                 position="static"
                 color="default"
                 elevation={ 0 }
-                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
+                sx={ { borderBottom: '1px solid rgba(0, 0, 0, 0.12)' } }
             >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
                         <Grid item={ true }>
                             { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                                href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                             }
@@ -149,7 +149,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                         </Grid>
                         <Grid item={ true }>
                             { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                                href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
                             }
@@ -159,7 +159,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
             </AppBar>
             <Grid container={ true }>
                 <Grid item={ true } xs={ 6 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         { testRun.Test.TestConfig.Platform != PlatformType.Editor && (
                             <>
                                 <Typography variant={ 'h6' }>App Details</Typography>
@@ -235,7 +235,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                 <Grid item={ true } xs={ 2 }>
                 </Grid>
                 <Grid item={ true } xs={ 4 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Results</Typography>
                         <Divider/>
                         <Grid container={ true }>
@@ -261,7 +261,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
                         <Divider/>
                         <TableContainer>
@@ -305,7 +305,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                     </Box>
                 </Grid>
                 <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
+                    <Box sx={ { p: 2, m: 2 } }>
                         <Typography variant={ 'h6' }>Executor Log</Typography>
                         <Divider/>
                         <TableContainer>
@@ -319,7 +319,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
                                 </TableHead>
                                 <TableBody>
                                     { log.map((entry) => <TableRow key={ entry.ID }>
-                                        <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
+                                        <TableCell component="th" scope="row" style={ { whiteSpace: 'nowrap' } }>
                                             <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
                                         </TableCell>
                                         <TableCell>{ entry.Level }</TableCell>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { Button, Card, CardMedia, Popover, Popper, Typography } from '@mui/material';
-import Paper from "@mui/material/Paper";
+import Paper from '@mui/material/Paper';
 
 interface CellExpandProps {
     id: number
@@ -10,7 +10,7 @@ interface CellExpandProps {
 }
 
 const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
-    const {id, value, data} = props;
+    const { id, value, data } = props;
 
     const [anchorLogScreenEl, setAnchorLogScreenEl] = useState<HTMLButtonElement | null>(null);
     const wrapper = React.useRef<HTMLDivElement | null>(null);
@@ -48,15 +48,15 @@ const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
 
         function handleKeyDown(nativeEvent: KeyboardEvent) {
             // IE11, Edge (prior to using Bink?) use 'Esc'
-            if (nativeEvent.key === "Escape" || nativeEvent.key === "Esc") {
+            if (nativeEvent.key === 'Escape' || nativeEvent.key === 'Esc') {
                 setShowFullCell(false);
             }
         }
 
-        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener('keydown', handleKeyDown);
         };
     }, [setShowFullCell, showFullCell]);
 
@@ -65,19 +65,19 @@ const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
             ref={ wrapper }
             onMouseEnter={ handleMouseEnter }
             onMouseLeave={ handleMouseLeave }
-            style={{ display: "block", maxWidth: "inherit" }}
+            style={{ display: 'block', maxWidth: 'inherit' }}
         >
             <div
                 ref={ cellDiv }
                 style={ {
                     height: 1,
-                    display: "block",
-                    top: 0
+                    display: 'block',
+                    top: 0,
                 } }
             />
             { value === '' && (<>
-                <Button aria-describedby={ `$id` } variant="contained"
-                        onClick={ showLogScreenPopup }>
+                <Button aria-describedby={ '$id' } variant="contained"
+                    onClick={ showLogScreenPopup }>
                     Show
                 </Button>
                 <Popover
@@ -100,8 +100,8 @@ const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
                     </Card>
                 </Popover>
             </>) }
-            { value !== '' && (<div style={{ display: "block", maxWidth: "inherit" }}>
-                <div ref={ cellValue } style={{ display: "block", maxWidth: "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ value }</div>
+            { value !== '' && (<div style={{ display: 'block', maxWidth: 'inherit' }}>
+                <div ref={ cellValue } style={{ display: 'block', maxWidth: 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ value }</div>
                 <Popper
                     open={ showFullCell && anchorEl != null }
                     anchorEl={ anchorEl }
@@ -109,7 +109,7 @@ const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
                 >
                     <Paper
                         elevation={1}>
-                        <Typography variant={ "body2" } style={{ padding: 8 }}>{ value }</Typography>
+                        <Typography variant={ 'body2' } style={{ padding: 8 }}>{ value }</Typography>
                     </Paper>
                 </Popper>
             </div>) }

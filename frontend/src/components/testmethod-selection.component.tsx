@@ -118,7 +118,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                 />
                             </ListItemIcon>
                             <ListItemText id={ labelId }
-                                primary={ `${ trimClass(value.Class) } ${ trimMethod(value.Method) }` }/>
+                                primary={ `${ trimMethod(value.Method) }` } secondary={trimClass(value.Class) }/>
                         </ListItem>
                     );
                 }) }

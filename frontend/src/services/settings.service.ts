@@ -1,6 +1,7 @@
 import http from '../http-common';
 import { AxiosResponse } from 'axios';
-import IAccessTokenData from "../types/access.token";
+import IAccessTokenData from '../types/access.token';
+import { Dayjs } from "dayjs";
 
 
 export const getAccessTokens = (): Promise<AxiosResponse<IAccessTokenData[]>> => {
@@ -9,7 +10,7 @@ export const getAccessTokens = (): Promise<AxiosResponse<IAccessTokenData[]>> =>
 
 export interface NewAccessTokenRequest {
     Name: string,
-    ExpiresAt: Date | null,
+    ExpiresAt: Dayjs | null,
 }
 
 export const createAccessToken = (data: NewAccessTokenRequest): Promise<AxiosResponse<IAccessTokenData>> => {

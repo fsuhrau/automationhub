@@ -24,7 +24,7 @@ import { Edit, PlayArrow } from '@mui/icons-material';
 import AppSelection from './app-selection.component';
 import IAppData from '../types/app';
 import { useHistory } from 'react-router-dom';
-import { PlatformType } from "../types/platform.type.enum";
+import { PlatformType } from '../types/platform.type.enum';
 
 const TestsTable: React.FC = () => {
 
@@ -41,7 +41,7 @@ const TestsTable: React.FC = () => {
 
     // test handling
     const [startDisabled, setStartDisabled] = useState<boolean>(true);
-    const [selectedTest, setSelectedTest] = useState<ITestData|null>(null);
+    const [selectedTest, setSelectedTest] = useState<ITestData | null>(null);
     const [selectedAppID, setSelectedAppID] = useState<number>(0);
     const [envParameter, setEnvParameter] = useState<string>('');
     const [tests, setTests] = useState<ITestData[]>([]);
@@ -118,7 +118,7 @@ const TestsTable: React.FC = () => {
     };
 
     useEffect(() => {
-        setStartDisabled(!(selectedTest?.TestConfig.Platform == PlatformType.Editor || selectedAppID > 0))
+        setStartDisabled(!(selectedTest?.TestConfig.Platform == PlatformType.Editor || selectedAppID > 0));
     }, [selectedTest, selectedAppID]);
 
     return (
@@ -158,7 +158,8 @@ const TestsTable: React.FC = () => {
                     <Button onClick={ handleRunClose } color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={ () => { selectedTest && onRunTest(selectedTest.ID, selectedAppID);
+                    <Button onClick={ () => {
+                        selectedTest && onRunTest(selectedTest.ID, selectedAppID);
                         handleRunClose();
                     } } color="primary" variant={ 'contained' } disabled={ startDisabled }>
                         Start

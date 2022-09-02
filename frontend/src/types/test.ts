@@ -1,6 +1,6 @@
 import ITestConfigData from './test.config';
 import ITestRunData from './test.run';
-import { PlatformType } from "./platform.type.enum";
+import { PlatformType } from './platform.type.enum';
 
 export default interface ITestData {
     ID: number,

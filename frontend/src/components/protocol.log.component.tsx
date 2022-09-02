@@ -3,7 +3,7 @@ import { Box, Button, Card, CardMedia, Chip, Popover, Popper, Typography } from 
 import IProtocolEntryData from '../types/protocol.entry';
 import { DataGrid, GridCellValue, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { makeStyles } from '@mui/styles';
-import CellExpand from "./cell.expand.component";
+import CellExpand from './cell.expand.component';
 
 const useStyles = makeStyles(theme => ({
     chip: {
@@ -100,8 +100,8 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
         return (
             <CellExpand id={params.row.ID} value={params.value} data={params.row.Data} />
-        )
-    }
+        );
+    };
 
     const columns: GridColDef[] = [
         {
@@ -172,7 +172,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     };
 
     const filterEntries = (ents: IProtocolEntryData[]): IProtocolEntryData[] => {
-        return ents.filter(value => isVisible(value.Source) && (!errorsOnly || value.Level== "error"));
+        return ents.filter(value => isVisible(value.Source) && (!errorsOnly || value.Level == 'error'));
     };
 
     const toggleFilter = (source: string): void => {
@@ -197,9 +197,9 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     };
 
     const toggleFilterError = () => {
-      setErrorsOnly(prevState => {
-          return !prevState;
-      })
+        setErrorsOnly(prevState => {
+            return !prevState;
+        });
     };
 
     useEffect(() => {
@@ -210,9 +210,9 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         <div className={ classes.chip }>
             <Box sx={ { width: '100%', height: '50px' } }>
                 <Chip className={ errorsOnly ? 'chip--error' : 'chip--error--unchecked' } label={ 'errors' }
-                      clickable={ true }
-                      variant={ errorsOnly ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilterError() }/>
+                    clickable={ true }
+                    variant={ errorsOnly ? 'filled' : 'outlined' }
+                    onClick={ () => toggleFilterError() }/>
                 <Chip className={ filterApp ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
                     clickable={ true }
                     variant={ filterApp ? 'filled' : 'outlined' }

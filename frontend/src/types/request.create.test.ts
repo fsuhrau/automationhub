@@ -1,7 +1,7 @@
 import { TestType } from './test.type.enum';
 import IAppFunctionData from './app.function';
 import { TestExecutionType } from './test.execution.type.enum';
-import { PlatformType } from "./platform.type.enum";
+import { PlatformType } from './platform.type.enum';
 
 export default interface ICreateTestData {
     Name: string,

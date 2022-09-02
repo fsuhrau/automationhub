@@ -8,124 +8,142 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import IDeviceData from '../types/device';
-import { getAllDevices } from '../services/device.service';
-import { Typography } from '@mui/material';
+import { Avatar, Icon, ListItemAvatar, ListItemButton, Typography } from '@mui/material';
+import AndroidRoundedIcon from '@mui/icons-material/AndroidRounded';
+import AppleIcon from '@mui/icons-material/Apple';
 
 interface DeviceSelectionProps {
-    onSelectionChanged: (devices: IDeviceData[]) => void;
-    selectedDevices: IDeviceData[];
+    devices: IDeviceData[],
+    selectedDevices: number[];
+    onSelectionChanged: (devices: number[]) => void;
 }
 
-function not(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
+function not(a: number[], b: number[]): number[] {
     return a.filter((value) => b.indexOf(value) === -1);
 }
 
-function intersection(a: IDeviceData[], b: IDeviceData[]): IDeviceData[] {
+function intersection(a: number[], b: number[]): number[] {
     return a.filter((value) => b.indexOf(value) !== -1);
 }
 
 const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
-    const { selectedDevices, onSelectionChanged } = props;
+    const {devices, selectedDevices, onSelectionChanged} = props;
 
-    const [checked, setChecked] = React.useState<IDeviceData[]>([]);
+    type SelectionState = {
+        devices: IDeviceData[],
+        left: number[],
+        right: number[],
+        checked: number[],
+    }
 
-    const [left, setLeft] = React.useState<IDeviceData[]>([]);
-    const [right, setRight] = React.useState<IDeviceData[]>([]);
+    const [state, setState] = React.useState<SelectionState>({
+        devices: devices,
+        left: not(devices.map(dev => dev.ID), selectedDevices),
+        right: selectedDevices,
+        checked: [],
+    });
 
-    const leftChecked = intersection(checked, left);
-    const rightChecked = intersection(checked, right);
-
-    const handleToggle = (value: IDeviceData) => () => {
-        const currentIndex = checked.indexOf(value);
-        const newChecked = [...checked];
-
+    const handleToggle = (value: number) => () => {
+        const currentIndex = state.checked.indexOf(value);
         if (currentIndex === -1) {
-            newChecked.push(value);
+            setState(prevState => ({...prevState, checked: [...prevState.checked, value]}))
         } else {
-            newChecked.splice(currentIndex, 1);
+            setState(prevState => ({
+                ...prevState,
+                checked: [...prevState.checked.slice(0, currentIndex), ...prevState.checked.slice(currentIndex + 1)]
+            }))
         }
-
-        setChecked(newChecked);
     };
 
     const handleAllRight = (): void => {
-        setRight(right.concat(left));
-        setLeft([]);
-    };
-
-    const handleCheckedRight = (): void => {
-        setRight(right.concat(leftChecked));
-        setLeft(not(left, leftChecked));
-        setChecked(not(checked, leftChecked));
-    };
-
-    const handleCheckedLeft = (): void => {
-        setLeft(left.concat(rightChecked));
-        setRight(not(right, rightChecked));
-        setChecked(not(checked, rightChecked));
+        setState(prevState => ({
+            ...prevState,
+            right: devices.map(value => value.ID),
+            left: []
+        }))
     };
 
     const handleAllLeft = (): void => {
-        setLeft(left.concat(right));
-        setRight([]);
+        setState(prevState => ({
+            ...prevState,
+            right: [],
+            left: devices.map(value => value.ID)
+        }))
+    };
+
+    const handleCheckedRight = (): void => {
+        setState(prevState => ({
+            ...prevState,
+            right: [...prevState.right, ...prevState.left.filter(value => prevState.checked.findIndex(v => v === value) !== -1)],
+            left: not(prevState.left, prevState.checked),
+        }))
+    };
+
+    const handleCheckedLeft = (): void => {
+        setState(prevState => ({
+            ...prevState,
+            right: not(prevState.right, prevState.checked),
+            left: [...prevState.left, ...prevState.right.filter(value => prevState.checked.findIndex(v => v === value) !== -1)],
+        }))
     };
 
     useEffect(() => {
-        getAllDevices().then(response => {
-            const r = response.data.filter(value => selectedDevices.find(element => element.ID == value.ID));
-            setRight(r);
-            setLeft(not(response.data, r));
-        }).catch(e => {
-        });
-    }, []);
+        onSelectionChanged(state.right);
+    }, [state.right, onSelectionChanged]);
 
-    useEffect(() => {
-        onSelectionChanged(right);
-    }, [right, onSelectionChanged]);
-
-    const customList = (items: IDeviceData[]): ReactElement => (
-        <Paper sx={{ minWidth: 400, maxWidth: 400, minHeight: 400, maxHeight: 400, margin: 'auto', overflow: 'auto' }}>
-            <List dense={true} component="div" role="list">
-                {items.map((value) => {
-                    const labelId = `transfer-list-item-${value.ID}-label`;
-
+    const customList  = (items: number[]): ReactElement => (
+        <Paper sx={ {minWidth: 400, maxWidth: 400, minHeight: 400, maxHeight: 400, margin: 'auto', overflow: 'auto'} }>
+            <List dense={ true } component="div" role="list">
+                { items.map((value) => {
+                    const labelId = `transfer-list-item-${ value }-label`;
+                    const device = state.devices.find(d => d.ID === value);
                     return (
-                        <ListItem key={value.ID} role="listitem" button={true} onClick={handleToggle(value)}>
-                            <ListItemIcon>
-                                <Checkbox
-                                    checked={checked.indexOf(value) !== -1}
-                                    tabIndex={-1}
-                                    disableRipple={true}
-                                    inputProps={{ 'aria-labelledby': labelId }}
-                                />
-                            </ListItemIcon>
-                            <ListItemText id={labelId} primary={`${value.DeviceIdentifier}(${value.Name})`} />
+                        <ListItem key={ value }
+                                  role="listitem"
+                                  button={ true }
+                                  onClick={ handleToggle(value) }
+                                  secondaryAction={<Checkbox
+                                      checked={ state.checked.indexOf(value) !== -1 }
+                                      tabIndex={ -1 }
+                                      disableRipple={ true }
+                                      inputProps={ {'aria-labelledby': labelId} }
+                                  />}
+                        >
+                            <ListItemButton>
+                                <ListItemAvatar>
+                                    <Avatar>
+                                        { device?.OS === "android" && <AndroidRoundedIcon/>}
+                                        { device?.OS === "iPhone OS" && <AppleIcon/>}
+                                    </Avatar>
+                                </ListItemAvatar>
+                                <ListItemText id={ labelId } primary={ `${ device?.Name } (${ device?.OSVersion })` } secondary={device?.DeviceIdentifier}/>
+                            </ListItemButton>
                         </ListItem>
                     );
-                })}
-                <ListItem />
+                }) }
+                <ListItem/>
             </List>
         </Paper>
     );
 
     return (
         <Grid
-            container={true}
-            spacing={2}
+            container={ true }
+            spacing={ 2 }
             justifyContent="center"
             alignItems="center"
         >
-            <Grid item={true}>
-                <Typography variant={'subtitle1'}>Available Devices</Typography>
-                {customList(left)}
+            <Grid item={ true }>
+                <Typography variant={ 'subtitle1' }>Available Devices</Typography>
+                { customList(state.left) }
             </Grid>
-            <Grid item={true}>
-                <Grid container={true} direction="column" alignItems="center">
+            <Grid item={ true }>
+                <Grid container={ true } direction="column" alignItems="center">
                     <Button
                         variant="outlined"
                         size="small"
-                        onClick={handleAllRight}
-                        disabled={left.length === 0}
+                        onClick={ handleAllRight }
+                        disabled={ state.left.length === 0 }
                         aria-label="move all right"
                     >
                         ≫
@@ -133,8 +151,8 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        onClick={handleCheckedRight}
-                        disabled={leftChecked.length === 0}
+                        onClick={ handleCheckedRight }
+                        disabled={ state.left.length === 0 }
                         aria-label="move selected right"
                     >
                         &gt;
@@ -142,8 +160,8 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        onClick={handleCheckedLeft}
-                        disabled={rightChecked.length === 0}
+                        onClick={ handleCheckedLeft }
+                        disabled={ state.right.length === 0 }
                         aria-label="move selected left"
                     >
                         &lt;
@@ -151,17 +169,17 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                     <Button
                         variant="outlined"
                         size="small"
-                        onClick={handleAllLeft}
-                        disabled={right.length === 0}
+                        onClick={ handleAllLeft }
+                        disabled={ state.right.length === 0 }
                         aria-label="move all left"
                     >
                         ≪
                     </Button>
                 </Grid>
             </Grid>
-            <Grid item={true}>
-                <Typography variant={'subtitle1'}>Selected Devices</Typography>
-                {customList(right)}
+            <Grid item={ true }>
+                <Typography variant={ 'subtitle1' }>Selected Devices</Typography>
+                { customList(state.right) }
             </Grid>
         </Grid>
     );
