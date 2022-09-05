@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
-import Navigator from './components/navigator';
-import TestContent from './pages/tests/tests.content';
-import DevicesContent from './pages/devices/device.content';
-import Content from './Content';
-import AddTestPage from './pages/tests/add.test.content';
-import TestRunPageLoader from './pages/tests/test.run.page.loader';
-import TestProtocolLoader from './pages/tests/test.protocol.loader';
+import Navigator from './navigator';
+import TestContent from '../pages/tests/tests.content';
+import DevicesContent from '../pages/devices/device.content';
+import AddTestPage from '../pages/tests/add.test.content';
+import TestRunPageLoader from '../pages/tests/test.run.page.loader';
+import TestProtocolLoader from '../pages/tests/test.protocol.loader';
 import Moment from 'react-moment';
-import AppsPage from './pages/apps/apps.page';
-import SettingsPage from './pages/settings/settings.page';
+import AppsPage from '../pages/apps/apps.page';
+import SettingsPage from '../pages/settings/settings.page';
 import { SSEProvider } from 'react-hooks-sse';
-import { AppContext } from './context/app.context';
-import DefaultHeader from './pages/shared/header';
-import TestPageLoader from './pages/tests/test.page.loader';
-import DevicesManagerContent from './pages/devices/devices.manager.content';
-import DevicePageLoader from './pages/devices/device.page.loader';
+import { AppContext } from '../context/app.context';
+import DefaultHeader from '../pages/shared/header';
+import TestPageLoader from '../pages/tests/test.page.loader';
+import DevicesManagerContent from '../pages/devices/devices.manager.content';
+import DevicePageLoader from '../pages/devices/device.page.loader';
 import { useMediaQuery } from '@mui/material';
 import { Box } from '@mui/system';
-import MainPage from './pages/main/main.page';
+import MainPage from '../pages/main/main.page';
+import appReducer, { INITIAL_STATE, STATE_ACTIONS } from "./application.state";
+import { getProjects } from "../project/project.service";
 
 Moment.globalLocale = 'de';
 
@@ -234,20 +235,29 @@ declare module '@mui/material/Paper' {
 const drawerWidth = 256;
 
 const App: React.FC = () => {
-    const [mobileOpen, setMobileOpen] = useState(false);
+
+    const [state, dispatch] = useReducer(appReducer, INITIAL_STATE);
+
     const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
 
     const handleDrawerToggle = (): void => {
-        setMobileOpen(!mobileOpen);
+        dispatch({type: STATE_ACTIONS.TOGGLE_MOBILE_OPEN});
     };
+
+    useEffect(() => {
+        getProjects().then(response => {
+            dispatch({type: STATE_ACTIONS.UPDATE_PROJECTS, payload: response.data})
+        })
+    }, [])
 
     return <SSEProvider endpoint="/api/sse">
         <AppContext.Provider value={ { title: '' } }>
             <Router>
                 <ThemeProvider theme={ theme }>
+
                     <Box sx={ { display: 'flex', minHeight: '100vh' } }>
                         <CssBaseline/>
-                        <Box
+                        { state.project !== null && <Box
                             component="nav"
                             sx={ { width: { sm: drawerWidth }, flexShrink: { sm: 0 } } }
                         >
@@ -255,7 +265,7 @@ const App: React.FC = () => {
                                 <Navigator
                                     PaperProps={ { style: { width: drawerWidth } } }
                                     variant="temporary"
-                                    open={ mobileOpen }
+                                    open={ state.mobileOpen }
                                     onClose={ handleDrawerToggle }
                                 />
                             ) }
@@ -263,58 +273,59 @@ const App: React.FC = () => {
                                 PaperProps={ { style: { width: drawerWidth } } }
                                 sx={ { display: { sm: 'block', xs: 'none' } } }
                             />
-                        </Box>
+                        </Box> }
+
                         <Box sx={ { flex: 1, display: 'flex', flexDirection: 'column' } }>
-                            <DefaultHeader onDrawerToggle={ handleDrawerToggle }/>
+                            <DefaultHeader appState={state} dispatch={dispatch} onDrawerToggle={ handleDrawerToggle }/>
                             <Box component="main" sx={ { flex: 1, py: 6, px: 4, bgcolor: '#eaeff1' } }>
                                 <Switch>
-                                    <Route path="/web/tests">
+                                    <Route path="/web/:project/tests">
                                         <TestContent/>
                                     </Route>
-                                    <Route path={ '/web/test/new' }>
+                                    <Route path={ '/web/:project/test/new' }>
                                         <AddTestPage/>
                                     </Route>
-                                    <Route path={ '/web/test/:testId/run/:runId/:protocolId' }>
+                                    <Route path={ '/web/:project/test/:testId/run/:runId/:protocolId' }>
                                         <TestProtocolLoader/>
                                     </Route>
-                                    <Route path="/web/test/:testId/runs/last">
+                                    <Route path="/web/:project/test/:testId/runs/last">
                                         <TestRunPageLoader/>
                                     </Route>
-                                    <Route path="/web/test/:testId/run/:runId">
+                                    <Route path="/web/:project/test/:testId/run/:runId">
                                         <TestRunPageLoader/>
                                     </Route>
-                                    <Route path={ '/web/test/:testId/edit' }>
+                                    <Route path={ '/web/:project/test/:testId/edit' }>
                                         <TestPageLoader edit={ true }/>
                                     </Route>
-                                    <Route path={ '/web/test/:testId' }>
+                                    <Route path={ '/web/:project/test/:testId' }>
                                         <TestPageLoader edit={ false }/>
                                     </Route>
-                                    <Route path="/web/results">
-                                        <Content/>
+                                    <Route path="/web/:project/results">
                                     </Route>
-                                    <Route path="/web/performance">
-                                        <Content/>
+                                    <Route path="/web/:project/performance">
                                     </Route>
-                                    <Route path="/web/settings">
+                                    <Route path="/web/:project/settings">
                                         <SettingsPage/>
                                     </Route>
-                                    <Route path="/web/apps">
+                                    <Route path="/web/:project/apps">
                                         <AppsPage/>
                                     </Route>
-                                    <Route path="/web/users">
-                                        <Content/>
+                                    <Route path="/web/:project/users">
                                     </Route>
-                                    <Route path="/web/device/:deviceId/edit">
+                                    <Route path="/web/:project/device/:deviceId/edit">
                                         <DevicePageLoader edit={ true }/>
                                     </Route>
-                                    <Route path="/web/device/:deviceId">
+                                    <Route path="/web/:project/device/:deviceId">
                                         <DevicePageLoader edit={ false }/>
                                     </Route>
-                                    <Route path="/web/devices/manager">
+                                    <Route path="/web/:project/devices/manager">
                                         <DevicesManagerContent/>
                                     </Route>
-                                    <Route path="/web/devices">
+                                    <Route path="/web/:project/devices">
                                         <DevicesContent/>
+                                    </Route>
+                                    <Route path="/web/:project">
+                                        <MainPage/>
                                     </Route>
                                     <Route path="/web">
                                         <MainPage/>

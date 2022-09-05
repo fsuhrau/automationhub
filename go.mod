@@ -10,6 +10,7 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/google/flatbuffers v1.12.0
@@ -27,12 +28,13 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/sqlite v1.1.4
-	gorm.io/gorm v1.21.13
+	gorm.io/driver/sqlite v1.3.2
+	gorm.io/gorm v1.23.5
 	howett.net/plist v0.0.0-20200419221736-3b63eb3a43b5
 )
 
@@ -58,14 +60,14 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.2 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
-	github.com/mattn/go-sqlite3 v1.14.5 // indirect
+	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/miekg/dns v1.1.27 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
@@ -80,12 +82,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
-	golang.org/x/crypto v0.0.0-20210812204632-0ba0e8f03122 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect

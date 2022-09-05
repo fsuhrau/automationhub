@@ -22,6 +22,7 @@ import { useSSE } from 'react-hooks-sse';
 import ProtocolLogComponent from './protocol.log.component';
 import ProtocolScreensComponent from './protocol.screens.component';
 import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
+import { LineChart, CartesianGrid, Line, XAxis, Tooltip } from "recharts";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -382,50 +383,50 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                             <Typography gutterBottom={ true } variant="subtitle1">
                                 FPS
                             </Typography>
-                            {
-                                /*
-                                <Chart data={ performanceEntries }>
-                                    <ValueAxis/>
-                                    <LineSeries valueField="FPS" argumentField="Runtime"/>
-                                    <Tooltip/>
-                                </Chart>
-                                 */
-                            }
-
+                            <LineChart
+                                width={1150}
+                                height={300}
+                                data={performanceEntries}
+                                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                            >
+                                <XAxis dataKey="Checkpoint" />
+                                <Tooltip />
+                                <CartesianGrid stroke="#f5f5f5" />
+                                <Line type="monotone" dataKey="FPS" stroke="#ff7300" yAxisId={0} />
+                            </LineChart>
                         </Grid>
                         <Grid item={ true } xs={ true }>
                             <Typography gutterBottom={ true } variant="subtitle1">
                                 Memory
                             </Typography>
-                            {
-                                /*
-                                <Chart
-                                    data={ performanceEntries }
-                                >
-                                    <ValueAxis/>
-                                    <LineSeries valueField="MEM" argumentField="Runtime"/>
-                                    <Tooltip/>
-                                </Chart>
-                                 */
-                            }
-
+                            <LineChart
+                                width={1150}
+                                height={300}
+                                data={performanceEntries}
+                                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                            >
+                                <XAxis dataKey="Checkpoint" />
+                                <Tooltip />
+                                <CartesianGrid stroke="#f5f5f5" />
+                                <Line type="monotone" dataKey="MEM" stroke="#ff7300" yAxisId={0} />
+                            </LineChart>
                         </Grid>
                         { cpu > 0 && (
                             <Grid item={ true } xs={ true }>
                                 <Typography gutterBottom={ true } variant="subtitle1">
                                     CPU
                                 </Typography>
-                                {
-                                    /*
-                                    <Chart
-                                        data={ performanceEntries }
-                                    >
-                                        <ValueAxis/>
-                                        <LineSeries valueField="CPU" argumentField="Runtime"/>
-                                        <Tooltip/>
-                                    </Chart>
-                                     */
-                                }
+                                <LineChart
+                                    width={1150}
+                                    height={300}
+                                    data={performanceEntries}
+                                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                                >
+                                    <XAxis dataKey="Checkpoint" />
+                                    <Tooltip />
+                                    <CartesianGrid stroke="#f5f5f5" />
+                                    <Line type="monotone" dataKey="CPU" stroke="#ff7300" yAxisId={0} />
+                                </LineChart>
                             </Grid>
                         ) }
                     </Grid>

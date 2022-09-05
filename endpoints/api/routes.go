@@ -93,6 +93,10 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 	api.GET("/settings/access_tokens", s.getAccessTokens)
 	api.DELETE("/settings/access_token/:token_id", s.deleteAccessToken)
 
+	api.GET("/projects", s.getProjects)
+	api.POST("/project", s.createProject)
+	api.DELETE("/project/:project_id", s.deleteProject)
+
 	api.POST("/app", s.createApp)
 	api.GET("/app/:app_id", s.getApp)
 	api.PUT("/app/:app_id", s.updateApp)

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Dispatch } from 'react';
 import Divider from '@mui/material/Divider';
 import Drawer, { DrawerProps } from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -9,8 +9,19 @@ import HomeIcon from '@mui/icons-material/Home';
 import DnsRoundedIcon from '@mui/icons-material/DnsRounded';
 import { DistributiveOmit } from '@mui/types';
 import { NavLink, useHistory } from 'react-router-dom';
-import { Box, IconButton, Link, ListItemButton, Tooltip } from '@mui/material';
-import { ArrowRight, Biotech, Devices, Settings } from '@mui/icons-material';
+import {
+    Box,
+    FormControl, Icon,
+    IconButton,
+    InputLabel,
+    Link,
+    ListItemButton,
+    MenuItem,
+    Select, SelectChangeEvent,
+    Tooltip
+} from '@mui/material';
+import { ArrowRight, Biotech, Devices,  Settings } from '@mui/icons-material';
+import { ReactComponent as HubIcon} from '../icons/computing-icon.svg';
 
 const categories = [
     {
@@ -59,6 +70,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
         <Drawer variant="permanent" { ...other }>
             <List disablePadding={ true } >
                 <ListItem sx={ { ...item, ...itemCategory, fontSize: 22, bgcolor: '#101F33', color: '#fff' } } >
+                    <Icon fill={"white"} component={HubIcon} sx={{width: 35, height: 35, marginRight: 1}} />
                     Automation Hub
                 </ListItem>
                 <ListItem sx={{ bgcolor: '#101F33' }}>
