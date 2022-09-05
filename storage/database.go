@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"github.com/fsuhrau/automationhub/storage/migrations"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -14,12 +16,17 @@ func GetDB() (*gorm.DB, error) {
 	var err error
 	db, err = gorm.Open(sqlite.Open("ah.db"), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
-		// Logger: logger.Default.LogMode(logger.Info),
 	})
+
 	if err != nil {
 		return nil, err
 	}
-	if err := migrate(db); err != nil {
+
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		migrations.InitialMigration,
+	})
+
+	if err = m.Migrate(); err != nil {
 		return nil, err
 	}
 
