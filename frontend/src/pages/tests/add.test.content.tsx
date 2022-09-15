@@ -21,7 +21,7 @@ import {
 import { getExecutionTypes, TestExecutionType } from '../../types/test.execution.type.enum';
 import { getTestTypes, TestType } from '../../types/test.type.enum';
 import DeviceSelection from '../../components/device-selection.component';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ICreateTestData from '../../types/request.create.test';
 import { createTest } from '../../services/test.service';
 import TestMethodSelection from '../../components/testmethod-selection.component';
@@ -77,7 +77,7 @@ const AddTestPage: React.FC = () => {
         category: string,
     };
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [state, setState] = React.useState<NewTestState>({
         testType: TestType.Unity,
@@ -126,7 +126,7 @@ const AddTestPage: React.FC = () => {
 
         createTest(requestData).then(response => {
             console.log(response.data);
-            history.push('/web/tests');
+            navigate('/web/tests');
         }).catch(ex => {
             console.log(ex);
         });

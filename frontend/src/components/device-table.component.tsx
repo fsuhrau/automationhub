@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { ArrowForward, PlayArrow } from '@mui/icons-material';
 import { useSSE } from 'react-hooks-sse';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface DeviceChangePayload {
     DeviceID: number,
@@ -30,7 +30,7 @@ interface DeviceChangePayload {
 }
 
 const DeviceTable: React.FC = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
@@ -102,7 +102,7 @@ const DeviceTable: React.FC = () => {
     };
 
     function openDetails(id: number): void {
-        history.push(`/web/device/${ id }`);
+        navigate(`/device/${ id }`);
     }
 
     return (

@@ -21,7 +21,7 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import { updateDevice } from '../../services/device.service';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 import IDeviceParameter from '../../types/device.parameter';
 import { Add, Remove } from '@mui/icons-material';
@@ -43,7 +43,7 @@ interface DeviceEditProps {
 
 const DeviceEditContent: React.FC<DeviceEditProps> = props => {
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { device } = props;
 
@@ -88,7 +88,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
         device.ConnectionParameter.IP = ipAddress;
         device.ConnectionParameter.Port = port;
         updateDevice(device, device.ID).then(response => {
-            history.push(`/web/device/${ device.ID }`);
+            navigate(`/web/device/${ device.ID }`);
         });
     };
 

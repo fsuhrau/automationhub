@@ -9,9 +9,17 @@ import (
 	"strings"
 )
 
+func (s *Service) getProject(identifier string) (*models.Project, error) {
+	var project models.Project
+	if err := s.db.Where("identifier = ?", identifier).First(&project).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
 func (s *Service) getProjects(c *gin.Context) {
 	var projects []models.Project
-	if err := s.db.Find(&projects).Error; err != nil {
+	if err := s.db.Preload("Apps").Find(&projects).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -33,7 +41,7 @@ func (s *Service) createProject(c *gin.Context) {
 		return
 	}
 
-	request.ID = html.EscapeString(strings.Replace(request.Name, " ", "-", -1))
+	request.Identifier = html.EscapeString(strings.Replace(request.Name, " ", "-", -1))
 
 	tx := s.db.Begin()
 	defer func() {

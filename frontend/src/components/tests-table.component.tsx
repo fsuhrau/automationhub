@@ -21,14 +21,22 @@ import {
     Typography,
 } from '@mui/material';
 import { Edit, PlayArrow } from '@mui/icons-material';
-import AppSelection from './app-selection.component';
-import IAppData from '../types/app';
-import { useHistory } from 'react-router-dom';
+import BinarySelection from './binary-selection.component';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PlatformType } from '../types/platform.type.enum';
+import { IAppBinaryData } from "../types/app";
 
-const TestsTable: React.FC = () => {
+interface TestTableProps {
+    appId: number
+}
 
-    const history = useHistory();
+const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
+
+    const { appId } = props;
+
+    let params = useParams();
+
+    const navigate = useNavigate();
 
     // dialog
     const [open, setOpen] = useState(false);
@@ -42,12 +50,12 @@ const TestsTable: React.FC = () => {
     // test handling
     const [startDisabled, setStartDisabled] = useState<boolean>(true);
     const [selectedTest, setSelectedTest] = useState<ITestData | null>(null);
-    const [selectedAppID, setSelectedAppID] = useState<number>(0);
+    const [selectedBinaryID, setSelectedBinaryID] = useState<number>(0);
     const [envParameter, setEnvParameter] = useState<string>('');
     const [tests, setTests] = useState<ITestData[]>([]);
 
     useEffect(() => {
-        getAllTests().then(response => {
+        getAllTests(params.project_id as string, appId).then(response => {
             setTests(response.data);
         }).catch(e => {
             console.log(e);
@@ -78,9 +86,9 @@ const TestsTable: React.FC = () => {
         return '';
     };
 
-    const onRunTest = (id: number, appid: number): void => {
-        executeTest(id, appid, envParameter).then(response => {
-            history.push(`/web/test/${ id }/run/${ response.data.ID }`);
+    const onRunTest = (id: number, binaryId: number): void => {
+        executeTest(params.project_id as string, appId, id, binaryId, envParameter).then(response => {
+            navigate(`/web/test/${ id }/run/${ response.data.ID }`);
         }).catch(error => {
             console.log(error);
         });
@@ -109,8 +117,8 @@ const TestsTable: React.FC = () => {
         return 'n/a';
     };
 
-    const onAppSelectionChanged = (app: IAppData): void => {
-        setSelectedAppID(app.ID);
+    const onBinarySelectionChanged = (app: IAppBinaryData): void => {
+        setSelectedBinaryID(app.ID);
     };
 
     const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -118,22 +126,24 @@ const TestsTable: React.FC = () => {
     };
 
     useEffect(() => {
-        setStartDisabled(!(selectedTest?.TestConfig.Platform == PlatformType.Editor || selectedAppID > 0));
-    }, [selectedTest, selectedAppID]);
+        // selectedTest?.TestConfig.Platform == PlatformType.Editor
+        setStartDisabled(!(false || selectedBinaryID > 0))
+    }, [selectedTest, selectedBinaryID]);
 
     return (
         <div>
             <Dialog open={ open } onClose={ handleRunClose } aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
-                    {selectedTest && selectedTest.TestConfig.Platform != PlatformType.Editor && (
+                    { /* editor has no platform selectedTest.TestConfig.Platform != PlatformType.Editor */}
+                    {selectedTest && true && (
                         <>
                             <DialogContentText>
                                 Select an existing App to execute the tests.<br/>
                                 Or Upload a new one.<br/>
                                 <br/>
                             </DialogContentText>
-                            <AppSelection upload={ true } onSelectionChanged={ onAppSelectionChanged }/>
+                            <BinarySelection appid={appId} upload={ true } onSelectionChanged={ onBinarySelectionChanged }/>
                         </>
                     )}
                     You can change parameters of your app by providing key value pairs in an environment like format:<br/>
@@ -159,7 +169,7 @@ const TestsTable: React.FC = () => {
                         Cancel
                     </Button>
                     <Button onClick={ () => {
-                        selectedTest && onRunTest(selectedTest.ID, selectedAppID);
+                        selectedTest && onRunTest(selectedTest.ID, selectedBinaryID);
                         handleRunClose();
                     } } color="primary" variant={ 'contained' } disabled={ startDisabled }>
                         Start

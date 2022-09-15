@@ -12,7 +12,6 @@ export default interface ITestConfigData {
     AllDevices: boolean,
     Devices: ITestConfigDeviceData[]
     Unity?: ITestConfigUnityData | null,
-    Platform: PlatformType
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

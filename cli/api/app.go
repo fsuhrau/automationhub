@@ -12,16 +12,16 @@ import (
 	"os"
 )
 
-func (c *Client) UploadApp(filepath string) (*models.App, error) {
+func (c *Client) UploadApp(filepath string) (*models.AppBinary, error) {
 	//prepare the reader instances to encode
 	values := map[string]io.Reader{
-		"test_target":  mustOpen(filepath),
+		"test_target": mustOpen(filepath),
 	}
 
 	return c.uploadApp(values)
 }
 
-func (c *Client) UpdateApp(ctx context.Context, app *models.App) error {
+func (c *Client) UpdateApp(ctx context.Context, app *models.AppBinary) error {
 
 	data, err := json.Marshal(app)
 	if err != nil {
@@ -35,14 +35,14 @@ func (c *Client) UpdateApp(ctx context.Context, app *models.App) error {
 
 	req = req.WithContext(ctx)
 
-	var a models.App
+	var a models.AppBinary
 	if err := c.sendRequest(req, &a); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) uploadApp(values map[string]io.Reader) (*models.App, error) {
+func (c *Client) uploadApp(values map[string]io.Reader) (*models.AppBinary, error) {
 	// Prepare a form that you will submit to that URL.
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -92,11 +92,10 @@ func (c *Client) uploadApp(values map[string]io.Reader) (*models.App, error) {
 		return nil, err
 	}
 
-	var app models.App
+	var app models.AppBinary
 	if err = json.NewDecoder(res.Body).Decode(&app); err != nil {
 		return nil, err
 	}
-
 
 	return &app, nil
 }

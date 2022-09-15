@@ -10,8 +10,6 @@ import (
 	"net/http"
 )
 
-
-
 func (c *Client) GetTests(ctx context.Context) ([]models.Test, error) {
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tests", c.BaseURL), nil)
@@ -31,8 +29,8 @@ func (c *Client) GetTests(ctx context.Context) ([]models.Test, error) {
 
 func (c *Client) ExecuteTest(ctx context.Context, testId int, appID int, params string) (*models.TestRun, error) {
 	request := api.RunTestRequest{
-		AppID: uint(appID),
-		Params: params,
+		AppBinaryID: uint(appID),
+		Params:      params,
 	}
 
 	data, err := json.Marshal(request)

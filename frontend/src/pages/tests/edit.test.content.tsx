@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { getExecutionTypes, TestExecutionType } from '../../types/test.execution.type.enum';
 import { getTestTypes, TestType } from '../../types/test.type.enum';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TestMethodSelection from '../../components/testmethod-selection.component';
 import ITestData from '../../types/test';
 import { updateTest } from '../../services/test.service';
@@ -41,7 +41,7 @@ interface TestContentProps {
 
 const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     type NewTestState = {
         testName: string,
@@ -96,7 +96,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         }
         updateTest(test.ID as number, test).then(response => {
             console.log(response.data);
-            history.push('/web/tests');
+            navigate('/web/tests');
         }).catch(ex => {
             console.log(ex);
         });

@@ -21,14 +21,17 @@ func GetDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		migrations.InitialMigration,
+	tx := db.Begin()
+	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		// migrations.InitialMigration,
+		migrations.IntroduceProjects,
 	})
 
 	if err = m.Migrate(); err != nil {
+		tx.Rollback()
 		return nil, err
 	}
+	tx.Commit()
 
 	return db, nil
 }

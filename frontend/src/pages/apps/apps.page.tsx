@@ -4,7 +4,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
-import { useHistory } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import TableContainer from '@mui/material/TableContainer';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -12,7 +12,7 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import { deleteApp, getAllApps } from '../../services/app.service';
-import IAppData, { prettySize } from '../../types/app';
+import { prettySize, IAppBinaryData } from '../../types/app';
 import Moment from 'react-moment';
 import { ButtonGroup, Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
@@ -22,16 +22,18 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 const AppsPage: React.FC = () => {
 
-    const history = useHistory();
+    let params = useParams();
+
+    const navigate = useNavigate();
 
     function newAppClick(): void {
-        history.push('/web/app/new');
+        navigate('/web/app/new');
     }
 
-    const [apps, setApps] = useState<IAppData[]>([]);
+    const [apps, setApps] = useState<IAppBinaryData[]>([]);
 
     useEffect(() => {
-        getAllApps().then(response => {
+        getAllApps(params.project_id as string).then(response => {
             setApps(response.data);
         }).catch(e => {
             console.log(e);
@@ -39,7 +41,7 @@ const AppsPage: React.FC = () => {
     }, []);
 
     const handleDeleteApp = (appId: number): void => {
-        deleteApp(appId).then(value => {
+        deleteApp(params.project_id as string, appId).then(value => {
             setApps(prevState => {
                 const newState = [...prevState];
                 const index = newState.findIndex(value1 => value1.ID == appId);

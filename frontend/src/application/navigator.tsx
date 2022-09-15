@@ -7,8 +7,9 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import HomeIcon from '@mui/icons-material/Home';
 import DnsRoundedIcon from '@mui/icons-material/DnsRounded';
+import PeopleIcon from '@mui/icons-material/People';
 import { DistributiveOmit } from '@mui/types';
-import { NavLink, useHistory } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
     Box,
     FormControl, Icon,
@@ -22,47 +23,52 @@ import {
 } from '@mui/material';
 import { ArrowRight, Biotech, Devices,  Settings } from '@mui/icons-material';
 import { ReactComponent as HubIcon} from '../icons/computing-icon.svg';
+import { ApplicationState } from "./application.state";
 
-const categories = [
-    {
-        id: 'Test Center',
-        children: [
-            { id: 'Tests', ref: '/web/tests', icon: <Biotech/> },
-            // { id: 'Results', ref: '/web/results', icon: <SettingsEthernetIcon/> },
-            // { id: 'Performance', ref: '/web/performance', icon: <TimerIcon/> },
-        ],
-    },
-    {
-        id: 'Management',
-        children: [
-            // { id: 'Settings', ref: '/web/settings', icon: <SettingsIcon/> },
-            { id: 'Apps', ref: '/web/apps', icon: <DnsRoundedIcon/> },
-            // { id: 'User', ref: '/web/users', icon: <PeopleIcon/> },
-            { id: 'Devices', ref: '/web/devices', icon: <Devices/> },
-        ],
-    },
-];
-
-const item = {
-    py: '2px',
-    px: 3,
-    color: 'rgba(255, 255, 255, 0.7)',
-    '&:hover, &:focus': {
-        bgcolor: 'rgba(255, 255, 255, 0.08)',
-    },
-};
-
-const itemCategory = {
-    boxShadow: '0 -1px 0 rgb(255,255,255,0.1) inset',
-    py: 1.5,
-    px: 3,
-};
-
-export type NavigatorProps = DistributiveOmit<DrawerProps, 'classes'>;
+export interface NavigatorProps extends DistributiveOmit<DrawerProps, 'classes'> {
+    appState: ApplicationState
+}
 
 const Navigator: React.FC<NavigatorProps> = (props) => {
 
-    const history = useHistory();
+    const {appState} = props;
+
+    const navigate = useNavigate();
+
+    const categories = [
+        {
+            id: 'Test Center',
+            children: [
+                { id: 'Tests', ref: `/project/${appState.project?.Identifier}/tests`, icon: <Biotech/> },
+                // { id: 'Results', ref: `/project/${appState.project?.Identifier}/results`, icon: <SettingsEthernetIcon/> },
+                // { id: 'Performance', ref: `/project/${appState.project?.Identifier}/performance`, icon: <TimerIcon/> },
+            ],
+        },
+        {
+            id: 'Management',
+            children: [
+                // { id: 'Settings', ref: `/project/${appState.project?.Identifier}/settings`, icon: <SettingsIcon/> },
+                { id: 'Apps', ref: `/project/${appState.project?.Identifier}/apps`, icon: <DnsRoundedIcon/> },
+                { id: 'Devices', ref: `/project/${appState.project?.Identifier}/devices`, icon: <Devices/> },
+                // { id: 'User', ref: `/project/${appState.project?.Identifier}/users`, icon: <PeopleIcon/> },
+            ],
+        },
+    ];
+
+    const item = {
+        py: '2px',
+        px: 3,
+        color: 'rgba(255, 255, 255, 0.7)',
+        '&:hover, &:focus': {
+            bgcolor: 'rgba(255, 255, 255, 0.08)',
+        },
+    };
+
+    const itemCategory = {
+        boxShadow: '0 -1px 0 rgb(255,255,255,0.1) inset',
+        py: 1.5,
+        px: 3,
+    };
 
     const { ...other } = props;
 
@@ -76,7 +82,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
                 <ListItem sx={{ bgcolor: '#101F33' }}>
                     <ListItemButton
                         onClick={ () => {
-                            history.push('/web');
+                            navigate(`/project/${appState.project?.Identifier}`);
                         } }
                     >
                         <ListItemIcon>
@@ -99,7 +105,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
                                 },
                             }}
                             onClick={ () => {
-                                history.push('/web/settings');
+                                navigate(`/project/${appState.project?.Identifier}/settings`);
                             } }
                         >
                             <Settings />

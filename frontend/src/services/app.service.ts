@@ -1,38 +1,38 @@
 import http from '../http-common';
-import IAppData from '../types/app';
 import { AxiosResponse } from 'axios';
+import { IAppBinaryData } from "../types/app";
 
-export const getAllApps = (): Promise<AxiosResponse<IAppData[]>> => {
-    return http.get('/apps');
+export const getAllApps = (projectId: string): Promise<AxiosResponse<IAppBinaryData[]>> => {
+    return http.get(`/${projectId}/apps`);
 };
 
-export const getApp = (id: string): Promise<AxiosResponse<IAppData | undefined>> => {
-    return http.get(`/app/${id}`);
+export const getApp = (projectId: string, id: string): Promise<AxiosResponse<IAppBinaryData | undefined>> => {
+    return http.get(`/${projectId}/app/${id}`);
 };
 
-export const createApp = (data: IAppData): Promise<AxiosResponse<IAppData>> => {
-    return http.post('/app', data);
+export const createApp = (projectId: string, data: IAppBinaryData): Promise<AxiosResponse<IAppBinaryData>> => {
+    return http.post('/${projectId}/app', data);
 };
 
-export const updateApp = (data: IAppData, id: number): Promise<AxiosResponse<IAppData>> => {
-    return http.put(`/app/${id}`, data);
+export const updateApp = (projectId: string, data: IAppBinaryData, id: number): Promise<AxiosResponse<IAppBinaryData>> => {
+    return http.put(`/${projectId}/app/${id}`, data);
 };
 
-export const deleteApp = (id: number): Promise<AxiosResponse<void>> => {
-    return http.delete(`/app/${id}`);
+export const deleteApp = (projectId: string, id: number): Promise<AxiosResponse<void>> => {
+    return http.delete(`/${projectId}/app/${id}`);
 };
 
 export type AppFilter = {
     name?: string;
 };
 
-export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppData[]>> => {
+export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppBinaryData[]>> => {
     return http.get('/apps', { params: filter });
 };
 
 export const uploadNewApp = (file: File,
     uploadProgress: (progressEvent: number) => void,
-    finished: (finished: AxiosResponse<IAppData>) => void): void => {
+    finished: (finished: AxiosResponse<IAppBinaryData>) => void): void => {
 
     const formData = new FormData();
     formData.append('test_target', file);

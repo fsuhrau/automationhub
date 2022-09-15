@@ -89,41 +89,41 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 
 	api.GET("/stats", s.getStats)
 
-	api.POST("/settings/access_token", s.createAccessToken)
-	api.GET("/settings/access_tokens", s.getAccessTokens)
-	api.DELETE("/settings/access_token/:token_id", s.deleteAccessToken)
+	api.POST("/:project_id/settings/access_token", s.createAccessToken)
+	api.GET("/:project_id/settings/access_tokens", s.getAccessTokens)
+	api.DELETE("/:project_id/settings/access_token/:token_id", s.deleteAccessToken)
 
 	api.GET("/projects", s.getProjects)
 	api.POST("/project", s.createProject)
 	api.DELETE("/project/:project_id", s.deleteProject)
 
-	api.POST("/app", s.createApp)
-	api.GET("/app/:app_id", s.getApp)
-	api.PUT("/app/:app_id", s.updateApp)
-	api.DELETE("/app/:app_id", s.deleteApp)
-	api.GET("/app/:app_id/functions", s.getAppFunctions)
-	api.POST("/app/upload", s.uploadApp)
-	api.GET("/apps", s.getApps)
+	api.POST("/:project_id/app", s.createApp)
+	api.GET("/:project_id/apps", s.getApps)
+	// api.GET("/:project_id/app/:app_id", s.getApp)
+	api.PUT("/:project_id/app/:app_id/binary/:binary_id", s.updateBinary)
+	api.PUT("/:project_id/app/:app_id/binaries", s.getBinaries)
+	api.DELETE("/:project_id/app/:app_id/binary/:binary_id", s.deleteBinary)
+	api.POST("/:project_id/app/:app_id/upload", s.uploadBinary)
 
-	api.GET("/device/:device_id", s.getDevice)
-	api.DELETE("/device/:device_id", s.deleteDevice)
-	api.PUT("/device/:device_id", s.updateDevice)
-	api.POST("/device/:device_id/tests", s.deviceRunTests)
-	api.GET("/devices", s.getDevices)
-	api.GET("/device/connect", func(c *gin.Context) {
+	api.POST("/:project_id/app/:app_id/test", s.newTest)
+	api.GET("/data/test/data/:name", s.getData)
+	api.GET("/:project_id/app/:app_id/test/:test_id", s.getTest)
+	api.PUT("/:project_id/app/:app_id/test/:test_id", s.updateTest)
+	api.POST("/:project_id/app/:app_id/test/:test_id/run", s.runTest)
+	api.GET("/:project_id/app/:app_id/test/:test_id/runs", s.getTestRuns)
+	api.GET("/:project_id/app/:app_id/test/:test_id/runs/last", s.getLastTestRun)
+	api.GET("/:project_id/app/:app_id/test/:test_id/run/:run_id", s.getTestRun)
+	api.GET("/:project_id/app/:app_id/test/:test_id/run/:run_id/:protocol_id", s.getTestRunProtocol)
+	api.GET("/:project_id/app/:app_id/tests", s.getTests)
+
+	api.GET("/:project_id/device/:device_id", s.getDevice)
+	api.DELETE("/:project_id/device/:device_id", s.deleteDevice)
+	api.PUT("/:project_id/device/:device_id", s.updateDevice)
+	api.POST("/:project_id/device/:device_id/tests", s.deviceRunTests)
+	api.GET("/:project_id/devices", s.getDevices)
+	api.GET("/:project_id/device/connect", func(c *gin.Context) {
 		s.socketHandler(c, c.Writer, c.Request)
 	})
-
-	api.POST("/test", s.newTest)
-	api.GET("/data/test/data/:name", s.getData)
-	api.GET("/test/:test_id", s.getTest)
-	api.PUT("/test/:test_id", s.updateTest)
-	api.POST("/test/:test_id/run", s.runTest)
-	api.GET("/test/:test_id/runs", s.getTestRuns)
-	api.GET("/test/:test_id/runs/last", s.getLastTestRun)
-	api.GET("/test/:test_id/run/:run_id", s.getTestRun)
-	api.GET("/test/:test_id/run/:run_id/:protocol_id", s.getTestRunProtocol)
-	api.GET("/tests", s.getTests)
 
 	return nil
 }

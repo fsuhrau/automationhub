@@ -13,16 +13,16 @@ import TableContainer from '@mui/material/TableContainer';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const DevicesManagerContent: React.FC = () => {
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     function openDetails(id: number): void {
-        history.push(`/web/device/${ id }`);
+        navigate(`/web/device/${ id }`);
     }
 
     useEffect(() => {

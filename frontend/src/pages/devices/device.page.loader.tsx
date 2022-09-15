@@ -5,23 +5,23 @@ import IDeviceData from '../../types/device';
 import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';
 import DeviceShowContent from './device.show.content';
+import { useProjectContext } from "../../project/project.context";
 
 interface DevicePageProps {
     edit: boolean
 }
 
-interface ParamTypes {
-    deviceId: string
-}
-
 const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
-    const { deviceId } = useParams<ParamTypes>();
+
+    const { projectId } = useProjectContext();
+
+    const { deviceId } = useParams();
 
     const { edit } = props;
     const [device, setDevice] = useState<IDeviceData>();
 
     useEffect(() => {
-        getDevice(deviceId).then(response => {
+        getDevice(deviceId === undefined ? "" : deviceId).then(response => {
             setDevice(response.data);
         }).catch(ex => {
             console.log(ex);

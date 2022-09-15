@@ -5,14 +5,14 @@ import { IconButton, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Grid from '@mui/material/Grid';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 
 const Devices: React.FC = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     function onManageDevices(): void {
-        history.push('/web/devices/manager');
+        navigate('/web/devices/manager');
     }
 
     return (

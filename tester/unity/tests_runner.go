@@ -54,7 +54,7 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
@@ -73,8 +73,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 
 	if appData != nil {
 		tr.appParams = app.Parameter{
-			AppID:          appData.ID,
-			Identifier:     appData.AppID,
+			AppBinaryID:    appData.ID,
+			Identifier:     appData.App.Identifier,
 			AppPath:        appData.AppPath,
 			LaunchActivity: appData.LaunchActivity,
 			Name:           appData.Name,
@@ -83,7 +83,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 		}
 	} else {
 		tr.appParams = app.Parameter{
-			AppID:          0,
+			AppBinaryID:    appData.ID,
 			LaunchActivity: "BootScene",
 		}
 	}
@@ -221,7 +221,7 @@ func (tr *testsRunner) getTestList(connectedDevices []base.DeviceMap) ([]models.
 	return testList, nil
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData *models.App) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, appData *models.AppBinary) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))

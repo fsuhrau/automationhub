@@ -15,10 +15,10 @@ func (tr *TestRunner) NewSessionID() string {
 func (tr *TestRunner) InitNewTestSession(appId uint, params string) error {
 	sessionID := tr.NewSessionID()
 	tr.TestRun = models.TestRun{
-		TestID:    tr.Test.ID,
-		AppID:     appId,
-		SessionID: sessionID,
-		Parameter: params,
+		TestID:      tr.Test.ID,
+		AppBinaryID: appId,
+		SessionID:   sessionID,
+		Parameter:   params,
 	}
 	if err := tr.DB.Create(&tr.TestRun).Error; err != nil {
 		return err

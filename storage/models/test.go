@@ -4,7 +4,8 @@ import "gorm.io/gorm"
 
 type Test struct {
 	gorm.Model
-	CompanyID  uint
+	AppID      uint
+	App        *App
 	Name       string
 	TestConfig TestConfig
 	TestRuns   []TestRun

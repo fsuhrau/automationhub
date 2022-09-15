@@ -12,9 +12,10 @@ import {
     SelectChangeEvent,
     Typography,
 } from '@mui/material';
-import IAppData from '../types/app';
 import { getAllApps, uploadNewApp } from '../services/app.service';
 import Select from '@mui/material/Select';
+import { IAppBinaryData } from "../types/app";
+import { useParams } from "react-router-dom";
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
@@ -32,22 +33,25 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
 }
 
 
-interface AppSelectionProps {
-    onSelectionChanged: (app: IAppData) => void;
+interface BinarySelectionProps {
+    appid: number,
+    onSelectionChanged: (app: IAppBinaryData) => void;
     upload: boolean;
 }
 
-const AppSelection: React.FC<AppSelectionProps> = (props) => {
+const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
+    let params = useParams();
+
     const { onSelectionChanged, upload } = props;
 
-    const [app, setApp] = useState<IAppData>();
-    const [apps, setApps] = useState<IAppData[]>([]);
+    const [app, setApp] = useState<IAppBinaryData>();
+    const [apps, setApps] = useState<IAppBinaryData[]>([]);
     const [selectedAppID, setSelectedAppID] = useState<number>(1);
 
     const [uploadProgress, setUploadProgress] = useState<number>(0);
 
     useEffect(() => {
-        getAllApps().then(response => {
+        getAllApps(params.project_id as string).then(response => {
             setApps(response.data);
         }).catch(e => {
         });
@@ -148,4 +152,4 @@ const AppSelection: React.FC<AppSelectionProps> = (props) => {
     );
 };
 
-export default AppSelection;
+export default BinarySelection;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
-import { useHistory } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Card, CardContent, Link, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import IHubStatsData from '../../types/hub.stats';
@@ -9,9 +9,9 @@ import TestStatusIconComponent from '../../components/test-status-icon.component
 import { prettySize } from '../../types/app';
 import { duration } from '../../types/test.protocol';
 
-const MainPage: React.FC = () => {
+const ProjectMainPage: React.FC = () => {
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [stats, setStats] = useState<IHubStatsData>();
 
@@ -139,4 +139,4 @@ const MainPage: React.FC = () => {
     );
 };
 
-export default MainPage;
+export default ProjectMainPage;

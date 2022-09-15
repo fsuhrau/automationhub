@@ -12,8 +12,14 @@ import (
 )
 
 func (s *Service) getTests(c *gin.Context) {
+	app, err := s.getApp(c.Param("app_id"))
+	if err != nil {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("app not found"))
+		return
+	}
+
 	var tests []models.Test
-	if err := s.db.Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
+	if err := s.db.Where("app_id = ?", app.ID).Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -21,6 +27,12 @@ func (s *Service) getTests(c *gin.Context) {
 }
 
 func (s *Service) newTest(c *gin.Context) {
+	app, err := s.getApp(c.Param("app_id"))
+	if err != nil {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("app not found"))
+		return
+	}
+
 	type TestFunc struct {
 		Assembly string
 		Class    string
@@ -71,8 +83,8 @@ func (s *Service) newTest(c *gin.Context) {
 		tx.Rollback()
 	}()
 	test := models.Test{
-		CompanyID: 1,
-		Name:      request.Name,
+		AppID: app.ID,
+		Name:  request.Name,
 	}
 	if err := tx.Create(&test).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -210,8 +222,8 @@ func extractParams(param string) map[string]string {
 }
 
 type RunTestRequest struct {
-	AppID  uint
-	Params string
+	AppBinaryID uint
+	Params      string
 }
 
 func (s *Service) runTest(c *gin.Context) {
@@ -230,10 +242,10 @@ func (s *Service) runTest(c *gin.Context) {
 		return
 	}
 
-	var app *models.App
+	var app *models.AppBinary
 	if test.TestConfig.Platform != models.PlatformTypeEditor {
-		app = &models.App{}
-		if err := s.db.First(app, req.AppID).Error; err != nil {
+		app = &models.AppBinary{}
+		if err := s.db.Preload("App").First(app, req.AppBinaryID).Error; err != nil {
 			s.error(c, http.StatusNotFound, err)
 			return
 		}
@@ -306,7 +318,7 @@ func (s *Service) getLastTestRun(c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -331,7 +343,7 @@ func (s *Service) getTestRun(c *gin.Context) {
 	runId := c.Param("run_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -350,7 +362,7 @@ func (s *Service) getTestRunProtocol(c *gin.Context) {
 	protocolId := c.Param("protocol_id")
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("App").Preload("Test").First(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

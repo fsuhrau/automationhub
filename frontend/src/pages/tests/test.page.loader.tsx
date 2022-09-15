@@ -10,17 +10,13 @@ interface TestPageProps {
     edit: boolean
 }
 
-interface ParamTypes {
-    testId: string
-}
-
 const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
     const { edit } = props;
-    const { testId } = useParams<ParamTypes>();
+    const { project_id, app_id, testId } = useParams();
     const [test, setTest] = useState<ITestData>();
 
     useEffect(() => {
-        getTest(testId).then(response => {
+        getTest(project_id as string, +app_id as number, testId).then(response => {
             setTest(response.data);
         }).catch(ex => {
             console.log(ex);

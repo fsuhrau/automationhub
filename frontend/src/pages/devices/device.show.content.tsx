@@ -7,7 +7,7 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import { deleteDevice } from '../../services/device.service';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DeviceType } from '../../types/device.type.enum';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 
@@ -17,7 +17,7 @@ interface DeviceShowProps {
 
 const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) => {
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { device } = props;
     const [expanded, setExpanded] = React.useState<string | false>(false);
@@ -48,7 +48,7 @@ const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) =>
                                 <Button href={ `${ device.ID }/edit` }>Edit</Button>
                                 <Button color="secondary" onClick={ () => {
                                     deleteDevice(device.ID as number).then((result) =>
-                                        history.push('/web/devices'),
+                                        navigate('/web/devices'),
                                     );
                                 } }> Delete</Button>
                             </ButtonGroup>

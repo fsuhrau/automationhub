@@ -1,35 +1,53 @@
 import IProject from "../project/project";
+import { useParams } from "react-router-dom";
 
-export const STATE_ACTIONS = {
-    CHANGE_PROJECT: 'change_project',
-    UPDATE_PROJECTS: 'update_projects',
-    TOGGLE_MOBILE_OPEN: 'toggle_mobile_open',
+export enum ApplicationStateActions {
+    ChangeProject = 'ChangeProject',
+    UpdateProjects = 'UpdateProjects',
+    ToggleMobileOpen = 'ToggleMobileOpen',
 }
+
+export interface ApplicationStateAction {
+    type: ApplicationStateActions,
+    payload?: any,
+}
+
 export interface ApplicationState {
     mobileOpen: boolean,
-    project: IProject | null,
     projects: IProject[],
+    projectId: string | null,
+    project: IProject | null,
 }
 
-export const INITIAL_STATE : ApplicationState = {
+export const InitialApplicationState: ApplicationState = {
     mobileOpen: false,
-    project: null,
     projects: [],
+    projectId: null,
+    project: null,
 }
 
-const appReducer = (state: ApplicationState, action: any) => {
-    switch (action.type) {
-        case STATE_ACTIONS.CHANGE_PROJECT:
+export function appReducer(state: ApplicationState, action: ApplicationStateAction): ApplicationState {
+
+    const {type, payload} = action;
+
+    switch (type) {
+        case ApplicationStateActions.ChangeProject: {
+            const project = state.projects.find(p => p.Identifier === payload as string);
             return {
                 ...state,
-                project: state.projects.find(p => p.ID === action.payload as string),
+                projectId: payload as string,
+                project: project === undefined ? null : project,
             }
-        case STATE_ACTIONS.UPDATE_PROJECTS:
+        }
+        case ApplicationStateActions.UpdateProjects: {
+            const project = state.projects.find(p => p.Identifier === state.projectId);
             return {
                 ...state,
-                projects: action.payload,
+                project: project === undefined ? null : project,
+                projects: payload,
             }
-        case STATE_ACTIONS.TOGGLE_MOBILE_OPEN:
+        }
+        case ApplicationStateActions.ToggleMobileOpen:
             return {
                 ...state,
                 mobileOpen: !state.mobileOpen,
@@ -37,6 +55,4 @@ const appReducer = (state: ApplicationState, action: any) => {
         default:
             return state
     }
-};
-
-export default appReducer;
+}

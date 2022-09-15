@@ -1,4 +1,4 @@
-import React, { Dispatch } from 'react';
+import React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -9,33 +9,45 @@ import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
-import { ApplicationState, STATE_ACTIONS } from "../../application/application.state";
+import { FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { ApplicationState, ApplicationStateActions } from "./application.state";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const lightColor = 'rgba(255, 255, 255, 0.7)';
 
 interface DefaultHeaderProps {
     onDrawerToggle: () => void;
-    appState: ApplicationState;
+    appstate: ApplicationState;
     dispatch: any;
+    color: string;
 }
 
 const DefaultHeader: React.FC<DefaultHeaderProps> = (props) => {
 
-    const { onDrawerToggle, appState, dispatch } = props;
+    const {onDrawerToggle, appstate, dispatch, color} = props;
+
+    const location = useLocation()
+    const navigate = useNavigate()
 
     const handleChange = (event: SelectChangeEvent) => {
-        dispatch({type: STATE_ACTIONS.CHANGE_PROJECT, payload: event.target.value})
-    };
+        if (appstate.projectId !== event.target.value) {
+            if (appstate.projectId !== null) {
+                navigate(location.pathname.replace(appstate.projectId, event.target.value));
+            } else {
+                navigate(`/project/${event.target.value}`)
+            }
+            // dispatch({type: ApplicationStateActions.ChangeProject, payload: event.target.value})
+        }
+    }
 
     return (
         <React.Fragment>
-            <AppBar color="primary" position="sticky" elevation={ 0 }>
+            <AppBar sx={{backgroundColor: color}} position="sticky" elevation={ 0 }>
                 <Toolbar>
                     <Grid container={ true } spacing={ 1 } alignItems="center">
-                        <Grid sx={ { display: { sm: 'none', xs: 'block' } } } item={true}>
+                        <Grid sx={ {display: {sm: 'none', xs: 'block'}} } item={ true }>
                             <IconButton
-                                color="inherit"
+                                color="default"
                                 aria-label="open drawer"
                                 onClick={ onDrawerToggle }
                                 edge="start"
@@ -43,33 +55,39 @@ const DefaultHeader: React.FC<DefaultHeaderProps> = (props) => {
                                 <MenuIcon/>
                             </IconButton>
                         </Grid>
-                        <Grid item={ true } xs={2}>
-                            <ListItem>
+                        <Grid item={ true } xs={ 2 }>
+                            { appstate.project !== null && <ListItem>
                                 <ListItemText>
-                                    <FormControl variant="standard" >
+                                    <FormControl variant="standard">
                                         <Select
-                                            id="team-select"
-                                            value={appState.project?.Name}
+                                            id="project-select"
+                                            defaultValue={appstate.projectId === null ? undefined : appstate.projectId}
                                             label="Project"
-                                            autoWidth={true}
-                                            onChange={handleChange}
-                                            disableUnderline={true}
+                                            autoWidth={ true }
+                                            onChange={ handleChange }
+                                            disableUnderline={ true }
+                                            sx={ {color: "black"} }
                                         >
-                                            <MenuItem value={10}>Rise of Cultures</MenuItem>
-                                            <MenuItem value={20}>Lost Survivors</MenuItem>
+                                            {
+                                                appstate.projects.map(project => (
+                                                    <MenuItem key={ `project_item_${ project.Identifier }` }
+                                                              value={ project.Identifier }>{ project.Name }</MenuItem>
+                                                ))
+                                            }
                                         </Select>
                                     </FormControl>
                                 </ListItemText>
                             </ListItem>
+                            }
                         </Grid>
-                        <Grid item={true} xs={ true }/>
+                        <Grid item={ true } xs={ true }/>
                         <Grid item={ true }>
                             <Link
                                 href="https://www.github.com/fsuhrau/automationhub"
                                 variant="body2"
                                 sx={ {
                                     textDecoration: 'none',
-                                    color: lightColor,
+                                    color: 'black',
                                     '&:hover': {
                                         color: 'common.white',
                                     },
@@ -82,7 +100,7 @@ const DefaultHeader: React.FC<DefaultHeaderProps> = (props) => {
                         </Grid>
                         <Grid item={ true }>
                             <Tooltip title="Alerts • No alerts">
-                                <IconButton color="inherit">
+                                <IconButton color="default">
                                     <NotificationsIcon/>
                                 </IconButton>
                             </Tooltip>
