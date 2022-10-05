@@ -18,4 +18,4 @@ frontend:
 # run build for frontend and backend
 .PHONY: build
 build:
-	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags "-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)" -o bin/automationhub && cd cli && go  -trimpath -ldflags "-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)" build -o ../bin/cli
+	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/cli
