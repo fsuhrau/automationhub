@@ -16,9 +16,9 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-func NewClient(url, apiToken string) *Client {
+func NewClient(url, apiToken, projectID string, appId uint) *Client {
 	return &Client{
-		BaseURL:  fmt.Sprintf("%s/api", url),
+		BaseURL:  fmt.Sprintf("%s/api/%s/app/%d", url, projectID, appId),
 		apiToken: apiToken,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,

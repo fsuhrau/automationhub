@@ -12,13 +12,41 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
 
-func (s *Service) getDevices(c *gin.Context) {
+func osFromPlatformType(t models.PlatformType) string {
+	switch t {
+	case models.PlatformTypeiOS:
+		return "iPhone OS"
+	case models.PlatformTypeAndroid:
+		return "android"
+	case models.PlatformTypeMac:
+		return "Mac OS X"
+	case models.PlatformTypeWindows:
+		return "windows"
+	case models.PlatformTypeLinux:
+		return "linux"
+	case models.PlatformTypeWeb:
+		return "web"
+	case models.PlatformTypeEditor:
+		return "editor"
+	}
+	return ""
+}
+
+func (s *Service) getDevices(c *gin.Context, project *models.Project) {
+	p := c.Query("platform")
+
 	var devices []models.Device
-	if err := s.db.Find(&devices).Error; err != nil {
+	query := s.db
+	if p != "" {
+		platform, _ := strconv.ParseInt(p, 10, 64)
+		query = query.Where("os = ?", osFromPlatformType(models.PlatformType(platform)))
+	}
+	if err := query.Find(&devices).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -68,7 +96,7 @@ func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Conte
 	s.devicesManager.RegisterDevice(register)
 }
 
-func (s *Service) getDevice(c *gin.Context) {
+func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 
 	deviceID := c.Param("device_id")
 	_ = deviceID
@@ -92,7 +120,7 @@ func (s *Service) getDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, device)
 }
 
-func (s *Service) deleteDevice(c *gin.Context) {
+func (s *Service) deleteDevice(c *gin.Context, project *models.Project) {
 	deviceID := c.Param("device_id")
 
 	var device models.Device
@@ -108,7 +136,7 @@ func (s *Service) deleteDevice(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (s *Service) updateDevice(c *gin.Context) {
+func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
 	deviceID := c.Param("device_id")
 
 	var dev models.Device
@@ -148,8 +176,7 @@ func (s *Service) updateDevice(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-
-func (s *Service) deviceRunTests(c *gin.Context) {
+func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 	type Request struct {
 		TestName string
 		Env      string

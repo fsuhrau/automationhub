@@ -3,6 +3,8 @@ import ITestData from '../types/test';
 import { AxiosResponse } from 'axios';
 import ICreateTestData from '../types/request.create.test';
 import ITestRunData from '../types/test.run';
+import { TestExecutionType } from "../types/test.execution.type.enum";
+import IUnityTestFunctionData from "../types/unity.test.function";
 
 export const getAllTests = (projectId: string, appId: number): Promise<AxiosResponse<ITestData[]>> => {
     return http.get(`/${projectId}/app/${appId}/tests`);
@@ -16,7 +18,17 @@ export const createTest = (projectId: string, appId: number, data: ICreateTestDa
     return http.post(`/${projectId}/app/${appId}/test`, data);
 };
 
-export const updateTest = (projectId: string, appId: number, id: number, data: ITestData): Promise<AxiosResponse<ITestData>> => {
+export interface UpdateTestData {
+    Name: string,
+    ExecutionType: TestExecutionType,
+    AllDevices: boolean,
+    Devices: number[],
+    RunAllTests: boolean,
+    Categories: string,
+    TestFunctions: IUnityTestFunctionData[],
+}
+
+export const updateTest = (projectId: string, appId: number, id: number, data: UpdateTestData): Promise<AxiosResponse<ITestData>> => {
     return http.put(`/${projectId}/app/${appId}/test/${id}`, data);
 };
 
@@ -32,9 +44,9 @@ export const findTest = (projectId: string, appId: number, filter?: TestFilter):
     return http.get(`/${projectId}/app/${appId}/tests`, { params: filter });
 };
 
-export const executeTest = (projectId: string, appId: number, id: number | null | undefined, appid: number, envParams: string): Promise<AxiosResponse<ITestRunData>> => {
+export const executeTest = (projectId: string, appId: number, id: number | null | undefined, bundleId: number, envParams: string): Promise<AxiosResponse<ITestRunData>> => {
     return http.post(`/${projectId}/app/${appId}/test/${id}/run`, {
-        AppID: appid,
+        AppBinaryID: bundleId,
         Params: envParams,
     });
 };

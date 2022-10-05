@@ -14,4 +14,5 @@ func (s *Service) error(c *gin.Context, status int, err error) {
 	c.JSON(status, &ErrorResponse{
 		Message: err.Error(),
 	})
+	c.Abort()
 }

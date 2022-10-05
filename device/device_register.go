@@ -11,6 +11,7 @@ type RegisterData struct {
 	Name            string
 	DeviceOS        string
 	DeviceOSVersion string
+	DeviceOSInfos   string
 	DeviceIP        net.IP
 	Conn            *websocket.Conn
 }

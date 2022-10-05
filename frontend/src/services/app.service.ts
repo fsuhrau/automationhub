@@ -1,6 +1,6 @@
 import http from '../http-common';
 import { AxiosResponse } from 'axios';
-import { IAppBinaryData } from "../types/app";
+import { IAppBinaryData, IAppData } from "../types/app";
 
 export const getAllApps = (projectId: string): Promise<AxiosResponse<IAppBinaryData[]>> => {
     return http.get(`/${projectId}/apps`);
@@ -10,16 +10,24 @@ export const getApp = (projectId: string, id: string): Promise<AxiosResponse<IAp
     return http.get(`/${projectId}/app/${id}`);
 };
 
-export const createApp = (projectId: string, data: IAppBinaryData): Promise<AxiosResponse<IAppBinaryData>> => {
-    return http.post('/${projectId}/app', data);
+export const createApp = (projectId: string, data: IAppData): Promise<AxiosResponse<IAppData>> => {
+    return http.post(`/${projectId}/app`, data);
 };
 
-export const updateApp = (projectId: string, data: IAppBinaryData, id: number): Promise<AxiosResponse<IAppBinaryData>> => {
-    return http.put(`/${projectId}/app/${id}`, data);
+export const updateApp = (projectId: string, appId: number, data: IAppData): Promise<AxiosResponse<IAppData>> => {
+    return http.put(`/${projectId}/app/${appId}`, data);
 };
 
-export const deleteApp = (projectId: string, id: number): Promise<AxiosResponse<void>> => {
-    return http.delete(`/${projectId}/app/${id}`);
+export const updateAppBundle = (projectId: string, appId: number, id: number, data: IAppBinaryData): Promise<AxiosResponse<IAppBinaryData>> => {
+    return http.put(`/${projectId}/app/${appId}/bundle/${id}`, data);
+};
+
+export const deleteAppBundle = (projectId: string, appId: number, id: number): Promise<AxiosResponse<void>> => {
+    return http.delete(`/${projectId}/app/${appId}/bundle/${id}`);
+};
+
+export const getAppBundles = (projectId: string, appId: number): Promise<AxiosResponse<IAppBinaryData[]>> => {
+    return http.get(`/${projectId}/app/${appId}/bundles`);
 };
 
 export type AppFilter = {
@@ -31,6 +39,8 @@ export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppBinaryDat
 };
 
 export const uploadNewApp = (file: File,
+    projectId: string,
+    appId: number,
     uploadProgress: (progressEvent: number) => void,
     finished: (finished: AxiosResponse<IAppBinaryData>) => void): void => {
 
@@ -39,7 +49,7 @@ export const uploadNewApp = (file: File,
 
     http.request({
         method: 'post',
-        url: 'app/upload',
+        url: `/${projectId}/app/${appId}/upload`,
         data: formData,
         headers: {
             'Content-Type': 'multipart/form-data',
@@ -51,5 +61,7 @@ export const uploadNewApp = (file: File,
         console.log(data);
         uploadProgress(100);
         finished(data);
+    }).catch(ex => {
+        alert(ex)
     });
 };

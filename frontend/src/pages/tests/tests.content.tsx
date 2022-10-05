@@ -6,26 +6,25 @@ import TestsTable from '../../components/tests-table.component';
 import { useNavigate } from 'react-router-dom';
 import { Divider, FormControl, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { ApplicationProps } from "../../application/application.props";
-import { useProjectContext } from "../../project/project.context";
 import { useProjectAppContext } from "../../project/app.context";
 import { TitleCard } from "../../components/title.card.component";
 
 const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
-    const { projectId } = useProjectContext();
-    const { appId } = useProjectAppContext();
+    const { projectId, appId } = useProjectAppContext();
 
     const {appState, dispatch} = props;
 
     const navigate = useNavigate();
 
     function newTestClick(): void {
-        navigate(`/project/${projectId}/app/${value}/test/new`)
+        navigate(`/project/${projectId}/app/${appId}/test/new`)
     }
 
-    const [value, setValue] = useState<string>(appId !== null ? `${ appId }` : appState.project?.Apps === undefined ? '' : appState.project?.Apps.length === 0 ? '' : `${ appState.project?.Apps[ 0 ].ID }`);
     const handleChange = (event: SelectChangeEvent): void => {
-        setValue(event.target.value as string);
+        if (appState.appId != +event.target.value) {
+            navigate(`/project/${projectId}/app/${event.target.value}/tests`)
+        }
     };
 
     useEffect(() => {
@@ -35,7 +34,7 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                 navigate(`/project/${projectId}/app/${value}/tests`)
             }
         }
-    }, [appState.project?.Apps])
+    }, [appState.project?.Apps, appId])
 
     return (
         <Grid container={ true } spacing={ 2 }>
@@ -44,8 +43,8 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                     <Select
                         id="app-select"
                         label="App"
-                        defaultValue={`${ value }`}
-                        value={`${ value }`}
+                        defaultValue={`${ appId }`}
+                        value={`${ appId }`}
                         autoWidth={ true }
                         disableUnderline={ true }
                         sx={ {color: "black"} }
@@ -86,7 +85,7 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                     <Button variant={ "contained" } onClick={ newTestClick }>Add new Test</Button>
                                 </Grid>
                                 <Grid item={ true } xs={ 12 }>
-                                    <TestsTable appId={+value} />
+                                    <TestsTable appState={appState} appId={appState.appId} />
                                 </Grid>
                             </Grid>
                         </Paper>

@@ -25,6 +25,7 @@ func (p *logProtocol) Close() {
 	endTime := time.Now()
 	p.p.TestResult = state
 	p.p.EndedAt = &endTime
+	p.p.AvgCPU, p.p.AvgFPS, p.p.AvgMEM = p.Writer.GetAvgPerformanceMetrics()
 	p.db.Updates(&p.p)
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: p.p.TestRunID, Protocol: p.p})
 }
@@ -76,9 +77,12 @@ func (w *ProtocolWriter) SessionID() string {
 }
 
 func (w *ProtocolWriter) Close() {
-	failedCount := 0
-	successCount := 0
-	unstableCount := 0
+	var (
+		failedCount   int
+		successCount  int
+		unstableCount int
+	)
+
 	for _, p := range w.protocols {
 		switch p.p.TestResult {
 		case models.TestResultSuccess:
@@ -99,4 +103,14 @@ func (w *ProtocolWriter) Close() {
 		Unstable:  unstableCount,
 		Failed:    failedCount,
 	})
+}
+
+func (w *ProtocolWriter) TrackStartupTime(deviceID uint, milliseconds int64) {
+	entry := models.TestRunDeviceStatus{
+		TestRunID:   w.RunID(),
+		DeviceID:    deviceID,
+		StartupTime: uint(milliseconds),
+	}
+	w.db.Create(&entry)
+	w.run.DeviceStatus = append(w.run.DeviceStatus, entry)
 }

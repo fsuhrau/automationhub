@@ -20,6 +20,7 @@ type Device struct {
 	generic.Device
 	deviceOSName     string
 	deviceOSVersion  string
+	deviceOSInfos    string
 	deviceName       string
 	deviceID         string
 	deviceIP         net.IP

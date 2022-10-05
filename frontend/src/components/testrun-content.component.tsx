@@ -28,12 +28,12 @@ import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import { useProjectAppContext } from "../project/app.context";
 import { TitleCard } from "./title.card.component";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { BarChart, Bar, Cell, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Pie, PieChart } from 'recharts';
 
 interface TestRunContentProps {
     testRun: ITestRunData
-    nextRunId: number
-    prevRunId: number
+    nextRunId: number | undefined
+    prevRunId: number | undefined
 }
 
 interface NewTestRunPayload {
@@ -115,12 +115,17 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
     }, [testRun]);
 
     const onTestRerun = (): void => {
-        executeTest(projectId, appId, testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
+        executeTest(projectId, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
             navigate(`/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ response.data.ID }`);
         }).catch(error => {
             console.log(error);
         });
     };
+
+    const startupTimes = testRun.DeviceStatus.map(item => {
+            return {Name: item.Device.Name, StartupTime: item.StartupTime}
+        }
+    )
 
     return (
         <Grid container={ true } spacing={ 2 }>
@@ -138,7 +143,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                 >
                     <Grid item={ true } container={ true } xs={ 12 } spacing={ 2 } alignItems={ "center" }>
                         <Grid item={ true }>
-                            { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
+                            { prevRunId !== undefined && prevRunId > 0 && <Button variant="contained" color="primary" size="small"
                                                        href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
@@ -147,7 +152,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         <Grid item={ true } xs={ true }>
                         </Grid>
                         <Grid item={ true }>
-                            { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
+                            { nextRunId !== undefined && nextRunId > 0 && <Button variant="contained" color="primary" size="small"
                                                        href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
@@ -244,62 +249,79 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                             </TableContainer>
                         </Paper>
                     </TitleCard>
-                    { testRun?.App &&
+                    { testRun?.AppBinary &&
                         <TitleCard title={ "App Bundle" }>
-                                <Box sx={ {p: 1, m: 1} }>
-                                    <Grid container={ true }>
-                                        <Grid item={ true } xs={ 2 }>
-                                            Name:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Name }
-                                        </Grid>
-
-                                        <Grid item={ true } xs={ 2 }>
-                                            Identifier:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Identifier }
-                                        </Grid>
-
-                                        <Grid item={ true } xs={ 2 }>
-                                            Platform:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Platform }
-                                        </Grid>
-
-                                        <Grid item={ true } xs={ 2 }>
-                                            Version:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Version }
-                                        </Grid>
-                                        <Grid item={ true } xs={ 2 }>
-                                            Hash:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Hash }
-                                        </Grid>
-
-                                        <Grid item={ true } xs={ 2 }>
-                                            Created:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            <Moment
-                                                format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
-                                        </Grid>
-
-                                        <Grid item={ true } xs={ 2 }>
-                                            Addons:
-                                        </Grid>
-                                        <Grid item={ true } xs={ 10 }>
-                                            { testRun?.App?.Additional }
-                                        </Grid>
+                            <Box sx={ {p: 1, m: 1} }>
+                                <Grid container={ true }>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Name:
                                     </Grid>
-                                </Box>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Name }
+                                    </Grid>
+
+                                    <Grid item={ true } xs={ 2 }>
+                                        Identifier:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Identifier }
+                                    </Grid>
+
+                                    <Grid item={ true } xs={ 2 }>
+                                        Platform:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Platform }
+                                    </Grid>
+
+                                    <Grid item={ true } xs={ 2 }>
+                                        Version:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Version }
+                                    </Grid>
+                                    <Grid item={ true } xs={ 2 }>
+                                        Hash:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Hash }
+                                    </Grid>
+
+                                    <Grid item={ true } xs={ 2 }>
+                                        Created:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        <Moment
+                                            format="YYYY/MM/DD HH:mm:ss">{ testRun?.AppBinary?.CreatedAt }</Moment>
+                                    </Grid>
+
+                                    <Grid item={ true } xs={ 2 }>
+                                        Addons:
+                                    </Grid>
+                                    <Grid item={ true } xs={ 10 }>
+                                        { testRun?.AppBinary?.Additional }
+                                    </Grid>
+                                </Grid>
+                            </Box>
                         </TitleCard>
                     }
+                    <TitleCard title={ "App Startup Time" }>
+                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                            <ResponsiveContainer width={ '100%' } height={ 200 }>
+                                <BarChart width={ 600 } height={ 200 } data={startupTimes} margin={ {
+                                    top: 5,
+                                    right: 30,
+                                    left: 20,
+                                    bottom: 5,
+                                } }>
+                                    <CartesianGrid strokeDasharray="3 3"/>
+                                    <XAxis dataKey="Name"/>
+                                    <Tooltip/>
+                                    <Bar dataKey="StartupTime" fill="#8884d8" label={{ position: 'top' }} unit={'ms'}/>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Paper>
+                    </TitleCard>
                     <TitleCard title={ "Execution Log" }>
                         <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
                             <Box sx={ {p: 1, m: 1} }>

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,54 +25,71 @@ import (
 	sse "github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var (
 	appPath  string
-	appID    int
-	testID   int
+	binaryID int
 	params   string
 	async    *bool
 	success  bool
-	testName string
 	tags     string
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "run --url http://localhost:8002 --appid 50 --app path_to_app --testid 9 --test \"name\" --tags \"tag1,tag2,tag3\" --params \"param1=1;parameter2=2\" --async",
+	Short: "run http://localhost:8002 projectID appID testName --binaryID 50 --binary path_to_app --tags \"tag1,tag2,tag3\" --params \"param1=1;parameter2=2\" --async",
 	Long: `Run a new test.
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(apiURL, apiToken)
+		if len(args) < 4 {
+			return fmt.Errorf("missing parameter")
+		}
+		var (
+			testID    uint
+			apiURL    string
+			projectID string
+			appID     uint
+			testName  string
+		)
+
+		apiURL = args[0]
+		projectID = args[1]
+		u, _ := strconv.ParseUint(args[2], 10, 64)
+		appID = uint(u)
+		testName = args[3]
+
+		client := api.NewClient(apiURL, apiToken, projectID, appID)
+
 		if len(appPath) > 0 {
-			logrus.Info("uploading app")
-			app, err := client.UploadApp(appPath)
+			logrus.Info("uploading appBundle")
+			appBundle, err := client.UploadBundle(appPath)
 			if err != nil {
 				return err
 			}
-			appID = int(app.ID)
-			logrus.Infof("upload finished new appId: %d", appID)
+			binaryID = int(appBundle.ID)
+			logrus.Infof("upload finished new binaryID: %d", binaryID)
 
 			if len(tags) > 0 {
-				app.Tags = tags
-				if err := client.UpdateApp(context.Background(), app); err != nil {
+				appBundle.Tags = tags
+				if err := client.UpdateApp(context.Background(), appBundle); err != nil {
 					return err
 				}
 			}
 		}
 
-		if testID == 0 && len(testName) > 0 {
+		if len(testName) > 0 {
 			tests, err := client.GetTests(context.Background())
 			if err != nil {
 				return err
 			}
 			for _, t := range tests {
 				if t.Name == testName {
-					testID = int(t.ID)
+					testID = t.ID
 				}
 			}
 		}
@@ -81,15 +98,15 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("no test provided or test could not be found")
 		}
 
-		logrus.Infof("execute test %d with appId: %d\n%s", testID, appID, params)
+		logrus.Infof("execute test %d with binaryId: %d\n%s", testID, binaryID, params)
 		parameter := strings.Split(params, ";")
-		logrus.Infof("execute test %d with appId: %d", testID, appID)
-		testRun, err := client.ExecuteTest(context.Background(), testID, appID, strings.Join(parameter, "\n"))
+		logrus.Infof("execute test %d with binaryId: %d", testID, binaryID)
+		testRun, err := client.ExecuteTest(context.Background(), testID, binaryID, strings.Join(parameter, "\n"))
 		if err != nil {
 			return err
 		}
 		defer func() {
-			logrus.Infof("Check your restults at: %s/web/test/%d/run/%d", apiURL, testID, testRun.ID)
+			logrus.Infof("Check your restults at: %s/project/%s/app/%d/test/%d/run/%d", apiURL, projectID, appID, testID, testRun.ID)
 		}()
 		if async != nil && *async == true {
 			logrus.Infof("Test Running...")
@@ -144,20 +161,9 @@ func init() {
 	success = false
 	testCmd.AddCommand(runCmd)
 
-	runCmd.PersistentFlags().StringVar(&appPath, "app", "", "app path")
-	runCmd.PersistentFlags().IntVar(&appID, "appid", 0, "appid 123")
-	runCmd.PersistentFlags().IntVar(&testID, "testid", 0, "testid 123")
-	runCmd.PersistentFlags().StringVar(&testName, "test", "", "test \"testname\"")
-	runCmd.PersistentFlags().StringVar(&params, "params", "", "test environment parameter \"param1=1;param2=2\"")
+	runCmd.PersistentFlags().StringVar(&appPath, "binary", "", "binary /path/to/apk/ipa/zip")
+	runCmd.PersistentFlags().IntVar(&binaryID, "binaryID", 0, "binaryID 123")
+	runCmd.PersistentFlags().StringVar(&params, "params", "", "params \"param1=1;param2=2\"")
 	runCmd.PersistentFlags().StringVar(&tags, "tags", "", "tag \"tag1,tag2,tag3\"")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
 	async = testCmd.PersistentFlags().BoolP("async", "a", false, "run command async observe status manually")
 }

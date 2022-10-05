@@ -30,7 +30,7 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
     const unityTestConfig = getUnityTestsConfig();
     const deviceConfig = getDeviceOption();
 
-    const getUnityTestConfigName = (b: boolean): string => {
+    const getUnityTestConfigName = (b: boolean | undefined): string => {
         const id = b ? 0 : 1;
         const item = unityTestConfig.find(i => i.id === id);
         return item === undefined ? "" : item.name;
@@ -115,7 +115,6 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                                                     </Grid>
                                                     { !test.TestConfig.AllDevices && (<>
                                                         <Grid item={ true } xs={ 2 }>
-                                                            Devices:
                                                         </Grid>
                                                         <Grid item={ true } xs={ 10 }>
                                                             { test.TestConfig.Devices.map((a, index) =>
@@ -151,7 +150,7 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                                                                     </Grid>
                                                                 </>
                                                             }
-                                                            { test.TestConfig.Unity?.RunAllTests === false && (
+                                                            { test.TestConfig.Unity?.RunAllTests === false && test.TestConfig.Unity.UnityTestFunctions.length > 0 && (
                                                                 <>
                                                                     <Grid item={ true } xs={ 2 }>
                                                                         Functions:

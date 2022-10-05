@@ -62,6 +62,7 @@ func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appSta
 		if !d.Device.IsAppConnected() {
 			wg.Add(1)
 			go func(dm manager.Devices, appp app.Parameter, d DeviceMap, sessionId string, group *sync.ExtendedWaitGroup) {
+				startTime := time.Now()
 				if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.IP); err != nil {
 					tr.LogError("unable to start app: %v", err)
 				}
@@ -71,6 +72,7 @@ func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appSta
 				for !d.Device.IsAppConnected() {
 					time.Sleep(500 * time.Millisecond)
 				}
+				tr.ProtocolWriter.TrackStartupTime(d.Model.ID, time.Now().Sub(startTime).Milliseconds())
 				if connectedFunc != nil {
 					connectedFunc(d.Device)
 				}

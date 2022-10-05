@@ -37,6 +37,7 @@ type Device struct {
 	DPI                 float32
 	OS                  string
 	OSVersion           string
+	OSInfos             string
 	GPU                 string
 	ABI                 string
 	OpenGLESVersion     float32

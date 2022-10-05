@@ -34,7 +34,7 @@ const TestRunPageLoader: React.FC = () => {
                 console.log(ex);
             });
         }
-    }, [testId, runId]);
+    }, [testId, appId, runId]);
 
     return (
         testRun

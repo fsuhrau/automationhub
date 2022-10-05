@@ -8,7 +8,6 @@ export default interface ICreateTestData {
     TestType: TestType,
     UnityAllTests: boolean,
     ExecutionType: TestExecutionType,
-    Platform: PlatformType
     Categories: string[],
     UnitySelectedTests: IAppFunctionData[],
     AllDevices: boolean,

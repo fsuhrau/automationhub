@@ -1,4 +1,4 @@
-import { ToArray } from '../helper/enum_to_array';
+import { IdName, ToArray } from '../helper/enum_to_array';
 
 export enum PlatformType {
     iOS,
@@ -10,7 +10,7 @@ export enum PlatformType {
     Editor,
 }
 
-export const getPlatformTypes = (): Array<Object> => {
+export const getPlatformTypes = (): Array<IdName> => {
     return ToArray(PlatformType);
 };
 

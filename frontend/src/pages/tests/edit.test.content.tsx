@@ -18,11 +18,11 @@ import { getTestTypes, TestType } from '../../types/test.type.enum';
 import { useNavigate } from 'react-router-dom';
 import TestMethodSelection from '../../components/testmethod-selection.component';
 import ITestData from '../../types/test';
-import { updateTest } from '../../services/test.service';
+import { updateTest, UpdateTestData } from '../../services/test.service';
 import DeviceSelection from '../../components/device-selection.component';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { getPlatformTypes, PlatformType } from '../../types/platform.type.enum';
+import { PlatformType } from '../../types/platform.type.enum';
 import Table from "@mui/material/Table";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
@@ -34,12 +34,17 @@ import IAppFunctionData from "../../types/app.function";
 import { getDeviceOption, getUnityTestsConfig } from "./add.test.content";
 import { getAllDevices } from "../../services/device.service";
 import IDeviceData from "../../types/device";
+import { useProjectAppContext } from "../../project/app.context";
+import { isEqual } from "lodash";
+import { ApplicationProps } from "../../application/application.props";
 
-interface TestContentProps {
+interface TestContentProps extends ApplicationProps{
     test: ITestData
 }
 
 const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
+
+    const {projectId, appId} = useProjectAppContext();
 
     const navigate = useNavigate();
 
@@ -56,21 +61,29 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         category: string,
     };
 
-    const {test} = props;
+    const {test, appState} = props;
+
+    const app = appState.project?.Apps.find(a => a.ID === appId);
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
-    const platformTypes = getPlatformTypes();
     const unityTestExecutionTypes = getUnityTestsConfig();
     const deviceTypes = getDeviceOption();
 
     const addCategory = () => {
         if (state.category != '') {
-            setState(prevState => ({...prevState, testCategories: [...prevState.testCategories, prevState.category], category: ''}))
+            setState(prevState => ({
+                ...prevState,
+                testCategories: [...prevState.testCategories, prevState.category],
+                category: ''
+            }))
         }
     };
     const removeCategory = (index: number) => {
-        setState(prevState => ({...prevState, testCategories: [...prevState.testCategories.slice(0, index), ...prevState.testCategories.slice(index+1)]}))
+        setState(prevState => ({
+            ...prevState,
+            testCategories: [...prevState.testCategories.slice(0, index), ...prevState.testCategories.slice(index + 1)]
+        }))
     };
 
     const [state, setState] = React.useState<NewTestState>({
@@ -80,49 +93,53 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
             testName: test.Name,
             unityTestExecutionType: test.TestConfig.Unity?.RunAllTests ? 0 : 1,
             deviceType: test.TestConfig.AllDevices ? 0 : 1,
-            selectedDevices: test.TestConfig.Devices.map(value => value.ID) as number[],
-            selectedTestFunctions: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.UnityTestFunctions.map(value => ({Assembly: value.Assembly, Class: value.Class, Method: value.Method} as IAppFunctionData)),
-            testCategories: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.Categories.split(','),
+            selectedDevices: test.TestConfig.Devices.map(value => value.DeviceID) as number[],
+            selectedTestFunctions: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.UnityTestFunctions.map(value => ({
+                Assembly: value.Assembly,
+                Class: value.Class,
+                Method: value.Method
+            } as IAppFunctionData)),
+            testCategories: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null || test.TestConfig.Unity.Categories === '' ? [] : test.TestConfig.Unity.Categories.split(','),
             category: '',
         }
     )
+
     const updateTestData = (): void => {
-        test.Name = state.testName;
-        test.TestConfig.AllDevices = state.deviceType === 0;
-        test.TestConfig.ExecutionType = state.executionType;
-        if (test.TestConfig.Unity !== null && test.TestConfig.Unity !== undefined) {
-            test.TestConfig.Unity.RunAllTests = state.unityTestExecutionType == 0;
-            // test.TestConfig.Devices = state.selectedDevices;
-        }
-        updateTest(test.ID as number, test).then(response => {
-            console.log(response.data);
-            navigate('/web/tests');
+        updateTest(projectId as string, appId, test.ID as number, {
+            Name: state.testName,
+            Categories: state.testCategories.join(','),
+            AllDevices: state.deviceType === 0,
+            ExecutionType: state.executionType,
+            RunAllTests: state.unityTestExecutionType == 0,
+            Devices: state.selectedDevices,
+        } as UpdateTestData).then(response => {
+            navigate(`/project/${ projectId }/tests`);
         }).catch(ex => {
             console.log(ex);
         });
     };
 
     const getTestTypeName = (type: TestType): string => {
-        const item = testTypes.find(i => i.id == type);
-        return item.name;
+        const item = testTypes.find(i => i.id === `${ type }`);
+        return item === undefined ? '' : item.name;
     };
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     useEffect(() => {
-        getAllDevices().then(response => {
+        getAllDevices(projectId, app?.Platform).then(response => {
             setDevices(response.data);
         })
-    }, [])
+    }, [projectId, app?.Platform])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
-        if (selectedDevices.equals(state.selectedDevices) === false) {
+        if (!isEqual(selectedDevices, state.selectedDevices)) {
             setState(prevState => ({...prevState, selectedDevices: selectedDevices}))
         }
     }
 
     const onTestSelectionChanged = (testSelection: IAppFunctionData[]) => {
-        if (testSelection.equals(state.selectedTestFunctions) === false) {
+        if (!isEqual(testSelection, state.selectedTestFunctions)) {
             setState(prevState => ({...prevState, selectedTestFunctions: testSelection}))
         }
     }
@@ -247,10 +264,12 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                             </Typography>
                                         </Grid>
                                         <Grid item={ true }>
-                                            <DeviceSelection
-                                                devices={devices}
-                                                selectedDevices={ test.TestConfig.Devices.map(value => value.DeviceID) }
-                                                onSelectionChanged={ onDeviceSelectionChanged }/>
+                                            {
+                                                devices !== undefined && devices.length > 0 && <DeviceSelection
+                                                    devices={ devices }
+                                                    selectedDevices={ state.selectedDevices }
+                                                    onSelectionChanged={ onDeviceSelectionChanged }/>
+                                            }
                                         </Grid>
                                     </Grid>
                                 ) }
@@ -272,7 +291,10 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                             name="unity-test-execution-selection"
                                             aria-label="spacing"
                                             value={ state.unityTestExecutionType.toString() }
-                                            onChange={ event => setState(prevState => ({...prevState, unityTestExecutionType: +event.target.value})) }
+                                            onChange={ event => setState(prevState => ({
+                                                ...prevState,
+                                                unityTestExecutionType: +event.target.value
+                                            })) }
                                             row={ true }
                                         >
                                             { unityTestExecutionTypes.map((value) => (
@@ -286,7 +308,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                         </RadioGroup>
                                     </Grid>
                                     { state.unityTestExecutionType === 2 && (
-                                        <Grid item={true} xs={12} container={true} >
+                                        <Grid item={ true } xs={ 12 } container={ true }>
                                             <Grid item={ true } xs={ 2 }>
                                                 Selected Tests:
                                             </Grid>
@@ -296,7 +318,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                         </Grid>
                                     ) }
                                     { state.unityTestExecutionType === 1 && (
-                                        <Grid item={true} xs={12} container={true} >
+                                        <Grid item={ true } xs={ 12 } container={ true }>
                                             <Grid item={ true } xs={ 2 }>
                                                 Categories
                                             </Grid>

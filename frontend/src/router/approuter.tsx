@@ -9,13 +9,14 @@ import TestProtocolLoader from "../pages/tests/test.protocol.loader";
 import TestRunPageLoader from "../pages/tests/test.run.page.loader";
 import TestPageLoader from "../pages/tests/test.page.loader";
 import SettingsPage from "../pages/settings/settings.page";
-import AppsPage from "../pages/apps/apps.page";
 import DevicePageLoader from "../pages/devices/device.page.loader";
 import DevicesManagerContent from "../pages/devices/devices.manager.content";
 import DevicesContent from "../pages/devices/device.content";
 import ProjectsIndexPage from "../project/projects.index.page";
 import { ProjectAppProvider } from "../project/app.context";
 import ProjectAppPage from "../pages/tests/project.app.page";
+import AppBundlesPage from "../pages/apps/appbundles.page";
+import AppSelectionContext from "../pages/apps/app.selection.context";
 
 export const AppRouter: React.FC = () => {
     const [state, dispatch] = useReducer(appReducer, InitialApplicationState);
@@ -23,18 +24,19 @@ export const AppRouter: React.FC = () => {
         <BrowserRouter>
             <Routes>
                 <Route path={ "/" } element={ <App appState={ state } dispatch={ dispatch } /> }>
-                    <Route index element={ <ProjectsIndexPage appState={ state } dispatch={ dispatch }/> }/>
+                    <Route index={true} element={ <ProjectsIndexPage appState={ state } dispatch={ dispatch }/> }/>
                     <Route path={ "project/:project_id" } element={ <ProjectMainPage/> }/>
                     <Route path={ "project/:project_id/tests" } element={ <ProjectAppProvider><TestContent appState={ state } dispatch={ dispatch }/></ProjectAppProvider> }/>
+                    <Route path={ "project/:project_id/bundles" } element={ <ProjectAppProvider ><AppBundlesPage appState={ state } dispatch={ dispatch }/></ProjectAppProvider> }/>
                     <Route path={ "project/:project_id/app/:app_id" } element={<ProjectAppPage />}>
+                        <Route path={ 'bundles' } element={ <AppSelectionContext appState={ state } dispatch={ dispatch } path={'bundles'}><AppBundlesPage appState={ state } dispatch={ dispatch }/></AppSelectionContext> }/>
                         <Route path={ "tests" } element={ <TestContent appState={ state } dispatch={ dispatch }/> }/>
-                        <Route path={ 'test/:testId' } element={ <TestPageLoader edit={ false }/> }/>
-                        <Route path={ 'test/new' } element={ <AddTestPage/> }/>
-                        <Route path={ 'test/:testId/edit' } element={ <TestPageLoader edit={ true }/> }/>
+                        <Route path={ 'test/:testId' } element={ <TestPageLoader appState={ state } edit={ false }/> }/>
+                        <Route path={ 'test/new' } element={ <AddTestPage appState={ state }/> }/>
+                        <Route path={ 'test/:testId/edit' } element={ <TestPageLoader appState={ state } edit={ true }/> }/>
                         <Route path={ 'test/:testId/run/:runId/:protocolId' } element={ <TestProtocolLoader/> }/>
                         <Route path={ "test/:testId/run/:runId" } element={ <TestRunPageLoader/> }/>
                         <Route path={ "test/:testId/runs/last" } element={ <TestRunPageLoader/> }/>
-                        <Route path={ "bundles" } element={ <AppsPage/> }/>
                         <Route path={ "results" }/>
                         <Route path={ "performance" }/>
                     </Route>

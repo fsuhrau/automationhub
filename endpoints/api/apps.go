@@ -12,21 +12,31 @@ import (
 	"strings"
 )
 
-func (s *Service) getApp(appId string) (*models.App, error) {
-	var app models.App
-	if err := s.db.First(&app, appId).Error; err != nil {
-		return nil, err
-	}
-	return &app, nil
-}
+func (s *Service) ResolveApp(context *gin.Context) {
+	appId := context.Param("app_id")
 
-func (s *Service) getApps(c *gin.Context) {
-	projectId := c.Param("project_id")
-	project, err := s.getProject(projectId)
-	if err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+	p, _ := context.Get("project")
+	project := p.(*models.Project)
+
+	var application models.App
+	if err := s.db.First(&application, "project_id = ? and id = ?", project.ID, appId).Error; err != nil {
+		s.error(context, http.StatusNotFound, err)
 		return
 	}
+	context.Set("app", &application)
+}
+
+func (s *Service) WithApp(wrapperFunction func(*gin.Context, *models.Project, *models.App)) func(*gin.Context) {
+	return func(context *gin.Context) {
+		p, _ := context.Get("project")
+		project := p.(*models.Project)
+		a, _ := context.Get("app")
+		application := a.(*models.App)
+		wrapperFunction(context, project, application)
+	}
+}
+
+func (s *Service) getApps(c *gin.Context, project *models.Project) {
 
 	var apps []models.App
 	if err := s.db.Where("project_id = ?", project.ID).Find(&apps).Error; err != nil {
@@ -36,10 +46,9 @@ func (s *Service) getApps(c *gin.Context) {
 	c.JSON(http.StatusOK, apps)
 }
 
-func (s *Service) getBinaries(c *gin.Context) {
-	appId := c.Param("app_id")
+func (s *Service) getBinaries(c *gin.Context, project *models.Project, application *models.App) {
 	var apps []models.AppBinary
-	if err := s.db.Where("app_id = ?", appId).Find(&apps).Error; err != nil {
+	if err := s.db.Where("app_id = ?", application.ID).Find(&apps).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -58,19 +67,19 @@ func (s *Service) getApp(c *gin.Context) {
 }
 */
 
-func (s *Service) deleteBinary(c *gin.Context) {
+func (s *Service) deleteBinary(c *gin.Context, project *models.Project, application *models.App) {
 	binaryId := c.Param("binary_id")
-	var app models.AppBinary
-	if err := s.db.First(&app, binaryId).Error; err != nil {
+	var binary models.AppBinary
+	if err := s.db.First(&binary, "app_id = ? and id = ?", application.ID, binaryId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-	if err := os.RemoveAll(app.AppPath); err != nil {
+	if err := os.RemoveAll(binary.AppPath); err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := s.db.Delete(&app).Error; err != nil {
+	if err := s.db.Delete(&binary).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -78,33 +87,43 @@ func (s *Service) deleteBinary(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (s *Service) createApp(c *gin.Context) {
-	projectId := c.Param("project_id")
-	project, err := s.getProject(projectId)
-	if err != nil {
-		s.error(c, http.StatusNotFound, err)
-		return
-	}
-
-	var app models.App
-	c.Bind(&app)
-	app.ProjectID = project.ID
-	if err := s.db.Create(&app).Error; err != nil {
+func (s *Service) createApp(c *gin.Context, project *models.Project) {
+	var application models.App
+	c.Bind(&application)
+	application.ProjectID = project.ID
+	if err := s.db.Create(&application).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
-	c.JSON(http.StatusOK, app)
+	c.JSON(http.StatusOK, application)
 }
 
-func (s *Service) updateBinary(c *gin.Context) {
+func (s *Service) updateApp(c *gin.Context, project *models.Project, application *models.App) {
+	var request models.App
+	c.Bind(&request)
+	application.Name = request.Name
+	application.DefaultParameter = request.DefaultParameter
+	// allow change it once since it's a default generated one
+	if application.Identifier == "default_app" {
+		application.Identifier = request.Identifier
+	}
+
+	if err := s.db.Save(&application).Error; err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, application)
+}
+
+func (s *Service) updateBinary(c *gin.Context, project *models.Project, application *models.App) {
 	binaryId := c.Param("binary_id")
 
 	var newApp models.AppBinary
 	c.Bind(&newApp)
 
 	var binary models.AppBinary
-
-	if err := s.db.Find(&binary, binaryId).Error; err != nil {
+	if err := s.db.Find(&binary, "app_id = ? and id = ?", application.ID, binaryId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -118,18 +137,11 @@ func (s *Service) updateBinary(c *gin.Context) {
 	c.JSON(http.StatusOK, binary)
 }
 
-func (s *Service) uploadBinary(c *gin.Context) {
+func (s *Service) uploadBinary(c *gin.Context, project *models.Project, application *models.App) {
 	file, err := c.FormFile("test_target")
-	projectId := c.Param("project_id")
 
 	if err != nil {
 		s.error(c, http.StatusBadRequest, fmt.Errorf("get form err: %s", err.Error()))
-		return
-	}
-
-	project, err := s.getProject(projectId)
-	if err != nil {
-		s.error(c, http.StatusInternalServerError, fmt.Errorf("project not found err: %s", err.Error()))
 		return
 	}
 
@@ -158,12 +170,6 @@ func (s *Service) uploadBinary(c *gin.Context) {
 		return
 	}
 
-	var app models.App
-	if err := s.db.Where("project_id = ? and identifier = ?", project.ID, params.Identifier).First(&app).Error; err != nil {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("no app defined for identifer %s", params.Identifier))
-		return
-	}
-
 	a := models.AppBinary{}
 	result := s.db.First(&a, "hash = '%s'", params.Hash)
 	if result.RowsAffected > 0 {
@@ -180,7 +186,7 @@ func (s *Service) uploadBinary(c *gin.Context) {
 		Hash:           params.Hash,
 		Name:           params.Name,
 		Identifier:     params.Identifier,
-		AppID:          app.ID,
+		AppID:          application.ID,
 		Version:        params.Version,
 		LaunchActivity: params.LaunchActivity,
 		Platform:       params.Platform,

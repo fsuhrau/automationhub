@@ -21,12 +21,12 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     const [device, setDevice] = useState<IDeviceData>();
 
     useEffect(() => {
-        getDevice(deviceId === undefined ? "" : deviceId).then(response => {
+        getDevice(projectId as string, deviceId === undefined ? "" : deviceId).then(response => {
             setDevice(response.data);
         }).catch(ex => {
             console.log(ex);
         });
-    }, [deviceId]);
+    }, [projectId, deviceId]);
 
     return (
         <div>

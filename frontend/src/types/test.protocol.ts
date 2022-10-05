@@ -15,6 +15,13 @@ export default interface ITestProtocolData {
     Entries: IProtocolEntryData[]
     TestResult: TestResultState
     Performance: IProtocolPerformanceEntryData[]
+    AvgFPS: number,
+    AvgMEM: number,
+    AvgCPU: number,
+    HistAvgFPS: number,
+    HistAvgMEM: number,
+    HistAvgCPU: number,
+    TestProtocolHistory: ITestProtocolData[],
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

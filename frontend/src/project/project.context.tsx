@@ -35,7 +35,7 @@ export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => 
         <ProjectContext.Provider value={{
             projectId: project_id === undefined ? null : project_id,
         }}>
-            { state.projects !== null && project_id !== undefined && props.children }
+            { state.projects !== null && props.children }
             </ProjectContext.Provider>
     );
 };

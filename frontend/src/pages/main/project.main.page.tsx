@@ -8,20 +8,25 @@ import { getHubStats } from '../../services/hub.stats.service';
 import TestStatusIconComponent from '../../components/test-status-icon.component';
 import { prettySize } from '../../types/app';
 import { duration } from '../../types/test.protocol';
+import { useProjectContext } from "../../project/project.context";
 
 const ProjectMainPage: React.FC = () => {
 
     const navigate = useNavigate();
 
+    const {projectId} = useProjectContext();
+
     const [stats, setStats] = useState<IHubStatsData>();
 
     useEffect(() => {
-        getHubStats().then(response => {
-            setStats(response.data);
-        }).catch(e => {
-            console.log(e);
-        });
-    }, []);
+        if (projectId !== null) {
+            getHubStats(projectId as string).then(response => {
+                setStats(response.data);
+            }).catch(e => {
+                console.log(e);
+            });
+        }
+    }, [projectId]);
 
     return (
         <>
@@ -91,7 +96,7 @@ const ProjectMainPage: React.FC = () => {
                                         </Grid>
                                         <Grid item={ true } xs={ true }>
                                             <Link
-                                                href={ `/web/test/0/run/${ data.TestRunID }/${ data.ID }` }
+                                                href={ `/test/0/run/${ data.TestRunID }/${ data.ID }` }
                                                 underline="none">
                                                 { data.TestName.split('/')[ 1 ] }
                                             </Link>
@@ -120,7 +125,7 @@ const ProjectMainPage: React.FC = () => {
                                         </Grid>
                                         <Grid item={ true } xs={ true }>
                                             <Link
-                                                href={ `/web/test/0/run/${ data.TestRunID }/${ data.ID }` }
+                                                href={ `/test/0/run/${ data.TestRunID }/${ data.ID }` }
                                                 underline="none">
                                                 { data.TestName.split('/')[ 1 ] }
                                             </Link>

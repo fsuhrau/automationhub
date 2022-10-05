@@ -17,6 +17,10 @@ const TestProtocolLoader: React.FC = () => {
     const [run, setRun] = useState<ITestRunData>();
 
     useEffect(() => {
+        if (protocolId === undefined) {
+            return;
+        }
+
         getTestProtocol(projectId, appId, testId as string, runId as string, protocolId as string).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {

@@ -25,6 +25,8 @@ func GetDB() (*gorm.DB, error) {
 	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{
 		// migrations.InitialMigration,
 		migrations.IntroduceProjects,
+		migrations.AddOsInfosToDevice,
+		migrations.AddPerformanceAverage,
 	})
 
 	if err = m.Migrate(); err != nil {

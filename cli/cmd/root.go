@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	cfgFile string
-	apiURL   string
+	cfgFile  string
 	apiToken string
 )
 
@@ -59,7 +58,6 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
-	rootCmd.PersistentFlags().StringVar(&apiURL, "url", "", "url to api")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "token for authentication")
 
 	// Cobra also supports local flags, which will only run

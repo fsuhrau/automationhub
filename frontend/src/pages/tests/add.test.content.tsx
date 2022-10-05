@@ -38,23 +38,33 @@ import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
 import IDeviceData from "../../types/device";
 import { getAllDevices } from "../../services/device.service";
+import { useProjectAppContext } from "../../project/app.context";
+import { ApplicationProps } from "../../application/application.props";
+
+import * as _ from "lodash"
+import { isEqual } from "lodash";
+import { IdName } from "../../helper/enum_to_array";
 
 function getSteps(): Array<string> {
     return ['Select Test Type', 'Test Configuration', 'Device Selection'];
 }
 
-export function getUnityTestsConfig(): Array<Object> {
-    return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run all of Category' }, {
-        id: 2,
+export function getUnityTestsConfig(): Array<IdName> {
+    return [{ id: '0', name: 'Run all Tests' }, { id: '1', name: 'Run all of Category' }, {
+        id: '2',
         name: 'Run only Selected Tests',
     }];
 }
 
-export function getDeviceOption(): Array<Object> {
-    return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
+export function getDeviceOption(): Array<IdName> {
+    return [{ id: '0', name: 'All Devices' }, { id: '1', name: 'Selected Devices Only' }];
 }
 
-const AddTestPage: React.FC = () => {
+const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+
+    const {appState} = props;
+
+    const {projectId, appId} = useProjectAppContext()
 
     enum TestCreationSteps {
         Basics,
@@ -68,7 +78,6 @@ const AddTestPage: React.FC = () => {
         testName: string,
         testType: TestType,
         executionType: TestExecutionType,
-        platformType: PlatformType,
         unityTestExecutionType: number,
         deviceType: number,
         selectedDevices: number[],
@@ -82,7 +91,6 @@ const AddTestPage: React.FC = () => {
     const [state, setState] = React.useState<NewTestState>({
         testType: TestType.Unity,
         executionType: TestExecutionType.Concurrent,
-        platformType: PlatformType.iOS,
         testName: "",
         unityTestExecutionType: 0,
         deviceType: 0,
@@ -96,8 +104,6 @@ const AddTestPage: React.FC = () => {
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
-    const platformTypes = getPlatformTypes();
-
     const unityTestExecutionTypes = getUnityTestsConfig();
     const deviceTypes = getDeviceOption();
 
@@ -118,15 +124,13 @@ const AddTestPage: React.FC = () => {
             ExecutionType: state.executionType,
             UnityAllTests: state.unityTestExecutionType === 0 || state.unityTestExecutionType === 1,
             UnitySelectedTests: state.selectedTestFunctions,
-            Platform: state.platformType,
             Categories: state.testCategories,
             AllDevices: state.deviceType === 0,
             SelectedDevices: state.selectedDevices,
         };
 
-        createTest(requestData).then(response => {
-            console.log(response.data);
-            navigate('/web/tests');
+        createTest(projectId, appId, requestData).then(response => {
+            navigate(`/project/${projectId}/app/${appId}/tests`);
         }).catch(ex => {
             console.log(ex);
         });
@@ -145,19 +149,21 @@ const AddTestPage: React.FC = () => {
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
     useEffect(() => {
-        getAllDevices().then(response => {
+        const app = appState.project?.Apps.find(a => a.ID === appId);
+        getAllDevices(projectId, app?.Platform).then(response => {
+            console.log(response.data);
             setDevices(response.data);
         })
-    }, [])
+    }, [appState.project?.Apps, projectId, appId])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
-        if (selectedDevices.equals(state.selectedDevices) === false) {
+        if (!isEqual(selectedDevices, state.selectedDevices)) {
             setState(prevState => ({...prevState, selectedDevices: selectedDevices}))
         }
     }
 
     const onTestSelectionChanged = (testSelection: IAppFunctionData[]) => {
-        if (testSelection.equals(state.selectedTestFunctions) === false) {
+        if (!isEqual(testSelection, state.selectedTestFunctions)) {
             setState(prevState => ({...prevState, selectedTestFunctions: testSelection}))
         }
     }
@@ -227,26 +233,8 @@ const AddTestPage: React.FC = () => {
                                                                 onChange={ event => setState(prevState => ({...prevState, testType: +event.target.value as TestType})) }
                                                             >
                                                                 { testTypes.map((value) => (
-                                                                    <MenuItem key={ 'tt_' + value.id.toString() }
-                                                                        value={ value.id.toString() }>{ value.name }</MenuItem>
-                                                                )) }
-                                                            </Select>
-                                                        </FormControl>
-                                                    </Grid>
-                                                    <Grid item={ true } xs={ 2 }>
-                                                        <FormControl fullWidth={ true }>
-                                                            <InputLabel
-                                                                id="platform-type-selection">Platform</InputLabel>
-                                                            <Select
-                                                                defaultValue={ state.platformType }
-                                                                labelId="platform-type-selection"
-                                                                id="platform-type"
-                                                                label="Platform"
-                                                                onChange={ event => setState(prevState => ({...prevState, platformType: +event.target.value as PlatformType})) }
-                                                            >
-                                                                { platformTypes.map((value) => (
-                                                                    <MenuItem key={ 'tt_' + value.id.toString() }
-                                                                        value={ value.id.toString() }>{ value.name }</MenuItem>
+                                                                    <MenuItem key={ 'tt_' + value.id }
+                                                                        value={ value.id }>{ value.name }</MenuItem>
                                                                 )) }
                                                             </Select>
                                                         </FormControl>
@@ -267,7 +255,7 @@ const AddTestPage: React.FC = () => {
                                                                     { executionTypes.map((value) => (
                                                                         <FormControlLabel
                                                                             key={ 'exec_' + value.id }
-                                                                            value={ value.id.toString() }
+                                                                            value={ value.id }
                                                                             control={ <Radio/> }
                                                                             label={ value.name }
                                                                         />
@@ -372,7 +360,7 @@ const AddTestPage: React.FC = () => {
                                                             { deviceTypes.map((value) => (
                                                                 <FormControlLabel
                                                                     key={ 'device_' + value.id }
-                                                                    value={ value.id.toString() }
+                                                                    value={ value.id }
                                                                     control={ <Radio/> }
                                                                     label={ value.name }
                                                                 />
@@ -390,10 +378,12 @@ const AddTestPage: React.FC = () => {
                                                         </Typography>
                                                     </Grid>
                                                     <Grid item={ true }>
-                                                        <DeviceSelection
-                                                            devices={devices}
-                                                            selectedDevices={ state.selectedDevices }
-                                                            onSelectionChanged={ onDeviceSelectionChanged }/>
+                                                        {
+                                                            devices !== undefined && devices.length > 0 && <DeviceSelection
+                                                                devices={devices}
+                                                                selectedDevices={ state.selectedDevices }
+                                                                onSelectionChanged={ onDeviceSelectionChanged }/>
+                                                        }
                                                     </Grid>
                                                 </Grid>
                                             ) }

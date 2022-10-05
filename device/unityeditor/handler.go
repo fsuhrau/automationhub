@@ -14,8 +14,8 @@ const (
 )
 
 type Handler struct {
-	devices      map[string]*Device
-	hostIP       net.IP
+	devices       map[string]*Device
+	hostIP        net.IP
 	deviceStorage storage.Device
 }
 
@@ -88,6 +88,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 	if _, ok := m.devices[data.DeviceID]; ok {
 		m.devices[data.DeviceID].deviceOSName = data.DeviceOS
 		m.devices[data.DeviceID].deviceOSVersion = data.DeviceOSVersion
+		m.devices[data.DeviceID].deviceOSInfos = data.DeviceOSInfos
 		m.devices[data.DeviceID].deviceName = data.Name
 		m.devices[data.DeviceID].deviceIP = data.DeviceIP
 		m.devices[data.DeviceID].lastUpdateAt = lastUpdate
@@ -99,6 +100,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			deviceID:        data.DeviceID,
 			deviceOSName:    data.DeviceOS,
 			deviceOSVersion: data.DeviceOSVersion,
+			deviceOSInfos:   data.DeviceOSInfos,
 			deviceIP:        data.DeviceIP,
 			lastUpdateAt:    lastUpdate,
 			conn:            data.Conn,
@@ -106,11 +108,12 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 		}
 		dev := models.Device{
 			DeviceIdentifier: data.DeviceID,
-			DeviceType: models.DeviceTypeUnityEditor,
-			Name: data.Name,
-			Manager: Manager,
-			OS: data.DeviceOS,
-			OSVersion: data.DeviceOSVersion,
+			DeviceType:       models.DeviceTypeUnityEditor,
+			Name:             data.Name,
+			Manager:          Manager,
+			OS:               data.DeviceOS,
+			OSVersion:        data.DeviceOSVersion,
+			OSInfos:          data.DeviceOSInfos,
 			ConnectionParameter: models.ConnectionParameter{
 				ConnectionType: models.ConnectionTypeRemote,
 			},

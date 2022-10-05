@@ -11,7 +11,7 @@ import TableBody from '@mui/material/TableBody';
 import Moment from 'react-moment';
 import {
     Avatar,
-    Box,
+    Box, Dialog, DialogActions, DialogContent,
     Divider,
     List,
     ListItem,
@@ -31,7 +31,7 @@ import {
 } from '../../services/settings.service';
 import IAccessTokenData from '../../types/access.token';
 import CopyToClipboard from '../../components/copy.clipboard.component';
-import { Android, Apple, ContentCopy, Web } from '@mui/icons-material';
+import { Android, Apple, ContentCopy, Edit, Web } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -41,6 +41,11 @@ import { ApplicationProps } from "../../application/application.props";
 import { PlatformType } from "../../types/platform.type.enum";
 import { IAppData } from "../../types/app";
 import { TitleCard } from "../../components/title.card.component";
+import { updateProject } from "../../project/project.service";
+import { ApplicationStateActions } from "../../application/application.state";
+import IProject from "../../project/project";
+import { createApp, updateApp, updateAppBundle } from "../../services/app.service";
+import NewAppDialog from "../apps/newapp.dialog";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -121,7 +126,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         }).catch(e => {
             console.log(e);
         });
-    }, []);
+    }, [params.project_id]);
 
     const handleDeleteAccessToken = (accessTokenID: number): void => {
         deleteAccessToken(params.project_id as string, accessTokenID).then(value => {
@@ -169,8 +174,63 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         setSelectedAppID(id);
     };
 
+    type ChangeAttributeState = {
+        context?: 'project' | 'app' ,
+        attribute: string,
+        value: string,
+        open: boolean,
+    }
+
+    const [changeAttributeDialogState, setChangeAttributeDialogState] = useState<ChangeAttributeState>({attribute: '', value: '', open: false});
+
+    const handleEditClose = () => {
+        setChangeAttributeDialogState(prevState => ({...prevState, attribute: '', value: '', open: false}))
+    };
+
+    const handleEditSubmit = () => {
+        if (changeAttributeDialogState.context === 'project') {
+            updateProject(appState.project?.Identifier as string, {...appState.project, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IProject).then(response => {
+                dispatch({type: ApplicationStateActions.UpdateProjectAttribute, payload: {attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
+            })
+        } else if (changeAttributeDialogState.context === 'app') {
+            updateApp(appState.project?.Identifier as string, selectedApp?.ID as number, {...selectedApp, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IAppData).then(response => {
+                dispatch({type: ApplicationStateActions.UpdateAppAttribute, payload: {app_id: selectedApp?.ID, attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
+            })
+        }
+
+        handleEditClose();
+    };
+
+    const [showNewAppDialog, setShowNewAppDialog] = useState<boolean>(false);
+
+    const submitNewApp = (data: IAppData) => {
+        createApp(appState.project?.Identifier as string, data).then(response => {
+            dispatch({type: ApplicationStateActions.AddNewApp, payload: response.data})
+        }).catch(ex => console.log(ex));
+    }
+
     return (
         <Grid container={ true } spacing={ 2 }>
+            <Grid item={true} xs={12}>
+                <Dialog open={changeAttributeDialogState.open} onClose={handleEditClose}>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="change_attribute"
+                            label={changeAttributeDialogState.attribute}
+                            value={changeAttributeDialogState.value}
+                            onChange={(e) => setChangeAttributeDialogState(prevState => ({...prevState, value: e.target.value}))}
+                            fullWidth
+                            variant="standard"
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleEditClose}>Cancel</Button>
+                        <Button onClick={handleEditSubmit}>Save</Button>
+                    </DialogActions>
+                </Dialog>
+            </Grid>
             <Grid item={ true } xs={ 12 }>
                 <Typography variant={ "h1" }>Project Settings</Typography>
             </Grid>
@@ -201,14 +261,13 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                             name</Typography>
                                     </Grid>
                                     <Grid item={ true } xs={ 9 }>
-                                        { appState.project?.Name }
+                                        { appState.project?.Name }<IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Name', open: true}))}><Edit /></IconButton>
                                     </Grid>
                                     <Grid item={ true } xs={ 3 }>
-                                        <Typography variant={ "body1" } color={ "dimgray" }>Project
-                                            ID</Typography>
+                                        <Typography variant={ "body1" } color={ "dimgray" }>Project ID</Typography>
                                     </Grid>
                                     <Grid item={ true } xs={ 9 }>
-                                        { appState.project?.Identifier }
+                                        { appState.project?.Identifier }{ appState.project?.Identifier === "default_project" && <IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Identifier', open: true}))}><Edit /></IconButton> }
                                     </Grid>
                                 </Grid>
                             </Box>
@@ -222,7 +281,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                     backgroundColor: '#fafafa',
                                     borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                                 } }>
-                                    <Button variant={ "contained" }>Add App</Button>
+                                    <Button variant={ "contained" } onClick={() => setShowNewAppDialog(true)}>Add App</Button>
                                 </Grid>
                                 <Grid item={ true } container={ true } xs={ 4 }
                                       sx={ {backgroundColor: '#fafafa', borderRight: '1px solid rgba(0, 0, 0, 0.12)'} }>
@@ -233,6 +292,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                    onSelect={ selectApp } icon={ <Web/> }/>
                                     <AppNavigation title={ "Web apps" } apps={ webApps } onSelect={ selectApp } icon={ <Web/> }/>
                                 </Grid>
+                                <NewAppDialog open={showNewAppDialog} onSubmit={submitNewApp} onClose={()=>setShowNewAppDialog(false)} />
                                 <Grid item={ true } container={ true } xs={ 8 } sx={ {padding: 2} }>
                                     {
                                         selectedApp === null ? (<Typography variant={ "body1" } color={ "dimgray" }>No
@@ -247,19 +307,19 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                 <Typography variant={ "caption" }>App Name</Typography>
                                             </Grid>
                                             <Grid item={ true } xs={ 12 }>
-                                                { selectedApp?.Name }
+                                                { selectedApp?.Name }<IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "app", attribute: 'Name', open: true}))}><Edit /></IconButton>
                                             </Grid>
                                             <Grid item={ true } xs={ 12 }>
                                                 <Typography variant={ "caption" }>Bundle Identifier</Typography>
                                             </Grid>
                                             <Grid item={ true } xs={ 12 }>
-                                                { selectedApp?.Identifier }
+                                                { selectedApp?.Identifier }{ selectedApp?.Identifier === "default_app" && <IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "app", attribute: 'Identifier', open: true}))}><Edit /></IconButton> }
                                             </Grid>
                                             <Grid item={ true } xs={ 12 }>
                                                 <Typography variant={ "caption" }>Default Parameter</Typography>
                                             </Grid>
                                             <Grid item={ true } xs={ 12 }>
-                                                { selectedApp?.DefaultParameter }
+                                                { selectedApp?.DefaultParameter }<IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "app", attribute: 'DefaultParameter', open: true}))}><Edit /></IconButton>
                                             </Grid>
                                         </>)
                                     }

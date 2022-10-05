@@ -10,12 +10,15 @@ import { deleteDevice } from '../../services/device.service';
 import { useNavigate } from 'react-router-dom';
 import { DeviceType } from '../../types/device.type.enum';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
+import { useProjectContext } from "../../project/project.context";
 
 interface DeviceShowProps {
     device: IDeviceData
 }
 
 const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) => {
+
+    const {projectId} = useProjectContext();
 
     const navigate = useNavigate();
 
@@ -47,8 +50,8 @@ const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) =>
                             <ButtonGroup variant="text" aria-label="text button group">
                                 <Button href={ `${ device.ID }/edit` }>Edit</Button>
                                 <Button color="secondary" onClick={ () => {
-                                    deleteDevice(device.ID as number).then((result) =>
-                                        navigate('/web/devices'),
+                                    deleteDevice(projectId as string, device.ID as number).then((result) =>
+                                        navigate('/devices'),
                                     );
                                 } }> Delete</Button>
                             </ButtonGroup>

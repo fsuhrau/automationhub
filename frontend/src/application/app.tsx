@@ -61,7 +61,10 @@ const App: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         if (params.project_id !== null && params.project_id !== undefined && params.project_id !== appState.projectId) {
             dispatch({type: ApplicationStateActions.ChangeProject, payload: params.project_id})
         }
-    }, [appState.projectId, params.project_id])
+        if (params.app_id !== null && params.app_id !== undefined && +params.app_id !== appState.appId) {
+            dispatch({type: ApplicationStateActions.ChangeActiveApp, payload: +params.app_id})
+        }
+    }, [appState.projectId, params.project_id, appState.appId, params.app_id])
 
     return <SSEProvider endpoint="/api/sse">
             <Box sx={ {display: 'flex', minHeight: '100vh'} }>

@@ -8,28 +8,47 @@ import (
 	"time"
 )
 
+type PerformanceMetric struct {
+	Count int
+	CPU   float32
+	FPS   float32
+	MEM   float32
+}
+
 type LogWriter struct {
-	db         *gorm.DB
-	protocolId uint
-	errs       []error
-	startTime time.Time
+	db                 *gorm.DB
+	protocolId         uint
+	errs               []error
+	startTime          time.Time
+	performanceMetrics PerformanceMetric
+}
+
+func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem float32) {
+	cpu = w.performanceMetrics.CPU / float32(w.performanceMetrics.Count)
+	fps = w.performanceMetrics.FPS / float32(w.performanceMetrics.Count)
+	mem = w.performanceMetrics.MEM / float32(w.performanceMetrics.Count)
+	return
 }
 
 func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+	w.performanceMetrics.Count++
+	w.performanceMetrics.CPU += cpu
+	w.performanceMetrics.FPS += fps
+	w.performanceMetrics.MEM += mem
 	entry := models.ProtocolPerformanceEntry{
 		TestProtocolID: w.protocolId,
 		Checkpoint:     checkpoint,
+		CPU:            cpu,
 		FPS:            fps,
 		MEM:            mem,
-		CPU:            cpu,
 		Other:          other,
-		Runtime: w.getRuntime(),
+		Runtime:        w.getRuntime(),
 	}
 	w.db.Create(&entry)
 }
 
 func (w *LogWriter) getRuntime() float64 {
-	return float64(time.Now().UTC().UnixNano() - w.startTime.UnixNano()) / float64(time.Second)
+	return float64(time.Now().UTC().UnixNano()-w.startTime.UnixNano()) / float64(time.Second)
 }
 
 func (w *LogWriter) write(source, level, message, data string) {
@@ -40,7 +59,7 @@ func (w *LogWriter) write(source, level, message, data string) {
 		Level:          level,
 		Message:        message,
 		Data:           data,
-		Runtime: w.getRuntime(),
+		Runtime:        w.getRuntime(),
 	}
 	w.db.Create(&entry)
 
@@ -68,6 +87,6 @@ func NewLogWriter(db *gorm.DB, protocolId uint) *LogWriter {
 	return &LogWriter{
 		db:         db,
 		protocolId: protocolId,
-		startTime: time.Now().UTC(),
+		startTime:  time.Now().UTC(),
 	}
 }

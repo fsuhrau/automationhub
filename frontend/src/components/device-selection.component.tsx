@@ -30,15 +30,16 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
     const {devices, selectedDevices, onSelectionChanged} = props;
 
     type SelectionState = {
-        devices: IDeviceData[],
         left: number[],
         right: number[],
         checked: number[],
     }
 
+    const deviceIDs = devices.map(dev => dev.ID) as number[];
+    const left = not(deviceIDs, selectedDevices);
+
     const [state, setState] = React.useState<SelectionState>({
-        devices: devices,
-        left: not(devices.map(dev => dev.ID), selectedDevices),
+        left: left,
         right: selectedDevices,
         checked: [],
     });
@@ -58,7 +59,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
     const handleAllRight = (): void => {
         setState(prevState => ({
             ...prevState,
-            right: devices.map(value => value.ID),
+            right: deviceIDs,
             left: []
         }))
     };
@@ -67,7 +68,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
         setState(prevState => ({
             ...prevState,
             right: [],
-            left: devices.map(value => value.ID)
+            left: deviceIDs
         }))
     };
 
@@ -96,7 +97,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
             <List dense={ true } component="div" role="list">
                 { items.map((value) => {
                     const labelId = `transfer-list-item-${ value }-label`;
-                    const device = state.devices.find(d => d.ID === value);
+                    const device = devices.find(d => d.ID === value);
                     return (
                         <ListItem key={ value }
                                   role="listitem"

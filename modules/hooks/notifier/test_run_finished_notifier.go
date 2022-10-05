@@ -40,7 +40,7 @@ func buildTitle(payload events.TestRunFinishedPayload) string {
 func getUrl(payload events.TestRunFinishedPayload) string {
 	if testRun, ok := payload.TestRun.(*models.TestRun); ok {
 		ip := viper.GetString("host_ip")
-		return fmt.Sprintf("http://%s:8002/web/test/%d/run/%d", ip, testRun.TestID, testRun.ID)
+		return fmt.Sprintf("http://%s:8002/test/%d/run/%d", ip, testRun.TestID, testRun.ID)
 	}
 	return ""
 }

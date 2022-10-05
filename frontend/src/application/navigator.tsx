@@ -22,7 +22,7 @@ import {
     Tooltip
 } from '@mui/material';
 import { ArrowRight, Biotech, Devices,  Settings } from '@mui/icons-material';
-import { ReactComponent as HubIcon} from '../icons/computing-icon.svg';
+import { ReactComponent as HubIcon} from '../icons/tech-icon.svg';
 import { ApplicationState } from "./application.state";
 
 export interface NavigatorProps extends DistributiveOmit<DrawerProps, 'classes'> {
@@ -48,7 +48,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
             id: 'Management',
             children: [
                 // { id: 'Settings', ref: `/project/${appState.project?.Identifier}/settings`, icon: <SettingsIcon/> },
-                { id: 'Apps', ref: `/project/${appState.project?.Identifier}/apps`, icon: <DnsRoundedIcon/> },
+                { id: 'Apps', ref: `/project/${appState.project?.Identifier}/bundles`, icon: <DnsRoundedIcon/> },
                 { id: 'Devices', ref: `/project/${appState.project?.Identifier}/devices`, icon: <Devices/> },
                 // { id: 'User', ref: `/project/${appState.project?.Identifier}/users`, icon: <PeopleIcon/> },
             ],

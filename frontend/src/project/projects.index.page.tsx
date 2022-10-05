@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ButtonBase, Card, CardActions, CardContent, IconButton, Typography } from '@mui/material';
@@ -8,6 +8,10 @@ import AndroidRoundedIcon from "@mui/icons-material/AndroidRounded";
 import AppleIcon from "@mui/icons-material/Apple";
 import { PlatformType } from "../types/platform.type.enum";
 import { ApplicationProps } from "../application/application.props";
+import CreateProjectDialog from "./create.project.dialog";
+import { isBooleanObject } from "util/types";
+import IProject from "./project";
+import { createProject } from "./project.service";
 
 const styles = {
     cardAction: {
@@ -25,8 +29,18 @@ const ProjectsIndexPage: React.FC<ApplicationProps> = (props: ApplicationProps) 
 
     let params = useParams();
 
+    const [openNewProjectDialog, setOpenNewProjectDialog] = useState<boolean>(false);
+
     const handleCreateNewProject = () => {
-        console.log("handle app creation");
+        setOpenNewProjectDialog(true);
+    };
+
+    const onCreateNewProject = (project: IProject) => {
+        createProject(project).then(resp => {
+            navigate(`/project/${resp.data.Identifier}`)
+        }).catch(ex => {
+            console.log(ex)
+        })
     };
 
     return (
@@ -36,6 +50,7 @@ const ProjectsIndexPage: React.FC<ApplicationProps> = (props: ApplicationProps) 
                     <Typography variant={ "h3" }>Your Projects:</Typography>
                 </Grid>
                 <Grid item={ true } xs={ 3 }>
+                    <CreateProjectDialog open={openNewProjectDialog} onClose={() => setOpenNewProjectDialog(false) } onSubmit={onCreateNewProject} />
                     <ButtonBase sx={ {display: 'block', width: '100%', backgroundColor: 'transparent'} }
                                 onClick={ handleCreateNewProject }>
                         <Card sx={ {height: 200, padding: 2, margin: 'auto', flexDirection: 'column'} }>

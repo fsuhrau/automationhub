@@ -14,24 +14,27 @@ import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import { useNavigate } from 'react-router-dom';
+import { useProjectContext } from "../../project/project.context";
 
 const DevicesManagerContent: React.FC = () => {
+
+    const {projectId} = useProjectContext();
 
     const navigate = useNavigate();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     function openDetails(id: number): void {
-        navigate(`/web/device/${ id }`);
+        navigate(`/device/${ id }`);
     }
 
     useEffect(() => {
-        getAllDevices().then(response => {
+        getAllDevices(projectId as string).then(response => {
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, []);
+    }, [projectId]);
 
     return (
         <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>

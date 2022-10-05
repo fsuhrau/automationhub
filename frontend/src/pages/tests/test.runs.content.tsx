@@ -6,30 +6,33 @@ import { useParams } from 'react-router-dom';
 import { Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
-
-interface ParamTypes {
-    testId: string
-}
+import { useProjectAppContext } from "../../project/app.context";
 
 const TestRuns: React.FC = () => {
 
-    const { testId } = useParams<ParamTypes>();
+    const { testId } = useParams();
+
+    const {projectId, appId} = useProjectAppContext();
 
     const [testRuns, setTestRuns] = useState<ITestRunData[]>([]);
 
 
     useEffect(() => {
-        getAllRuns(testId).then(response => {
+        if (testId === undefined) {
+            return;
+        }
+
+        getAllRuns(projectId, appId, testId).then(response => {
             console.log(response.data);
             setTestRuns(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, [testId]);
+    }, [projectId, appId, testId]);
 
 
     function getStatus(run: ITestRunData): string {
-        return TestResultState[ run.Result.Status ];
+        return TestResultState[ run.TestResult ];
     }
 
     return (

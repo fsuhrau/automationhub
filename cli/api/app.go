@@ -12,23 +12,23 @@ import (
 	"os"
 )
 
-func (c *Client) UploadApp(filepath string) (*models.AppBinary, error) {
+func (c *Client) UploadBundle(filepath string) (*models.AppBinary, error) {
 	//prepare the reader instances to encode
 	values := map[string]io.Reader{
 		"test_target": mustOpen(filepath),
 	}
 
-	return c.uploadApp(values)
+	return c.uploadBundle(values)
 }
 
-func (c *Client) UpdateApp(ctx context.Context, app *models.AppBinary) error {
+func (c *Client) UpdateApp(ctx context.Context, binary *models.AppBinary) error {
 
-	data, err := json.Marshal(app)
+	data, err := json.Marshal(binary)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/app/%d", c.BaseURL, app.ID), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/bundle/%d", c.BaseURL, binary.ID), bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (c *Client) UpdateApp(ctx context.Context, app *models.AppBinary) error {
 	return nil
 }
 
-func (c *Client) uploadApp(values map[string]io.Reader) (*models.AppBinary, error) {
+func (c *Client) uploadBundle(values map[string]io.Reader) (*models.AppBinary, error) {
 	// Prepare a form that you will submit to that URL.
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -73,7 +73,7 @@ func (c *Client) uploadApp(values map[string]io.Reader) (*models.AppBinary, erro
 	w.Close()
 
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/app/upload", c.BaseURL), &b)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/upload", c.BaseURL), &b)
 	if err != nil {
 		return nil, err
 	}
