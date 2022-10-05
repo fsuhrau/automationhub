@@ -3,7 +3,8 @@ import { Box, Button, Card, CardMedia, Chip, Popover, Popper, Typography } from 
 import IProtocolEntryData from '../types/protocol.entry';
 import { DataGrid, GridCellValue, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { makeStyles } from '@mui/styles';
-import CellExpand from "./cell.expand.component";
+import CellExpand from './cell.expand.component';
+import Grid from "@mui/material/Grid";
 
 const useStyles = makeStyles(theme => ({
     chip: {
@@ -100,8 +101,8 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
         return (
             <CellExpand id={params.row.ID} value={params.value} data={params.row.Data} />
-        )
-    }
+        );
+    };
 
     const columns: GridColDef[] = [
         {
@@ -172,7 +173,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     };
 
     const filterEntries = (ents: IProtocolEntryData[]): IProtocolEntryData[] => {
-        return ents.filter(value => isVisible(value.Source) && (!errorsOnly || value.Level== "error"));
+        return ents.filter(value => isVisible(value.Source) && (!errorsOnly || value.Level == 'error'));
     };
 
     const toggleFilter = (source: string): void => {
@@ -197,9 +198,9 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     };
 
     const toggleFilterError = () => {
-      setErrorsOnly(prevState => {
-          return !prevState;
-      })
+        setErrorsOnly(prevState => {
+            return !prevState;
+        });
     };
 
     useEffect(() => {
@@ -207,49 +208,52 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     }, [filterApp, filterTestrunner, filterAction, filterStep, filterStatus, entries, errorsOnly]);
 
     return (
-        <div className={ classes.chip }>
-            <Box sx={ { width: '100%', height: '50px' } }>
+        <Grid container={true} className={ classes.chip } sx={{padding: 1}}>
+            <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
                 <Chip className={ errorsOnly ? 'chip--error' : 'chip--error--unchecked' } label={ 'errors' }
                       clickable={ true }
                       variant={ errorsOnly ? 'filled' : 'outlined' }
                       onClick={ () => toggleFilterError() }/>
                 <Chip className={ filterApp ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
-                    clickable={ true }
-                    variant={ filterApp ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('app') }/>
+                      clickable={ true }
+                      variant={ filterApp ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('app') }/>
                 <Chip className={ filterStep ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' }
-                    clickable={ true }
-                    variant={ filterStep ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('step') }/>
+                      clickable={ true }
+                      variant={ filterStep ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('step') }/>
                 <Chip className={ filterDevice ? 'chip--device' : 'chip--device--unchecked' }
-                    label={ 'device' }
-                    clickable={ true }
-                    variant={ filterDevice ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('device') }/>
+                      label={ 'device' }
+                      clickable={ true }
+                      variant={ filterDevice ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('device') }/>
                 <Chip className={ filterStatus ? 'chip--status' : 'chip--status--unchecked' }
-                    label={ 'status' }
-                    clickable={ true }
-                    variant={ filterStatus ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('status') }/>
+                      label={ 'status' }
+                      clickable={ true }
+                      variant={ filterStatus ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('status') }/>
                 <Chip className={ filterTestrunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' }
-                    label={ 'testrunner' } clickable={ true }
-                    variant={ filterTestrunner ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('testrunner') }/>
+                      label={ 'testrunner' } clickable={ true }
+                      variant={ filterTestrunner ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('testrunner') }/>
                 <Chip className={ filterAction ? 'chip--action' : 'chip--action--unchecked' }
-                    label={ 'action' } clickable={ true }
-                    variant={ filterAction ? 'filled' : 'outlined' }
-                    onClick={ () => toggleFilter('action') }/>
-            </Box>
-            <DataGrid
-                autoHeight={ true }
-                getRowId={ (row) => row.ID }
-                rows={ filteredEntries }
-                columns={ columns }
-                checkboxSelection={ false }
-                disableSelectionOnClick={ true }
-                disableColumnFilter={ true }
-            />
-        </div>
+                      label={ 'action' } clickable={ true }
+                      variant={ filterAction ? 'filled' : 'outlined' }
+                      onClick={ () => toggleFilter('action') }/>
+            </Grid>
+            <Grid item={true} xs={12}>
+                <DataGrid
+                    autoHeight={ true }
+                    getRowId={ (row) => row.ID }
+                    rows={ filteredEntries }
+                    columns={ columns }
+                    checkboxSelection={ false }
+                    disableSelectionOnClick={ true }
+                    disableColumnFilter={ true }
+                />
+
+            </Grid>
+        </Grid>
     );
 };
 

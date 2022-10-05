@@ -11,16 +11,21 @@ import (
 	"strings"
 )
 
-func (s *Service) getTests(c *gin.Context) {
+const (
+	AVG_HISTORY_LIMIT = 20
+)
+
+func (s *Service) getTests(c *gin.Context, project *models.Project, application *models.App) {
 	var tests []models.Test
-	if err := s.db.Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
+	if err := s.db.Where("app_id = ?", application.ID).Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, tests)
 }
 
-func (s *Service) newTest(c *gin.Context) {
+func (s *Service) newTest(c *gin.Context, project *models.Project, application *models.App) {
+
 	type TestFunc struct {
 		Assembly string
 		Class    string
@@ -71,8 +76,8 @@ func (s *Service) newTest(c *gin.Context) {
 		tx.Rollback()
 	}()
 	test := models.Test{
-		CompanyID: 1,
-		Name:      request.Name,
+		AppID: application.ID,
+		Name:  request.Name,
 	}
 	if err := tx.Create(&test).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -84,7 +89,6 @@ func (s *Service) newTest(c *gin.Context) {
 		Type:          request.TestType,
 		AllDevices:    request.AllDevices,
 		ExecutionType: request.ExecutionType,
-		Platform:      request.PlatformType,
 	}
 	if err := tx.Create(&config).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
@@ -134,7 +138,7 @@ func (s *Service) newTest(c *gin.Context) {
 	c.JSON(http.StatusCreated, test)
 }
 
-func (s *Service) getTest(c *gin.Context) {
+func (s *Service) getTest(c *gin.Context, project *models.Project, application *models.App) {
 	testId := c.Param("test_id")
 
 	var test models.Test
@@ -146,10 +150,21 @@ func (s *Service) getTest(c *gin.Context) {
 	c.JSON(http.StatusOK, test)
 }
 
-func (s *Service) updateTest(c *gin.Context) {
+func (s *Service) updateTest(c *gin.Context, project *models.Project, application *models.App) {
 	testId := c.Param("test_id")
-	var newTestData models.Test
-	c.Bind(&newTestData)
+
+	type request struct {
+		Name          string
+		ExecutionType models.ExecutionType
+		AllDevices    bool
+		Devices       []uint
+		RunAllTests   bool
+		Categories    string
+		TestFunctions []models.UnityTestFunction
+	}
+
+	var req request
+	c.Bind(&req)
 
 	var test models.Test
 	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
@@ -157,35 +172,69 @@ func (s *Service) updateTest(c *gin.Context) {
 		return
 	}
 
-	test.Name = newTestData.Name
-	test.TestConfig.ExecutionType = newTestData.TestConfig.ExecutionType
-	test.TestConfig.AllDevices = newTestData.TestConfig.AllDevices
-	for i := range test.TestConfig.Devices {
-		stillNeeded := false
-		for d := range newTestData.TestConfig.Devices {
-			if test.TestConfig.Devices[i].DeviceID == newTestData.TestConfig.Devices[d].DeviceID {
-				stillNeeded = true
-				break
+	test.Name = req.Name
+	test.TestConfig.ExecutionType = req.ExecutionType
+	test.TestConfig.AllDevices = req.AllDevices
+
+	if req.AllDevices {
+		// since all devices are selected we don't need to specify them
+		s.db.Where("test_config_id = ?", test.TestConfig.ID).Delete(&models.TestConfigDevice{})
+		test.TestConfig.Devices = []models.TestConfigDevice{}
+	} else {
+		// remove devices that are not needed anymore
+		for i := range test.TestConfig.Devices {
+
+			stillNeeded := false
+			for _, d := range req.Devices {
+				if test.TestConfig.Devices[i].DeviceID == d {
+					stillNeeded = true
+					break
+				}
 			}
-		}
-		if !stillNeeded {
-			s.db.Delete(&test.TestConfig.Devices)
-		}
-	}
-	for i := range newTestData.TestConfig.Devices {
-		needCreation := true
-		for d := range test.TestConfig.Devices {
-			if test.TestConfig.Devices[d].DeviceID == newTestData.TestConfig.Devices[i].DeviceID {
-				needCreation = false
+
+			if !stillNeeded {
+				if err := s.db.Delete(&test.TestConfig.Devices[i]).Error; err != nil {
+					s.error(c, http.StatusBadRequest, err)
+					return
+				}
 			}
 		}
 
-		if needCreation {
-			newTestData.TestConfig.Devices[i].TestConfigID = test.TestConfig.ID
-			s.db.Create(&newTestData.TestConfig.Devices[i])
+		for _, i := range req.Devices {
+			needCreation := true
+			for d := range test.TestConfig.Devices {
+				if test.TestConfig.Devices[d].DeviceID == i {
+					needCreation = false
+				}
+			}
+
+			if needCreation {
+				newDevice := models.TestConfigDevice{
+					TestConfigID: test.TestConfig.ID,
+					DeviceID:     i,
+				}
+				if err := s.db.Create(&newDevice).Error; err != nil {
+					s.error(c, http.StatusBadRequest, err)
+					return
+				}
+				test.TestConfig.Devices = append(test.TestConfig.Devices, newDevice)
+			}
 		}
 	}
-	test.TestConfig.Devices = newTestData.TestConfig.Devices
+
+	if test.TestConfig.Type == models.TestTypeUnity {
+		test.TestConfig.Unity.RunAllTests = req.RunAllTests
+		test.TestConfig.Unity.Categories = req.Categories
+		if err := s.db.Save(&test.TestConfig.Unity).Error; err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	if err := s.db.Save(&test.TestConfig).Error; err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
 
 	if err := s.db.Save(&test).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
@@ -210,11 +259,12 @@ func extractParams(param string) map[string]string {
 }
 
 type RunTestRequest struct {
-	AppID  uint
-	Params string
+	AppBinaryID int
+	Params      string
 }
 
-func (s *Service) runTest(c *gin.Context) {
+func (s *Service) runTest(c *gin.Context, project *models.Project, application *models.App) {
+
 	testId := c.Param("test_id")
 	var req RunTestRequest
 	if err := c.Bind(&req); err != nil {
@@ -225,15 +275,15 @@ func (s *Service) runTest(c *gin.Context) {
 	environmentParams := extractParams(req.Params)
 
 	var test models.Test
-	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").First(&test, testId).Error; err != nil {
+	if err := s.db.Preload("App").Preload("TestConfig").Preload("TestConfig.Devices").First(&test, testId).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
 
-	var app *models.App
-	if test.TestConfig.Platform != models.PlatformTypeEditor {
-		app = &models.App{}
-		if err := s.db.First(app, req.AppID).Error; err != nil {
+	var binary *models.AppBinary
+	if test.App.Platform != models.PlatformTypeEditor {
+		binary = &models.AppBinary{}
+		if err := s.db.Preload("App").First(binary, req.AppBinaryID).Error; err != nil {
 			s.error(c, http.StatusNotFound, err)
 			return
 		}
@@ -275,7 +325,7 @@ func (s *Service) runTest(c *gin.Context) {
 		return
 	}
 	var err error
-	run, err = testRunner.Run(devices, app)
+	run, err = testRunner.Run(devices, binary)
 	if err != nil {
 		s.error(c, http.StatusInternalServerError, err) // Todo status code
 		return
@@ -284,7 +334,7 @@ func (s *Service) runTest(c *gin.Context) {
 	c.JSON(http.StatusOK, run)
 }
 
-func (s *Service) getTestRuns(c *gin.Context) {
+func (s *Service) getTestRuns(c *gin.Context, project *models.Project, application *models.App) {
 	testId := c.Param("test_id")
 
 	var testRuns []models.TestRun
@@ -296,7 +346,7 @@ func (s *Service) getTestRuns(c *gin.Context) {
 	c.JSON(http.StatusOK, testRuns)
 }
 
-func (s *Service) getLastTestRun(c *gin.Context) {
+func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
 	type Response struct {
 		TestRun   models.TestRun
 		PrevRunId uint
@@ -306,7 +356,7 @@ func (s *Service) getLastTestRun(c *gin.Context) {
 	testId := c.Param("test_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
+	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -320,7 +370,7 @@ func (s *Service) getLastTestRun(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (s *Service) getTestRun(c *gin.Context) {
+func (s *Service) getTestRun(c *gin.Context, project *models.Project, application *models.App) {
 	type Response struct {
 		TestRun   models.TestRun
 		PrevRunId uint
@@ -331,9 +381,21 @@ func (s *Service) getTestRun(c *gin.Context) {
 	runId := c.Param("run_id")
 
 	var resp Response
-	if err := s.db.Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("App").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
+	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
+	}
+
+	for i := range resp.TestRun.DeviceStatus {
+		var histStatus []models.TestRunDeviceStatus
+		if err := s.db.Where("device_id = ? and test_run_id in (select tr.id from test_runs tr where tr.id < ? order by tr.id desc limit ?)", resp.TestRun.DeviceStatus[i].DeviceID, resp.TestRun.DeviceStatus[i].TestRunID, AVG_HISTORY_LIMIT).Find(&histStatus).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		for _, t := range histStatus {
+			resp.TestRun.DeviceStatus[i].HistAvgStartupTime += t.StartupTime
+		}
+		resp.TestRun.DeviceStatus[i].HistAvgStartupTime = resp.TestRun.DeviceStatus[i].HistAvgStartupTime / uint(len(histStatus))
 	}
 
 	// get prev
@@ -345,14 +407,31 @@ func (s *Service) getTestRun(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (s *Service) getTestRunProtocol(c *gin.Context) {
+func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, application *models.App) {
 	runId := c.Param("run_id")
 	protocolId := c.Param("protocol_id")
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("App").Preload("Test").First(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
+	}
+
+	if len(run.Protocols) > 0 {
+		var histProtocols []models.TestProtocol
+		if err := s.db.Where("device_id = ? and test_name = ?", run.Protocols[0].DeviceID, run.Protocols[0].TestName).Order("id desc").Limit(AVG_HISTORY_LIMIT).Preload("Performance").Find(&histProtocols).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		for _, p := range histProtocols {
+			run.Protocols[0].HistAvgFPS += p.AvgFPS
+			run.Protocols[0].HistAvgMEM += p.AvgMEM
+			run.Protocols[0].HistAvgCPU += p.AvgCPU
+		}
+		run.Protocols[0].HistAvgFPS = run.Protocols[0].HistAvgFPS / float32(len(histProtocols))
+		run.Protocols[0].HistAvgMEM = run.Protocols[0].HistAvgMEM / float32(len(histProtocols))
+		run.Protocols[0].HistAvgCPU = run.Protocols[0].HistAvgCPU / float32(len(histProtocols))
+		run.Protocols[0].TestProtocolHistory = histProtocols
 	}
 
 	c.JSON(http.StatusOK, run)

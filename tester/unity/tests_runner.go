@@ -54,7 +54,7 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
@@ -73,8 +73,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 
 	if appData != nil {
 		tr.appParams = app.Parameter{
-			AppID:          appData.ID,
-			Identifier:     appData.AppID,
+			AppBinaryID:    appData.ID,
+			Identifier:     appData.App.Identifier,
 			AppPath:        appData.AppPath,
 			LaunchActivity: appData.LaunchActivity,
 			Name:           appData.Name,
@@ -83,7 +83,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 		}
 	} else {
 		tr.appParams = app.Parameter{
-			AppID:          0,
+			AppBinaryID:    appData.ID,
 			LaunchActivity: "BootScene",
 		}
 	}
@@ -100,44 +100,28 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 	if err == sync.TimeoutError {
 		tr.LogError("one or more apps didn't connect")
 	}
-
-	var testList []models.UnityTestFunction
-	if tr.Config.Unity.RunAllTests {
-		tr.LogInfo("RunAllTests active requesting PlayMode tests")
-		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
-		a := &action.TestsGet{}
-		if err := actionExecutor.Execute(connectedDevices[0].Device, a, 5*time.Minute); err != nil {
-			tr.LogError("send action to select all tests failed: %v", err)
-			return
-		}
-		testCats := strings.Split(tr.Config.Unity.Categories, ",")
-		allCategories := len(testCats) == 0
-		for _, t := range a.Tests {
-			add := false
-			if !allCategories {
-				for _, cc := range t.Categories {
-					for _, tc := range testCats {
-						if tc == cc {
-							add = true
-							break
-						}
-					}
-				}
-			}
-			if allCategories || add {
-				testList = append(testList, models.UnityTestFunction{
-					Assembly: t.Assembly,
-					Class:    t.Class,
-					Method:   t.Method,
-				})
-			}
-		}
-	} else {
-		tr.DB.Where("test_config_unity_id = ?", tr.Config.Unity.ID).Find(&testList)
+	if connectedDevices == nil {
+		tr.LogError("no devices connected can't execute tests...")
+		return
 	}
 
-	tr.LogInfo("Execute Tests")
+	testList, err := tr.getTestList(connectedDevices)
+	if err != nil {
+		tr.LogError("get tests failed: %v", err)
+	} else {
+		tr.LogInfo("Execute Tests")
+		tr.scheduleTests(connectedDevices, testList)
+	}
 
+	tr.LogInfo("stop apps")
+	for _, d := range connectedDevices {
+		if err := d.Device.StopApp(&tr.appParams); err != nil {
+			tr.LogError("unable to stop app: %v", err)
+		}
+	}
+}
+
+func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList []models.UnityTestFunction) {
 	switch tr.Config.ExecutionType {
 	case models.SimultaneouslyExecutionType:
 		// each device gets its own input pool which needs to be processed
@@ -197,16 +181,47 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.App) {
 		close(cancel)
 		close(parallelWorker)
 	}
-
-	tr.LogInfo("stop apps")
-	for _, d := range connectedDevices {
-		if err := d.Device.StopApp(&tr.appParams); err != nil {
-			tr.LogError("unable to start app: %v", err)
-		}
-	}
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData *models.App) (*models.TestRun, error) {
+func (tr *testsRunner) getTestList(connectedDevices []base.DeviceMap) ([]models.UnityTestFunction, error) {
+	var testList []models.UnityTestFunction
+	if tr.Config.Unity.RunAllTests {
+		tr.LogInfo("RunAllTests active requesting PlayMode tests")
+		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
+		a := &action.TestsGet{}
+		if err := actionExecutor.Execute(connectedDevices[0].Device, a, 5*time.Minute); err != nil {
+
+			return nil, fmt.Errorf("send action to select all tests failed: %v", err)
+		}
+		testCats := strings.Split(tr.Config.Unity.Categories, ",")
+		allCategories := len(testCats) == 0
+		for _, t := range a.Tests {
+			add := false
+			if !allCategories {
+				for _, cc := range t.Categories {
+					for _, tc := range testCats {
+						if tc == cc {
+							add = true
+							break
+						}
+					}
+				}
+			}
+			if allCategories || add {
+				testList = append(testList, models.UnityTestFunction{
+					Assembly: t.Assembly,
+					Class:    t.Class,
+					Method:   t.Method,
+				})
+			}
+		}
+	} else {
+		tr.DB.Where("test_config_unity_id = ?", tr.Config.Unity.ID).Find(&testList)
+	}
+	return testList, nil
+}
+
+func (tr *testsRunner) Run(devs []models.Device, appData *models.AppBinary) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
@@ -252,7 +267,14 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 		dev.Device.SetLogWriter(nil)
 		prot.Close()
 	}()
-
+	/*
+		tr.LogInfo("Reset device settings")
+		var reset action.UnityReset
+		resetExec := tester_action.NewExecutor(tr.DeviceManager)
+		if err := resetExec.Execute(dev.Device, &reset, 30*time.Second); err != nil {
+			tr.LogError("unable to reset settings %s: %v", dev.Device.DeviceID(), err)
+		}
+	*/
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
 	executor := NewExecutor(tr.DeviceManager)
 	err = executor.Execute(dev.Device, task, DefaultTestTimeout)

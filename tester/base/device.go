@@ -30,6 +30,7 @@ func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
 
 func (tr *TestRunner) UnlockDevices(devices []DeviceMap) {
 	for i := range devices {
+		tr.DeviceManager.Stop(devices[i].Device)
 		_ = devices[i].Device.Unlock()
 	}
 }

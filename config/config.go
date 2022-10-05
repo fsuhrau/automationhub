@@ -1,8 +1,13 @@
 package config
 
+type WebDriver struct {
+	BundleID string `mapstructure:"bundleId"`
+}
+
 type Manager struct {
-	Enabled         bool `mapstructure:"enabled"`
-	UseOSScreenshot bool `mapstructure:"use_os_screenshot"`
+	Enabled         bool       `mapstructure:"enabled"`
+	UseOSScreenshot bool       `mapstructure:"use_os_screenshot"`
+	WebDriver       *WebDriver `mapstructure:"webdriver"`
 }
 
 type Hook struct {

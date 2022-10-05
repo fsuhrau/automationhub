@@ -1,4 +1,4 @@
-import { ToArray } from "../helper/enum_to_array";
+import { ToArray } from '../helper/enum_to_array';
 
 export enum DeviceConnectionType {
     USB,
@@ -6,7 +6,7 @@ export enum DeviceConnectionType {
 }
 export const getConnectionTypes = (): Array<Object> => {
     return ToArray(DeviceConnectionType);
-}
+};
 
 export const getConnectionTypeName = (type: DeviceConnectionType): string => {
     return DeviceConnectionType[type];

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,15 +20,29 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/cli/api"
 	"github.com/spf13/cobra"
+	"strconv"
 )
 
 // testCmd represents the test command
 var testCmd = &cobra.Command{
 	Use:   "test",
-	Short: "test --url http://localhost:8002",
-	Long: `list all available tests with id and name`,
+	Short: "test http://localhost:8002 projectID appID",
+	Long:  `list all available tests with id and name`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := api.NewClient(apiURL, "")
+		if len(args) < 4 {
+			return fmt.Errorf("missing parameter")
+		}
+		var (
+			apiURL    string
+			projectID string
+			appID     uint
+		)
+		apiURL = args[1]
+		projectID = args[2]
+		u, _ := strconv.ParseUint(args[3], 10, 64)
+		appID = uint(u)
+
+		client := api.NewClient(apiURL, apiToken, projectID, appID)
 
 		tests, err := client.GetTests(context.Background())
 		if err != nil {
@@ -44,15 +58,4 @@ var testCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(testCmd)
-
-	testCmd.Flag("url")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

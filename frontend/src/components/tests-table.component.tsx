@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -21,14 +21,25 @@ import {
     Typography,
 } from '@mui/material';
 import { Edit, PlayArrow } from '@mui/icons-material';
-import AppSelection from './app-selection.component';
-import IAppData from '../types/app';
-import { useHistory } from 'react-router-dom';
-import { PlatformType } from "../types/platform.type.enum";
+import BinarySelection from './binary-selection.component';
+import { useNavigate, useParams } from 'react-router-dom';
+import { PlatformType } from '../types/platform.type.enum';
+import { IAppBinaryData } from "../types/app";
+import { ApplicationProps } from "../application/application.props";
 
-const TestsTable: React.FC = () => {
+interface TestTableProps extends ApplicationProps {
+    appId: number | null
+}
 
-    const history = useHistory();
+const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
+
+    const { appId, appState } = props;
+
+    let params = useParams();
+
+    const navigate = useNavigate();
+
+    const app = appState.project?.Apps.find(a => a.ID === appId);
 
     // dialog
     const [open, setOpen] = useState(false);
@@ -39,20 +50,31 @@ const TestsTable: React.FC = () => {
         setOpen(false);
     };
 
-    // test handling
-    const [startDisabled, setStartDisabled] = useState<boolean>(true);
-    const [selectedTest, setSelectedTest] = useState<ITestData|null>(null);
-    const [selectedAppID, setSelectedAppID] = useState<number>(0);
-    const [envParameter, setEnvParameter] = useState<string>('');
+    type RunTestState = {
+        disableStart: boolean,
+        testId: number | null,
+        binaryId: number,
+        envParams: string,
+    }
+
+    const [state, setState] = useState<RunTestState>({
+        disableStart: true,
+        testId: null,
+        binaryId: 0,
+        envParams: app === undefined ? '' : app?.DefaultParameter.replace(';', "\n"),
+    });
+
     const [tests, setTests] = useState<ITestData[]>([]);
 
     useEffect(() => {
-        getAllTests().then(response => {
-            setTests(response.data);
-        }).catch(e => {
-            console.log(e);
-        });
-    }, []);
+        if (appId !== null) {
+            getAllTests(params.project_id as string, appId).then(response => {
+                setTests(response.data);
+            }).catch(e => {
+                console.log(e);
+            });
+        }
+    }, [params.project_id, appId]);
 
     const typeString = (type: number): string => {
         switch (type) {
@@ -78,12 +100,14 @@ const TestsTable: React.FC = () => {
         return '';
     };
 
-    const onRunTest = (id: number, appid: number): void => {
-        executeTest(id, appid, envParameter).then(response => {
-            history.push(`/web/test/${ id }/run/${ response.data.ID }`);
-        }).catch(error => {
-            console.log(error);
-        });
+    const onRunTest = (): void => {
+        if (appId !== null) {
+            executeTest(params.project_id as string, appId, state.testId, state.binaryId, state.envParams).then(response => {
+                navigate(`/project/${params.project_id}/app/${appId}/test/${ state.testId }/run/${ response.data.ID }`);
+            }).catch(error => {
+                console.log(error);
+            });
+        }
     };
 
     const getDevices = (test: ITestData): string => {
@@ -109,31 +133,36 @@ const TestsTable: React.FC = () => {
         return 'n/a';
     };
 
-    const onAppSelectionChanged = (app: IAppData): void => {
-        setSelectedAppID(app.ID);
+    const requiresApp = app?.Platform !== PlatformType.Editor
+
+    const onBinarySelectionChanged = (app: IAppBinaryData): void => {
+        setState(prevState => ({...prevState, binaryId: app.ID, disableStart: requiresApp && app.ID === 0}));
     };
 
     const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
-        setEnvParameter(event.target.value);
+        setState(prevState => ({...prevState, envParams: event.target.value}));
     };
 
+
     useEffect(() => {
-        setStartDisabled(!(selectedTest?.TestConfig.Platform == PlatformType.Editor || selectedAppID > 0))
-    }, [selectedTest, selectedAppID]);
+        if (app !== null && app !== undefined) {
+            setState(prevState => ({...prevState, envParams: app.DefaultParameter.replace(";", "\n")}));
+        }
+    }, [app]);
 
     return (
         <div>
             <Dialog open={ open } onClose={ handleRunClose } aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
-                    {selectedTest && selectedTest.TestConfig.Platform != PlatformType.Editor && (
+                    { requiresApp && (
                         <>
                             <DialogContentText>
                                 Select an existing App to execute the tests.<br/>
                                 Or Upload a new one.<br/>
                                 <br/>
                             </DialogContentText>
-                            <AppSelection upload={ true } onSelectionChanged={ onAppSelectionChanged }/>
+                            <BinarySelection binaryId={state.binaryId} upload={ true } onSelectionChanged={ onBinarySelectionChanged }/>
                         </>
                     )}
                     You can change parameters of your app by providing key value pairs in an environment like format:<br/>
@@ -144,12 +173,12 @@ const TestsTable: React.FC = () => {
                     </Typography>
                     <br/>
                     <TextField
-                        id="outlined-multiline-static"
                         label="Parameter"
                         fullWidth={ true }
                         multiline={ true }
                         rows={ 4 }
-                        defaultValue=""
+                        defaultValue={state.envParams}
+                        value={state.envParams}
                         variant="outlined"
                         onChange={ onEnvParamsChanged }
                     />
@@ -158,9 +187,10 @@ const TestsTable: React.FC = () => {
                     <Button onClick={ handleRunClose } color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={ () => { selectedTest && onRunTest(selectedTest.ID, selectedAppID);
+                    <Button onClick={ () => {
+                        onRunTest();
                         handleRunClose();
-                    } } color="primary" variant={ 'contained' } disabled={ startDisabled }>
+                    } } color="primary" variant={ 'contained' } disabled={ state.disableStart }>
                         Start
                     </Button>
                 </DialogActions>
@@ -192,8 +222,7 @@ const TestsTable: React.FC = () => {
                                         href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
                                     <Button variant="text" size="small" endIcon={ <PlayArrow/> }
                                         onClick={ () => {
-                                            setSelectedTest(test);
-                                            //setSelectedTestID(test.ID as number);
+                                            setState(prevState => ({...prevState, testId: test.ID}))
                                             handleRunClickOpen();
                                         } }>Run</Button>
                                 </ButtonGroup>

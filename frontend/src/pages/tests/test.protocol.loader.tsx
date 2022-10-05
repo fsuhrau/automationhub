@@ -5,21 +5,23 @@ import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
 import ITestRunData from '../../types/test.run';
 import { Backdrop, CircularProgress } from '@mui/material';
-
-interface ParamTypes {
-    testId: string
-    runId: string
-    protocolId: string
-}
+import { useProjectAppContext } from "../../project/app.context";
 
 const TestProtocolLoader: React.FC = () => {
-    const { testId, runId, protocolId } = useParams<ParamTypes>();
+
+    const {projectId, appId} = useProjectAppContext();
+
+    const { testId, runId, protocolId } = useParams();
 
     const [protocol, setProtocol] = useState<ITestProtocolData>();
     const [run, setRun] = useState<ITestRunData>();
 
     useEffect(() => {
-        getTestProtocol(testId, runId, protocolId).then(response => {
+        if (protocolId === undefined) {
+            return;
+        }
+
+        getTestProtocol(projectId, appId, testId as string, runId as string, protocolId as string).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
                 if (response.data.Protocols[ i ].ID == +protocolId) {

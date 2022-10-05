@@ -32,7 +32,7 @@ func (s *Service) getStats(c *gin.Context) {
 }
 
 func (s *Service) getAppStats() (int, int) {
-	var apps []models.App
+	var apps []models.AppBinary
 	if err := s.db.Find(&apps).Error; err != nil {
 		return 0, 0
 	}

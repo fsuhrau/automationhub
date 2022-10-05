@@ -2,7 +2,7 @@ import IProtocolEntryData from './protocol.entry';
 import { TestResultState } from './test.result.state.enum';
 import IDeviceData from './device';
 import IProtocolPerformanceEntryData from './protocol.performance.entry';
-import moment from "moment";
+import moment from 'moment';
 
 export default interface ITestProtocolData {
     ID?: number | null,
@@ -15,6 +15,13 @@ export default interface ITestProtocolData {
     Entries: IProtocolEntryData[]
     TestResult: TestResultState
     Performance: IProtocolPerformanceEntryData[]
+    AvgFPS: number,
+    AvgMEM: number,
+    AvgCPU: number,
+    HistAvgFPS: number,
+    HistAvgMEM: number,
+    HistAvgCPU: number,
+    TestProtocolHistory: ITestProtocolData[],
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

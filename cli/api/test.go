@@ -10,8 +10,6 @@ import (
 	"net/http"
 )
 
-
-
 func (c *Client) GetTests(ctx context.Context) ([]models.Test, error) {
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tests", c.BaseURL), nil)
@@ -29,10 +27,10 @@ func (c *Client) GetTests(ctx context.Context) ([]models.Test, error) {
 	return tests, nil
 }
 
-func (c *Client) ExecuteTest(ctx context.Context, testId int, appID int, params string) (*models.TestRun, error) {
+func (c *Client) ExecuteTest(ctx context.Context, testID uint, binaryID int, params string) (*models.TestRun, error) {
 	request := api.RunTestRequest{
-		AppID: uint(appID),
-		Params: params,
+		AppBinaryID: binaryID,
+		Params:      params,
 	}
 
 	data, err := json.Marshal(request)
@@ -40,7 +38,7 @@ func (c *Client) ExecuteTest(ctx context.Context, testId int, appID int, params 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/test/%d/run", c.BaseURL, testId), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/test/%d/run", c.BaseURL, testID), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}

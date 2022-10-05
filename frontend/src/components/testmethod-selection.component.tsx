@@ -105,10 +105,10 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
         <Paper sx={ { minWidth: 400, maxWidth: 400, minHeight: 400, maxHeight: 400, margin: 'auto', overflow: 'auto' } }>
             <List dense={ true } component="div" role="list">
                 { items.map((value) => {
-                    const labelId = `transfer-list-item-${ value.ID }-label`;
+                    const labelId = `transfer-list-item-${ value.Class }-${ value.Method }-label`;
 
                     return (
-                        <ListItem key={ value.ID } role="listitem" button={ true } onClick={ handleToggle(value) }>
+                        <ListItem key={ value.Class + value.Method } role="listitem" button={ true } onClick={ handleToggle(value) }>
                             <ListItemIcon>
                                 <Checkbox
                                     checked={ checked.indexOf(value) !== -1 }
@@ -118,7 +118,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                 />
                             </ListItemIcon>
                             <ListItemText id={ labelId }
-                                primary={ `${ trimClass(value.Class) } ${ trimMethod(value.Method) }` }/>
+                                primary={ `${ trimMethod(value.Method) }` } secondary={trimClass(value.Class) }/>
                         </ListItem>
                     );
                 }) }

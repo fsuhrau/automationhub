@@ -16,6 +16,7 @@ type Devices interface {
 	//GetDevice(id uint) (device.Device, error)
 	GetDevice(id string) device.Device
 	Start(getDevice device.Device) error
+	Stop(getDevice device.Device) error
 	AddHandler(handler device.Handler)
 	Run(ctx context.Context) error
 	StopObserver()

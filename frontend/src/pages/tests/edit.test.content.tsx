@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
 import {
     Alert,
@@ -15,120 +15,142 @@ import {
 } from '@mui/material';
 import { getExecutionTypes, TestExecutionType } from '../../types/test.execution.type.enum';
 import { getTestTypes, TestType } from '../../types/test.type.enum';
-import IDeviceData from '../../types/device';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TestMethodSelection from '../../components/testmethod-selection.component';
-import IAppFunctionData from '../../types/app.function';
 import ITestData from '../../types/test';
-import { updateTest } from '../../services/test.service';
+import { updateTest, UpdateTestData } from '../../services/test.service';
 import DeviceSelection from '../../components/device-selection.component';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import ITestConfigDeviceData from "../../types/test.config.device";
-import { getPlatformTypes } from "../../types/platform.type.enum";
+import { PlatformType } from '../../types/platform.type.enum';
+import Table from "@mui/material/Table";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import TableBody from "@mui/material/TableBody";
+import IconButton from "@mui/material/IconButton";
+import { Delete } from "@mui/icons-material";
+import IAppFunctionData from "../../types/app.function";
+import { getDeviceOption, getUnityTestsConfig } from "./add.test.content";
+import { getAllDevices } from "../../services/device.service";
+import IDeviceData from "../../types/device";
+import { useProjectAppContext } from "../../project/app.context";
+import { isEqual } from "lodash";
+import { ApplicationProps } from "../../application/application.props";
 
-function getUnityTestsConfig(): Array<Object> {
-    return [{ id: 0, name: 'Run all Tests' }, { id: 1, name: 'Run only Selected Tests' }];
-}
-
-function getDeviceOption(): Array<Object> {
-    return [{ id: 0, name: 'All Devices' }, { id: 1, name: 'Selected Devices Only' }];
-}
-
-interface TestContentProps {
+interface TestContentProps extends ApplicationProps{
     test: ITestData
 }
 
 const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
-    const history = useHistory();
+    const {projectId, appId} = useProjectAppContext();
 
-    const { test } = props;
+    const navigate = useNavigate();
+
+    type NewTestState = {
+        testName: string,
+        testType: TestType,
+        executionType: TestExecutionType,
+        platformType: PlatformType,
+        unityTestExecutionType: number,
+        deviceType: number,
+        selectedDevices: number[],
+        selectedTestFunctions: IAppFunctionData[],
+        testCategories: string[],
+        category: string,
+    };
+
+    const {test, appState} = props;
+
+    const app = appState.project?.Apps.find(a => a.ID === appId);
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
-    const platformTypes = getPlatformTypes();
     const unityTestExecutionTypes = getUnityTestsConfig();
     const deviceTypes = getDeviceOption();
 
-    const [testName, setTestName] = useState<string>(test.Name);
-    const [deviceType, setDeviceType] = useState<number>(test.TestConfig.AllDevices ? 0 : 1);
-    const [executionType, setExecutionType] = useState<number>(test.TestConfig.ExecutionType);
-    const [unityTestExecution, setUnityTestExecution] = useState<number>(test.TestConfig.Unity?.RunAllTests ? 0 : 1);
-    const [selectedDevices, setSelectedDevices] = useState<IDeviceData[]>(test.TestConfig.Devices.map(value => value.Device));
-    const [unityTestFunctions, setUnityTestFunctions] = useState<IAppFunctionData[]>(test.TestConfig.Unity?.UnityTestFunctions);
-
-    const onTestNameChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
-        setTestName(event.target.value);
+    const addCategory = () => {
+        if (state.category != '') {
+            setState(prevState => ({
+                ...prevState,
+                testCategories: [...prevState.testCategories, prevState.category],
+                category: ''
+            }))
+        }
+    };
+    const removeCategory = (index: number) => {
+        setState(prevState => ({
+            ...prevState,
+            testCategories: [...prevState.testCategories.slice(0, index), ...prevState.testCategories.slice(index + 1)]
+        }))
     };
 
-    const onExecutionTypeChange = (event: ChangeEvent<{ name?: string; value: TestExecutionType }>): void => {
-        const type = (+event.target.value as TestExecutionType);
-        setExecutionType(type);
-    };
-
-    const onUnityTestExecutionChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
-        setUnityTestExecution(+event.target.value);
-    };
-
-    const onDeviceExecutionChanged = (event: ChangeEvent<{ name?: string; value: string }>): void => {
-        setDeviceType(+event.target.value);
-    };
-
-    const onDeviceSelectionChanged = (devices: IDeviceData[]): void => {
-        setSelectedDevices(devices);
-    };
+    const [state, setState] = React.useState<NewTestState>({
+            testType: TestType.Unity,
+            executionType: test.TestConfig.ExecutionType,
+            platformType: PlatformType.iOS,
+            testName: test.Name,
+            unityTestExecutionType: test.TestConfig.Unity?.RunAllTests ? 0 : 1,
+            deviceType: test.TestConfig.AllDevices ? 0 : 1,
+            selectedDevices: test.TestConfig.Devices.map(value => value.DeviceID) as number[],
+            selectedTestFunctions: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.UnityTestFunctions.map(value => ({
+                Assembly: value.Assembly,
+                Class: value.Class,
+                Method: value.Method
+            } as IAppFunctionData)),
+            testCategories: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null || test.TestConfig.Unity.Categories === '' ? [] : test.TestConfig.Unity.Categories.split(','),
+            category: '',
+        }
+    )
 
     const updateTestData = (): void => {
-        test.Name = testName;
-        test.TestConfig.AllDevices = deviceType == 0;
-        test.TestConfig.ExecutionType = executionType;
-        if (test.TestConfig.Unity !== null) {
-            test.TestConfig.Unity.RunAllTests = unityTestExecution == 0;
-            var devices: ITestConfigDeviceData[] = []
-            selectedDevices.map(dev => {
-                let deviceConfig: ITestConfigDeviceData = {
-                    TestConfigID: test.TestConfig.ID,
-                    DeviceID: dev.ID,
-                }
-                devices.push(deviceConfig);
-            })
-            test.TestConfig.Devices = devices;
-        }
-        updateTest(test.ID as number, test).then(response => {
-            console.log(response.data);
-            history.push('/web/tests');
+        updateTest(projectId as string, appId, test.ID as number, {
+            Name: state.testName,
+            Categories: state.testCategories.join(','),
+            AllDevices: state.deviceType === 0,
+            ExecutionType: state.executionType,
+            RunAllTests: state.unityTestExecutionType == 0,
+            Devices: state.selectedDevices,
+        } as UpdateTestData).then(response => {
+            navigate(`/project/${ projectId }/tests`);
         }).catch(ex => {
             console.log(ex);
         });
     };
 
-    const handleFunctionSelection = (funcs: IAppFunctionData[]): void => {
-        setUnityTestFunctions(funcs);
-    };
-
     const getTestTypeName = (type: TestType): string => {
-        const item = testTypes.find(i => i.id == type);
-        return item.name;
+        const item = testTypes.find(i => i.id === `${ type }`);
+        return item === undefined ? '' : item.name;
     };
 
-    const getTestExecutionName = (type: TestExecutionType): string => {
-        const item = executionTypes.find(i => i.id == type);
-        return item.name;
-    };
+    const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     useEffect(() => {
-        setUnityTestExecution(test.TestConfig.Unity?.RunAllTests ? 0 : 1);
-        setDeviceType(test.TestConfig.AllDevices ? 0 : 1);
-    }, [test]);
+        getAllDevices(projectId, app?.Platform).then(response => {
+            setDevices(response.data);
+        })
+    }, [projectId, app?.Platform])
+
+    const onDeviceSelectionChanged = (selectedDevices: number[]) => {
+        if (!isEqual(selectedDevices, state.selectedDevices)) {
+            setState(prevState => ({...prevState, selectedDevices: selectedDevices}))
+        }
+    }
+
+    const onTestSelectionChanged = (testSelection: IAppFunctionData[]) => {
+        if (!isEqual(testSelection, state.selectedTestFunctions)) {
+            setState(prevState => ({...prevState, selectedTestFunctions: testSelection}))
+        }
+    }
 
     return (
-        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
             <AppBar
                 position="static"
                 color="default"
-                elevation={0}
-                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                elevation={ 0 }
+                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
             >
                 <Toolbar>
                     <Grid container={ true } spacing={ 2 } alignItems="center">
@@ -147,7 +169,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <Box sx={ { p: 2, m: 2 } }>
+            <Box sx={ {p: 2, m: 2} }>
                 <Grid container={ true }>
                     <Grid item={ true } xs={ 12 }>
                         <Typography variant={ 'h6' }>Test Details</Typography>
@@ -160,8 +182,11 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                             <Grid item={ true } xs={ 10 }>
                                 <FormControl>
                                     <TextField required={ true } id="test-name" label="Name"
-                                        value={ testName }
-                                        onChange={ onTestNameChanged }/>
+                                               value={ state.testName }
+                                               onChange={ event => setState(prevState => ({
+                                                   ...prevState,
+                                                   testName: event.target.value
+                                               })) }/>
                                 </FormControl>
                             </Grid>
                         </Grid>
@@ -183,8 +208,11 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                 <RadioGroup
                                     name="execution-type-selection"
                                     aria-label="spacing"
-                                    value={ executionType.toString() }
-                                    onChange={ onExecutionTypeChange }
+                                    value={ state.executionType.toString() }
+                                    onChange={ event => setState(prevState => ({
+                                        ...prevState,
+                                        executionType: +event.target.value
+                                    })) }
                                     row={ true }
                                 >
                                     { executionTypes.map((value) => (
@@ -211,8 +239,11 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                 <RadioGroup
                                     name="device-selection"
                                     aria-label="spacing"
-                                    value={ deviceType.toString() }
-                                    onChange={ onDeviceExecutionChanged }
+                                    value={ state.deviceType.toString() }
+                                    onChange={ event => setState(prevState => ({
+                                        ...prevState,
+                                        deviceType: +event.target.value
+                                    })) }
                                     row={ true }
                                 >
                                     { deviceTypes.map((value) => (
@@ -224,18 +255,21 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                         />
                                     )) }
                                 </RadioGroup>
-                                { deviceType === 1 && (
+                                { state.deviceType === 1 && (
                                     <Grid container={ true } justifyContent="center" spacing={ 2 }
-                                        alignItems={ 'center' } direction={ 'column' }>
+                                          alignItems={ 'center' } direction={ 'column' }>
                                         <Grid item={ true }>
                                             <Typography variant={ 'h6' }>
                                                 Select Devices
                                             </Typography>
                                         </Grid>
                                         <Grid item={ true }>
-                                            <DeviceSelection
-                                                selectedDevices={ test.TestConfig.Devices.map(value => value.Device) }
-                                                onSelectionChanged={ onDeviceSelectionChanged }/>
+                                            {
+                                                devices !== undefined && devices.length > 0 && <DeviceSelection
+                                                    devices={ devices }
+                                                    selectedDevices={ state.selectedDevices }
+                                                    onSelectionChanged={ onDeviceSelectionChanged }/>
+                                            }
                                         </Grid>
                                     </Grid>
                                 ) }
@@ -256,8 +290,11 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                         <RadioGroup
                                             name="unity-test-execution-selection"
                                             aria-label="spacing"
-                                            value={ unityTestExecution.toString() }
-                                            onChange={ onUnityTestExecutionChanged }
+                                            value={ state.unityTestExecutionType.toString() }
+                                            onChange={ event => setState(prevState => ({
+                                                ...prevState,
+                                                unityTestExecutionType: +event.target.value
+                                            })) }
                                             row={ true }
                                         >
                                             { unityTestExecutionTypes.map((value) => (
@@ -269,13 +306,68 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                                 />
                                             )) }
                                         </RadioGroup>
-
-                                        { unityTestExecution === 1 && (
-                                            <div>
-                                                <TestMethodSelection onSelectionChanged={ handleFunctionSelection }/>
-                                            </div>
-                                        ) }
                                     </Grid>
+                                    { state.unityTestExecutionType === 2 && (
+                                        <Grid item={ true } xs={ 12 } container={ true }>
+                                            <Grid item={ true } xs={ 2 }>
+                                                Selected Tests:
+                                            </Grid>
+                                            <Grid item={ true } xs={ 10 }>
+                                                <TestMethodSelection onSelectionChanged={ onTestSelectionChanged }/>
+                                            </Grid>
+                                        </Grid>
+                                    ) }
+                                    { state.unityTestExecutionType === 1 && (
+                                        <Grid item={ true } xs={ 12 } container={ true }>
+                                            <Grid item={ true } xs={ 2 }>
+                                                Categories
+                                            </Grid>
+                                            <Grid item={ true } xs={ 10 }>
+                                                <Table size="small" aria-label="a dense table" width={ 600 }>
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell>Category</TableCell>
+                                                            <TableCell></TableCell>
+                                                        </TableRow>
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        { state.testCategories.map((element, index) => <TableRow
+                                                            key={ `categories_${ index }` }>
+                                                            <TableCell>{ element }</TableCell>
+                                                            <TableCell>
+                                                                <IconButton edge="end"
+                                                                            aria-label="delete"
+                                                                            onClick={ () => removeCategory(index) }>
+                                                                    <Delete/>
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>) }
+
+                                                        <TableRow>
+                                                            <TableCell>
+                                                                <FormControl>
+                                                                    <TextField required={ true }
+                                                                               id="test-name"
+                                                                               label="Category Name"
+                                                                               value={ state.category }
+                                                                               fullWidth={ true }
+                                                                               onChange={ event => setState(prevState => ({
+                                                                                   ...prevState,
+                                                                                   category: event.target.value
+                                                                               })) }
+                                                                    />
+                                                                </FormControl>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Button variant={ 'outlined' }
+                                                                        onClick={ addCategory }>Add</Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableBody>
+                                                </Table>
+                                            </Grid>
+                                        </Grid>
+                                    ) }
                                 </Grid>
                             </div>) }
                     </Grid>

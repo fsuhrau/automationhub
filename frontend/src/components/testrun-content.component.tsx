@@ -21,19 +21,19 @@ import TestStatusIconComponent from '../components/test-status-icon.component';
 import Moment from 'react-moment';
 import { useSSE } from 'react-hooks-sse';
 import ITesRunLogEntryData from '../types/test.run.log.entry';
-import ITestProtocolData, { duration } from '../types/test.protocol';
+import ITestProtocolData from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import { PlatformType } from "../types/platform.type.enum";
+import { useProjectAppContext } from "../project/app.context";
+import { TitleCard } from "./title.card.component";
+import { BarChart, Bar, Cell, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Pie, PieChart } from 'recharts';
 
 interface TestRunContentProps {
     testRun: ITestRunData
-    nextRunId: number
-    prevRunId: number
+    nextRunId: number | undefined
+    prevRunId: number | undefined
 }
 
 interface NewTestRunPayload {
@@ -41,19 +41,16 @@ interface NewTestRunPayload {
     Entry: ITesRunLogEntryData,
 }
 
-interface NewProtocolPayload {
-    TestRunID: number,
-    Protocol: ITestProtocolData,
-}
+const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProps) => {
 
-const TestRunContent: React.FC<TestRunContentProps> = (props) => {
+    const {projectId, appId} = useProjectAppContext();
 
     const {testRun, nextRunId, prevRunId} = props;
 
     const testContext = useContext(TestContext);
     const {test, setTest} = testContext;
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [log, setLog] = useState<Array<ITesRunLogEntryData>>([]);
 
@@ -118,220 +115,242 @@ const TestRunContent: React.FC<TestRunContentProps> = (props) => {
     }, [testRun]);
 
     const onTestRerun = (): void => {
-        executeTest(testRun.TestID, testRun.AppID, testRun.Parameter).then(response => {
-            history.push(`/web/test/${ testRun.TestID }/run/${ response.data.ID }`);
+        executeTest(projectId, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
+            navigate(`/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ response.data.ID }`);
         }).catch(error => {
             console.log(error);
         });
     };
 
+    const startupTimes = testRun.DeviceStatus.map(item => {
+            return {Name: item.Device.Name, StartupTime: item.StartupTime}
+        }
+    )
+
     return (
-        <Paper sx={ {maxWidth: 1200, margin: 'auto', overflow: 'hidden'} }>
-            <AppBar
-                position="static"
-                color="default"
-                elevation={ 0 }
-                sx={ {borderBottom: '1px solid rgba(0, 0, 0, 0.12)'} }
-            >
-                <Toolbar>
-                    <Grid container={ true } spacing={ 2 } alignItems="center">
+        <Grid container={ true } spacing={ 2 }>
+            <Grid item={ true } xs={ 12 }>
+                <Typography variant={ "h1" }>Test: { testRun.Test.Name } Run: { testRun.ID }</Typography>
+            </Grid>
+            <Grid item={ true } xs={ 12 }>
+                <Divider/>
+            </Grid>
+            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" } justifyContent={ "center" }>
+                <Grid
+                    item={ true }
+                    xs={ 12 }
+                    style={ {maxWidth: 800} }
+                >
+                    <Grid item={ true } container={ true } xs={ 12 } spacing={ 2 } alignItems={ "center" }>
                         <Grid item={ true }>
-                            { prevRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ prevRunId } ` }>
+                            { prevRunId !== undefined && prevRunId > 0 && <Button variant="contained" color="primary" size="small"
+                                                       href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ prevRunId } ` }>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                             }
                         </Grid>
                         <Grid item={ true } xs={ true }>
-                            <Typography variant={ 'h6' }>
-                                Test: { testRun.Test.Name } Run: { testRun.ID }
-                            </Typography>
                         </Grid>
                         <Grid item={ true }>
-                            { nextRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/web/test/${ testRun.TestID }/run/${ nextRunId } ` }>
+                            { nextRunId !== undefined && nextRunId > 0 && <Button variant="contained" color="primary" size="small"
+                                                       href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ nextRunId } ` }>
                                 Next <KeyboardArrowRight/>
                             </Button>
                             }
                         </Grid>
                     </Grid>
-                </Toolbar>
-            </AppBar>
-            <Grid container={ true }>
-                <Grid item={ true } xs={ 6 }>
-                    <Box sx={ {p: 2, m: 2} }>
-                        { testRun.Test.TestConfig.Platform != PlatformType.Editor && (
-                            <>
-                                <Typography variant={ 'h6' }>App Details</Typography>
-                                <Divider/>
+                    <TitleCard title={ "Results" }>
+                        <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" }
+                              justifyContent={ "center" }>
+                            <PieChart
+                                width={ 200 }
+                                height={ 200 }
+                            >
+                                <Pie
+                                    data={ [
+                                        {name: "Open", value: runsOpen},
+                                        {name: "Failed", value: runsFailed},
+                                        {name: "Success", value: runsSuccess},
+                                    ] }
+                                    cx="50%"
+                                    cy="50%"
+                                    label
+                                    outerRadius={ 70 }
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    <Cell fill={ 'yellow' }/>
+                                    <Cell fill={ 'red' }/>
+                                    <Cell fill={ 'green' }/>
+                                </Pie>
+                                <Tooltip/>
+                            </PieChart>
+                            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" }
+                                  justifyContent={ "center" }>
+                                <Typography
+                                    variant={ "caption" }> Open: { runsOpen } Failed: { runsFailed } Success: { runsSuccess }</Typography>
+                            </Grid>
+                        </Grid>
+                    </TitleCard>
+                    <TitleCard title={ "Environment" }>
+                        <Grid item={ true } container={ true } xs={ 12 }>
+                            <Grid container={ true }>
+                                <Grid item={ true } xs={ 12 }>
+                                    { testRun?.Parameter }
+                                </Grid>
+                                <Grid item={ true } xs={ true }/>
+                                <Grid item={ true } container={ true } xs={ 12 } alignItems={ "flex-end" }
+                                      justifyContent={ "flex-end" }>
+                                    <Button variant="contained" color="primary" onClick={ onTestRerun }>
+                                        Rerun
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </TitleCard>
+                    <TitleCard title={ "Test Functions" }>
+                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                            <TableContainer>
+                                <Table size="small" aria-label="a dense table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Test</TableCell>
+                                            <TableCell>Device</TableCell>
+                                            <TableCell align="right">Status</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        { protocols.map((protocol) => (
+                                            <TableRow key={ protocol.ID }>
+                                                <TableCell component="th" scope="row">
+                                                    <Link
+                                                        href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
+                                                        underline="none">
+                                                        { protocol.TestName }
+                                                    </Link>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Grid container={ true }>
+                                                        <Grid item={ true } xs={ 12 }>
+                                                            { protocol.Device?.Name }
+                                                        </Grid>
+                                                        <Grid item={ true } xs={ 12 }>
+                                                            { protocol.Device?.OS } { protocol.Device?.OSVersion }
+                                                        </Grid>
+                                                    </Grid>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <TestStatusIconComponent status={ protocol.TestResult }/>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) }
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Paper>
+                    </TitleCard>
+                    { testRun?.AppBinary &&
+                        <TitleCard title={ "App Bundle" }>
+                            <Box sx={ {p: 1, m: 1} }>
                                 <Grid container={ true }>
                                     <Grid item={ true } xs={ 2 }>
                                         Name:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Name }
+                                        { testRun?.AppBinary?.Name }
                                     </Grid>
 
                                     <Grid item={ true } xs={ 2 }>
                                         Identifier:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Identifier }
+                                        { testRun?.AppBinary?.Identifier }
                                     </Grid>
 
                                     <Grid item={ true } xs={ 2 }>
                                         Platform:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Platform }
+                                        { testRun?.AppBinary?.Platform }
                                     </Grid>
 
                                     <Grid item={ true } xs={ 2 }>
                                         Version:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Version }
+                                        { testRun?.AppBinary?.Version }
                                     </Grid>
-
                                     <Grid item={ true } xs={ 2 }>
                                         Hash:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Hash }
+                                        { testRun?.AppBinary?.Hash }
                                     </Grid>
 
                                     <Grid item={ true } xs={ 2 }>
                                         Created:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        <Moment format="YYYY/MM/DD HH:mm:ss">{ testRun?.App?.CreatedAt }</Moment>
+                                        <Moment
+                                            format="YYYY/MM/DD HH:mm:ss">{ testRun?.AppBinary?.CreatedAt }</Moment>
                                     </Grid>
 
                                     <Grid item={ true } xs={ 2 }>
                                         Addons:
                                     </Grid>
                                     <Grid item={ true } xs={ 10 }>
-                                        { testRun?.App?.Additional }
+                                        { testRun?.AppBinary?.Additional }
                                     </Grid>
                                 </Grid>
-                                <br/>
-                            </>
-                        ) }
-                        <Typography variant={ 'h6' }>Environment Parameter</Typography>
-                        <Divider/>
-                        <Grid container={ true }>
-                            <Grid item={ true } xs={ 10 }>
-                                { testRun?.Parameter }
-                            </Grid>
-                            <Grid item={ true } xs={ 10 }>
-                                <br/>
-                                <Button variant="contained" color="primary" onClick={ onTestRerun }>
-                                    Rerun
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Box>
-                </Grid>
-                <Grid item={ true } xs={ 2 }>
-                </Grid>
-                <Grid item={ true } xs={ 4 }>
-                    <Box sx={ {p: 2, m: 2} }>
-                        <Typography variant={ 'h6' }>Test Results</Typography>
-                        <Divider/>
-                        <Grid container={ true }>
-                            <Grid item={ true } xs={ 4 }>
-                                Open
-                            </Grid>
-                            <Grid item={ true } xs={ 4 }>
-                                Failed
-                            </Grid>
-                            <Grid item={ true } xs={ 4 }>
-                                Success
-                            </Grid>
-                            <Grid item={ true } xs={ 4 }>
-                                { runsOpen }
-                            </Grid>
-                            <Grid item={ true } xs={ 4 }>
-                                { runsFailed }
-                            </Grid>
-                            <Grid item={ true } xs={ 4 }>
-                                { runsSuccess }
-                            </Grid>
-                        </Grid>
-                    </Box>
-                </Grid>
-                <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
-                        <Typography variant={ 'h6' }>Test Details</Typography>
-                        <Divider/>
-                        <TableContainer>
-                            <Table size="small" aria-label="a dense table">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Test</TableCell>
-                                        <TableCell>Device</TableCell>
-                                        <TableCell align="right">OS</TableCell>
-                                        <TableCell>Duration</TableCell>
-                                        <TableCell align="right">Status</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    { protocols.map((protocol) => (
-                                        <TableRow key={ protocol.ID }>
-                                            <TableCell component="th" scope="row">
-                                                <Link
-                                                    href={ `/web/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
-                                                    underline="none">
-                                                    { protocol.TestName }
-                                                </Link>
-                                            </TableCell>
-                                            <TableCell>
-                                                { protocol.Device?.Name }
-                                            </TableCell>
-                                            <TableCell
-                                                align="right">{ protocol.Device?.OS } { protocol.Device?.OSVersion }
-                                            </TableCell>
-                                            <TableCell>
-                                                { duration(protocol.StartedAt, protocol.EndedAt) }
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <TestStatusIconComponent status={ protocol.TestResult }/>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) }
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
-                </Grid>
-                <Grid item={ true } xs={ 12 }>
-                    <Box sx={ {p: 2, m: 2} }>
-                        <Typography variant={ 'h6' }>Executor Log</Typography>
-                        <Divider/>
-                        <TableContainer>
-                            <Table size="small" aria-label="a dense table">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Date</TableCell>
-                                        <TableCell>Level</TableCell>
-                                        <TableCell>Log</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    { log.map((entry) => <TableRow key={ entry.ID }>
-                                        <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
-                                            <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
-                                        </TableCell>
-                                        <TableCell>{ entry.Level }</TableCell>
-                                        <TableCell>{ entry.Log }</TableCell>
-                                    </TableRow>) }
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
+                            </Box>
+                        </TitleCard>
+                    }
+                    <TitleCard title={ "App Startup Time" }>
+                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                            <ResponsiveContainer width={ '100%' } height={ 200 }>
+                                <BarChart width={ 600 } height={ 200 } data={startupTimes} margin={ {
+                                    top: 5,
+                                    right: 30,
+                                    left: 20,
+                                    bottom: 5,
+                                } }>
+                                    <CartesianGrid strokeDasharray="3 3"/>
+                                    <XAxis dataKey="Name"/>
+                                    <Tooltip/>
+                                    <Bar dataKey="StartupTime" fill="#8884d8" label={{ position: 'top' }} unit={'ms'}/>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Paper>
+                    </TitleCard>
+                    <TitleCard title={ "Execution Log" }>
+                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                            <Box sx={ {p: 1, m: 1} }>
+                                <TableContainer>
+                                    <Table size="small" aria-label="a dense table">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Date</TableCell>
+                                                <TableCell>Level</TableCell>
+                                                <TableCell>Log</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            { log.map((entry) => <TableRow key={ entry.ID }>
+                                                <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
+                                                    <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
+                                                </TableCell>
+                                                <TableCell>{ entry.Level }</TableCell>
+                                                <TableCell>{ entry.Log }</TableCell>
+                                            </TableRow>) }
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
+                        </Paper>
+                    </TitleCard>
                 </Grid>
             </Grid>
-        </Paper>
+        </Grid>
     );
 };
 

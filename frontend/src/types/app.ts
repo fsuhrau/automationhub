@@ -1,6 +1,20 @@
-import IAppFunctionData from './app.function';
+import IProject from "../project/project";
+import { PlatformType } from "./platform.type.enum";
 
-export default interface IAppData {
+export interface IAppData {
+    ID: number,
+    Name: string,
+    Identifier: string,
+    ProjectID: number,
+    Project: IProject,
+    DefaultParameter: string,
+    Platform: PlatformType,
+    CreatedAt: Date,
+    UpdatedAt: Date,
+    DeletedAt: Date,
+}
+
+export interface IAppBinaryData {
     ID: number,
     Name: string,
     Platform: string,
@@ -12,7 +26,6 @@ export default interface IAppData {
     Hash: string,
     Size: number,
     Tags: string,
-    AppFunctions: IAppFunctionData[],
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

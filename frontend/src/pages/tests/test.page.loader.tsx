@@ -5,30 +5,29 @@ import ITestData from '../../types/test';
 import EditTestPage from './edit.test.content';
 import { getTest } from '../../services/test.service';
 import ShowTestPage from './show.test.content';
+import { ApplicationProps } from "../../application/application.props";
 
-interface TestPageProps {
+interface TestPageProps extends ApplicationProps {
     edit: boolean
 }
 
-interface ParamTypes {
-    testId: string
-}
-
 const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
-    const { edit } = props;
-    const { testId } = useParams<ParamTypes>();
+    const { edit, appState } = props;
+    const { project_id, app_id, testId } = useParams();
     const [test, setTest] = useState<ITestData>();
 
     useEffect(() => {
-        getTest(testId).then(response => {
-            setTest(response.data);
-        }).catch(ex => {
-            console.log(ex);
-        });
-    }, [testId]);
+        if (app_id !== undefined && testId !== undefined) {
+            getTest(project_id as string, +app_id as number, testId).then(response => {
+                setTest(response.data);
+            }).catch(ex => {
+                console.log(ex);
+            });
+        }
+    }, [project_id, app_id, testId]);
     return (
         <div>
-            { test ? (edit ? (<EditTestPage test={ test }/>) : (<ShowTestPage test={ test }/>) ) : (<Backdrop open={true} ><CircularProgress color="inherit" /></Backdrop>) }
+            { test ? (edit ? (<EditTestPage appState={appState} test={ test }/>) : (<ShowTestPage test={ test }/>) ) : (<Backdrop open={true} ><CircularProgress color="inherit" /></Backdrop>) }
         </div>
     );
 };

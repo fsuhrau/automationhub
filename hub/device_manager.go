@@ -348,6 +348,7 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 					d.Connection().ActionChannel <- resp
 				} else {
 					d.Log("unhandled", "Received: %v", resp.Payload)
+					return
 				}
 			}
 		case <-ctx.Done():

@@ -11,12 +11,12 @@ const TestStatusIconComponent: React.FC<TestStatusIconProps> = (props) => {
     const { status } = props;
 
     return (
-        <div>
+        <>
             {status == TestResultState.TestResultSuccess && <CheckCircle htmlColor={'green'}/>}
             {status == TestResultState.TestResultFailed && <Cancel htmlColor={'red'}/>}
             {status == TestResultState.TestResultOpen && <ArrowRightRounded htmlColor={'gray'}/>}
             {status == TestResultState.TestResultUnstable && <Explicit htmlColor={'yellow'}/>}
-        </div>
+        </>
     );
 };
 

@@ -1,4 +1,4 @@
-import { ToArray } from "../helper/enum_to_array";
+import { IdName, ToArray } from '../helper/enum_to_array';
 
 export enum TestType {
     Unity,
@@ -7,9 +7,9 @@ export enum TestType {
     Scenario,
 }
 
-export const getTestTypes = (): Array<Object> => {
+export const getTestTypes = (): Array<IdName> => {
     return ToArray(TestType);
-}
+};
 
 export const getTestTypeName = (type: TestType): string => {
     return TestType[type];

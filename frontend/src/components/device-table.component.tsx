@@ -22,7 +22,9 @@ import {
 } from '@mui/material';
 import { ArrowForward, PlayArrow } from '@mui/icons-material';
 import { useSSE } from 'react-hooks-sse';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useProjectAppContext } from "../project/app.context";
+import { useProjectContext } from "../project/project.context";
 
 interface DeviceChangePayload {
     DeviceID: number,
@@ -30,7 +32,10 @@ interface DeviceChangePayload {
 }
 
 const DeviceTable: React.FC = () => {
-    const history = useHistory();
+
+    const {projectId} = useProjectContext();
+
+    const navigate = useNavigate();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
@@ -39,7 +44,6 @@ const DeviceTable: React.FC = () => {
     useEffect(() => {
         if (deviceStateChange === null)
             return;
-        console.log(deviceStateChange);
         setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? {
             ...device,
             Status: deviceStateChange.DeviceState,
@@ -47,12 +51,12 @@ const DeviceTable: React.FC = () => {
     }, [deviceStateChange]);
 
     useEffect(() => {
-        getAllDevices().then(response => {
+        getAllDevices(projectId as string).then(response => {
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, []);
+    }, [projectId]);
 
     function deviceState(state: number): string {
         switch (state) {
@@ -86,7 +90,7 @@ const DeviceTable: React.FC = () => {
     };
 
     const onRunTest = (): void => {
-        runTest(selectedDeviceID, testName, envParameter).then(response => {
+        runTest(projectId as string, selectedDeviceID, testName, envParameter).then(response => {
             console.log(response.data);
         }).catch(ex => {
             console.log(ex);
@@ -102,7 +106,7 @@ const DeviceTable: React.FC = () => {
     };
 
     function openDetails(id: number): void {
-        history.push(`/web/device/${ id }`);
+        navigate(`/project/${projectId}/device/${ id }`);
     }
 
     return (
@@ -171,7 +175,7 @@ const DeviceTable: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { devices.map((device) => <TableRow key={ device.Name }>
+                        { devices.map((device) => <TableRow key={ `device_entry_${device.ID}` }>
                             <TableCell component="th" scope="row">
                                 { device.ID }
                             </TableCell>

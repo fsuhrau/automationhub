@@ -21,11 +21,12 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import { updateDevice } from '../../services/device.service';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 import IDeviceParameter from '../../types/device.parameter';
 import { Add, Remove } from '@mui/icons-material';
 import { DeviceType } from '../../types/device.type.enum';
+import { useProjectContext } from "../../project/project.context";
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -43,7 +44,9 @@ interface DeviceEditProps {
 
 const DeviceEditContent: React.FC<DeviceEditProps> = props => {
 
-    const history = useHistory();
+    const {projectId} = useProjectContext()
+
+    const navigate = useNavigate();
 
     const { device } = props;
 
@@ -87,8 +90,8 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
         device.ConnectionParameter.ConnectionType = connectionType;
         device.ConnectionParameter.IP = ipAddress;
         device.ConnectionParameter.Port = port;
-        updateDevice(device, device.ID).then(response => {
-            history.push(`/web/device/${ device.ID }`);
+        updateDevice(projectId as string, device, device.ID).then(response => {
+            navigate(`/project/${projectId}/device/${ device.ID }`);
         });
     };
 

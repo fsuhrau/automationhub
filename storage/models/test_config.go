@@ -35,7 +35,6 @@ type TestConfig struct {
 	TestID        uint
 	ExecutionType ExecutionType
 	Type          TestType
-	Platform      PlatformType
 	AllDevices    bool
 	Devices       []TestConfigDevice
 	Unity         *TestConfigUnity

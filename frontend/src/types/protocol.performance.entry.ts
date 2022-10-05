@@ -8,6 +8,7 @@ export default interface IProtocolPerformanceEntryData {
     CPU: number,
     Other: string,
     Runtime: number,
+    ExecutionTime: number,
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,

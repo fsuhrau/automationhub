@@ -1,14 +1,12 @@
 package iosdevice
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/fsuhrau/automationhub/tools/exec"
-	"strings"
 	"time"
 
+	"github.com/danielpaulus/go-ios/ios"
 	"github.com/fsuhrau/automationhub/device"
 )
 
@@ -39,7 +37,7 @@ type Detect struct {
 }
 
 type Handler struct {
-	devices      map[string]*Device
+	devices       map[string]*Device
 	deviceStorage storage.Device
 }
 
@@ -75,32 +73,32 @@ func (m *Handler) Stop() error {
 }
 
 func (m *Handler) StartDevice(deviceID string) error {
-	found := false
+	var dev *Device
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
-			found = true
+			dev = v
 			break
 		}
 	}
 
-	if found {
-		return nil
+	if dev != nil {
+		return dev.StartXCUITestRunner()
 	}
 
 	return device.DeviceNotFoundError
 }
 
 func (m *Handler) StopDevice(deviceID string) error {
-	found := false
+	var dev *Device
 	for _, v := range m.devices {
 		if v.deviceID == deviceID {
-			found = true
+			dev = v
 			break
 		}
 	}
 
-	if found {
-		return nil
+	if dev != nil {
+		return dev.StopXCUITestRunner()
 	}
 
 	return device.DeviceNotFoundError
@@ -116,51 +114,49 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 
 func (m *Handler) RefreshDevices() error {
 	lastUpdate := time.Now().UTC()
-	cmd := exec.NewCommand(IosDeployBin, "--detect", "--no-wifi", "--timeout", fmt.Sprintf("%d", DeviceListTimeoutSecs), "-j")
-	// cmd.Stderr = os.Stderr
-	output, err := cmd.Output()
+	_ = lastUpdate
+	deviceList, err := ios.ListDevices()
 	if err != nil {
 		return err
 	}
-	jsonString := fmt.Sprintf("[%s]", strings.Replace(string(output), "}{", "},{", -1))
-	var resp []Detect
-	if err := json.Unmarshal([]byte(jsonString), &resp); err != nil {
-		return err
-	}
-	for _, device := range resp {
-		if len(device.Device.BuildVersion) == 0 {
-			continue
+	for _, i := range deviceList.DeviceList {
+		identifier := i.Properties.SerialNumber
+		allValues, err := ios.GetValues(i)
+		if err != nil {
+			return err
 		}
-		if _, ok := m.devices[device.Device.DeviceIdentifier]; ok {
-			m.devices[device.Device.DeviceIdentifier].deviceName = device.Device.DeviceName
-			m.devices[device.Device.DeviceIdentifier].deviceID = device.Device.DeviceIdentifier
-			m.devices[device.Device.DeviceIdentifier].deviceOSName = device.Device.ModelSDK
-			m.devices[device.Device.DeviceIdentifier].deviceOSVersion = device.Device.ProductVersion
-			m.devices[device.Device.DeviceIdentifier].lastUpdateAt = lastUpdate
-			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
-			m.deviceStorage.Update(m.Name(), m.devices[device.Device.DeviceIdentifier])
+		if _, ok := m.devices[identifier]; ok {
+			m.devices[identifier].deviceModel = allValues.Value.ProductType
+			m.devices[identifier].deviceName = allValues.Value.DeviceName
+			m.devices[identifier].deviceID = identifier
+			m.devices[identifier].deviceOSName = allValues.Value.ProductName
+			m.devices[identifier].deviceOSVersion = allValues.Value.ProductVersion
+			m.devices[identifier].lastUpdateAt = lastUpdate
+			m.devices[identifier].SetDeviceState("StateBooted")
+			m.deviceStorage.Update(m.Name(), m.devices[identifier])
 		} else {
-			m.devices[device.Device.DeviceIdentifier] = &Device{
-				deviceName:      device.Device.DeviceName,
-				deviceID:        device.Device.DeviceIdentifier,
-				deviceOSName:    device.Device.ModelSDK,
-				deviceOSVersion: device.Device.ProductVersion,
+			m.devices[identifier] = &Device{
+				deviceModel:     allValues.Value.ProductType,
+				deviceName:      allValues.Value.DeviceName,
+				deviceID:        identifier,
+				deviceOSName:    allValues.Value.ProductName,
+				deviceOSVersion: allValues.Value.ProductVersion,
 				lastUpdateAt:    lastUpdate,
 			}
 			dev := models.Device{
-				DeviceIdentifier: device.Device.DeviceIdentifier,
-				DeviceType: models.DeviceTypePhone,
-				Name: device.Device.DeviceName,
-				Manager: Manager,
-				OS: device.Device.ModelSDK,
-				OSVersion: m.devices[device.Device.DeviceIdentifier].deviceOSVersion,
+				DeviceIdentifier: identifier,
+				DeviceType:       models.DeviceTypePhone,
+				Name:             allValues.Value.DeviceName,
+				Manager:          Manager,
+				OS:               allValues.Value.ProductName,
+				OSVersion:        m.devices[identifier].deviceOSVersion,
 				ConnectionParameter: models.ConnectionParameter{
 					ConnectionType: models.ConnectionTypeUSB,
 				},
 			}
 			m.deviceStorage.NewDevice(m.Name(), dev)
-			m.devices[device.Device.DeviceIdentifier].SetDeviceState("StateBooted")
-			m.deviceStorage.Update(m.Name(), m.devices[device.Device.DeviceIdentifier])
+			m.devices[identifier].SetDeviceState("StateBooted")
+			m.deviceStorage.Update(m.Name(), m.devices[identifier])
 		}
 	}
 

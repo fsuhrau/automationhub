@@ -1,4 +1,4 @@
-import ITestProtocolData from "./test.protocol";
+import ITestProtocolData from './test.protocol';
 
 export default interface IHubStatsData {
     AppsCount: number,
