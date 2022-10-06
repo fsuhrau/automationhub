@@ -48,7 +48,7 @@ var masterCmd = &cobra.Command{
 
 		hostIP := getHostIP(serviceConfig)
 
-		db, err := storage.GetDB()
+		db, err := storage.GetDB(serviceConfig.Database)
 		if err != nil {
 			return err
 		}

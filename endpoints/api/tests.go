@@ -2,12 +2,14 @@ package api
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/fsuhrau/automationhub/tester/scenario"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
 
@@ -311,16 +313,16 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 
 	switch test.TestConfig.Type {
 	case models.TestTypeUnity:
-		testRunner = unity.New(s.db, s.hostIP, s.devicesManager, s)
+		testRunner = unity.New(s.db, s.hostIP, s.devicesManager, s, project.Identifier, application.ID)
 		if err := s.db.Preload("UnityTestFunctions").Where("test_config_id = ?", test.TestConfig.ID).First(&test.TestConfig.Unity).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
 	case models.TestTypeScenario:
-		testRunner = scenario.New(s.db, s.hostIP, s.devicesManager, s)
+		testRunner = scenario.New(s.db, s.hostIP, s.devicesManager, s, project.Identifier, application.ID)
 	}
 
-	if err := testRunner.Initialize(project.Identifier, application.ID, test, environmentParams); err != nil {
+	if err := testRunner.Initialize(test, environmentParams); err != nil {
 		s.error(c, http.StatusInternalServerError, err) // Todo status code
 		return
 	}
@@ -441,5 +443,5 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 
 func (s *Service) getData(c *gin.Context) {
 	name := c.Param("name")
-	c.File(fmt.Sprintf("test/data/" + name))
+	c.File(filepath.Join(apps.TestDataPath, name))
 }

@@ -98,7 +98,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 	api.DELETE("/project/:project_id", s.deleteProject)
 	api.PUT("/project/:project_id", s.updateProject)
 
-	api.GET("/data/test/data/:name", s.getData)
+	api.GET("/data/:name", s.getData)
 
 	projectApi := api.Group("/:project_id")
 	projectApi.Use(s.ResolveProject)

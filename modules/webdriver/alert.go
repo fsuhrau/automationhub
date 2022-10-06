@@ -3,7 +3,7 @@ package webdriver
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func (c *Client) GetAlertText() (string, error) {
 		return "", err
 	}
 
-	responseBody, _ := ioutil.ReadAll(resp.Body)
+	responseBody, _ := io.ReadAll(resp.Body)
 
 	var r response
 	if err := json.Unmarshal(responseBody, &r); err != nil {
@@ -59,7 +59,7 @@ func (c *Client) AcceptAlert(accept bool) (string, error) {
 		return "", err
 	}
 
-	responseBody, _ := ioutil.ReadAll(resp.Body)
+	responseBody, _ := io.ReadAll(resp.Body)
 
 	var r response
 	if err := json.Unmarshal(responseBody, &r); err != nil {

@@ -43,11 +43,11 @@ type ProtocolWriter struct {
 	appId     uint
 }
 
-func NewProtocolWriter(db *gorm.DB, testName string, run *models.TestRun) *ProtocolWriter {
-	return &ProtocolWriter{db: db, testName: testName, run: run}
+func NewProtocolWriter(db *gorm.DB, projectId string, appId uint, testName string, run *models.TestRun) *ProtocolWriter {
+	return &ProtocolWriter{db: db, projectId: projectId, appId: appId, testName: testName, run: run}
 }
 
-func (w *ProtocolWriter) NewProtocol(projectId string, appId uint, dev models.Device, testname string) (*logProtocol, error) {
+func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logProtocol, error) {
 	protocol := &models.TestProtocol{
 		TestRunID: w.run.ID,
 		DeviceID:  &dev.ID,
@@ -64,8 +64,6 @@ func (w *ProtocolWriter) NewProtocol(projectId string, appId uint, dev models.De
 
 	p := &logProtocol{w.db, protocol, writer}
 	w.protocols = append(w.protocols, p)
-	w.projectId = projectId
-	w.appId = appId
 
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
 

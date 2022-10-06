@@ -12,11 +12,11 @@ func (tr *TestRunner) NewSessionID() string {
 	return fmt.Sprintf("%s", u)
 }
 
-func (tr *TestRunner) InitNewTestSession(appId uint, params string) error {
+func (tr *TestRunner) InitNewTestSession(appBinaryId uint, params string) error {
 	sessionID := tr.NewSessionID()
 	tr.TestRun = models.TestRun{
 		TestID:      tr.Test.ID,
-		AppBinaryID: appId,
+		AppBinaryID: appBinaryId,
 		SessionID:   sessionID,
 		Parameter:   params,
 	}
@@ -24,7 +24,7 @@ func (tr *TestRunner) InitNewTestSession(appId uint, params string) error {
 		return err
 	}
 
-	tr.ProtocolWriter = protocol.NewProtocolWriter(tr.DB, tr.Test.Name, &tr.TestRun)
+	tr.ProtocolWriter = protocol.NewProtocolWriter(tr.DB, tr.ProjectId, tr.AppId, tr.Test.Name, &tr.TestRun)
 	return nil
 }
 

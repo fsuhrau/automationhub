@@ -3,7 +3,7 @@ package remlog
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -52,7 +52,7 @@ func (s *Service) Run(logLine func(string)) error {
 			}
 
 			z := bytes.NewReader(buffer[0:n])
-			b, err := ioutil.ReadAll(z)
+			b, err := io.ReadAll(z)
 			if err != nil {
 				connectionLog.Errorf("error read %v", err)
 			}

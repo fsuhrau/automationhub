@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -74,7 +75,8 @@ func (s *Service) deleteBinary(c *gin.Context, project *models.Project, applicat
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-	if err := os.RemoveAll(binary.AppPath); err != nil {
+	appPath := filepath.Join(apps.AppStoragePath, binary.AppPath)
+	if err := os.RemoveAll(appPath); err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -146,7 +148,7 @@ func (s *Service) uploadBinary(c *gin.Context, project *models.Project, applicat
 	}
 
 	filename := filepath.Base(file.Filename)
-	filePath := filepath.Join("upload", filename)
+	filePath := filepath.Join(apps.AppStoragePath, filename)
 
 	os.MkdirAll("upload", os.ModePerm)
 
@@ -162,10 +164,11 @@ func (s *Service) uploadBinary(c *gin.Context, project *models.Project, applicat
 	}
 	params := analyser.GetParameter()
 
-	ext := filepath.Ext(filePath)
-	newPath := strings.TrimSuffix(filePath, ext)
-	params.AppPath = fmt.Sprintf("%s_%s%s", newPath, params.Hash, ext)
-	if err := os.Rename(filePath, params.AppPath); err != nil {
+	ext := filepath.Ext(filename)
+	newFileName := strings.TrimSuffix(filename, ext)
+	params.AppPath = fmt.Sprintf("%s_%s%s", newFileName, params.Hash, ext)
+	newFilePath := filepath.Join(apps.AppStoragePath, params.AppPath)
+	if err := os.Rename(filePath, newFilePath); err != nil {
 		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to store file err: %s", err.Error()))
 		return
 	}

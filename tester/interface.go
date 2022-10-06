@@ -5,6 +5,6 @@ import (
 )
 
 type Interface interface {
-	Initialize(projectIO string, appId uint, test models.Test, env map[string]string) error
+	Initialize(test models.Test, env map[string]string) error
 	Run(devs []models.Device, appData *models.AppBinary) (*models.TestRun, error)
 }

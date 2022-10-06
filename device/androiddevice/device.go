@@ -9,21 +9,18 @@ import (
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"github.com/google/uuid"
 	"image"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/tools/android"
 	"github.com/prometheus/common/log"
-	"github.com/spf13/viper"
-
-	"github.com/fsuhrau/automationhub/device"
 	"github.com/sirupsen/logrus"
 )
 
@@ -202,25 +199,21 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 	if err := d.unlockScreen(); err != nil {
 		return err
 	}
-	if viper.GetBool("restart") {
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
-		return cmd.Run()
-	}
-	return nil
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
+	return cmd.Run()
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	if viper.GetBool("restart") {
-		d.Log("device", "Stop App '%s'", params.Identifier)
-		if false {
-			cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
-			return cmd.Run()
-		} else {
-			cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "clear", params.Identifier)
-			// adb shell pm clear com.my.app.package
-			return cmd.Run()
-		}
+	d.Log("device", "Stop App '%s'", params.Identifier)
+	if false {
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
+		return cmd.Run()
+	} else {
+		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "clear", params.Identifier)
+		// adb shell pm clear com.my.app.package
+		return cmd.Run()
 	}
+
 	return nil
 }
 
@@ -324,7 +317,7 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	width = srcImage.Bounds().Dx()
 	height = srcImage.Bounds().Dy()
 	imagePath.Seek(0, 0)
-	bytes, err := ioutil.ReadAll(imagePath)
+	bytes, err := io.ReadAll(imagePath)
 	logrus.Infof("Android open Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
 	defer os.Remove(fileName)
 	return bytes, width, height, err
@@ -375,91 +368,9 @@ func (d *Device) getScreenXml() (*xmlquery.Node, error) {
 }
 
 func (d *Device) RunNativeScript(script []byte) {
-
-	boundsEx := regexp.MustCompile(`\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]`)
-
-	actions, err := ParseNativeScript(script)
-	if err != nil {
-		d.Error("device", "Error: %v", err)
+	scriptHandler := New(d)
+	if err := scriptHandler.Execute(string(script)); err != nil {
+		d.Error("device", "Script Failed: %v", err)
 		d.pressKey(KEYCODE_BACK)
-		return
-	}
-
-	_ = actions
-
-	for _, a := range actions {
-		if wfa, ok := a.(*WaitForAction); ok {
-			d.Log("device", "wait_for_action: %s with timeout: %d", wfa.XPath, wfa.Timeout)
-			timeout := time.Now().Add(time.Duration(wfa.Timeout) * time.Second)
-
-			for {
-				xml, err := d.getScreenXml()
-				if err != nil {
-					d.Error("device", "get screen failed: %v", err)
-				}
-				element := xmlquery.FindOne(xml, wfa.XPath)
-				if element == nil {
-					if time.Now().After(timeout) {
-						d.Error("device", "Timeout: Element '%s' not found", wfa.XPath)
-						d.pressKey(KEYCODE_BACK)
-						return
-					}
-					time.Sleep(500 * time.Millisecond)
-				} else {
-					break
-				}
-			}
-		}
-		if ca, ok := a.(*ClickAction); ok {
-			retryCounter := 0
-			for {
-				d.Log("device", "click: %s", ca.XPath)
-				xml, err := d.getScreenXml()
-				if err != nil {
-					d.Error("device", "get screen failed: %v", err)
-				}
-				element := xmlquery.FindOne(xml, ca.XPath)
-				if element == nil {
-					if retryCounter > 3 {
-						d.Error("device", "Element '%s' not found", ca.XPath)
-						d.pressKey(KEYCODE_BACK)
-						return
-					} else {
-						time.Sleep(500 * time.Millisecond)
-						retryCounter++
-						continue
-					}
-				}
-
-				var bounds string
-				for _, attr := range element.Attr {
-					if attr.Name.Local == "bounds" {
-						bounds = attr.Value
-						break
-					}
-				}
-
-				actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
-				if len(actionContent) == 0 {
-					d.Error("device", "No valid bounds for element '%s'", ca.XPath)
-					d.pressKey(KEYCODE_BACK)
-					return
-				}
-				xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
-				ys, _ := strconv.ParseFloat(actionContent[0][2], 64)
-				xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
-				ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
-
-				x := (xs + xe) * 0.5
-				y := (ys + ye) * 0.5
-
-				if err := d.Tap(int64(x), int64(y)); err != nil {
-					d.Error("device", "Touch element '%s' failed: '%v'", ca.XPath, err)
-					d.pressKey(KEYCODE_BACK)
-					return
-				}
-				break
-			}
-		}
 	}
 }

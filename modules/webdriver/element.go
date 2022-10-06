@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -42,7 +42,7 @@ func (c *Client) FindElement(by, value string) (*Element, error) {
 		return nil, err
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	fmt.Println(string(body))
 	var element Element
 	if err := json.Unmarshal(body, &element); err != nil {
@@ -72,7 +72,7 @@ func (c *Client) TapElement(elementId string) error {
 	}
 
 	// Read Response Body
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
 	var result Element
 	if err := json.Unmarshal(respBody, &result); err != nil {

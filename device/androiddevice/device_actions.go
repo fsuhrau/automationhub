@@ -14,3 +14,8 @@ func (d *Device) swipe(fromX, fromY, toX, toY int) error {
 	cmd := exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "swipe", fmt.Sprintf("%d", fromX), fmt.Sprintf("%d", fromY), fmt.Sprintf("%d", toX), fmt.Sprintf("%d", toY))
 	return cmd.Run()
 }
+
+func (d *Device) sendText(text string) error {
+	cmd := exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "text", fmt.Sprintf("'%s", text))
+	return cmd.Run()
+}

@@ -3,7 +3,7 @@ package webdriver
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -36,7 +36,7 @@ func (c *Client) Status() (*Status, error) {
 		return nil, err
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	var status Status
 	if err := json.Unmarshal(body, &status); err != nil {

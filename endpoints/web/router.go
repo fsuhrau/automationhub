@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -52,19 +53,26 @@ func (s *wf) RegisterRoutes(r *gin.Engine) error {
 		}
 	*/
 	uploads := r.Group("/upload")
-	/*
-		authorized := r.Group("/")
-		if s.cfg.Auth.AuthenticationRequired() {
-			if s.cfg.Auth.OAuth2 != nil {
-				authorized.Use(oauth2.Auth())
-				uploads.Use(oauth2.Auth())
-			} else if s.cfg.Auth.Github != nil {
-				authorized.Use(github.Auth())
-				uploads.Use(github.Auth())
+	{
+		/*
+			authorized := r.Group("/")
+			if s.cfg.Auth.AuthenticationRequired() {
+				if s.cfg.Auth.OAuth2 != nil {
+					authorized.Use(oauth2.Auth())
+					uploads.Use(oauth2.Auth())
+				} else if s.cfg.Auth.Github != nil {
+					authorized.Use(github.Auth())
+					uploads.Use(github.Auth())
+				}
 			}
-		}
-	*/
-	uploads.Static("/", "./upload")
+		*/
+		uploads.Static("/", apps.AppStoragePath)
+	}
+	data := r.Group("/data")
+	{
+		data.Static("/", apps.TestDataPath)
+	}
+
 	r.GET("/static/*filepath", s.StaticRoute)
 	r.GET("/asset-manifest.json", s.StaticRoute)
 	r.GET("/favicon.ico", s.StaticRoute)

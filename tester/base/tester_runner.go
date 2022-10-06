@@ -15,19 +15,24 @@ type DeviceMap struct {
 }
 
 type TestRunner struct {
-	DeviceManager  manager.Devices
-	IP             net.IP
-	DB             *gorm.DB
-	Config         models.TestConfig
-	Test           models.Test
+	DeviceManager manager.Devices
+	IP            net.IP
+	DB            *gorm.DB
+	Config        models.TestConfig
+	Test          models.Test
 
 	ProtocolWriter *protocol.ProtocolWriter
-	TestRun models.TestRun
-	Err     error
+	TestRun        models.TestRun
+	Err            error
+
+	ProjectId string
+	AppId     uint
 }
 
-func (t *TestRunner) Init(deviceManager manager.Devices, ip net.IP, db *gorm.DB) {
+func (t *TestRunner) Init(deviceManager manager.Devices, ip net.IP, db *gorm.DB, projectId string, appId uint) {
 	t.DeviceManager = deviceManager
 	t.IP = ip
 	t.DB = db
+	t.ProjectId = projectId
+	t.AppId = appId
 }

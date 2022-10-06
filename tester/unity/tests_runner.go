@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	tester_action "github.com/fsuhrau/automationhub/tester/action"
 	"github.com/fsuhrau/automationhub/tester/base"
@@ -37,21 +38,19 @@ type testsRunner struct {
 	appId     uint
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
+func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
 	testRunner := &testsRunner{
 		fin:       make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip, db)
+	testRunner.Init(deviceManager, ip, db, projectId, appId)
 	return testRunner
 }
 
-func (tr *testsRunner) Initialize(projectId string, appId uint, test models.Test, env map[string]string) error {
+func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
 	if test.TestConfig.Type != models.TestTypeUnity {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
-	tr.projectId = projectId
-	tr.appId = appId
 	tr.env = env
 	tr.Test = test
 	tr.Config = test.TestConfig
@@ -79,7 +78,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		tr.appParams = app.Parameter{
 			AppBinaryID:    appData.ID,
 			Identifier:     appData.App.Identifier,
-			AppPath:        appData.AppPath,
+			AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
 			LaunchActivity: appData.LaunchActivity,
 			Name:           appData.Name,
 			Version:        appData.Version,
@@ -225,21 +224,21 @@ func (tr *testsRunner) getTestList(connectedDevices []base.DeviceMap) ([]models.
 	return testList, nil
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData *models.AppBinary) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	var appID uint
-	if appData != nil {
-		appID = appData.ID
+	var binaryId uint
+	if binary != nil {
+		binaryId = binary.ID
 	}
-	if err := tr.InitNewTestSession(appID, strings.Join(params, "\n")); err != nil {
+	if err := tr.InitNewTestSession(binaryId, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
-	go tr.exec(devs, appData)
+	go tr.exec(devs, binary)
 
 	return &tr.TestRun, nil
 }
@@ -263,7 +262,7 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
 
-	prot, err := tr.ProtocolWriter.NewProtocol(tr.projectId, tr.appId, dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
+	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
 		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
 	}
@@ -285,7 +284,8 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 	err = executor.Execute(dev.Device, task, DefaultTestTimeout)
 	if err != nil || len(prot.Errors()) > 0 {
 		nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
-		filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
+		fileName := fmt.Sprintf("%x.png", sha1.Sum(nameData))
+		filePath := filepath.Join(apps.TestDataPath, fileName)
 
 		rawData, _, _, err := dev.Device.GetScreenshot()
 		if rawData == nil {
@@ -298,10 +298,8 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 			}
 		}
 		if rawData != nil {
-			dir, _ := filepath.Split(filePath)
-			os.MkdirAll(dir, os.ModePerm)
 			os.WriteFile(filePath, rawData, os.ModePerm)
-			dev.Device.Data("screen", filePath)
+			dev.Device.Data("screen", fileName)
 		}
 		tr.LogError("test execution failed: %v", err)
 	} else {

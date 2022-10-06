@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -138,7 +139,7 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		respBody, _ := ioutil.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(respBody, &user)
 
 		// save userinfo, which could be used in Handlers

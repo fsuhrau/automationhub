@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -29,7 +29,7 @@ func (c *Client) SendText(value string) error {
 		return err
 	}
 
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 	var result Element
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		var wdaError WDAError
@@ -55,7 +55,7 @@ func (c *Client) PressButton(name string) error {
 		return err
 	}
 
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 	var result Element
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		var wdaError WDAError

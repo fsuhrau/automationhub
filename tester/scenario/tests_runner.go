@@ -7,11 +7,13 @@ import (
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
 	"net"
+	"path/filepath"
 	"strings"
 )
 
@@ -25,25 +27,21 @@ type testsRunner struct {
 	env       map[string]string
 
 	appParams app.Parameter
-	projectId string
-	appId     uint
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
+func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
 	testRunner := &testsRunner{
 		fin:       make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip, db)
+	testRunner.Init(deviceManager, ip, db, projectId, appId)
 	return testRunner
 }
 
-func (tr *testsRunner) Initialize(projectId string, appId uint, test models.Test, env map[string]string) error {
+func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
 	if test.TestConfig.Type != models.TestTypeScenario {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
-	tr.projectId = projectId
-	tr.appId = appId
 	tr.env = env
 	tr.Test = test
 	tr.Config = test.TestConfig
@@ -70,7 +68,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	tr.appParams = app.Parameter{
 		AppBinaryID:    appData.ID,
 		Identifier:     appData.App.Identifier,
-		AppPath:        appData.AppPath,
+		AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
 		LaunchActivity: appData.LaunchActivity,
 		Name:           appData.Name,
 		Version:        appData.Version,
@@ -185,20 +183,20 @@ func (tr *testsRunner) OnDeviceConnected(d device.Device) {
 
 }
 
-func (tr *testsRunner) Run(devs []models.Device, appData *models.AppBinary) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
 	}
-	var appID uint
-	if appData != nil {
-		appID = appData.ID
+	var binaryID uint
+	if binary != nil {
+		binaryID = binary.ID
 	}
-	if err := tr.InitNewTestSession(appID, strings.Join(params, "\n")); err != nil {
+	if err := tr.InitNewTestSession(binaryID, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
-	go tr.exec(devs, appData)
+	go tr.exec(devs, binary)
 
 	return &tr.TestRun, nil
 }

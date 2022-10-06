@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -61,7 +61,7 @@ func (c *Client) Launch(bundleIdentifier string, shouldWaitForQuiescence bool, a
 	}
 
 	// Read Response Body
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
 	var res response
 	if err := json.Unmarshal(respBody, &res); err != nil {
@@ -100,7 +100,7 @@ func (c *Client) Terminate(bundleIdentifier string) error {
 	}
 
 	// Read Response Body
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
 	var r response
 	if err := json.Unmarshal(respBody, &r); err != nil {
@@ -126,7 +126,7 @@ func (c *Client) ActiveAppInfo() (*AppInfo, error) {
 	}
 
 	// Read Response Body
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
 	var res AppInfo
 	if err := json.Unmarshal(respBody, &res); err != nil {
