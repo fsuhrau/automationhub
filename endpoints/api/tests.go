@@ -320,7 +320,7 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 		testRunner = scenario.New(s.db, s.hostIP, s.devicesManager, s)
 	}
 
-	if err := testRunner.Initialize(test, environmentParams); err != nil {
+	if err := testRunner.Initialize(project.Identifier, application.ID, test, environmentParams); err != nil {
 		s.error(c, http.StatusInternalServerError, err) // Todo status code
 		return
 	}
@@ -395,7 +395,9 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 		for _, t := range histStatus {
 			resp.TestRun.DeviceStatus[i].HistAvgStartupTime += t.StartupTime
 		}
-		resp.TestRun.DeviceStatus[i].HistAvgStartupTime = resp.TestRun.DeviceStatus[i].HistAvgStartupTime / uint(len(histStatus))
+		if len(histStatus) > 0 {
+			resp.TestRun.DeviceStatus[i].HistAvgStartupTime = resp.TestRun.DeviceStatus[i].HistAvgStartupTime / uint(len(histStatus))
+		}
 	}
 
 	// get prev

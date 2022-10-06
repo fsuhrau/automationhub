@@ -25,6 +25,8 @@ type testsRunner struct {
 	env       map[string]string
 
 	appParams app.Parameter
+	projectId string
+	appId     uint
 }
 
 func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
@@ -36,10 +38,12 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 	return testRunner
 }
 
-func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
+func (tr *testsRunner) Initialize(projectId string, appId uint, test models.Test, env map[string]string) error {
 	if test.TestConfig.Type != models.TestTypeScenario {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
+	tr.projectId = projectId
+	tr.appId = appId
 	tr.env = env
 	tr.Test = test
 	tr.Config = test.TestConfig

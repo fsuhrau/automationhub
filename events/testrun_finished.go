@@ -3,6 +3,8 @@ package events
 var TestRunFinished testRunFinished
 
 type TestRunFinishedPayload struct {
+	ProjectID string
+	AppID     uint
 	TestRunID uint
 	TestName  string
 	Success   bool

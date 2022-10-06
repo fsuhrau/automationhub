@@ -127,6 +127,8 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
         }
     )
 
+    const environmentParameters = testRun?.Parameter.split("\n");
+
     return (
         <Grid container={ true } spacing={ 2 }>
             <Grid item={ true } xs={ 12 }>
@@ -195,8 +197,14 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                     <TitleCard title={ "Environment" }>
                         <Grid item={ true } container={ true } xs={ 12 }>
                             <Grid container={ true }>
-                                <Grid item={ true } xs={ 12 }>
-                                    { testRun?.Parameter }
+                                <Grid item={ true } container={true} xs={ 12 }>
+                                    { environmentParameters.map((e, i) => (
+                                        <Grid key={`env_${i}`} item={true} xs={12}>
+                                            <Typography variant={"body1"}>
+                                                { e }
+                                            </Typography>
+                                        </Grid>
+                                    ))}
                                 </Grid>
                                 <Grid item={ true } xs={ true }/>
                                 <Grid item={ true } container={ true } xs={ 12 } alignItems={ "flex-end" }

@@ -33,6 +33,8 @@ type testsRunner struct {
 	env       map[string]string
 
 	appParams app.Parameter
+	projectId string
+	appId     uint
 }
 
 func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher) *testsRunner {
@@ -44,10 +46,12 @@ func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Pu
 	return testRunner
 }
 
-func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error {
+func (tr *testsRunner) Initialize(projectId string, appId uint, test models.Test, env map[string]string) error {
 	if test.TestConfig.Type != models.TestTypeUnity {
 		return fmt.Errorf("config needs to be unity to create a unity test handler")
 	}
+	tr.projectId = projectId
+	tr.appId = appId
 	tr.env = env
 	tr.Test = test
 	tr.Config = test.TestConfig
@@ -258,7 +262,8 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 }
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
-	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
+
+	prot, err := tr.ProtocolWriter.NewProtocol(tr.projectId, tr.appId, dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
 		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
 	}
