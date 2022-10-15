@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Card, CardMedia, Chip, Popover, Popper, Typography } from '@mui/material';
+import { Box, Button, Card, CardMedia, Chip, Popover, Popper, TextField, Typography } from '@mui/material';
 import IProtocolEntryData from '../types/protocol.entry';
 import { DataGrid, GridCellValue, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { makeStyles } from '@mui/styles';
@@ -152,100 +152,85 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         },
     ];
 
-    const [filteredEntries, setFilteredEntries] = useState<IProtocolEntryData[]>([]);
+    type FilterType = {
+        Errors: boolean,
+        App: boolean,
+        Action: boolean,
+        Device: boolean,
+        Status: boolean,
+        Step: boolean,
+        TestRunner: boolean,
+        Content: string,
+    };
 
-    const [errorsOnly, setErrorsOnly] = useState<boolean>(false);
-    const [filterApp, setFilterApp] = useState<boolean>(true);
-    const [filterAction, setFilterAction] = useState<boolean>(true);
-    const [filterDevice, setFilterDevice] = useState<boolean>(true);
-    const [filterStatus, setFilterStatus] = useState<boolean>(true);
-    const [filterStep, setFilterStep] = useState<boolean>(true);
-    const [filterTestrunner, setFilterTestrunner] = useState<boolean>(true);
+    const [filter, setFilter] = useState<FilterType>({
+        Errors: false,
+        App: true,
+        Action: true,
+        Device: true,
+        Status: true,
+        Step: true,
+        TestRunner: true,
+        Content: "",
+    })
 
     const isVisible = (source: string): boolean => {
-        return (filterApp && source === 'app') ||
-            (filterAction && source === 'action') ||
-            (filterDevice && source === 'device') ||
-            (filterStatus && source === 'status') ||
-            (filterStep && source === 'step') ||
-            (filterTestrunner && source === 'testrunner' ||
+        return (filter.App && source === 'app') ||
+            (filter.Action && source === 'action') ||
+            (filter.Device && source === 'device') ||
+            (filter.Status && source === 'status') ||
+            (filter.Step && source === 'step') ||
+            (filter.TestRunner && source === 'testrunner' ||
                 source === 'screen');
     };
 
-    const filterEntries = (ents: IProtocolEntryData[]): IProtocolEntryData[] => {
-        return ents.filter(value => isVisible(value.Source) && (!errorsOnly || value.Level == 'error'));
-    };
-
-    const toggleFilter = (source: string): void => {
-        if (source === 'app') {
-            setFilterApp(!filterApp);
-        }
-        if (source === 'action') {
-            setFilterAction(!filterAction);
-        }
-        if (source === 'device') {
-            setFilterDevice(!filterDevice);
-        }
-        if (source === 'status') {
-            setFilterStatus(!filterStatus);
-        }
-        if (source === 'step') {
-            setFilterStep(!filterStep);
-        }
-        if (source === 'testrunner') {
-            setFilterTestrunner(!filterTestrunner);
-        }
-    };
-
-    const toggleFilterError = () => {
-        setErrorsOnly(prevState => {
-            return !prevState;
-        });
-    };
-
-    useEffect(() => {
-        setFilteredEntries(filterEntries(entries));
-    }, [filterApp, filterTestrunner, filterAction, filterStep, filterStatus, entries, errorsOnly]);
+    const filterEntries = entries.filter(value => (!filter.Errors && isVisible(value.Source) || (value.Level == 'error')) && (filter.Content.length < 2 || value.Message.indexOf(filter.Content) !== -1));
 
     return (
         <Grid container={true} className={ classes.chip } sx={{padding: 1}}>
             <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
-                <Chip className={ errorsOnly ? 'chip--error' : 'chip--error--unchecked' } label={ 'errors' }
+                <Chip className={ filter.Errors ? 'chip--error' : 'chip--error--unchecked' } label={ 'errors' }
                       clickable={ true }
-                      variant={ errorsOnly ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilterError() }/>
-                <Chip className={ filterApp ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
+                      variant={ filter.Errors ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, Errors: !prevState.Errors})) }/>
+                <Chip className={ filter.App ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
                       clickable={ true }
-                      variant={ filterApp ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('app') }/>
-                <Chip className={ filterStep ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' }
+                      variant={ filter.App ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, App: !prevState.App})) }/>
+                <Chip className={ filter.Step ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' }
                       clickable={ true }
-                      variant={ filterStep ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('step') }/>
-                <Chip className={ filterDevice ? 'chip--device' : 'chip--device--unchecked' }
+                      variant={ filter.Step ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, Step: !prevState.Step})) }/>
+                <Chip className={ filter.Device ? 'chip--device' : 'chip--device--unchecked' }
                       label={ 'device' }
                       clickable={ true }
-                      variant={ filterDevice ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('device') }/>
-                <Chip className={ filterStatus ? 'chip--status' : 'chip--status--unchecked' }
+                      variant={ filter.Device ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, Device: !prevState.Device})) }/>
+                <Chip className={ filter.Status ? 'chip--status' : 'chip--status--unchecked' }
                       label={ 'status' }
                       clickable={ true }
-                      variant={ filterStatus ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('status') }/>
-                <Chip className={ filterTestrunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' }
+                      variant={ filter.Status ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, Status: !prevState.Status})) }/>
+                <Chip className={ filter.TestRunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' }
                       label={ 'testrunner' } clickable={ true }
-                      variant={ filterTestrunner ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('testrunner') }/>
-                <Chip className={ filterAction ? 'chip--action' : 'chip--action--unchecked' }
+                      variant={ filter.TestRunner ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, TestRunner: !prevState.TestRunner})) }/>
+                <Chip className={ filter.Action ? 'chip--action' : 'chip--action--unchecked' }
                       label={ 'action' } clickable={ true }
-                      variant={ filterAction ? 'filled' : 'outlined' }
-                      onClick={ () => toggleFilter('action') }/>
+                      variant={ filter.Action ? 'filled' : 'outlined' }
+                      onClick={ () => setFilter(prevState => ({...prevState, Action: !prevState.Action})) }/>
+                <TextField
+                    id="textfilter"
+                    label="Content"
+                    size={"small"}
+                    value={filter.Content}
+                    onChange={(e)=> setFilter(prevState => ({...prevState, Content: e.target.value}))} />
             </Grid>
             <Grid item={true} xs={12}>
                 <DataGrid
                     autoHeight={ true }
                     getRowId={ (row) => row.ID }
-                    rows={ filteredEntries }
+                    rows={ filterEntries }
                     columns={ columns }
                     checkboxSelection={ false }
                     disableSelectionOnClick={ true }

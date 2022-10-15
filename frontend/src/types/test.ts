@@ -4,7 +4,7 @@ import { PlatformType } from './platform.type.enum';
 
 export default interface ITestData {
     ID: number,
-    CompanyID: number,
+    AppID: number,
     Name: string,
     TestConfig: ITestConfigData,
     TestRuns: ITestRunData[],

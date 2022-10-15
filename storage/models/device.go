@@ -43,7 +43,7 @@ type Device struct {
 	OpenGLESVersion     float32
 	Parameter           []DeviceParameter
 	StatusLog           []DeviceLog
-	ConnectionParameter ConnectionParameter
+	ConnectionParameter *ConnectionParameter
 	IsAcknowledged      bool
 	Status              device.State `gorm:"-"`
 	Dev                 interface{}  `gorm:"-"`

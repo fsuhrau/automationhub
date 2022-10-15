@@ -9,6 +9,7 @@ import TestStatusIconComponent from '../../components/test-status-icon.component
 import { prettySize } from '../../types/app';
 import { duration } from '../../types/test.protocol';
 import { useProjectContext } from "../../project/project.context";
+import { useProjectAppContext } from "../../project/app.context";
 
 const ProjectMainPage: React.FC = () => {
 
@@ -86,26 +87,27 @@ const ProjectMainPage: React.FC = () => {
                                 <Typography gutterBottom={true} variant="h5" component="div">
                                     Latest Tests
                                 </Typography>
-                                { stats?.TestsLastProtocols.map((data) => (
-                                    <Grid container={ true } key={`test_protocol_${data.ID}`}>
-                                        <Grid item={ true } xs={ 1 }>
-                                            <TestStatusIconComponent status={ data.TestResult }/>
+                                { stats?.TestsLastProtocols.map((data) => {
+                                    const testName = data.TestName.split('/');
+                                    return (
+                                        <Grid container={ true } key={ `test_protocol_${ data.ID }` }>
+                                            <Grid item={ true } xs={ 1 }>
+                                                <TestStatusIconComponent status={ data.TestResult }/>
+                                            </Grid>
+                                            <Grid item={ true } xs={ true }>
+                                                <Link
+                                                    href={ `/project/${ projectId }/app/${ data.TestRun.Test.AppID }/test/4/run/${ data.TestRunID }/${ data.ID }` }
+                                                    underline="none">
+                                                    { testName.length > 1 ? testName[1] : data.TestName }
+                                                </Link> <br/>
+                                                { data.Device?.Name }
+                                            </Grid>
+                                            <Grid item={ true } xs={ 2 }>
+                                                { duration(data.CreatedAt, data.EndedAt) }
+                                            </Grid>
                                         </Grid>
-                                        <Grid item={ true } xs={ 4 }>
-                                            { data.Device?.Name }
-                                        </Grid>
-                                        <Grid item={ true } xs={ true }>
-                                            <Link
-                                                href={ `/test/0/run/${ data.TestRunID }/${ data.ID }` }
-                                                underline="none">
-                                                { data.TestName.split('/')[ 1 ] }
-                                            </Link>
-                                        </Grid>
-                                        <Grid item={ true } xs={ 2 }>
-                                            { duration(data.CreatedAt, data.EndedAt) }
-                                        </Grid>
-                                    </Grid>
-                                )) }
+                                    )
+                                }) }
                             </CardContent>
                         </Card>
                     </Grid>

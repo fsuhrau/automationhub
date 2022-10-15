@@ -22,7 +22,7 @@ const (
 type Handler struct {
 	devices       map[string]*Device
 	deviceStorage storage.Device
-	init bool
+	init          bool
 }
 
 func NewHandler(ds storage.Device) *Handler {
@@ -209,13 +209,13 @@ func (m *Handler) RefreshDevices() error {
 			m.devices[deviceID].SetDeviceState("StateBooted")
 			dev := models.Device{
 				DeviceIdentifier: deviceID,
-				DeviceType: models.DeviceTypePhone,
-				Name: name,
-				Manager: Manager,
-				HardwareModel: model,
-				OS: "android",
-				OSVersion: m.devices[deviceID].deviceOSVersion,
-				ConnectionParameter: models.ConnectionParameter{
+				DeviceType:       models.DeviceTypePhone,
+				Name:             name,
+				Manager:          Manager,
+				HardwareModel:    model,
+				OS:               "android",
+				OSVersion:        m.devices[deviceID].deviceOSVersion,
+				ConnectionParameter: &models.ConnectionParameter{
 					ConnectionType: models.ConnectionTypeUSB,
 				},
 			}

@@ -79,7 +79,7 @@ func (d *Device) DeviceState() device.State {
 	return d.deviceState
 }
 
-func GetConnectionString(parameter models.ConnectionParameter) string {
+func GetConnectionString(parameter *models.ConnectionParameter) string {
 	return fmt.Sprintf("%s:%d", parameter.IP, parameter.Port)
 }
 

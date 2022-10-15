@@ -17,14 +17,14 @@ import (
 	"time"
 )
 
-func osFromPlatformType(t models.PlatformType) string {
+func managerForPlatform(t models.PlatformType) string {
 	switch t {
 	case models.PlatformTypeiOS:
-		return "iPhone OS"
+		return "ios_device"
 	case models.PlatformTypeAndroid:
-		return "android"
+		return "android_device"
 	case models.PlatformTypeMac:
-		return "Mac OS X"
+		return "macos"
 	case models.PlatformTypeWindows:
 		return "windows"
 	case models.PlatformTypeLinux:
@@ -32,7 +32,7 @@ func osFromPlatformType(t models.PlatformType) string {
 	case models.PlatformTypeWeb:
 		return "web"
 	case models.PlatformTypeEditor:
-		return "editor"
+		return "unity_editor"
 	}
 	return ""
 }
@@ -44,7 +44,7 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 	query := s.db
 	if p != "" {
 		platform, _ := strconv.ParseInt(p, 10, 64)
-		query = query.Where("os = ?", osFromPlatformType(models.PlatformType(platform)))
+		query = query.Where("manager = ?", managerForPlatform(models.PlatformType(platform)))
 	}
 	if err := query.Find(&devices).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)

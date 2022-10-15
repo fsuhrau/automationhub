@@ -5,13 +5,8 @@ import ITestRunData from '../types/test.run';
 import { TestResultState } from '../types/test.result.state.enum';
 import ITestProtocolData, { duration } from '../types/test.protocol';
 import Typography from '@mui/material/Typography';
-import { AvTimer,DateRange, PhoneAndroid, Speed } from '@mui/icons-material';
+import { AvTimer, DateRange, PhoneAndroid, Speed } from '@mui/icons-material';
 import { Button, Card, CardMedia, Divider, Popover, Tab, Tabs } from '@mui/material';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
 import moment from 'moment';
 import IProtocolEntryData from '../types/protocol.entry';
 import TestStatusIconComponent from '../components/test-status-icon.component';
@@ -20,10 +15,7 @@ import ProtocolLogComponent from './protocol.log.component';
 import ProtocolScreensComponent from './protocol.screens.component';
 import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
 import {
-    Bar,
-    BarChart,
     CartesianGrid,
-    ComposedChart,
     LabelList,
     Legend,
     Line,
@@ -34,6 +26,7 @@ import {
     YAxis
 } from "recharts";
 import { TitleCard } from "./title.card.component";
+import { useProjectContext } from "../project/project.context";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -114,7 +107,10 @@ const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: Perfor
 };
 
 const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
+
     const {run, protocol} = props;
+
+    const {projectId} = useProjectContext();
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
     const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -205,13 +201,13 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
 
     const historicalCheckpoints = protocol.TestProtocolHistory.slice(-2).map(p => {
         p.Performance = p.Performance.filter(p => p.Checkpoint !== "schedule").map((value1, index, array) => {
-           if (index !== 0) {
-               value1.ExecutionTime = value1.Runtime - array[ index - 1 ].Runtime
-           } else {
-               value1.ExecutionTime = value1.Runtime
-           }
-           return value1
-       })
+            if (index !== 0) {
+                value1.ExecutionTime = value1.Runtime - array[ index - 1 ].Runtime
+            } else {
+                value1.ExecutionTime = value1.Runtime
+            }
+            return value1
+        })
         return p
     })
 
@@ -275,28 +271,48 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                     textColor="inherit"
                                 >
                                     <Tab label="Status" { ...a11yProps(0) } />
-                                    <Tab label="Executor" { ...a11yProps(1) } />
-                                    <Tab label="Logs" { ...a11yProps(2) } />
-                                    <Tab label="Screenshots" { ...a11yProps(3) } />
-                                    <Tab label="Video/Replay" { ...a11yProps(4) } />
-                                    <Tab label="Performance" { ...a11yProps(5) } />
+                                    <Tab label="Logs" { ...a11yProps(1) } />
+                                    <Tab label="Screenshots" { ...a11yProps(2) } />
+                                    <Tab label="Video/Replay" { ...a11yProps(3) } />
+                                    <Tab label="Performance" { ...a11yProps(4) } />
+                                    <Tab label="Checkpoints" { ...a11yProps(5) } />
                                 </Tabs>
                             </Grid>
                             <Grid container={ true }>
                                 <TabPanel value={ value } index={ 0 }>
                                     <Grid item={ true } container={ true } xs={ 12 }>
                                         { protocol?.TestResult == TestResultState.TestResultFailed &&
-                                            <Grid item={ true } container={ true } justifyContent="center"
-                                                  alignItems="center" sx={ {padding: 1, backgroundColor: '#ff2b40'} }
+                                            <Grid item={ true } container={ true }
+                                                  sx={ {padding: 1, backgroundColor: '#ff2b40'} }
                                                   xs={ 12 }>
-                                                <Grid item={ true } xs={ 12 }>
+                                                <Grid item={ true } container={ true } xs={ 12 }>
                                                     { lastStep &&
-                                                        <Typography>{ moment(lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }{ ': ' }{ lastStep.Message }</Typography> }
-                                                    { lastErrors.map((lastError) => (
-                                                        <Typography>{ moment(lastError.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }{ ': ' }{ lastError.Message }</Typography>)) }
+                                                        <Grid item={ true } container={ true } xs={ 12 }>
+                                                            <Grid item={ true } xs={ 2 }>
+                                                                <Typography
+                                                                    variant={ "body2" }>{ moment(lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }</Typography>
+                                                            </Grid>
+                                                            <Grid item={ true } xs={ true }>
+                                                                <Typography
+                                                                    variant={ "body2" }>{ lastStep.Message }</Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                    }
+                                                    { lastErrors.map((lastError, index) =>
+                                                        (<Grid key={`last_error_${index}`} item={ true } container={ true } xs={ 12 }>
+                                                            <Grid item={ true } xs={ 2 }>
+                                                                <Typography
+                                                                    variant={ "body2" }>{ moment(lastError.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }</Typography>
+                                                            </Grid>
+                                                            <Grid item={ true } xs={ true }>
+                                                                <Typography
+                                                                    variant={ "body2" }>{ lastError.Message }</Typography>
+                                                            </Grid>
+                                                        </Grid>)
+                                                    ) }
                                                 </Grid>
                                                 <Grid item={ true } xs={ 12 } container={ true }
-                                                      justifyContent={ "flex-end" }>
+                                                      justifyContent={ "center" }>
                                                     { lastScreen && <div>
                                                         <Button aria-describedby={ 'last_screen_' + lastScreen.ID }
                                                                 variant="contained" onClick={ showScreenPopup }>
@@ -390,71 +406,16 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                     </Grid>
                                 </TabPanel>
                                 <TabPanel value={ value } index={ 1 }>
-                                    <Table size="small" aria-label="a dense table">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Date</TableCell>
-                                                <TableCell>Level</TableCell>
-                                                <TableCell>Log</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            { run.Log.map((entry) => <TableRow key={ entry.ID }>
-                                                <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
-                                                    { moment(entry.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }
-                                                </TableCell>
-                                                <TableCell>{ entry.Level }</TableCell>
-                                                <TableCell>{ entry.Log }</TableCell>
-                                            </TableRow>) }
-                                        </TableBody>
-                                    </Table>
-                                </TabPanel>
-                                <TabPanel value={ value } index={ 2 }>
                                     <ProtocolLogComponent entries={ entries }/>
                                 </TabPanel>
-                                <TabPanel value={ value } index={ 3 }>
+                                <TabPanel value={ value } index={ 2 }>
                                     <ProtocolScreensComponent entries={ screenEntries }/>
                                 </TabPanel>
-                                <TabPanel value={ value } index={ 4 }>
+                                <TabPanel value={ value } index={ 3 }>
                                     Video (not implemented)
                                 </TabPanel>
-                                <TabPanel value={ value } index={ 5 }>
+                                <TabPanel value={ value } index={ 4 }>
                                     <Grid container={ true } sx={ {padding: 1} } spacing={ 1 }>
-                                        { checkpoints !== undefined && checkpoints.length > 0 &&
-                                            <Grid item={ true } xs={ 12 }>
-                                                <Typography gutterBottom={ true } variant="subtitle1">
-                                                    Checkpoints
-                                                </Typography>
-                                                <Divider/>
-                                                <ResponsiveContainer width={ "100%" } height={ 200 }>
-                                                    <LineChart
-                                                        width={ 600 }
-                                                        height={ 300 }
-                                                        margin={ {top: 10, right: 20, left: 10, bottom: 5} }
-                                                    >
-                                                        <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                                        <XAxis xAxisId={'pruntime'} dataKey="Checkpoint" />
-                                                        <XAxis xAxisId={'pexecutiontime'} dataKey="Checkpoint" hide={true} />
-                                                        <YAxis/>
-                                                        <Tooltip/>
-                                                        <Legend/>
-                                                        {
-                                                            historicalCheckpoints.map((e,i) => ( <XAxis xAxisId={`xachis_${i}`} dataKey="Checkpoint" hide={true} />))
-                                                        }
-                                                        {
-                                                            historicalCheckpoints.map((e,i) => <Line data={ e.Performance } type="monotone" dataKey="Runtime" stroke="#004467" strokeDasharray="5 5" xAxisId={`xachis_${i}`} >
-                                                                <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
-                                                            </Line>)
-                                                        }
-                                                        <Line data={ checkpoints } type="monotone" dataKey="Runtime" stroke="#ff7300" xAxisId={'pruntime'} >
-                                                            <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
-                                                        </Line>
-                                                        <Line data={ checkpoints } type="monotone" dataKey="ExecutionTime" stroke="#8884d8" xAxisId={'pexecutiontime'} >
-                                                            <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
-                                                        </Line>
-                                                    </LineChart>
-                                                </ResponsiveContainer>
-                                            </Grid> }
                                         <Grid item={ true } xs={ 12 }>
                                             <Typography gutterBottom={ true } variant="subtitle1">
                                                 FPS
@@ -526,6 +487,56 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                         </Grid>
                                     </Grid>
                                 </TabPanel>
+                                { checkpoints !== undefined && checkpoints.length > 0 &&
+                                    <TabPanel value={ value } index={ 5 }>
+                                        <Grid container={ true } sx={ {padding: 1} } spacing={ 1 }>
+                                            <Grid item={ true } xs={ 12 }>
+                                                <Typography gutterBottom={ true } variant="subtitle1">
+                                                    Checkpoints
+                                                </Typography>
+                                                <Divider/>
+                                                <ResponsiveContainer width={ "100%" } height={ 200 }>
+                                                    <LineChart
+                                                        width={ 600 }
+                                                        height={ 300 }
+                                                        margin={ {top: 10, right: 20, left: 10, bottom: 5} }
+                                                    >
+                                                        <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
+                                                        <XAxis xAxisId={ 'pruntime' } dataKey="Checkpoint"/>
+                                                        <XAxis xAxisId={ 'pexecutiontime' } dataKey="Checkpoint"
+                                                               hide={ true }/>
+                                                        <YAxis/>
+                                                        <Tooltip/>
+                                                        <Legend/>
+                                                        {
+                                                            historicalCheckpoints.map((e, i) => (
+                                                                <XAxis key={`hist_checkpoint_xaxis_${i}`} xAxisId={ `xachis_${ i }` } dataKey="Checkpoint"
+                                                                       hide={ true }/>))
+                                                        }
+                                                        {
+                                                            historicalCheckpoints.map((e, i) => <Line
+                                                                key={`hist_checkpoint_line_${i}`}
+                                                                data={ e.Performance } type="monotone" dataKey="Runtime"
+                                                                stroke="#004467" strokeDasharray="5 5"
+                                                                xAxisId={ `xachis_${ i }` }>
+                                                                <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
+                                                            </Line>)
+                                                        }
+                                                        <Line data={ checkpoints } type="monotone" dataKey="Runtime"
+                                                              stroke="#ff7300" xAxisId={ 'pruntime' }>
+                                                            <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
+                                                        </Line>
+                                                        <Line data={ checkpoints } type="monotone"
+                                                              dataKey="ExecutionTime" stroke="#8884d8"
+                                                              xAxisId={ 'pexecutiontime' }>
+                                                            <LabelList content={ <CustomLineLabel unit={ 's' }/> }/>
+                                                        </Line>
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </Grid>
+                                        </Grid>
+                                    </TabPanel>
+                                }
                             </Grid>
                         </Paper>
                     </TitleCard>

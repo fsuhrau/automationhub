@@ -3,9 +3,11 @@ import { TestResultState } from './test.result.state.enum';
 import IDeviceData from './device';
 import IProtocolPerformanceEntryData from './protocol.performance.entry';
 import moment from 'moment';
+import ITestRunData from "./test.run";
 
 export default interface ITestProtocolData {
     ID?: number | null,
+    TestRun: ITestRunData,
     TestRunID: number,
     DeviceID?: number | null,
     Device?: IDeviceData | null,
