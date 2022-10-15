@@ -150,7 +150,7 @@ func (m *Handler) RefreshDevices() error {
 				Manager:          Manager,
 				OS:               allValues.Value.ProductName,
 				OSVersion:        m.devices[identifier].deviceOSVersion,
-				ConnectionParameter: models.ConnectionParameter{
+				ConnectionParameter: &models.ConnectionParameter{
 					ConnectionType: models.ConnectionTypeUSB,
 				},
 			}

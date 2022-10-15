@@ -114,7 +114,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			OS:               data.DeviceOS,
 			OSVersion:        data.DeviceOSVersion,
 			OSInfos:          data.DeviceOSInfos,
-			ConnectionParameter: models.ConnectionParameter{
+			ConnectionParameter: &models.ConnectionParameter{
 				ConnectionType: models.ConnectionTypeRemote,
 			},
 		}

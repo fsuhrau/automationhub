@@ -8,6 +8,7 @@ import (
 type TestProtocol struct {
 	gorm.Model
 	TestRunID   uint
+	TestRun     *TestRun
 	DeviceID    *uint
 	Device      *Device
 	TestName    string

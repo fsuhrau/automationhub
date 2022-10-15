@@ -32,8 +32,8 @@ type SimulatorDescriptions struct {
 }
 
 type Handler struct {
-	devices      map[string]*Device
-	hostIP       net.IP
+	devices       map[string]*Device
+	hostIP        net.IP
 	deviceStorage storage.Device
 }
 
@@ -154,12 +154,12 @@ func (m *Handler) RefreshDevices() error {
 				m.devices[device.UDID].SetDeviceState(device.State)
 				dev := models.Device{
 					DeviceIdentifier: device.UDID,
-					DeviceType: models.DeviceTypePhone,
-					Name: device.Name,
-					Manager: Manager,
-					OS: deviceOSName,
-					OSVersion: osVersion,
-					ConnectionParameter: models.ConnectionParameter{
+					DeviceType:       models.DeviceTypePhone,
+					Name:             device.Name,
+					Manager:          Manager,
+					OS:               deviceOSName,
+					OSVersion:        osVersion,
+					ConnectionParameter: &models.ConnectionParameter{
 						ConnectionType: models.ConnectionTypeUSB,
 					},
 				}

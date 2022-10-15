@@ -25,10 +25,16 @@ import ITestProtocolData from '../types/test.protocol';
 import { executeTest } from '../services/test.service';
 import { useNavigate } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
-import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import {
+    Cancel,
+    CheckCircle, DirectionsRun,
+    KeyboardArrowLeft,
+    KeyboardArrowRight
+} from '@mui/icons-material';
 import { useProjectAppContext } from "../project/app.context";
 import { TitleCard } from "./title.card.component";
-import { BarChart, Bar, Cell, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Pie, PieChart } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import { makeStyles } from "@mui/styles";
 
 interface TestRunContentProps {
     testRun: ITestRunData
@@ -41,7 +47,43 @@ interface NewTestRunPayload {
     Entry: ITesRunLogEntryData,
 }
 
+const useStyles = makeStyles(theme => ({
+    chip: {
+        '& .chip--error': {
+            backgroundColor: 'red',
+            color: '#ffffff',
+            margin: '5px',
+        },
+        '& .chip--error--unchecked': {
+            backgroundColor: '#ffffff',
+            fontcolor: 'red',
+            margin: '5px',
+        },
+        '& .chip--success': {
+            backgroundColor: 'green',
+            color: '#ffffff',
+            margin: '5px',
+        },
+        '& .chip--success--unchecked': {
+            backgroundColor: '#ffffff',
+            fontcolor: 'green',
+            margin: '5px',
+        },
+        '& .chip--pending': {
+            backgroundColor: '#FFC857',
+            color: '#000000',
+            margin: '5px',
+        },
+        '& .chip--pending--unchecked': {
+            backgroundColor: '#ffffff',
+            fontcolor: '#FFC857',
+            margin: '5px',
+        },
+    },
+}));
+
 const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProps) => {
+    const classes = useStyles();
 
     const {projectId, appId} = useProjectAppContext();
 
@@ -81,6 +123,18 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
     const [runsOpen, setRunsOpen] = useState<number>();
     const [runsFailed, setRunsFailed] = useState<number>();
     const [runsSuccess, setRunsSuccess] = useState<number>();
+
+    type FilterType = {
+        Success: boolean,
+        Failed: boolean,
+        Pending: boolean,
+    };
+
+    const [filter, setFilter] = useState<FilterType>({
+        Success: true,
+        Failed: true,
+        Pending: true,
+    });
 
     function rebuildStatistics(run: ITestRunData): void {
         let ro: number;
@@ -217,7 +271,18 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         </Grid>
                     </TitleCard>
                     <TitleCard title={ "Test Functions" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                        <Grid container justifyContent="flex-end" className={ classes.chip } padding={1} >
+                            <CheckCircle htmlColor={filter.Success ? 'green' : 'lightgray'}
+                                         onClick={ () => setFilter(prevState => ({...prevState, Success: !prevState.Success})) }
+                            />
+                            <Cancel htmlColor={filter.Failed ? 'red' : 'lightgray'}
+                                    onClick={ () => setFilter(prevState => ({...prevState, Failed: !prevState.Failed})) }
+                            />
+                            <DirectionsRun htmlColor={filter.Pending ? 'yellow' : 'lightgray'}
+                                      onClick={ () => setFilter(prevState => ({...prevState, Pending: !prevState.Pending})) }
+                            />
+                        </Grid>
+                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} } >
                             <TableContainer>
                                 <Table size="small" aria-label="a dense table">
                                     <TableHead>
@@ -228,30 +293,33 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        { protocols.map((protocol) => (
-                                            <TableRow key={ protocol.ID }>
-                                                <TableCell component="th" scope="row">
-                                                    <Link
-                                                        href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
-                                                        underline="none">
-                                                        { protocol.TestName }
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Grid container={ true }>
-                                                        <Grid item={ true } xs={ 12 }>
-                                                            { protocol.Device?.Name }
+                                        { protocols.filter(value => (filter.Success && value.TestResult === TestResultState.TestResultSuccess) || (filter.Failed && value.TestResult === TestResultState.TestResultFailed) || (filter.Pending && value.TestResult === TestResultState.TestResultOpen) ).map((protocol) => {
+                                            const testName = protocol.TestName.split("/");
+                                            return (
+                                                <TableRow key={ protocol.ID }>
+                                                    <TableCell component="th" scope="row">
+                                                        <Link
+                                                            href={ `/project/${ projectId }/app/${ testRun.Test.AppID }/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
+                                                            underline="none">
+                                                            { testName[0] } <br/> { testName[1] }
+                                                        </Link>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Grid container={ true }>
+                                                            <Grid item={ true } xs={ 12 }>
+                                                                { protocol.Device?.Name }
+                                                            </Grid>
+                                                            <Grid item={ true } xs={ 12 }>
+                                                                { protocol.Device?.OS } { protocol.Device?.OSVersion }
+                                                            </Grid>
                                                         </Grid>
-                                                        <Grid item={ true } xs={ 12 }>
-                                                            { protocol.Device?.OS } { protocol.Device?.OSVersion }
-                                                        </Grid>
-                                                    </Grid>
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    <TestStatusIconComponent status={ protocol.TestResult }/>
-                                                </TableCell>
-                                            </TableRow>
-                                        )) }
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        <TestStatusIconComponent status={ protocol.TestResult }/>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        }) }
                                     </TableBody>
                                 </Table>
                             </TableContainer>

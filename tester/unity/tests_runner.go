@@ -86,7 +86,6 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		}
 	} else {
 		tr.appParams = app.Parameter{
-			AppBinaryID:    appData.ID,
 			LaunchActivity: "BootScene",
 		}
 	}

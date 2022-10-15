@@ -67,9 +67,8 @@ func (s *Service) getDeviceStats() (int, int) {
 func (s *Service) getProtocolStats() ([]models.TestProtocol, []models.TestProtocol) {
 	var protocols []models.TestProtocol
 	var failedProtocols []models.TestProtocol
-	s.db.Preload("Device").Order("created_at desc").Limit(10).Find(&protocols)
-
-	s.db.Preload("Device").Where("test_result = ?", models.TestResultFailed).Order("created_at desc").Limit(10).Find(&failedProtocols)
+	s.db.Preload("TestRun").Preload("TestRun.Test").Preload("Device").Order("created_at desc").Limit(10).Find(&protocols)
+	s.db.Preload("TestRun").Preload("TestRun.Test").Preload("Device").Where("test_result = ?", models.TestResultFailed).Order("created_at desc").Limit(10).Find(&failedProtocols)
 
 	return protocols, failedProtocols
 }

@@ -23,7 +23,6 @@ const TestRuns: React.FC = () => {
         }
 
         getAllRuns(projectId, appId, testId).then(response => {
-            console.log(response.data);
             setTestRuns(response.data);
         }).catch(e => {
             console.log(e);

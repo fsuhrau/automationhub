@@ -146,7 +146,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     useEffect(() => {
         if (app !== null && app !== undefined) {
-            setState(prevState => ({...prevState, envParams: app.DefaultParameter.replace(";", "\n")}));
+            setState(prevState => ({...prevState, disableStart: requiresApp && app.ID === 0, envParams: app.DefaultParameter.replace(";", "\n")}));
         }
     }, [app]);
 
