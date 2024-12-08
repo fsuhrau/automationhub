@@ -108,7 +108,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                     const labelId = `transfer-list-item-${ value.Class }-${ value.Method }-label`;
 
                     return (
-                        <ListItem key={ value.Class + value.Method } role="listitem" button={ true } onClick={ handleToggle(value) }>
+                        <ListItem key={ value.Class + value.Method } role="listitem" onClick={ handleToggle(value) }>
                             <ListItemIcon>
                                 <Checkbox
                                     checked={ checked.indexOf(value) !== -1 }

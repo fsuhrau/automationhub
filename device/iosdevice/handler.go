@@ -2,6 +2,8 @@ package iosdevice
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"time"
@@ -49,7 +51,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
 		return err
@@ -59,6 +61,8 @@ func (m *Handler) Init() error {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
 		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
 		m.devices[deviceId] = dev
 	}
 	return nil
@@ -112,7 +116,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	_ = lastUpdate
 	deviceList, err := ios.ListDevices()
@@ -148,6 +152,7 @@ func (m *Handler) RefreshDevices() error {
 				DeviceType:       models.DeviceTypePhone,
 				Name:             allValues.Value.DeviceName,
 				Manager:          Manager,
+				PlatformType:     models.PlatformTypeiOS,
 				OS:               allValues.Value.ProductName,
 				OSVersion:        m.devices[identifier].deviceOSVersion,
 				ConnectionParameter: &models.ConnectionParameter{

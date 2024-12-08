@@ -27,12 +27,14 @@ type Device struct {
 	deviceState      device.State
 	recordingSession *exec.Cmd
 	lastUpdateAt     time.Time
+	startedAt        time.Time
 	updated          bool
 
 	// Create client
-	client      *http.Client
-	conn        *websocket.Conn
-	sendChannel chan []byte
+	client            *http.Client
+	managerConnection *websocket.Conn
+	sendChannel       chan []byte
+	process           *exec.Cmd
 }
 
 func (d *Device) DeviceModel() string {
@@ -72,7 +74,7 @@ func (d *Device) SetDeviceState(state string) {
 	case "StateRemoteDisconnected":
 		d.deviceState = device.StateRemoteDisconnected
 	default:
-		d.deviceState = device.StateUnknown
+		d.deviceState = device.StateShutdown
 	}
 }
 
@@ -99,7 +101,7 @@ func (d *Device) getHTTPClient() *http.Client {
 	return d.client
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 
 	type request struct {
 		Action    string
@@ -109,7 +111,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 	req := request{
 		Action:    "start",
 		SessionID: sessionId,
-		HostUrl:   hostIP.String(),
+		HostUrl:   nodeUrl,
 	}
 	buffer, _ := json.Marshal(req)
 	d.sendChannel <- buffer
@@ -161,7 +163,7 @@ func (d *Device) RunNativeScript(script []byte) {
 
 }
 
-func (d *Device) HandleSocketFunction() {
+func (d *Device) HandleManagerConnection() {
 	d.deviceState = device.StateBooted
 	d.updated = true
 	d.sendChannel = make(chan []byte, 10)
@@ -170,7 +172,7 @@ func (d *Device) HandleSocketFunction() {
 		for {
 			select {
 			case message := <-d.sendChannel:
-				err := d.conn.WriteMessage(websocket.TextMessage, message)
+				err := d.managerConnection.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					return
 				}
@@ -179,7 +181,7 @@ func (d *Device) HandleSocketFunction() {
 	}(d)
 
 	for {
-		_, msg, err := d.conn.ReadMessage()
+		_, msg, err := d.managerConnection.ReadMessage()
 		if err != nil {
 			break
 		}
@@ -187,6 +189,6 @@ func (d *Device) HandleSocketFunction() {
 		_ = msg
 	}
 
-	d.deviceState = device.StateUnknown
+	d.deviceState = device.StateShutdown
 	d.updated = true
 }

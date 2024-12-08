@@ -34,15 +34,15 @@ func (s *Service) newTest(c *gin.Context, project *models.Project, application *
 		Method   string
 	}
 	type Request struct {
-		Name               string
-		TestType           models.TestType
-		ExecutionType      models.ExecutionType
-		PlatformType       models.PlatformType
-		UnityAllTests      bool
-		UnitySelectedTests []TestFunc
-		AllDevices         bool
-		SelectedDevices    []uint
-		Categories         []string
+		Name                  string
+		TestType              models.TestType
+		ExecutionType         models.ExecutionType
+		PlatformType          models.PlatformType
+		UnityTestCategoryType models.UnityTestCategoryType
+		UnitySelectedTests    []TestFunc
+		AllDevices            bool
+		SelectedDevices       []uint
+		Categories            []string
 	}
 
 	var request Request
@@ -59,8 +59,12 @@ func (s *Service) newTest(c *gin.Context, project *models.Project, application *
 
 	switch request.TestType {
 	case models.TestTypeUnity:
-		if request.UnityAllTests == false && len(request.UnitySelectedTests) == 0 {
+		if request.UnityTestCategoryType == models.SelectedTestsOnly && len(request.UnitySelectedTests) == 0 {
 			s.error(c, http.StatusBadRequest, fmt.Errorf("missing tests"))
+			return
+		}
+		if request.UnityTestCategoryType == models.AllOfCategory && len(request.Categories) == 0 {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("missing categories"))
 			return
 		}
 	default:
@@ -100,8 +104,9 @@ func (s *Service) newTest(c *gin.Context, project *models.Project, application *
 	switch request.TestType {
 	case models.TestTypeUnity:
 		unityConfig := models.TestConfigUnity{
-			TestConfigID: config.ID,
-			RunAllTests:  request.UnityAllTests,
+			TestConfigID:          config.ID,
+			RunAllTests:           request.UnityTestCategoryType == models.AllTest,
+			UnityTestCategoryType: request.UnityTestCategoryType,
 		}
 		if len(request.Categories) > 0 {
 			unityConfig.Categories = strings.Join(request.Categories, ",")
@@ -156,13 +161,13 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 	testId := c.Param("test_id")
 
 	type request struct {
-		Name          string
-		ExecutionType models.ExecutionType
-		AllDevices    bool
-		Devices       []uint
-		RunAllTests   bool
-		Categories    string
-		TestFunctions []models.UnityTestFunction
+		Name                  string
+		ExecutionType         models.ExecutionType
+		AllDevices            bool
+		Devices               []uint
+		UnityTestCategoryType models.UnityTestCategoryType
+		Categories            string
+		TestFunctions         []models.UnityTestFunction
 	}
 
 	var req request
@@ -225,7 +230,51 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 	}
 
 	if test.TestConfig.Type == models.TestTypeUnity {
-		test.TestConfig.Unity.RunAllTests = req.RunAllTests
+
+		// remove devices that are not needed anymore
+		for i, function := range test.TestConfig.Unity.UnityTestFunctions {
+
+			stillNeeded := false
+			for _, d := range req.TestFunctions {
+				if function.Assembly == d.Assembly && function.Class == d.Class && function.Method == d.Method {
+					stillNeeded = true
+					break
+				}
+			}
+
+			if !stillNeeded {
+				if err := s.db.Delete(&test.TestConfig.Unity.UnityTestFunctions[i]).Error; err != nil {
+					s.error(c, http.StatusBadRequest, err)
+					return
+				}
+			}
+		}
+
+		for _, reqFunc := range req.TestFunctions {
+			needCreation := true
+			for _, extFunc := range test.TestConfig.Unity.UnityTestFunctions {
+				if extFunc.Assembly == reqFunc.Assembly && extFunc.Class == reqFunc.Class && extFunc.Method == reqFunc.Method {
+					needCreation = false
+				}
+			}
+
+			if needCreation {
+				newFunction := models.UnityTestFunction{
+					TestConfigUnityID: test.TestConfig.Unity.ID,
+					Assembly:          reqFunc.Assembly,
+					Class:             reqFunc.Class,
+					Method:            reqFunc.Method,
+				}
+				if err := s.db.Create(&newFunction).Error; err != nil {
+					s.error(c, http.StatusBadRequest, err)
+					return
+				}
+				test.TestConfig.Unity.UnityTestFunctions = append(test.TestConfig.Unity.UnityTestFunctions, newFunction)
+			}
+		}
+
+		test.TestConfig.Unity.RunAllTests = req.UnityTestCategoryType == models.AllTest
+		test.TestConfig.Unity.UnityTestCategoryType = req.UnityTestCategoryType
 		test.TestConfig.Unity.Categories = req.Categories
 		if err := s.db.Save(&test.TestConfig.Unity).Error; err != nil {
 			s.error(c, http.StatusBadRequest, err)
@@ -305,7 +354,7 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 	}
 
 	for i := range devices {
-		devices[i].Dev = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
+		devices[i].Dev, _ = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 	}
 
 	var run *models.TestRun
@@ -313,19 +362,29 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 
 	switch test.TestConfig.Type {
 	case models.TestTypeUnity:
-		testRunner = unity.New(s.db, s.hostIP, s.devicesManager, s, project.Identifier, application.ID)
+		testRunner = unity.New(s.db, s.nodeUrl, s.devicesManager, s, project.Identifier, application.ID)
 		if err := s.db.Preload("UnityTestFunctions").Where("test_config_id = ?", test.TestConfig.ID).First(&test.TestConfig.Unity).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err) // Todo status code
 			return
 		}
+		break
 	case models.TestTypeScenario:
-		testRunner = scenario.New(s.db, s.hostIP, s.devicesManager, s, project.Identifier, application.ID)
+		testRunner = scenario.New(s.db, s.nodeUrl, s.devicesManager, s, project.Identifier, application.ID)
+		break
+	default:
+		s.error(c, http.StatusInternalServerError, fmt.Errorf("invalid test config type")) // Todo status code
+		return
 	}
 
 	if err := testRunner.Initialize(test, environmentParams); err != nil {
 		s.error(c, http.StatusInternalServerError, err) // Todo status code
 		return
 	}
+
+	s.runnersMutex.Lock()
+	s.runners[testId] = testRunner
+	s.runnersMutex.Unlock()
+
 	var err error
 	run, err = testRunner.Run(devices, binary)
 	if err != nil {
@@ -334,6 +393,31 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 	}
 
 	c.JSON(http.StatusOK, run)
+}
+
+func (s *Service) cancelTestRun(c *gin.Context, project *models.Project, application *models.App) {
+	testId := c.Param("test_id")
+	runId := c.Param("run_id")
+
+	s.runnersMutex.Lock()
+	testRunner, exists := s.runners[testId]
+	s.runnersMutex.Unlock()
+
+	if !exists {
+		s.error(c, http.StatusNotFound, fmt.Errorf("test runner not found"))
+		return
+	}
+
+	if err := testRunner.Cancel(runId); err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	s.runnersMutex.Lock()
+	delete(s.runners, testId)
+	s.runnersMutex.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{"status": "cancelled"})
 }
 
 func (s *Service) getTestRuns(c *gin.Context, project *models.Project, application *models.App) {
@@ -432,9 +516,9 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 			run.Protocols[0].HistAvgMEM += p.AvgMEM
 			run.Protocols[0].HistAvgCPU += p.AvgCPU
 		}
-		run.Protocols[0].HistAvgFPS = run.Protocols[0].HistAvgFPS / float32(len(histProtocols))
-		run.Protocols[0].HistAvgMEM = run.Protocols[0].HistAvgMEM / float32(len(histProtocols))
-		run.Protocols[0].HistAvgCPU = run.Protocols[0].HistAvgCPU / float32(len(histProtocols))
+		run.Protocols[0].HistAvgFPS = run.Protocols[0].HistAvgFPS / float64(len(histProtocols))
+		run.Protocols[0].HistAvgMEM = run.Protocols[0].HistAvgMEM / float64(len(histProtocols))
+		run.Protocols[0].HistAvgCPU = run.Protocols[0].HistAvgCPU / float64(len(histProtocols))
 		run.Protocols[0].TestProtocolHistory = histProtocols
 	}
 

@@ -1,8 +1,6 @@
 package action
 
-import (
-	"google.golang.org/protobuf/proto"
-)
+import "encoding/json"
 
 type Scroll struct {
 	OffsetX int64
@@ -16,9 +14,9 @@ func (a *Scroll) GetActionType() ActionType {
 func (a *Scroll) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_Move,
-		Payload: &Request_MoveOffset{&MoveOffset{From: a.OffsetX, To:a.OffsetY}},
+		Payload:    RequestData{MoveOffset: &MoveOffset{From: a.OffsetX, To: a.OffsetY}},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *Scroll) ProcessResponse(response *Response) error {

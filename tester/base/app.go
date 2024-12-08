@@ -11,15 +11,17 @@ import (
 func (tr *TestRunner) InstallApp(params app.Parameter, devices []DeviceMap) {
 	var wg sync.ExtendedWaitGroup
 	for _, d := range devices {
-		installed, err := d.Device.IsAppInstalled(&params)
-		if err != nil {
-			tr.LogError("check installation failed: %v", err)
-			return
-		}
+		wg.Add(1)
+		go func(appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
+			defer group.Done()
 
-		if !installed {
-			wg.Add(1)
-			go func(appp app.Parameter, d device.Device, group *sync.ExtendedWaitGroup) {
+			installed, err := d.IsAppInstalled(&params)
+			if err != nil {
+				tr.LogError("check installation failed: %v", err)
+				return
+			}
+
+			if !installed {
 				tries := 0
 				for {
 					if tries > 1 {
@@ -34,9 +36,8 @@ func (tr *TestRunner) InstallApp(params app.Parameter, devices []DeviceMap) {
 					}
 					break
 				}
-				group.Done()
-			}(params, d.Device, &wg)
-		}
+			}
+		}(params, d.Device, &wg)
 	}
 	wg.Wait()
 }
@@ -63,7 +64,8 @@ func (tr *TestRunner) StartApp(params app.Parameter, devices []DeviceMap, appSta
 			wg.Add(1)
 			go func(dm manager.Devices, appp app.Parameter, d DeviceMap, sessionId string, group *sync.ExtendedWaitGroup) {
 				startTime := time.Now()
-				if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.IP); err != nil {
+				tr.LogInfo("Start App '%s' on Device '%s' with Session '%s'", appp.Identifier, d.Device.DeviceID(), tr.ProtocolWriter.SessionID())
+				if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
 					tr.LogError("unable to start app: %v", err)
 				}
 				if appStartedFunc != nil {

@@ -1,0 +1,138 @@
+syntax = "proto3";
+package node;
+option go_package = "hub/node";
+
+message Void {
+}
+
+message RegisterNodeRequest {
+  string Identifier = 1;
+  string Hostname = 2;
+  string OperationSystem = 3;
+  string EnvironmentVariables = 4;
+  int32 Port = 5;
+  repeated string Managers = 6;
+}
+
+enum DeviceState {
+  None = 0;
+  Unknown = 1;
+  Shutdown = 2;
+  RemoteDisconnected = 3;
+  Booted = 4;
+  Locked = 5;
+}
+
+message DeviceStatusRequest {
+  string DeviceId = 1;
+}
+
+message DeviceResponse {
+  string Manager = 1;
+  string DeviceID = 2;
+  string Name = 3;
+  string DeviceOS = 4;
+  string DeviceOSVersion = 5;
+  string DeviceOSInfos = 6;
+  string ProjectDir = 7;
+  string DeviceIP = 8;
+  string DeviceModel = 9;
+  DeviceState State = 10;
+}
+
+message DeviceRequest {
+  string DeviceID = 1;
+}
+
+message DevicesResponse {
+  repeated DeviceResponse Devices = 1;
+}
+
+message ErrorResponse {
+  int32 ErrorCode = 1;
+  string ErrorMessage = 2;
+}
+
+message UploadAppRequest {
+  int32  AppID = 1;
+  string Identifier = 2;
+  string Name = 3;
+  string Hash = 4;
+  int64 Size = 5;
+  bytes Data = 6;
+}
+
+message AppParameterRequest {
+  string DeviceID = 1;
+  int32 AppID = 2;
+  string Platform = 3;
+  string Name = 4;
+  string Identifier = 5;
+  string Version = 6;
+  string LaunchActivity = 7;
+  string Additional = 8;
+  string Hash = 9;
+  int64 Size = 10;
+}
+
+
+message StartAppRequest {
+  AppParameterRequest App = 1;
+  string SessionID = 2;
+  string HostIP = 3;
+}
+
+message BoolResponse {
+  bool Value = 1;
+  int32 ErrorCode = 2;
+  string ErrorMessage = 3;
+}
+
+message ScreenShotResponse {
+  bytes Data = 1;
+  int32 Width = 2;
+  int32 Height = 3;
+}
+
+message FeatureRequest {
+  string DeviceID = 1;
+  string Feature = 2;
+}
+
+message ExecuteRequest {
+  string DeviceID = 1;
+  string Data = 2;
+}
+
+message TimeoutResponse {
+  int64 Timeout = 1;
+}
+
+service Node {
+  rpc DeviceStatus (DeviceStatusRequest) returns (DeviceResponse) {}
+  rpc Ping (Void) returns (Void) {}
+  rpc StartDevice(DeviceRequest) returns (ErrorResponse) {}
+  rpc StopDevice(DeviceRequest) returns (ErrorResponse) {}
+  rpc GetDevices(Void) returns (DevicesResponse) {}
+
+  rpc IsAppInstalled(AppParameterRequest) returns (BoolResponse) {}
+  rpc UploadApp(UploadAppRequest) returns (BoolResponse) {}
+  rpc InstallApp(AppParameterRequest) returns (BoolResponse) {}
+  rpc UninstallApp(AppParameterRequest) returns (BoolResponse) {}
+
+  rpc StartApp(StartAppRequest) returns (BoolResponse) {}
+  rpc StopApp(AppParameterRequest) returns (BoolResponse) {}
+
+  rpc IsConnected(DeviceRequest) returns (BoolResponse) {}
+
+  // rpc StartRecording(DeviceRequest) returns (BoolResponse) {}
+  // rpc StopRecording(DeviceRequest) returns (BoolResponse) {}
+
+  rpc GetScreenshot(DeviceRequest) returns (ScreenShotResponse) {}
+  rpc HasFeature(FeatureRequest) returns (BoolResponse) {}
+  rpc Execute(ExecuteRequest) returns (Void) {}
+
+  rpc ConnectionTimeout(DeviceRequest) returns (TimeoutResponse) {}
+
+  rpc RunNativeScript(ExecuteRequest) returns (Void) {}
+}

@@ -141,11 +141,11 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	*/
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	if d.webDriver == nil {
 		return fmt.Errorf("webdriver not connected")
 	}
-	return d.webDriver.Launch(params.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "HOST", hostIP.String()})
+	return d.webDriver.Launch(params.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "NODE_URL", nodeUrl})
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {

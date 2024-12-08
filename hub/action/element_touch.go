@@ -1,12 +1,12 @@
 package action
 
 import (
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 )
 
 type TouchElement struct {
 	ElementID string
-	Success bool
+	Success   bool
 }
 
 func (a *TouchElement) GetActionType() ActionType {
@@ -16,9 +16,9 @@ func (a *TouchElement) GetActionType() ActionType {
 func (a *TouchElement) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementTouch,
-		Payload: &Request_Id{Id: a.ElementID},
+		Payload:    RequestData{Id: &a.ElementID},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *TouchElement) ProcessResponse(response *Response) error {

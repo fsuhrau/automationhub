@@ -62,6 +62,13 @@ func (d *Device) Connection() *device.Connection {
 	return d.con
 }
 
+func (d *Device) Send(data []byte) error {
+	if err := d.con.Send(data); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *Device) Lock() error {
 	if d.locked {
 		return DeviceLockedError
@@ -87,7 +94,7 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
-func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float64, other string) {
 	if d.writer != nil {
 		d.writer.LogPerformance(checkpoint, cpu, fps, mem, other)
 	}

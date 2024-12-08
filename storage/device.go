@@ -58,24 +58,31 @@ func (d *deviceStore) GetDevice(manager, deviceId string) (*models.Device, error
 }
 
 func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
+	tx := d.db.Begin()
+
 	_, err := d.GetDevice(manager, dev.DeviceIdentifier)
 	if err == nil {
+		tx.Rollback()
 		return fmt.Errorf("device with the same id exists already")
 	}
 
 	if err := d.db.Create(&dev).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
-
+	dev.ConnectionParameter.DeviceID = dev.ID
 	if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	d.devices[manager] = append(d.devices[manager], &dev)
+	tx.Commit()
 	return nil
 }
 
 func (d *deviceStore) Update(manager string, dev device.Device) error {
+	tx := db.Begin()
 	deviceData, err := d.GetDevice(manager, dev.DeviceID())
 	if err != nil {
 		return err
@@ -127,5 +134,6 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 			DeviceState: uint(dev.DeviceState()),
 		})
 	}
+	tx.Commit()
 	return nil
 }

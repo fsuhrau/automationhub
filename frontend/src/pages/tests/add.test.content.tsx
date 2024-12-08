@@ -44,6 +44,7 @@ import { ApplicationProps } from "../../application/application.props";
 import * as _ from "lodash"
 import { isEqual } from "lodash";
 import { IdName } from "../../helper/enum_to_array";
+import { getUnityTestCategoryTypes, UnityTestCategory } from "../../types/unity.test.category.type.enum";
 
 function getSteps(): Array<string> {
     return ['Select Test Type', 'Test Configuration', 'Device Selection'];
@@ -78,7 +79,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         testName: string,
         testType: TestType,
         executionType: TestExecutionType,
-        unityTestExecutionType: number,
+        unityTestCategoryType: UnityTestCategory,
         deviceType: number,
         selectedDevices: number[],
         selectedTestFunctions: IAppFunctionData[],
@@ -92,7 +93,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         testType: TestType.Unity,
         executionType: TestExecutionType.Concurrent,
         testName: "",
-        unityTestExecutionType: 0,
+        unityTestCategoryType: 0,
         deviceType: 0,
         selectedDevices: [],
         selectedTestFunctions: [],
@@ -104,7 +105,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
-    const unityTestExecutionTypes = getUnityTestsConfig();
+    const unityTestCategoryTypes = getUnityTestCategoryTypes();
     const deviceTypes = getDeviceOption();
 
     const addCategory = () => {
@@ -122,7 +123,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
             Name: state.testName,
             TestType: state.testType,
             ExecutionType: state.executionType,
-            UnityAllTests: state.unityTestExecutionType === 0 || state.unityTestExecutionType === 1,
+            UnityTestCategoryType: state.unityTestCategoryType,
             UnitySelectedTests: state.selectedTestFunctions,
             Categories: state.testCategories,
             AllDevices: state.deviceType === 0,
@@ -151,7 +152,6 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     useEffect(() => {
         const app = appState.project?.Apps.find(a => a.ID === appId);
         getAllDevices(projectId, app?.Platform).then(response => {
-            console.log(response.data);
             setDevices(response.data);
         })
     }, [appState.project?.Apps, projectId, appId])
@@ -280,11 +280,11 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                                 <RadioGroup
                                                                     name="unity-test-execution-selection"
                                                                     aria-label="spacing"
-                                                                    value={ state.unityTestExecutionType.toString() }
-                                                                    onChange={ event => setState(prevState => ({...prevState, unityTestExecutionType: +event.target.value})) }
+                                                                    value={ state.unityTestCategoryType.toString() }
+                                                                    onChange={ event => setState(prevState => ({...prevState, unityTestCategoryType: +event.target.value})) }
                                                                     row={ true }
                                                                 >
-                                                                    { unityTestExecutionTypes.map((value) => (
+                                                                    { unityTestCategoryTypes.map((value) => (
                                                                         <FormControlLabel
                                                                             key={ 'unityt_' + value.id }
                                                                             value={ value.id.toString() }
@@ -295,7 +295,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                                 </RadioGroup>
                                                             </Grid>
                                                             <Grid item={ true }>
-                                                                { state.unityTestExecutionType === 1 && (
+                                                                { state.unityTestCategoryType === UnityTestCategory.RunAllOfCategory && (
                                                                     <Grid container={ true } justifyContent="center" spacing={ 1 } alignItems={ 'center' }>
                                                                         <Grid item={ true }>
                                                                             <Table size="small" aria-label="a dense table" width={600}>
@@ -338,7 +338,7 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                                         </Grid>
                                                                     </Grid>
                                                                 ) }
-                                                                { state.unityTestExecutionType === 2 && (
+                                                                { state.unityTestCategoryType === UnityTestCategory.RunSelectedTestsOnly && (
                                                                     <TestMethodSelection onSelectionChanged={ onTestSelectionChanged }/>
                                                                 ) }
                                                             </Grid>

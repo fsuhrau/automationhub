@@ -193,13 +193,13 @@ func (d *Device) unlockScreen() error {
 	return nil
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	d.Log("device", "Start App '%s' with Session: '%s'", params.Identifier, sessionId)
 
 	if err := d.unlockScreen(); err != nil {
 		return err
 	}
-	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "NODE_URL", nodeUrl, "-e", "DEVICE_ID", d.deviceID)
 	return cmd.Run()
 }
 

@@ -1,12 +1,12 @@
 package action
 
 import (
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 )
 
 type DragAndDrop struct {
 	From string
-	To string
+	To   string
 }
 
 func (a *DragAndDrop) GetActionType() ActionType {
@@ -16,9 +16,9 @@ func (a *DragAndDrop) GetActionType() ActionType {
 func (a *DragAndDrop) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_DragAndDrop,
-		Payload: &Request_MoveElement{&MoveElement{From: a.From, To:a.To}},
+		Payload:    RequestData{MoveElement: &MoveElement{From: a.From, To: a.To}},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *DragAndDrop) ProcessResponse(response *Response) error {

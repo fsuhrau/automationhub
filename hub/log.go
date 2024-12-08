@@ -28,6 +28,7 @@ func Logger(logger logrus.FieldLogger) gin.HandlerFunc {
 		}
 
 		c.Next()
+
 		stop := time.Since(start)
 		latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
 		statusCode := c.Writer.Status()

@@ -2,7 +2,7 @@ package action
 
 import (
 	"bytes"
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 	"image"
 )
 
@@ -21,12 +21,12 @@ func (a *GetScreenshot) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_GetScreenshot,
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *GetScreenshot) ProcessResponse(response *Response) error {
 	a.Success = response.Success
-	a.screenshot = response.GetScreenshot()
+	a.screenshot = response.Payload.Screenshot
 	if a.screenshot != nil {
 		reader := bytes.NewReader(a.screenshot.Screenshot)
 		srcImage, _, _ := image.Decode(reader)

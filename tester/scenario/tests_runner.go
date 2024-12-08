@@ -12,7 +12,6 @@ import (
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
-	"net"
 	"path/filepath"
 	"strings"
 )
@@ -23,18 +22,20 @@ type cancelChannel chan bool
 type testsRunner struct {
 	base.TestRunner
 	fin       chan bool
+	cancel    chan bool
 	publisher sse.Publisher
 	env       map[string]string
 
 	appParams app.Parameter
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
+func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
 	testRunner := &testsRunner{
 		fin:       make(chan bool, 1),
+		cancel:    make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip, db, projectId, appId)
+	testRunner.Init(deviceManager, nodeUrl, db, projectId, appId)
 	return testRunner
 }
 
@@ -46,6 +47,15 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	tr.Test = test
 	tr.Config = test.TestConfig
 	return nil
+}
+
+func (tr *testsRunner) Cancel(runId string) error {
+	select {
+	case tr.cancel <- true:
+		return nil
+	default:
+		return fmt.Errorf("no running test to cancel")
+	}
 }
 
 func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
@@ -91,8 +101,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	}
 
 	var testList []models.UnityTestFunction
-	if tr.Config.Unity.RunAllTests {
-		tr.LogInfo("RunAllTests active requesting PlayMode tests")
+	if tr.Config.Unity.UnityTestCategoryType == models.AllTest {
+		tr.LogInfo("UnityTestCategoryType active requesting PlayMode tests")
 		a := &action.TestsGet{}
 		if err := tr.DeviceManager.SendAction(connectedDevices[0].Device, a); err != nil {
 			tr.LogError("send action to select all tests failed: %v", err)
@@ -213,6 +223,9 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 			tr.runTest(dev, task, method)
 			group.Done()
 		case <-cancel:
+			return
+		case <-tr.cancel:
+			tr.LogInfo("Test run cancelled")
 			return
 		}
 	}

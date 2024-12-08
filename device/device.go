@@ -4,13 +4,11 @@ import (
 	"context"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"net"
 	"time"
 )
 
 type Device interface {
 	DeviceID() string
-	DeviceIP() net.IP
 	DeviceState() State
 	DeviceOSName() string
 	DeviceOSVersion() string
@@ -29,8 +27,9 @@ type Device interface {
 	Connection() *Connection
 	IsAppConnected() bool
 
-	StartApp(*app.Parameter, string, net.IP) error
+	StartApp(*app.Parameter, string, string) error
 	StopApp(*app.Parameter) error
+	Send([]byte) error
 
 	StartRecording(string) error
 	StopRecording() error
@@ -45,7 +44,7 @@ type Device interface {
 
 	SetLogWriter(LogWriter)
 	Data(string, string)
-	LogPerformance(checkpoint string, cpu, fps, mem float32, other string)
+	LogPerformance(checkpoint string, cpu, fps, mem float64, other string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})
 	Exception(string, string, ...interface{})

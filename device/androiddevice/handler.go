@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
@@ -36,7 +38,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 	m.init = true
 	defer func() {
 		m.init = false
@@ -52,6 +54,8 @@ func (m *Handler) Init() error {
 			installedApps: make(map[string]string),
 		}
 		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
 		m.devices[deviceId] = dev
 
 		// connect all remote devs
@@ -65,7 +69,7 @@ func (m *Handler) Init() error {
 		}
 	}
 
-	if err := m.RefreshDevices(); err != nil {
+	if err := m.RefreshDevices(true); err != nil {
 		return err
 	}
 
@@ -154,7 +158,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
@@ -214,6 +218,7 @@ func (m *Handler) RefreshDevices() error {
 				Manager:          Manager,
 				HardwareModel:    model,
 				OS:               "android",
+				PlatformType:     models.PlatformTypeAndroid,
 				OSVersion:        m.devices[deviceID].deviceOSVersion,
 				ConnectionParameter: &models.ConnectionParameter{
 					ConnectionType: models.ConnectionTypeUSB,

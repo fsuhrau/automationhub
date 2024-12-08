@@ -64,10 +64,10 @@ func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout
 
 func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Response) {
 	if response.Success {
-		dev.Log("testrunner", fmt.Sprintf("timeout: %d", response.GetTestDetails().Timeout))
-		dev.Log("testrunner", fmt.Sprintf("categories: %v", response.GetTestDetails().Categories))
-		if response.GetTestDetails().Timeout > 0 {
-			tr.wg.UpdateUntil(time.Now().Add(time.Duration(response.GetTestDetails().Timeout) * time.Millisecond))
+		dev.Log("testrunner", fmt.Sprintf("timeout: %d", response.Payload.TestDetails.Timeout))
+		dev.Log("testrunner", fmt.Sprintf("categories: %v", response.Payload.TestDetails.Categories))
+		if response.Payload.TestDetails.Timeout > 0 {
+			tr.wg.UpdateUntil(time.Now().Add(time.Duration(response.Payload.TestDetails.Timeout) * time.Millisecond))
 		}
 	} else {
 		dev.Error("testrunner", "starting test failed")
@@ -85,19 +85,15 @@ func (tr *testExecutor) handleExecutionResult(dev device.Device, response *actio
 }
 
 func (tr *testExecutor) handlePerformance(dev device.Device, response *action.Response) {
-	perf := response.GetPerformance()
-	if perf != nil {
-		dev.LogPerformance(perf.Checkpoint, perf.Cpu, perf.Fps, perf.Memory, "")
-	}
+	dev.LogPerformance(response.Payload.PerformanceData.Checkpoint, response.Payload.PerformanceData.CPU, response.Payload.PerformanceData.FPS, response.Payload.PerformanceData.Memory, "")
 }
 
 func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.Response) {
-	scriptData := response.GetData()
-	go dev.RunNativeScript(scriptData)
+	go dev.RunNativeScript(*response.Payload.Data)
 }
 
 func (tr *testExecutor) handleLog(dev device.Device, response *action.Response) {
-	if response.GetLog().Level == action.LogLevel_Exception {
+	if response.Payload.LogData.Level == action.LogLevel_Exception {
 		tr.fin <- true
 	}
 }

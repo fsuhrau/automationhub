@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
-import { IconButton, Typography } from '@mui/material';
+import {Button, IconButton, Typography} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Grid from '@mui/material/Grid';
 import IDeviceData from '../../types/device';
-import { getAllDevices } from '../../services/device.service';
+import {getAllDevices, postUnlockDevice} from '../../services/device.service';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import { Add, ArrowForward } from '@mui/icons-material';
@@ -15,6 +15,7 @@ import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import { useNavigate } from 'react-router-dom';
 import { useProjectContext } from "../../project/project.context";
+import {deviceState} from "../../components/device-table.component";
 
 const DevicesManagerContent: React.FC = () => {
 
@@ -35,6 +36,13 @@ const DevicesManagerContent: React.FC = () => {
             console.log(e);
         });
     }, [projectId]);
+
+    const unlockDevice = (deviceId: string) => {
+        postUnlockDevice(projectId as string, deviceId).then(response => {
+            setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
+        });
+    }
+
 
     return (
         <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
@@ -78,9 +86,9 @@ const DevicesManagerContent: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { devices.map((device) => <TableRow key={ device.ID }>
+                        { devices.map((device) => <TableRow key={ `device_table_row_${device.ID}` }>
                             <TableCell component="th" scope="row">
-                                { device.Name }
+                                { device.Alias.length > 0 ? device.Alias : device.Name }
                             </TableCell>
                             <TableCell>
                                 { device.HardwareModel }
@@ -92,7 +100,8 @@ const DevicesManagerContent: React.FC = () => {
                                 { device.SOC }
                             </TableCell>
                             <TableCell>
-                                { device.Status }
+                                { deviceState(device.Status) }
+                                { device.Status === 5 && <Button onClick={() => unlockDevice(device.DeviceIdentifier)}>Unlock</Button>}
                             </TableCell>
                             <TableCell align="right">
                                 <IconButton color="primary" size={ 'small' }

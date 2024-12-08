@@ -19,8 +19,13 @@ const Devices: React.FC = () => {
 
     return (
         <Grid container={ true } spacing={ 2 }>
-            <Grid item={ true } xs={ 12 }>
-                <Typography variant={ "h1" }>Device Pool</Typography>
+            <Grid item={ true } container={true} xs={ 12 }>
+                <Grid item={true} xs={true}>
+                    <Typography variant={ "h1" }>Device Pool</Typography>
+                </Grid>
+                <Grid item={true}>
+                    <Button variant={"text"}>Manage</Button>
+                </Grid>
             </Grid>
             <Grid item={ true } xs={ 12 }>
                 <Divider/>
@@ -31,22 +36,7 @@ const Devices: React.FC = () => {
                     xs={ 12 }
                     style={ {maxWidth: 1000} }
                 >
-                    <TitleCard title={ "Devices" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
-                            <Grid container={ true }>
-                                <Grid item={ true } xs={ 12 } container={ true } justifyContent={ "flex-end" } sx={ {
-                                    padding: 1,
-                                    backgroundColor: '#fafafa',
-                                    borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                } }>
-                                    <Button variant={ "contained" }>Manage</Button>
-                                </Grid>
-                                <Grid item={true} xs={12}>
-                                    <DeviceTableComponent/>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                    </TitleCard>
+                    <DeviceTableComponent/>
                 </Grid>
             </Grid>
         </Grid>

@@ -2,6 +2,7 @@ package unity
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -13,7 +14,6 @@ import (
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +30,7 @@ type cancelChannel chan bool
 type testsRunner struct {
 	base.TestRunner
 	fin       chan bool
+	cancel    chan bool
 	publisher sse.Publisher
 	env       map[string]string
 
@@ -38,12 +39,13 @@ type testsRunner struct {
 	appId     uint
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
+func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
 	testRunner := &testsRunner{
 		fin:       make(chan bool, 1),
+		cancel:    make(chan bool, 1),
 		publisher: publisher,
 	}
-	testRunner.Init(deviceManager, ip, db, projectId, appId)
+	testRunner.Init(deviceManager, nodeUrl, db, projectId, appId)
 	return testRunner
 }
 
@@ -57,16 +59,30 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
-	defer tr.TestSessionFinished()
+func (tr *testsRunner) Cancel(runId string) error {
+	select {
+	case tr.cancel <- true:
+		return nil
+	default:
+		return fmt.Errorf("no running test to cancel")
+	}
+}
 
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
 		tr.LogError("no lockable devices available")
 		return
 	}
-	defer tr.UnlockDevices(devices)
+
+	defer func() {
+		if err := recover(); err != nil {
+			tr.LogError("text execution failed recovered: %v", err)
+		}
+		tr.UnlockDevices(devices)
+		tr.TestSessionFinished()
+	}()
 
 	tr.LogInfo("Starting devices")
 	if err := tr.StartDevices(devices); err != nil {
@@ -99,7 +115,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 
 	tr.LogInfo("start app on devices and wait for connection")
 	connectedDevices, err := tr.StartApp(tr.appParams, devices, nil, nil)
-	if err == sync.TimeoutError {
+	if errors.Is(err, sync.TimeoutError) {
 		tr.LogError("one or more apps didn't connect")
 	}
 	if connectedDevices == nil {
@@ -107,10 +123,14 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		return
 	}
 
+	tr.LogInfo("get test list")
 	testList, err := tr.getTestList(connectedDevices)
 	if err != nil {
 		tr.LogError("get tests failed: %v", err)
 	} else {
+		if len(testList) == 0 {
+			tr.LogInfo("No Tests")
+		}
 		tr.LogInfo("Execute Tests")
 		tr.scheduleTests(connectedDevices, testList)
 	}
@@ -134,7 +154,7 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 		for _, d := range connectedDevices {
 			channel := make(workerChannel, len(testList))
 			workers = append(workers, channel)
-			go tr.WorkerFunction(channel, d, cancel, &group)
+			go tr.workerFunction(channel, d, cancel, &group)
 		}
 
 		for _, t := range testList {
@@ -142,6 +162,7 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 				Assembly: t.Assembly,
 				Class:    t.Class,
 				Method:   t.Method,
+				Env:      tr.env,
 			}
 			for i := range workers {
 				group.Add(1)
@@ -164,7 +185,7 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 
 		parallelWorker := make(workerChannel, len(testList))
 		for _, d := range connectedDevices {
-			go tr.WorkerFunction(parallelWorker, d, cancel, &group)
+			go tr.workerFunction(parallelWorker, d, cancel, &group)
 		}
 		for _, t := range testList {
 			a := action.TestStart{
@@ -187,12 +208,11 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 
 func (tr *testsRunner) getTestList(connectedDevices []base.DeviceMap) ([]models.UnityTestFunction, error) {
 	var testList []models.UnityTestFunction
-	if tr.Config.Unity.RunAllTests {
-		tr.LogInfo("RunAllTests active requesting PlayMode tests")
+	if tr.Config.Unity.UnityTestCategoryType == models.AllTest || tr.Config.Unity.UnityTestCategoryType == models.AllOfCategory {
+		tr.LogInfo("UnityTestCategoryType active requesting PlayMode tests")
 		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
 		a := &action.TestsGet{}
 		if err := actionExecutor.Execute(connectedDevices[0].Device, a, 5*time.Minute); err != nil {
-
 			return nil, fmt.Errorf("send action to select all tests failed: %v", err)
 		}
 		testCats := strings.Split(tr.Config.Unity.Categories, ",")
@@ -242,7 +262,7 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*mod
 	return &tr.TestRun, nil
 }
 
-func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
+func (tr *testsRunner) workerFunction(channel workerChannel, dev base.DeviceMap, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
 	for {
 		select {
 		case task := <-channel:
@@ -254,6 +274,9 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 			tr.runTest(dev, task, method)
 			group.Done()
 		case <-cancel:
+			return
+		case <-tr.cancel:
+			tr.LogInfo("Test run cancelled")
 			return
 		}
 	}

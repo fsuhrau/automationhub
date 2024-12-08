@@ -119,7 +119,7 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                                                         <Grid item={ true } xs={ 10 }>
                                                             { test.TestConfig.Devices.map((a, index) =>
                                                                 <div
-                                                                    key={ `device_${ a.ID }_${ index }` }>- { a.Device?.DeviceIdentifier }({ a.Device?.Name })<br/>
+                                                                    key={ `device_${ a.ID }_${ index }` }>- { a.Device?.DeviceIdentifier }({ a.Device && (a.Device.Alias.length > 0 ? a.Device.Alias : a.Device.Name) })<br/>
                                                                 </div>,
                                                             ) }
                                                         </Grid>

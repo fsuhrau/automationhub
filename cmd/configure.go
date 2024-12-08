@@ -61,7 +61,6 @@ var configureCmd = &cobra.Command{
 		if !cfg.Autodetect {
 			input := readValidIP(reader, "Set static ip. (format: 0.0.0.0)")
 			cfg.HostIP = input
-			cfg.Port = 8002
 		}
 		fmt.Println("------------------------------------")
 		fmt.Println("The hub is able to manage different devices like android, ios, ...")

@@ -3,7 +3,6 @@ package macos
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage"
-	"net"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
@@ -14,20 +13,19 @@ const (
 )
 
 type Handler struct {
-	devices      map[string]*Device
-	hostIP       net.IP
+	devices       map[string]*Device
 	deviceStorage storage.Device
 }
 
-func NewHandler(ds storage.Device, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
+func NewHandler(ds storage.Device) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 	return nil
 }
 
@@ -55,14 +53,13 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	if len(m.devices) == 0 {
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
 			deviceName:      "MacOS",
 			deviceID:        "54decb62-3993-4031-9c6a-18ce048cc63c",
 			deviceOSName:    "MacOSX",
 			deviceOSVersion: "10-14",
-			deviceIP:        m.hostIP,
 			lastUpdateAt:    time.Now().UTC(),
 		}
 		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")

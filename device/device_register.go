@@ -12,6 +12,11 @@ type RegisterData struct {
 	DeviceOS        string
 	DeviceOSVersion string
 	DeviceOSInfos   string
+	ProjectDir      string
+	DeviceModel     string
+	RAM             float32
+	GPU             string
+	SOC             string
 	DeviceIP        net.IP
 	Conn            *websocket.Conn
 }

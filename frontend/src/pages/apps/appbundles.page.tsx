@@ -147,7 +147,7 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
                                                     <TableCell>{ bundle.Tags }</TableCell>
                                                     <TableCell><ButtonGroup>
                                                         <IconButton color="primary" size="small"
-                                                                    href={ `/${ bundle.AppPath }` }>
+                                                                    href={ `/upload/${ bundle.AppPath }` }>
                                                             <DownloadIcon/>
                                                         </IconButton>
                                                         <IconButton color="secondary" size="small" onClick={ () => {

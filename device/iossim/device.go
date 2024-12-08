@@ -8,7 +8,6 @@ import (
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
 	"image/png"
-	"net"
 	"os"
 	"os/exec"
 	"time"
@@ -26,7 +25,6 @@ type Device struct {
 	deviceOSVersion  string
 	deviceName       string
 	deviceID         string
-	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
 	lastUpdateAt     time.Time
@@ -50,10 +48,6 @@ func (d *Device) DeviceName() string {
 
 func (d *Device) DeviceID() string {
 	return d.deviceID
-}
-
-func (d *Device) DeviceIP() net.IP {
-	return d.deviceIP
 }
 
 func (d *Device) DeviceState() device.State {
@@ -91,9 +85,9 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return cmd.Run()
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	if restart {
-		cmd := exec2.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "HOST", hostIP.String())
+		cmd := exec2.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "NODE_URL", nodeUrl)
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -164,6 +158,6 @@ func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }
 
-func (d *Device) RunNativeScript(script []byte)  {
+func (d *Device) RunNativeScript(script []byte) {
 
 }

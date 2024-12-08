@@ -28,7 +28,7 @@ func GetParameterString(deviceID, param string) string {
 	if err != nil {
 		return ""
 	}
-	return strings.Trim(string(output), "\n")
+	return strings.Trim(string(output), "\n\r")
 }
 
 func GetParameterInt(deviceID, param string) int64 {

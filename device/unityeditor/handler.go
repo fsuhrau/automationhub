@@ -1,33 +1,77 @@
 package unityeditor
 
 import (
+	"fmt"
+	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"net"
+	"github.com/fsuhrau/automationhub/tools/exec"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
 const (
-	Manager = "unity_editor"
+	Manager        = "unity_editor"
+	StartupTimeout = 30 * time.Minute
+)
+
+var (
+	ErrorGetProjectVersion = fmt.Errorf("Could not determinate project project / unity version")
 )
 
 type Handler struct {
 	devices       map[string]*Device
-	hostIP        net.IP
 	deviceStorage storage.Device
+	init          bool
+	managerCfg    config.Manager
+	mu            sync.Mutex
 }
 
-func NewHandler(ds storage.Device, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
+func NewHandler(cfg config.Manager, ds storage.Device) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceStorage: ds, managerCfg: cfg}
 }
 
 func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+	m.init = true
+	defer func() {
+		m.init = false
+	}()
+	devs, err := m.deviceStorage.GetDevices(Manager)
+	if err != nil {
+		return err
+	}
+	for i := range devs {
+		deviceId := devs[i].DeviceIdentifier
+		dev := &Device{
+			deviceOSName:    devs[i].OS,
+			deviceOSVersion: devs[i].OSVersion,
+			deviceOSInfos:   devs[i].OSInfos,
+			deviceName:      devs[i].Name,
+			deviceID:        devs[i].DeviceIdentifier,
+		}
+		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
+		m.mu.Lock()
+		m.devices[deviceId] = dev
+		m.mu.Unlock()
+	}
+
+	if err := m.RefreshDevices(true); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -40,14 +84,117 @@ func (m *Handler) Stop() error {
 }
 
 func (m *Handler) StartDevice(deviceID string) error {
-	return nil
+	m.mu.Lock()
+	dev, ok := m.devices[deviceID]
+	m.mu.Unlock()
+	if ok {
+		config := dev.GetConfig()
+		var projectDir string
+		if config != nil {
+			projectDir = config.GetAttribute("projectDir")
+		}
+		instanceFile := filepath.Join(projectDir, ".hub")
+		_ = os.Remove(instanceFile)
+
+		projectVersion, err := GetUsedUnityVersion(projectDir)
+		if err != nil {
+			return err
+		}
+
+		unityEditorPath := GetUnityEditorPath(m.managerCfg.UnityPath, projectVersion)
+
+		unityParams := []string{
+			"-buildTarget",
+			m.managerCfg.UnityBuildTarget,
+			"-projectPath", projectDir, "-overrideProfile", "automation", "-executeMethod", "AutomationLoader.LoadSceneAndConnect", "-logFile", "automation_hub_unity.log", "-debugCodeOptimization", "--ump-channel-service-on-startup",
+		}
+		dev.process = exec.NewCommand(unityEditorPath, unityParams...)
+		//dev.process.Stdout = os.Stdout
+		//dev.process.Stderr = os.Stdout
+		dev.startedAt = time.Now()
+		if err := dev.process.Start(); err != nil {
+			return err
+		}
+		m.mu.Lock()
+		m.devices[deviceID] = dev
+		m.mu.Unlock()
+		waitUntil := dev.startedAt.Add(StartupTimeout)
+		for {
+			if _, err := os.Stat(instanceFile); os.IsNotExist(err) {
+				if time.Now().After(waitUntil) {
+					return fmt.Errorf("device didn't start in time")
+				}
+
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			break
+		}
+
+		for {
+			m.mu.Lock()
+			if m.devices[deviceID].DeviceState() == device.StateBooted {
+				m.mu.Unlock()
+				break
+			}
+			m.mu.Unlock()
+
+			if time.Now().After(waitUntil) {
+				return fmt.Errorf("device didn't start in time")
+			}
+
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		return nil
+	}
+
+	return device.DeviceNotFoundError
+}
+
+func GetUnityEditorPath(editorPath string, projectVersion string) string {
+	if runtime.GOOS == "darwin" {
+		return filepath.Join(editorPath, projectVersion, "Unity.app/Contents/MacOS/Unity")
+	}
+	return ""
+}
+
+func GetUsedUnityVersion(projectDir string) (string, error) {
+	projectVersionFile := filepath.Join(projectDir, "ProjectSettings", "ProjectVersion.txt")
+	data, err := os.ReadFile(projectVersionFile)
+	if err != nil {
+		return "", ErrorGetProjectVersion
+	}
+
+	var projectVersion string
+	re := regexp.MustCompile(`m_EditorVersion:\s*([0-9]+\.[0-9]+\.[0-9]+[a-z0-9]*)`)
+	match := re.FindStringSubmatch(string(data))
+	if len(match) > 1 {
+		projectVersion = match[1]
+	} else {
+		return "", ErrorGetProjectVersion
+	}
+	return projectVersion, nil
 }
 
 func (m *Handler) StopDevice(deviceID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if dev, ok := m.devices[deviceID]; ok {
+		if dev.process != nil && dev.process.Process != nil {
+			if err := dev.process.Process.Kill(); err != nil {
+				return err
+			}
+			dev.process = nil
+		}
+	}
 	return nil
 }
 
 func (m *Handler) GetDevices() ([]device.Device, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	devices := make([]device.Device, 0, len(m.devices))
 	for _, d := range m.devices {
 		devices = append(devices, d)
@@ -55,13 +202,16 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	now := time.Now().UTC()
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	for i := range m.devices {
 		if now.Sub(m.devices[i].lastUpdateAt) > 1*time.Minute {
-			if m.devices[i].deviceState != device.StateUnknown {
-				m.devices[i].deviceState = device.StateUnknown
+			if m.devices[i].deviceState != device.StateShutdown {
+				m.devices[i].deviceState = device.StateShutdown
 				m.devices[i].updated = true
 			}
 		}
@@ -74,6 +224,9 @@ func (m *Handler) RefreshDevices() error {
 }
 
 func (m *Handler) HasDevice(dev device.Device) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	for _, device := range m.devices {
 		if device == dev {
 			return true
@@ -83,28 +236,34 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 }
 
 func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	lastUpdate := time.Now().UTC()
 
-	if _, ok := m.devices[data.DeviceID]; ok {
-		m.devices[data.DeviceID].deviceOSName = data.DeviceOS
-		m.devices[data.DeviceID].deviceOSVersion = data.DeviceOSVersion
-		m.devices[data.DeviceID].deviceOSInfos = data.DeviceOSInfos
-		m.devices[data.DeviceID].deviceName = data.Name
-		m.devices[data.DeviceID].deviceIP = data.DeviceIP
-		m.devices[data.DeviceID].lastUpdateAt = lastUpdate
-		m.devices[data.DeviceID].conn = data.Conn
-		m.devices[data.DeviceID].updated = true
+	if d, ok := m.devices[data.DeviceID]; ok {
+		d.deviceOSName = data.DeviceOS
+		d.deviceOSVersion = data.DeviceOSVersion
+		d.deviceOSInfos = data.DeviceOSInfos
+		d.deviceName = data.Name
+		d.deviceIP = data.DeviceIP
+		d.lastUpdateAt = lastUpdate
+		d.managerConnection = data.Conn
+		d.updated = true
+		m.devices[data.DeviceID] = d
+		m.deviceStorage.Update(m.Name(), d)
+
 	} else {
-		m.devices[data.DeviceID] = &Device{
-			deviceName:      data.Name,
-			deviceID:        data.DeviceID,
-			deviceOSName:    data.DeviceOS,
-			deviceOSVersion: data.DeviceOSVersion,
-			deviceOSInfos:   data.DeviceOSInfos,
-			deviceIP:        data.DeviceIP,
-			lastUpdateAt:    lastUpdate,
-			conn:            data.Conn,
-			updated:         true,
+		d = &Device{
+			deviceName:        data.Name,
+			deviceID:          data.DeviceID,
+			deviceOSName:      data.DeviceOS,
+			deviceOSVersion:   data.DeviceOSVersion,
+			deviceOSInfos:     data.DeviceOSInfos,
+			deviceIP:          data.DeviceIP,
+			lastUpdateAt:      lastUpdate,
+			managerConnection: data.Conn,
+			updated:           true,
 		}
 		dev := models.Device{
 			DeviceIdentifier: data.DeviceID,
@@ -114,12 +273,24 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			OS:               data.DeviceOS,
 			OSVersion:        data.DeviceOSVersion,
 			OSInfos:          data.DeviceOSInfos,
+			SOC:              data.SOC,
+			RAM:              data.RAM,
+			GPU:              data.GPU,
+			HardwareModel:    data.DeviceModel,
 			ConnectionParameter: &models.ConnectionParameter{
 				ConnectionType: models.ConnectionTypeRemote,
 			},
+			Parameter: []models.DeviceParameter{
+				models.DeviceParameter{
+					Key:   "projectDir",
+					Value: data.ProjectDir,
+				},
+			},
 		}
+		d.SetConfig(&dev)
 		m.deviceStorage.NewDevice(m.Name(), dev)
+		m.devices[data.DeviceID] = d
 	}
-	go m.devices[data.DeviceID].HandleSocketFunction()
+	go m.devices[data.DeviceID].HandleManagerConnection()
 	return m.devices[data.DeviceID], nil
 }

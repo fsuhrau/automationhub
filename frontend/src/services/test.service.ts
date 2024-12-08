@@ -5,6 +5,7 @@ import ICreateTestData from '../types/request.create.test';
 import ITestRunData from '../types/test.run';
 import { TestExecutionType } from "../types/test.execution.type.enum";
 import IUnityTestFunctionData from "../types/unity.test.function";
+import { UnityTestCategory } from "../types/unity.test.category.type.enum";
 
 export const getAllTests = (projectId: string, appId: number): Promise<AxiosResponse<ITestData[]>> => {
     return http.get(`/${projectId}/app/${appId}/tests`);
@@ -24,6 +25,7 @@ export interface UpdateTestData {
     AllDevices: boolean,
     Devices: number[],
     RunAllTests: boolean,
+    UnityTestCategoryType: UnityTestCategory,
     Categories: string,
     TestFunctions: IUnityTestFunctionData[],
 }
@@ -49,4 +51,8 @@ export const executeTest = (projectId: string, appId: number, id: number | null 
         AppBinaryID: bundleId,
         Params: envParams,
     });
+};
+
+export const cancelTestRun = (projectId: string, appId: number, testId: number, runId: number): Promise<AxiosResponse<void>> => {
+    return http.delete(`/${projectId}/app/${appId}/test/${testId}/run/${runId}`);
 };

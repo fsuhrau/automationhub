@@ -3,13 +3,17 @@ import IRealDeviceConnectionData from './real.device.connection';
 import IDeviceParameter from './device.parameter';
 import IConnectionParameter from './device.connection.parameter';
 import { DeviceType } from './device.type.enum';
+import { INodeData } from "./node";
 
 export default interface IDeviceData {
     ID: number,
+    NodeID: number,
+    Node?: INodeData,
     CompanyID: number,
     DeviceIdentifier: string,
     DeviceType: DeviceType,
     Name: string,
+    Alias: string,
     HardwareModel: string,
     RAM: number,
     SOC: string,

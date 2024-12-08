@@ -22,7 +22,7 @@ import Moment from 'react-moment';
 import { useSSE } from 'react-hooks-sse';
 import ITesRunLogEntryData from '../types/test.run.log.entry';
 import ITestProtocolData from '../types/test.protocol';
-import { executeTest } from '../services/test.service';
+import {cancelTestRun, executeTest} from '../services/test.service';
 import { useNavigate } from 'react-router-dom';
 import { TestContext } from '../context/test.context';
 import {
@@ -176,8 +176,16 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
         });
     };
 
+    const onCancelTestRun = (): void => {
+        cancelTestRun(projectId, appId, testRun.TestID, testRun.ID!).then(response => {
+            console.log("Test run cancelled", response);
+        }).catch(error => {
+            console.log(error);
+        });
+    };
+
     const startupTimes = testRun.DeviceStatus.map(item => {
-            return {Name: item.Device.Name, StartupTime: item.StartupTime}
+            return {Name: item.Device && (item.Device.Alias.length > 0 ? item.Device.Alias : item.Device.Name), StartupTime: item.StartupTime}
         }
     )
 
@@ -266,6 +274,9 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                     <Button variant="contained" color="primary" onClick={ onTestRerun }>
                                         Rerun
                                     </Button>
+                                    <Button variant="contained" color="secondary" onClick={ onCancelTestRun }>
+                                        Cancel
+                                    </Button>
                                 </Grid>
                             </Grid>
                         </Grid>
@@ -307,7 +318,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                                     <TableCell>
                                                         <Grid container={ true }>
                                                             <Grid item={ true } xs={ 12 }>
-                                                                { protocol.Device?.Name }
+                                                                { protocol.Device && (protocol.Device.Alias.length > 0 ? protocol.Device.Alias : protocol.Device.Name) }
                                                             </Grid>
                                                             <Grid item={ true } xs={ 12 }>
                                                                 { protocol.Device?.OS } { protocol.Device?.OSVersion }

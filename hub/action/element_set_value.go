@@ -1,14 +1,12 @@
 package action
 
-import (
-	"google.golang.org/protobuf/proto"
-)
+import "encoding/json"
 
 type SetValue struct {
 	ElementID string
-	Success bool
-	Attr string
-	Value string
+	Success   bool
+	Attr      string
+	Value     string
 }
 
 func (a *SetValue) GetActionType() ActionType {
@@ -18,9 +16,9 @@ func (a *SetValue) GetActionType() ActionType {
 func (a *SetValue) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementSetValue,
-		Payload: &Request_SetAttr{&SetAttr{Id: a.ElementID, Attr: a.Attr, Val:a.Value}},
+		Payload:    RequestData{SetAttr: &SetAttr{Id: a.ElementID, Attr: a.Attr, Val: a.Value}},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *SetValue) ProcessResponse(response *Response) error {

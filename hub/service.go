@@ -10,6 +10,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net"
 	"net/http"
 	"time"
@@ -20,19 +21,19 @@ import (
 )
 
 type Service struct {
-	server         *http.Server
-	deviceManager  manager.Devices
-	sessionManager manager.Sessions
-	logger         *logrus.Logger
-	hostIP         net.IP
-	endpoints      []endpoints.ServiceEndpoint
-	router         *gin.Engine
-	cfg            config.Service
-	hooks          []hooks.Hook
-	sd             storage.Device
+	server        *http.Server
+	deviceManager manager.Devices
+	logger        *logrus.Logger
+	// hostIP        net.IP
+	endpoints []endpoints.ServiceEndpoint
+	router    *gin.Engine
+	cfg       config.Service
+	hooks     []hooks.Hook
+	sd        storage.Device
+	db        *gorm.DB
 }
 
-func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessions manager.Sessions, cfg config.Service, sd storage.Device) *Service {
+func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg config.Service, sd storage.Device, db *gorm.DB) *Service {
 	level, err := logrus.ParseLevel(viper.GetString("log"))
 	if err != nil {
 		logrus.Infof("Parse Log Level: %s", err)
@@ -47,13 +48,13 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, sessi
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
-		AllowOrigins:     []string{"http://localhost:7109", "http://localhost:3000", "http://localhost:8002"},
+		AllowOrigins:     []string{"http://localhost:7109", "http://localhost:3000", "http://localhost:8002", "http://10.35.111.12"},
 		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With", "X-Auth-Token"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},
 		MaxAge:           12 * time.Hour,
 	}))
 
-	return &Service{logger: logger, hostIP: ip, sessionManager: sessions, deviceManager: devices, router: router, cfg: cfg, sd: sd}
+	return &Service{logger: logger, deviceManager: devices, router: router, cfg: cfg, sd: sd, db: db}
 }
 
 func newRouter(logger *logrus.Logger) *gin.Engine {

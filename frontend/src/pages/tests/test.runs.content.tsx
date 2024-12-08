@@ -3,7 +3,7 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import { getAllRuns } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
-import { Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography} from '@mui/material';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
 import { useProjectAppContext } from "../../project/app.context";
@@ -90,7 +90,7 @@ const TestRuns: React.FC = () => {
                             { testRuns.map((run) => (
                                 <TableRow key={ run.ID } sx={ { '&:last-child td, &:last-child th': { border: 0 } } }>
                                     <TableCell component="th" scope="row">
-                                        { run.CreatedAt }
+                                        { run.CreatedAt.toLocaleString() }
                                     </TableCell>
                                     <TableCell align="right">0</TableCell>
                                     <TableCell align="right">{ getStatus(run) }</TableCell>

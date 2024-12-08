@@ -1,14 +1,13 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, {ChangeEvent, useEffect, useState} from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
 import IDeviceData from '../types/device';
-import { getAllDevices, runTest } from '../services/device.service';
+import {getAllDevices, postUnlockDevice, runTest} from '../services/device.service';
 import {
     Button,
     Dialog,
@@ -20,16 +19,36 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { ArrowForward, PlayArrow } from '@mui/icons-material';
-import { useSSE } from 'react-hooks-sse';
-import { useNavigate } from 'react-router-dom';
-import { useProjectAppContext } from "../project/app.context";
-import { useProjectContext } from "../project/project.context";
+import {ArrowForward, PlayArrow} from '@mui/icons-material';
+import {useSSE} from 'react-hooks-sse';
+import {useNavigate} from 'react-router-dom';
+import {useProjectContext} from "../project/project.context";
+import _ from "lodash";
+import {TitleCard} from "./title.card.component";
+import Grid from "@mui/material/Grid";
 
 interface DeviceChangePayload {
     DeviceID: number,
     DeviceState: number
 }
+
+export const deviceState = (state: number): string => {
+    switch (state) {
+        case 0:
+            return 'null';
+        case 1:
+            return 'unknown';
+        case 2:
+            return 'shutdown';
+        case 3:
+            return 'remote disconnected';
+        case 4:
+            return 'booted';
+        case 5:
+            return 'locked';
+    }
+    return '';
+};
 
 const DeviceTable: React.FC = () => {
 
@@ -57,24 +76,6 @@ const DeviceTable: React.FC = () => {
             console.log(e);
         });
     }, [projectId]);
-
-    function deviceState(state: number): string {
-        switch (state) {
-            case 0:
-                return 'null';
-            case 1:
-                return 'unknown';
-            case 2:
-                return 'shutdown';
-            case 3:
-                return 'remote disconnected';
-            case 4:
-                return 'booted';
-            case 5:
-                return 'locked';
-        }
-        return '';
-    }
 
     // dialog
     const [testName, seTestName] = useState<string>('');
@@ -105,22 +106,31 @@ const DeviceTable: React.FC = () => {
         seTestName(event.target.value);
     };
 
-    function openDetails(id: number): void {
-        navigate(`/project/${projectId}/device/${ id }`);
+    const unlockDevice = (deviceId: string) => {
+        postUnlockDevice(projectId as string, deviceId).then(response => {
+            setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
+        });
     }
 
+    const openDetails = (id: number): void => {
+        navigate(`/project/${projectId}/device/${id}`);
+    };
+
+    const groups = _.groupBy(devices, function (device) {
+        return device.Node ? device.Node.Name : "Master";
+    });
     return (
-        <div>
-            <Dialog open={ open } onClose={ handleClose } aria-labelledby="form-dialog-title">
+        <>
+            <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Run Test</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Enter Test to execute
                     </DialogContentText>
-                    <Typography variant={ 'subtitle1' }>
+                    <Typography variant={'subtitle1'}>
                         Parameter:
                     </Typography>
-                    <Typography variant={ 'subtitle2' }>
+                    <Typography variant={'subtitle2'}>
                         server=http://localhost:8080<br/>
                         user=autohub
                     </Typography>
@@ -128,86 +138,101 @@ const DeviceTable: React.FC = () => {
                     <TextField
                         id="outlined-multiline-static"
                         label="Parameter"
-                        fullWidth={ true }
-                        multiline={ true }
-                        rows={ 4 }
+                        fullWidth={true}
+                        multiline={true}
+                        rows={4}
                         defaultValue=""
                         variant="outlined"
-                        onChange={ onEnvParamsChanged }
+                        onChange={onEnvParamsChanged}
                     />
-                    <Typography variant={ 'subtitle1' }>
+                    <Typography variant={'subtitle1'}>
                         Test:
                     </Typography>
                     <br/>
                     <TextField
                         id="outlined-static"
                         label="Parameter"
-                        fullWidth={ true }
+                        fullWidth={true}
                         defaultValue=""
                         variant="outlined"
-                        onChange={ onTestNameChanged }
+                        onChange={onTestNameChanged}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={ handleClose } color="primary">
+                    <Button onClick={handleClose} color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={ () => {
+                    <Button onClick={() => {
                         onRunTest();
                         handleClose();
-                    } } color="primary" variant={ 'contained' }>
+                    }} color="primary" variant={'contained'}>
                         Start
                     </Button>
                 </DialogActions>
             </Dialog>
-            <TableContainer component={ Paper }>
-                <Table size="small" aria-label="a dense table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Identifier</TableCell>
-                            <TableCell>OS</TableCell>
-                            <TableCell align="right">Version</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Session</TableCell>
-                            <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        { devices.map((device) => <TableRow key={ `device_entry_${device.ID}` }>
-                            <TableCell component="th" scope="row">
-                                { device.ID }
-                            </TableCell>
-                            <TableCell>
-                                { device.Name }
-                            </TableCell>
-                            <TableCell>{ device.DeviceIdentifier }</TableCell>
-                            <TableCell>{ device.OS }</TableCell>
-                            <TableCell align="right">{ device.OSVersion }</TableCell>
-                            <TableCell>{ deviceState(device.Status) }</TableCell>
-                            <TableCell>{ device.Connection?.appID }</TableCell>
-                            <TableCell align="right">
-                                { device.Connection && (
-                                    <Button color="primary" size="small" variant="outlined" endIcon={ <PlayArrow/> }
-                                        onClick={ (e) => {
-                                            setSelectedDeviceID(device.ID as number);
-                                            handleClickOpen();
-                                        } }>
-                                        Run
-                                    </Button>) }
-                                <IconButton color="primary" size={ 'small' }
-                                    onClick={ (e) => {
-                                        openDetails(device.ID);
-                                    } }>
-                                    <ArrowForward/>
-                                </IconButton>
-                            </TableCell>
-                        </TableRow>) }
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </div>
+            {
+                _.map(groups, (items, group) => {
+                    return (
+                        <TitleCard key={`device_table_group_${group}`}
+                                   title={`Node: ${group === "null" ? "Master" : group}`}>
+                            <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
+                                <Grid container={true}>
+                                    <Grid item={true} xs={12}>
+                                        <Table size="small" aria-label="a dense table">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>ID</TableCell>
+                                                    <TableCell>Name/Identifier</TableCell>
+                                                    <TableCell>OS</TableCell>
+                                                    <TableCell align="right">Version</TableCell>
+                                                    <TableCell>Status</TableCell>
+                                                    <TableCell>Session</TableCell>
+                                                    <TableCell align="right">Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {items.map((device) => <TableRow key={`device_entry_${device.ID}`}>
+                                                    <TableCell component="th" scope="row">
+                                                        {device.ID}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {device.Alias.length > 0 ? device.Alias : device.Name}<br/>
+                                                        {device.DeviceIdentifier}
+                                                    </TableCell>
+                                                    <TableCell>{device.OS}</TableCell>
+                                                    <TableCell align="right">{device.OSVersion}</TableCell>
+                                                    <TableCell>{deviceState(device.Status)}
+                                                        {device.Status === 5 && <Button
+                                                            onClick={() => unlockDevice(device.DeviceIdentifier)}>Unlock</Button>}
+                                                    </TableCell>
+                                                    <TableCell>{device.Connection?.appID}</TableCell>
+                                                    <TableCell align="right">
+                                                        {device.Connection && (
+                                                            <Button color="primary" size="small" variant="outlined"
+                                                                    endIcon={<PlayArrow/>}
+                                                                    onClick={(e) => {
+                                                                        setSelectedDeviceID(device.ID as number);
+                                                                        handleClickOpen();
+                                                                    }}>
+                                                                Run
+                                                            </Button>)}
+                                                        <IconButton color="primary" size={'small'}
+                                                                    onClick={(e) => {
+                                                                        openDetails(device.ID);
+                                                                    }}>
+                                                            <ArrowForward/>
+                                                        </IconButton>
+                                                    </TableCell>
+                                                </TableRow>)}
+                                            </TableBody>
+                                        </Table>
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+                        </TitleCard>)
+                })
+            }
+        </>
     );
 };
 

@@ -101,7 +101,6 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                     return (
                         <ListItem key={ value }
                                   role="listitem"
-                                  button={ true }
                                   onClick={ handleToggle(value) }
                                   secondaryAction={<Checkbox
                                       checked={ state.checked.indexOf(value) !== -1 }
@@ -117,7 +116,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                                         { device?.OS === "iPhone OS" && <AppleIcon/>}
                                     </Avatar>
                                 </ListItemAvatar>
-                                <ListItemText id={ labelId } primary={ `${ device?.Name } (${ device?.OSVersion })` } secondary={device?.DeviceIdentifier}/>
+                                <ListItemText id={ labelId } primary={ `${ device && (device.Alias.length > 0 ? device.Alias : device.Name) } (${ device?.OSVersion })` } secondary={device?.DeviceIdentifier}/>
                             </ListItemButton>
                         </ListItem>
                     );

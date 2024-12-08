@@ -123,50 +123,55 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
     const lastScreenOpen = Boolean(anchorScreenEl);
     const lastScreenID = lastScreenOpen ? 'simple-popover' : undefined;
 
-    const [lastScreen, setLastScreen] = useState<IProtocolEntryData>();
-    const [lastErrors, setLastErrors] = useState<IProtocolEntryData[]>([]);
-    const [lastStep, setLastStep] = useState<IProtocolEntryData>();
-
-    const [entries, setEntries] = useState<IProtocolEntryData[]>([]);
-    const [screenEntries, setScreenEntries] = useState<IProtocolEntryData[]>([]);
-    const [performanceEntries, setPerformanceEntries] = useState<IProtocolPerformanceEntryData[]>([]);
-
-    const [steps, setSteps] = useState<number>(0);
+    const [state, setState] = useState<{
+        lastScreen: IProtocolEntryData|null,
+        lastErrors: IProtocolEntryData[],
+        lastStep: IProtocolEntryData|null,
+        entries: IProtocolEntryData[],
+        screenEntries: IProtocolEntryData[],
+        performanceEntries: IProtocolPerformanceEntryData[],
+        steps: number}>({
+        lastScreen: null,
+        lastErrors: [],
+        lastStep: null,
+        entries: [],
+        screenEntries: [],
+        performanceEntries: [],
+        steps: 0,
+    })
 
     const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${ protocol.ID }_log`, null);
     useEffect(() => {
         if (protocolEntry === null)
             return;
-
-        setEntries(prevState => {
-            const newState = [...prevState];
-            newState.push(protocolEntry.Entry);
-            return newState;
-        });
+        setState(prevState => ({...prevState, entries: [...prevState.entries, protocolEntry.Entry]}))
     }, [protocolEntry]);
 
     const updateStatusEntries = (): void => {
-        const length = entries.length;
+        const length = state.entries.length;
         let numSteps = 0;
         const errors: IProtocolEntryData[] = [];
+        let lastStep: IProtocolEntryData|null = null;
+        let lastScreen: IProtocolEntryData|null = null;
+        const screenEntries: IProtocolEntryData[] = [];
         for (let i = length - 1; i > 0; i--) {
-            if (lastScreen === undefined && entries[ i ].Source === 'screen') {
-                setLastScreen(entries[ i ]);
-            }
-            if (entries[ i ].Source === 'step') {
-                numSteps++;
-                if (lastStep === undefined) {
-                    setLastStep(entries[ i ]);
+            if (state.entries[ i ].Source === 'screen') {
+                screenEntries.push(state.entries[i])
+                if (lastScreen === null) {
+                    lastScreen = state.entries[ i ];
                 }
             }
-
-            if (entries[ i ].Level === 'error') {
-                errors.push(entries[ i ]);
+            if (state.entries[ i ].Source === 'step') {
+                numSteps++;
+                if (lastStep === null) {
+                    lastStep = state.entries[ i ];
+                }
+            }
+            if (state.entries[ i ].Level === 'error') {
+                errors.push(state.entries[ i ]);
             }
         }
-
-        setLastErrors(errors);
-        setSteps(numSteps);
+        setState(prevState => ({...prevState, lastScreen: lastScreen, lastStep: lastStep, lastErrors: errors, steps: numSteps, screenEntries: screenEntries}))
     };
 
     const [value, setValue] = useState(0);
@@ -175,14 +180,12 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
     };
 
     useEffect(() => {
-        setEntries(protocol.Entries);
-        setPerformanceEntries(protocol.Performance);
+        setState(prevState => ({...prevState, entries: protocol.Entries, performanceEntries: protocol.Performance}))
     }, [protocol]);
 
     useEffect(() => {
         updateStatusEntries();
-        setScreenEntries(entries.filter(value1 => value1.Source === 'screen'));
-    }, [entries]);
+    }, [state.entries]);
 
     interface Checkpoints {
         Name: string,
@@ -190,7 +193,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
         ExecutionTime: number,
     }
 
-    const checkpoints = performanceEntries.filter(p => p.Checkpoint !== "schedule").map((value1, index, array) => {
+    const checkpoints = state.performanceEntries.filter(p => p.Checkpoint !== "schedule").map((value1, index, array) => {
         if (index !== 0) {
             value1.ExecutionTime = value1.Runtime - array[ index - 1 ].Runtime
         } else {
@@ -255,7 +258,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                     <PhoneAndroid sx={ {display: 'block'} } color="inherit"/>
                                 </Grid>
                                 <Grid item={ true }>
-                                    { protocol.Device?.Name }
+                                    { protocol.Device && (protocol.Device.Alias.length > 0 ? protocol.Device.Alias : protocol.Device.Name) }
                                 </Grid>
                                 <Grid item={ true }>
                                     <Speed sx={ {display: 'block'} } color="inherit"/>
@@ -286,19 +289,19 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                   sx={ {padding: 1, backgroundColor: '#ff2b40'} }
                                                   xs={ 12 }>
                                                 <Grid item={ true } container={ true } xs={ 12 }>
-                                                    { lastStep &&
+                                                    { state.lastStep &&
                                                         <Grid item={ true } container={ true } xs={ 12 }>
                                                             <Grid item={ true } xs={ 2 }>
                                                                 <Typography
-                                                                    variant={ "body2" }>{ moment(lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }</Typography>
+                                                                    variant={ "body2" }>{ moment(state.lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss') }</Typography>
                                                             </Grid>
                                                             <Grid item={ true } xs={ true }>
                                                                 <Typography
-                                                                    variant={ "body2" }>{ lastStep.Message }</Typography>
+                                                                    variant={ "body2" }>{ state.lastStep.Message }</Typography>
                                                             </Grid>
                                                         </Grid>
                                                     }
-                                                    { lastErrors.map((lastError, index) =>
+                                                    { state.lastErrors.map((lastError, index) =>
                                                         (<Grid key={`last_error_${index}`} item={ true } container={ true } xs={ 12 }>
                                                             <Grid item={ true } xs={ 2 }>
                                                                 <Typography
@@ -313,8 +316,8 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                 </Grid>
                                                 <Grid item={ true } xs={ 12 } container={ true }
                                                       justifyContent={ "center" }>
-                                                    { lastScreen && <div>
-                                                        <Button aria-describedby={ 'last_screen_' + lastScreen.ID }
+                                                    { state.lastScreen && <div>
+                                                        <Button aria-describedby={ 'last_screen_' + state.lastScreen.ID }
                                                                 variant="contained" onClick={ showScreenPopup }>
                                                             Show
                                                         </Button>
@@ -332,7 +335,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                                 <CardMedia
                                                                     component="img"
                                                                     height="400"
-                                                                    image={ `/api/data/${ lastScreen.Data }` }
+                                                                    image={ `/api/data/${ state.lastScreen.Data }` }
                                                                     alt="green iguana"
                                                                 />
                                                             </Card>
@@ -368,7 +371,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                     <Grid item={ true } xs={ true }>
                                                         <Typography gutterBottom={ true } variant="body2"
                                                                     color="textSecondary">Steps</Typography>
-                                                        <Typography variant="h5">{ steps }</Typography>
+                                                        <Typography variant="h5">{ state.steps }</Typography>
                                                     </Grid>
                                                     <Grid item={ true } xs={ true }>
                                                         <Typography gutterBottom={ true } variant="body2"
@@ -376,7 +379,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                             FPS
                                                         </Typography>
                                                         <Typography variant="h5">
-                                                            { protocol.AvgFPS.toFixed(2) } <PerformanceNoteLabel
+                                                            { protocol.AvgFPS?.toFixed(2) } <PerformanceNoteLabel
                                                             value={ diffAvgFPS } isHigherBetter={ true }/>
                                                         </Typography>
                                                     </Grid>
@@ -386,7 +389,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                             Memory
                                                         </Typography>
                                                         <Typography variant="h5" component="h5">
-                                                            { protocol.AvgMEM.toFixed(2) }MB <PerformanceNoteLabel
+                                                            { protocol.AvgMEM?.toFixed(2) }MB <PerformanceNoteLabel
                                                             value={ diffAvgMEM } isHigherBetter={ false }/>
                                                         </Typography>
                                                     </Grid>
@@ -396,7 +399,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                             CPU
                                                         </Typography>
                                                         <Typography variant="h5" component="h5">
-                                                            { protocol.AvgCPU.toFixed(2) }% <PerformanceNoteLabel
+                                                            { protocol.AvgCPU?.toFixed(2) }% <PerformanceNoteLabel
                                                             value={ diffAvgCPU } isHigherBetter={ false }/>
                                                         </Typography>
                                                     </Grid>
@@ -406,10 +409,10 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                     </Grid>
                                 </TabPanel>
                                 <TabPanel value={ value } index={ 1 }>
-                                    <ProtocolLogComponent entries={ entries }/>
+                                    <ProtocolLogComponent entries={ state.entries }/>
                                 </TabPanel>
                                 <TabPanel value={ value } index={ 2 }>
-                                    <ProtocolScreensComponent entries={ screenEntries }/>
+                                    <ProtocolScreensComponent entries={ state.screenEntries }/>
                                 </TabPanel>
                                 <TabPanel value={ value } index={ 3 }>
                                     Video (not implemented)
@@ -425,7 +428,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                 <LineChart
                                                     width={ 600 }
                                                     height={ 300 }
-                                                    data={ performanceEntries }
+                                                    data={ state.performanceEntries }
                                                     syncId="anyId"
                                                     margin={ {top: 10, right: 20, left: 10, bottom: 5} }
                                                 >
@@ -448,7 +451,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                 <LineChart
                                                     width={ 600 }
                                                     height={ 300 }
-                                                    data={ performanceEntries }
+                                                    data={ state.performanceEntries }
                                                     syncId="anyId"
                                                     margin={ {top: 10, right: 20, left: 10, bottom: 5} }
                                                 >
@@ -471,7 +474,7 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                                                 <LineChart
                                                     width={ 600 }
                                                     height={ 300 }
-                                                    data={ performanceEntries }
+                                                    data={ state.performanceEntries }
                                                     syncId="anyId"
                                                     margin={ {top: 10, right: 20, left: 10, bottom: 5} }
                                                 >

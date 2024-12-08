@@ -385,16 +385,13 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                                     <LocalizationProvider dateAdapter={ AdapterDayjs }>
                                                         <MobileDatePicker
                                                             label="Expires At"
-                                                            inputFormat="MM/DD/YYYY"
                                                             value={ newToken.ExpiresAt }
-                                                            onChange={ (newValue: Dayjs | null, keyvalue: string | undefined) => {
+                                                            onChange={ (newValue: Dayjs | null) => {
                                                                 setNewToken(prevState => ({
                                                                     ...prevState,
                                                                     ExpiresAt: newValue
                                                                 }))
                                                             } }
-                                                            renderInput={ (params) => <TextField { ...params }
-                                                                                                 size="small"/> }
                                                         />
                                                     </LocalizationProvider>
                                                 </TableCell>

@@ -39,6 +39,8 @@ func (tr *TestRunner) StartDevices(devices []DeviceMap) error {
 	var wg sync.ExtendedWaitGroup
 	for _, d := range devices {
 		switch d.Device.DeviceState() {
+		case device.StateUnknown:
+			fallthrough
 		case device.StateShutdown:
 			fallthrough
 		case device.StateRemoteDisconnected:

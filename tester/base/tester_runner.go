@@ -6,7 +6,6 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/protocol"
 	"gorm.io/gorm"
-	"net"
 )
 
 type DeviceMap struct {
@@ -16,7 +15,7 @@ type DeviceMap struct {
 
 type TestRunner struct {
 	DeviceManager manager.Devices
-	IP            net.IP
+	NodeUrl       string
 	DB            *gorm.DB
 	Config        models.TestConfig
 	Test          models.Test
@@ -29,9 +28,9 @@ type TestRunner struct {
 	AppId     uint
 }
 
-func (t *TestRunner) Init(deviceManager manager.Devices, ip net.IP, db *gorm.DB, projectId string, appId uint) {
+func (t *TestRunner) Init(deviceManager manager.Devices, nodeUrl string, db *gorm.DB, projectId string, appId uint) {
 	t.DeviceManager = deviceManager
-	t.IP = ip
+	t.NodeUrl = nodeUrl
 	t.DB = db
 	t.ProjectId = projectId
 	t.AppId = appId

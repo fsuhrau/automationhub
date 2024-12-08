@@ -100,7 +100,7 @@ const ProjectMainPage: React.FC = () => {
                                                     underline="none">
                                                     { testName.length > 1 ? testName[1] : data.TestName }
                                                 </Link> <br/>
-                                                { data.Device?.Name }
+                                                { data.Device && (data.Device.Alias.length > 0 ? data.Device.Alias : data.Device.Name) }
                                             </Grid>
                                             <Grid item={ true } xs={ 2 }>
                                                 { duration(data.CreatedAt, data.EndedAt) }
@@ -122,15 +122,13 @@ const ProjectMainPage: React.FC = () => {
                                         <Grid item={ true } xs={ 1 }>
                                             <TestStatusIconComponent status={ data.TestResult }/>
                                         </Grid>
-                                        <Grid item={ true } xs={ 4 }>
-                                            { data.Device?.Name }
-                                        </Grid>
                                         <Grid item={ true } xs={ true }>
                                             <Link
                                                 href={ `/test/0/run/${ data.TestRunID }/${ data.ID }` }
                                                 underline="none">
                                                 { data.TestName.split('/')[ 1 ] }
-                                            </Link>
+                                            </Link> <br/>
+                                            { data.Device && (data.Device.Alias.length > 0 ? data.Device.Alias : data.Device.Name) }
                                         </Grid>
                                         <Grid item={ true } xs={ 2 }>
                                             { duration(data.CreatedAt, data.EndedAt) }

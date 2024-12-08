@@ -57,6 +57,11 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 		migrations.IntroduceProjects,
 		migrations.AddOsInfosToDevice,
 		migrations.AddPerformanceAverage,
+		migrations.AddNodes,
+		migrations.AddUnityTestCategory,
+		migrations.AddAliasToDevice,
+		migrations.AddPlatformTypeToDevice,
+		migrations.AddStatusToNode,
 	})
 	m.InitSchema(migrations.InitSchema)
 

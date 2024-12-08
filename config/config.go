@@ -4,10 +4,18 @@ type WebDriver struct {
 	BundleID string `yaml:"bundleId,omitempty" mapstructure:"bundleId"`
 }
 
+type Device struct {
+	Identifier string            `yaml:"identifier,omitempty" mapstructure:"identifier"`
+	Parameter  map[string]string `yaml:"parameter,omitempty" mapstructure:"parameter"`
+}
+
 type Manager struct {
-	Enabled         bool       `yaml:"enabled,omitempty" mapstructure:"enabled"`
-	UseOSScreenshot bool       `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
-	WebDriver       *WebDriver `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
+	Enabled          bool       `yaml:"enabled,omitempty" mapstructure:"enabled"`
+	UseOSScreenshot  bool       `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
+	WebDriver        *WebDriver `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
+	UnityPath        string     `yaml:"unity_path,omitempty" mapstructure:"unity_path"`
+	UnityBuildTarget string     `yaml:"unity_build_target,omitempty" mapstructure:"unity_build_target"`
+	Devices          []Device   `yaml:"devices,omitempty" mapstructure:"devices"`
 }
 
 type Hook struct {
@@ -53,11 +61,13 @@ type Database struct {
 }
 
 type Service struct {
-	Port          uint16             `yaml:"port,omitempty" mapstructure:"port"`
+	Identifier    string             `yaml:"identifier,omitempty" mapstructure:"identifier"`
+	Port          int32              `yaml:"port,omitempty" mapstructure:"port"`
 	Autodetect    bool               `yaml:"autodetect_ip,omitempty" mapstructure:"autodetect_ip"`
 	AutoDiscovery bool               `yaml:"auto_discovery,omitempty" mapstructure:"auto_discovery"`
 	HostIP        string             `yaml:"host_ip,omitempty" mapstructure:"host_ip"`
-	ServerURL     string             `yaml:"server_url,omitempty" mapstructure:"server_url"`
+	NodeUrl       string             `yaml:"node_url,omitempty" mapstructure:"node_url"`
+	MasterURL     string             `yaml:"master_url,omitempty" mapstructure:"master_url"`
 	DeviceManager map[string]Manager `yaml:"managers,omitempty" mapstructure:"managers"`
 	Hooks         []Hook             `yaml:"hooks,omitempty" mapstructure:"hooks"`
 	Auth          Auth               `yaml:"auth,omitempty" mapstructure:"auth"`

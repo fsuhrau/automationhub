@@ -32,3 +32,4 @@ test/
 
 dist/
 /github.json
+/automationhub_slave.yaml

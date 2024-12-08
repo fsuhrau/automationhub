@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Button, Card, CardMedia, Chip, Popover, Popper, TextField, Typography } from '@mui/material';
+import React, {useState} from 'react';
+import {Chip, TextField} from '@mui/material';
 import IProtocolEntryData from '../types/protocol.entry';
-import { DataGrid, GridCellValue, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { makeStyles } from '@mui/styles';
+import {DataGrid, GridColDef, GridKeyValue, GridRenderCellParams} from '@mui/x-data-grid';
+import {makeStyles} from '@mui/styles';
 import CellExpand from './cell.expand.component';
 import Grid from "@mui/material/Grid";
 
@@ -87,20 +87,20 @@ interface TestProtocolContentProps {
 
 const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestProtocolContentProps) => {
     const classes = useStyles();
-    const { entries } = props;
+    const {entries} = props;
 
-    const timeFrom = (value: GridCellValue): string => {
+    const timeFrom = (value: GridKeyValue): string => {
         return new Date((value as number) * 1000).toISOString().substr(11, 8);
     };
 
-    const nanosFrom = (value: GridCellValue): string => {
+    const nanosFrom = (value: GridKeyValue): string => {
         const str = (value as number).toFixed(4);
         return str.substring(str.length - 4);
     };
 
     const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
         return (
-            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data} />
+            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data}/>
         );
     };
 
@@ -108,7 +108,6 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         {
             field: 'ID',
             headerName: 'ID',
-            hide: true,
         },
         {
             field: 'Runtime',
@@ -118,7 +117,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                return (<div>{ timeFrom(params.value) }.{ nanosFrom(params.value) }</div>);
+                return (<div>{timeFrom(params.value)}.{nanosFrom(params.value)}</div>);
             },
         },
         {
@@ -129,8 +128,8 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                return (<Chip className={ `chip--${ params.value }` }
-                    label={ params.value }/>);
+                return (<Chip className={`chip--${params.value}`}
+                              label={params.value}/>);
             },
         },
         {
@@ -187,54 +186,54 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     const filterEntries = entries.filter(value => (!filter.Errors && isVisible(value.Source) || (value.Level == 'error')) && (filter.Content.length < 2 || value.Message.indexOf(filter.Content) !== -1));
 
     return (
-        <Grid container={true} className={ classes.chip } sx={{padding: 1}}>
+        <Grid container={true} className={classes.chip} sx={{padding: 1}}>
             <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
-                <Chip className={ filter.Errors ? 'chip--error' : 'chip--error--unchecked' } label={ 'errors' }
-                      clickable={ true }
-                      variant={ filter.Errors ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, Errors: !prevState.Errors})) }/>
-                <Chip className={ filter.App ? 'chip--app' : 'chip--app--unchecked' } label={ 'app' }
-                      clickable={ true }
-                      variant={ filter.App ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, App: !prevState.App})) }/>
-                <Chip className={ filter.Step ? 'chip--step' : 'chip--step--unchecked' } label={ 'step' }
-                      clickable={ true }
-                      variant={ filter.Step ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, Step: !prevState.Step})) }/>
-                <Chip className={ filter.Device ? 'chip--device' : 'chip--device--unchecked' }
-                      label={ 'device' }
-                      clickable={ true }
-                      variant={ filter.Device ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, Device: !prevState.Device})) }/>
-                <Chip className={ filter.Status ? 'chip--status' : 'chip--status--unchecked' }
-                      label={ 'status' }
-                      clickable={ true }
-                      variant={ filter.Status ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, Status: !prevState.Status})) }/>
-                <Chip className={ filter.TestRunner ? 'chip--testrunner' : 'chip--testrunner--unchecked' }
-                      label={ 'testrunner' } clickable={ true }
-                      variant={ filter.TestRunner ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, TestRunner: !prevState.TestRunner})) }/>
-                <Chip className={ filter.Action ? 'chip--action' : 'chip--action--unchecked' }
-                      label={ 'action' } clickable={ true }
-                      variant={ filter.Action ? 'filled' : 'outlined' }
-                      onClick={ () => setFilter(prevState => ({...prevState, Action: !prevState.Action})) }/>
+                <Chip className={filter.Errors ? 'chip--error' : 'chip--error--unchecked'} label={'errors'}
+                      clickable={true}
+                      variant={filter.Errors ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, Errors: !prevState.Errors}))}/>
+                <Chip className={filter.App ? 'chip--app' : 'chip--app--unchecked'} label={'app'}
+                      clickable={true}
+                      variant={filter.App ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, App: !prevState.App}))}/>
+                <Chip className={filter.Step ? 'chip--step' : 'chip--step--unchecked'} label={'step'}
+                      clickable={true}
+                      variant={filter.Step ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, Step: !prevState.Step}))}/>
+                <Chip className={filter.Device ? 'chip--device' : 'chip--device--unchecked'}
+                      label={'device'}
+                      clickable={true}
+                      variant={filter.Device ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, Device: !prevState.Device}))}/>
+                <Chip className={filter.Status ? 'chip--status' : 'chip--status--unchecked'}
+                      label={'status'}
+                      clickable={true}
+                      variant={filter.Status ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, Status: !prevState.Status}))}/>
+                <Chip className={filter.TestRunner ? 'chip--testrunner' : 'chip--testrunner--unchecked'}
+                      label={'testrunner'} clickable={true}
+                      variant={filter.TestRunner ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, TestRunner: !prevState.TestRunner}))}/>
+                <Chip className={filter.Action ? 'chip--action' : 'chip--action--unchecked'}
+                      label={'action'} clickable={true}
+                      variant={filter.Action ? 'filled' : 'outlined'}
+                      onClick={() => setFilter(prevState => ({...prevState, Action: !prevState.Action}))}/>
                 <TextField
                     id="textfilter"
                     label="Content"
                     size={"small"}
                     value={filter.Content}
-                    onChange={(e)=> setFilter(prevState => ({...prevState, Content: e.target.value}))} />
+                    onChange={(e) => setFilter(prevState => ({...prevState, Content: e.target.value}))}/>
             </Grid>
             <Grid item={true} xs={12}>
                 <DataGrid
-                    autoHeight={ true }
-                    getRowId={ (row) => row.ID }
-                    rows={ filterEntries }
-                    columns={ columns }
-                    checkboxSelection={ false }
-                    disableSelectionOnClick={ true }
-                    disableColumnFilter={ true }
+                    autoHeight={true}
+                    getRowId={(row) => row.ID}
+                    rows={filterEntries}
+                    columns={columns}
+                    checkboxSelection={false}
+                    disableRowSelectionOnClick={true}
+                    disableColumnFilter={true}
                 />
 
             </Grid>

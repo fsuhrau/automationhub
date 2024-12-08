@@ -45,8 +45,8 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                         label="App"
                         defaultValue={`${ appId }`}
                         value={`${ appId }`}
-                        autoWidth={ true }
                         disableUnderline={ true }
+                        fullWidth={true}
                         sx={ {color: "black"} }
                         onChange={handleChange}
                     >

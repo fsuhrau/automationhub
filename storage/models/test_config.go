@@ -18,16 +18,12 @@ const (
 	SimultaneouslyExecutionType                      // every test on every device ( more accuracy )
 )
 
-type PlatformType uint
+type UnityTestCategoryType uint
 
 const (
-	PlatformTypeiOS PlatformType = iota
-	PlatformTypeAndroid
-	PlatformTypeMac
-	PlatformTypeWindows
-	PlatformTypeLinux
-	PlatformTypeWeb
-	PlatformTypeEditor
+	AllTest UnityTestCategoryType = iota
+	AllOfCategory
+	SelectedTestsOnly
 )
 
 type TestConfig struct {

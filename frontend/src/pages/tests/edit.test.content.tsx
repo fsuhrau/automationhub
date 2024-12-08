@@ -37,6 +37,7 @@ import IDeviceData from "../../types/device";
 import { useProjectAppContext } from "../../project/app.context";
 import { isEqual } from "lodash";
 import { ApplicationProps } from "../../application/application.props";
+import { UnityTestCategory } from "../../types/unity.test.category.type.enum";
 
 interface TestContentProps extends ApplicationProps{
     test: ITestData
@@ -53,7 +54,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         testType: TestType,
         executionType: TestExecutionType,
         platformType: PlatformType,
-        unityTestExecutionType: number,
+        unityTestCategoryType: UnityTestCategory,
         deviceType: number,
         selectedDevices: number[],
         selectedTestFunctions: IAppFunctionData[],
@@ -91,7 +92,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
             executionType: test.TestConfig.ExecutionType,
             platformType: PlatformType.iOS,
             testName: test.Name,
-            unityTestExecutionType: test.TestConfig.Unity?.RunAllTests ? 0 : 1,
+            unityTestCategoryType: test.TestConfig.Unity?.UnityTestCategoryType as UnityTestCategory,
             deviceType: test.TestConfig.AllDevices ? 0 : 1,
             selectedDevices: test.TestConfig.Devices.map(value => value.DeviceID) as number[],
             selectedTestFunctions: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.UnityTestFunctions.map(value => ({
@@ -110,8 +111,10 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
             Categories: state.testCategories.join(','),
             AllDevices: state.deviceType === 0,
             ExecutionType: state.executionType,
-            RunAllTests: state.unityTestExecutionType == 0,
+            RunAllTests: state.unityTestCategoryType == 0,
+            UnityTestCategoryType: state.unityTestCategoryType,
             Devices: state.selectedDevices,
+            TestFunctions: state.selectedTestFunctions,
         } as UpdateTestData).then(response => {
             navigate(`/project/${ projectId }/tests`);
         }).catch(ex => {
@@ -290,10 +293,10 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                         <RadioGroup
                                             name="unity-test-execution-selection"
                                             aria-label="spacing"
-                                            value={ state.unityTestExecutionType.toString() }
+                                            value={ state.unityTestCategoryType.toString() }
                                             onChange={ event => setState(prevState => ({
                                                 ...prevState,
-                                                unityTestExecutionType: +event.target.value
+                                                unityTestCategoryType: +event.target.value
                                             })) }
                                             row={ true }
                                         >
@@ -307,7 +310,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                             )) }
                                         </RadioGroup>
                                     </Grid>
-                                    { state.unityTestExecutionType === 2 && (
+                                    { state.unityTestCategoryType === 2 && (
                                         <Grid item={ true } xs={ 12 } container={ true }>
                                             <Grid item={ true } xs={ 2 }>
                                                 Selected Tests:
@@ -317,7 +320,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                                             </Grid>
                                         </Grid>
                                     ) }
-                                    { state.unityTestExecutionType === 1 && (
+                                    { state.unityTestCategoryType === 1 && (
                                         <Grid item={ true } xs={ 12 } container={ true }>
                                             <Grid item={ true } xs={ 2 }>
                                                 Categories

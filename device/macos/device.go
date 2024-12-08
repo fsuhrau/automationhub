@@ -12,7 +12,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-const CONNECTION_TIMEOUT = 10 * time.Second
+const ConnectionTimeout = 10 * time.Second
 
 type Device struct {
 	generic.Device
@@ -81,8 +81,8 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return nil
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
-	cmd := exec2.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "HOST", hostIP.String())
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
+	cmd := exec2.NewCommand("open", params.AppPath, "SESSION_ID", sessionId, "NODE_URL", nodeUrl)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -120,9 +120,9 @@ func (d *Device) Execute(string) {
 }
 
 func (d *Device) ConnectionTimeout() time.Duration {
-	return CONNECTION_TIMEOUT
+	return ConnectionTimeout
 }
 
-func (d *Device) RunNativeScript(script []byte)  {
+func (d *Device) RunNativeScript(script []byte) {
 
 }

@@ -39,7 +39,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
         {
             id: 'Test Center',
             children: [
-                { id: 'Tests', ref: `/project/${appState.project?.Identifier}/tests`, icon: <Biotech/> },
+                { id: 'Tests', ref: appState.appId ? `/project/${appState.project?.Identifier}/app/${appState.appId}/tests` : `/project/${appState.project?.Identifier}/tests`, icon: <Biotech/> },
                 // { id: 'Results', ref: `/project/${appState.project?.Identifier}/results`, icon: <SettingsEthernetIcon/> },
                 // { id: 'Performance', ref: `/project/${appState.project?.Identifier}/performance`, icon: <TimerIcon/> },
             ],
@@ -48,7 +48,7 @@ const Navigator: React.FC<NavigatorProps> = (props) => {
             id: 'Management',
             children: [
                 // { id: 'Settings', ref: `/project/${appState.project?.Identifier}/settings`, icon: <SettingsIcon/> },
-                { id: 'Apps', ref: `/project/${appState.project?.Identifier}/bundles`, icon: <DnsRoundedIcon/> },
+                { id: 'Apps', ref: appState.appId ? `/project/${appState.project?.Identifier}/app/${appState.appId}/bundles` : `/project/${appState.project?.Identifier}/bundles`, icon: <DnsRoundedIcon/> },
                 { id: 'Devices', ref: `/project/${appState.project?.Identifier}/devices`, icon: <Devices/> },
                 // { id: 'User', ref: `/project/${appState.project?.Identifier}/users`, icon: <PeopleIcon/> },
             ],

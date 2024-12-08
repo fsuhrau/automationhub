@@ -1,7 +1,7 @@
 package action
 
 import (
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 )
 
 type TestStart struct {
@@ -19,14 +19,14 @@ func (a *TestStart) GetActionType() ActionType {
 func (a *TestStart) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ExecuteTest,
-		Payload: &Request_Test{&Test{
+		Payload: RequestData{Test: &Test{
 			Assembly:  a.Assembly,
 			Class:     a.Class,
 			Method:    a.Method,
 			Parameter: a.Env,
 		}},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *TestStart) ProcessResponse(response *Response) error {

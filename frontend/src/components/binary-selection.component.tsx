@@ -125,7 +125,7 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
                     >
                         <MenuItem value={ 0 }>Select an App</MenuItem>
                         { binaries.map((a) =>
-                            <MenuItem value={ a.ID }>{ a.Platform } { a.Name } ({ a.Version })</MenuItem>,
+                            <MenuItem key={`bin_select_item_${a.ID}`} value={ a.ID }>{ a.Platform } { a.Name } ({ a.Version })</MenuItem>,
                         ) }
                     </Select>
                 </FormControl>
