@@ -65,22 +65,22 @@ func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test acti
 
 func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Response) {
 	if response.Success {
-		dev.Log("testrunner", fmt.Sprintf("timeout: %d", response.Payload.TestDetails.Timeout))
-		dev.Log("testrunner", fmt.Sprintf("categories: %v", response.Payload.TestDetails.Categories))
+		dev.Log("testrunner", fmt.Sprintf("Timeout: %d", response.Payload.TestDetails.Timeout))
+		dev.Log("testrunner", fmt.Sprintf("Categories: %v", response.Payload.TestDetails.Categories))
 		if response.Payload.TestDetails.Timeout > 0 {
 			tr.wg.UpdateUntil(time.Now().Add(time.Duration(response.Payload.TestDetails.Timeout) * time.Millisecond))
 		}
 	} else {
-		dev.Error("testrunner", "starting test failed")
+		dev.Error("testrunner", "Starting test failed")
 		tr.fin <- true
 	}
 }
 
 func (tr *testExecutor) handleExecutionResult(dev device.Device, response *action.Response) {
 	if response.Success {
-		dev.Log("testrunner", "test finished successfully")
+		dev.Log("testrunner", "Test finished successfully")
 	} else {
-		dev.Error("testrunner", "test finished with errors")
+		dev.Error("testrunner", "Test finished with errors")
 	}
 	tr.fin <- true
 }

@@ -123,9 +123,9 @@ var runCmd = &cobra.Command{
 				return err
 			}
 
-			wg := sync.ExtendedWaitGroup{}
+			wg := sync.NewExtendedWaitGroup(context.Background())
 			wg.Add(1)
-			go waitForResult(&wg, eventsChannel, runLogChannel)
+			go waitForResult(wg, eventsChannel, runLogChannel)
 			if err := wg.WaitWithTimeout(5 * time.Minute); err != nil {
 				return err
 			}
@@ -138,7 +138,7 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func waitForResult(wg *sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan *sse.Event) {
+func waitForResult(wg sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan *sse.Event) {
 	for {
 		select {
 		case event := <-eventsChannel:

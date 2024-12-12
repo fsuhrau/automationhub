@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 
 import {
     Box,
@@ -16,25 +16,20 @@ import {
     Typography,
 } from '@mui/material';
 import ITestRunData from '../types/test.run';
-import { TestResultState } from '../types/test.result.state.enum';
+import {TestResultState} from '../types/test.result.state.enum';
 import TestStatusIconComponent from '../components/test-status-icon.component';
 import Moment from 'react-moment';
-import { useSSE } from 'react-hooks-sse';
+import {useSSE} from 'react-hooks-sse';
 import ITesRunLogEntryData from '../types/test.run.log.entry';
 import ITestProtocolData from '../types/test.protocol';
 import {cancelTestRun, executeTest} from '../services/test.service';
-import { useNavigate } from 'react-router-dom';
-import { TestContext } from '../context/test.context';
-import {
-    Cancel,
-    CheckCircle, DirectionsRun,
-    KeyboardArrowLeft,
-    KeyboardArrowRight
-} from '@mui/icons-material';
-import { useProjectAppContext } from "../project/app.context";
-import { TitleCard } from "./title.card.component";
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
-import { makeStyles } from "@mui/styles";
+import {useNavigate} from 'react-router-dom';
+import {TestContext} from '../context/test.context';
+import {Cancel, CheckCircle, DirectionsRun, KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
+import {useProjectAppContext} from "../project/app.context";
+import {TitleCard} from "./title.card.component";
+import {Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis} from 'recharts';
+import {makeStyles} from "@mui/styles";
 
 interface TestRunContentProps {
     testRun: ITestRunData
@@ -94,9 +89,14 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
 
     const navigate = useNavigate();
 
-    const [log, setLog] = useState<Array<ITesRunLogEntryData>>([]);
+    const [state, setState] = useState<{
+        log: Array<ITesRunLogEntryData>,
+        runsOpen: number,
+        runsFailed: number,
+        runsSuccess: number
+    }>({log: [], runsOpen: 0, runsSuccess: 0, runsFailed: 0})
 
-    const protocols = useSSE<ITestProtocolData[], ITestProtocolData>(`test_run_${ testRun.ID }_protocol`, testRun.Protocols, {
+    const protocols = useSSE<ITestProtocolData[], ITestProtocolData>(`test_run_${testRun.ID}_protocol`, testRun.Protocols, {
         stateReducer: (state, changes) => {
             if (state.findIndex(value => value.ID == changes.data.ID) >= 0) {
                 return state.map(value => {
@@ -108,21 +108,12 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
         },
     });
 
-    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${ testRun.ID }_log`, null);
+    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${testRun.ID}_log`, null);
     useEffect(() => {
         if (testRunEntry === null)
             return;
-
-        setLog(prevState => {
-            const newState = [...prevState];
-            newState.push(testRunEntry.Entry);
-            return newState;
-        });
+        setState(prevState => ({...prevState, log: [...prevState.log, testRunEntry.Entry]}))
     }, [testRunEntry]);
-
-    const [runsOpen, setRunsOpen] = useState<number>();
-    const [runsFailed, setRunsFailed] = useState<number>();
-    const [runsSuccess, setRunsSuccess] = useState<number>();
 
     type FilterType = {
         Success: boolean,
@@ -136,7 +127,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
         Pending: true,
     });
 
-    function rebuildStatistics(run: ITestRunData): void {
+    const rebuildStatistics = (run: ITestRunData): { ro: number, rf: number, rs: number } => {
         let ro: number;
         let rf: number;
         let rs: number;
@@ -157,20 +148,17 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                     break;
             }
         });
-
-        setRunsOpen(ro);
-        setRunsFailed(rf);
-        setRunsSuccess(rs);
+        return {ro: ro, rf: rf, rs: rs}
     }
 
     useEffect(() => {
-        setLog(testRun.Log);
-        rebuildStatistics(testRun);
+        let {ro, rf, rs} = rebuildStatistics(testRun);
+        setState(prevState => ({...prevState, log: testRun.Log, runsOpen: ro, runsFailed: rf, runsSuccess: rs}))
     }, [testRun]);
 
     const onTestRerun = (): void => {
         executeTest(projectId, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
-            navigate(`/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ response.data.ID }`);
+            navigate(`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);
         });
@@ -185,115 +173,131 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
     };
 
     const startupTimes = testRun.DeviceStatus.map(item => {
-            return {Name: item.Device && (item.Device.Alias.length > 0 ? item.Device.Alias : item.Device.Name), StartupTime: item.StartupTime}
+            return {
+                Name: item.Device && (item.Device.Alias.length > 0 ? item.Device.Alias : item.Device.Name),
+                StartupTime: item.StartupTime
+            }
         }
     )
 
     const environmentParameters = testRun?.Parameter.split("\n");
 
     return (
-        <Grid container={ true } spacing={ 2 }>
-            <Grid item={ true } xs={ 12 }>
-                <Typography variant={ "h1" }>Test: { testRun.Test.Name } Run: { testRun.ID }</Typography>
+        <Grid container={true} spacing={2}>
+            <Grid item={true} xs={12}>
+                <Typography variant={"h1"}>Test: {testRun.Test.Name} Run: {testRun.ID}</Typography>
             </Grid>
-            <Grid item={ true } xs={ 12 }>
+            <Grid item={true} xs={12}>
                 <Divider/>
             </Grid>
-            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" } justifyContent={ "center" }>
+            <Grid item={true} container={true} xs={12} alignItems={"center"} justifyContent={"center"}>
                 <Grid
-                    item={ true }
-                    xs={ 12 }
-                    style={ {maxWidth: 800} }
+                    item={true}
+                    xs={12}
+                    style={{maxWidth: 800}}
                 >
-                    <Grid item={ true } container={ true } xs={ 12 } spacing={ 2 } alignItems={ "center" }>
-                        <Grid item={ true }>
-                            { prevRunId !== undefined && prevRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ prevRunId } ` }>
-                                <KeyboardArrowLeft/> Prev
-                            </Button>
+                    <Grid item={true} container={true} xs={12} spacing={2} alignItems={"center"}>
+                        <Grid item={true}>
+                            {prevRunId !== undefined && prevRunId > 0 &&
+                                <Button variant="contained" color="primary" size="small"
+                                        href={`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${prevRunId} `}>
+                                    <KeyboardArrowLeft/> Prev
+                                </Button>
                             }
                         </Grid>
-                        <Grid item={ true } xs={ true }>
+                        <Grid item={true} xs={true}>
                         </Grid>
-                        <Grid item={ true }>
-                            { nextRunId !== undefined && nextRunId > 0 && <Button variant="contained" color="primary" size="small"
-                                                       href={ `/project/${ projectId }/app/${ appId }/test/${ testRun.TestID }/run/${ nextRunId } ` }>
-                                Next <KeyboardArrowRight/>
-                            </Button>
+                        <Grid item={true}>
+                            {nextRunId !== undefined && nextRunId > 0 &&
+                                <Button variant="contained" color="primary" size="small"
+                                        href={`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${nextRunId} `}>
+                                    Next <KeyboardArrowRight/>
+                                </Button>
                             }
                         </Grid>
                     </Grid>
-                    <TitleCard title={ "Results" }>
-                        <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" }
-                              justifyContent={ "center" }>
+                    <TitleCard title={"Results"}>
+                        <Grid item={true} container={true} xs={12} alignItems={"center"}
+                              justifyContent={"center"}>
                             <PieChart
-                                width={ 200 }
-                                height={ 200 }
+                                width={200}
+                                height={200}
                             >
                                 <Pie
-                                    data={ [
-                                        {name: "Open", value: runsOpen},
-                                        {name: "Failed", value: runsFailed},
-                                        {name: "Success", value: runsSuccess},
-                                    ] }
+                                    data={[
+                                        {name: "Open", value: state.runsOpen},
+                                        {name: "Failed", value: state.runsFailed},
+                                        {name: "Success", value: state.runsSuccess},
+                                    ]}
                                     cx="50%"
                                     cy="50%"
                                     label
-                                    outerRadius={ 70 }
+                                    outerRadius={70}
                                     fill="#8884d8"
                                     dataKey="value"
                                 >
-                                    <Cell fill={ 'yellow' }/>
-                                    <Cell fill={ 'red' }/>
-                                    <Cell fill={ 'green' }/>
+                                    <Cell fill={'yellow'}/>
+                                    <Cell fill={'red'}/>
+                                    <Cell fill={'green'}/>
                                 </Pie>
                                 <Tooltip/>
                             </PieChart>
-                            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" }
-                                  justifyContent={ "center" }>
+                            <Grid item={true} container={true} xs={12} alignItems={"center"}
+                                  justifyContent={"center"}>
                                 <Typography
-                                    variant={ "caption" }> Open: { runsOpen } Failed: { runsFailed } Success: { runsSuccess }</Typography>
+                                    variant={"caption"}> Open: {state.runsOpen} Failed: {state.runsFailed} Success: {state.runsSuccess}</Typography>
                             </Grid>
                         </Grid>
                     </TitleCard>
-                    <TitleCard title={ "Environment" }>
-                        <Grid item={ true } container={ true } xs={ 12 }>
-                            <Grid container={ true }>
-                                <Grid item={ true } container={true} xs={ 12 }>
-                                    { environmentParameters.map((e, i) => (
+                    <TitleCard title={"Environment"}>
+                        <Grid item={true} container={true} xs={12}>
+                            <Grid container={true}>
+                                <Grid item={true} container={true} xs={12}>
+                                    {environmentParameters.map((e, i) => (
                                         <Grid key={`env_${i}`} item={true} xs={12}>
                                             <Typography variant={"body1"}>
-                                                { e }
+                                                {e}
                                             </Typography>
                                         </Grid>
                                     ))}
                                 </Grid>
-                                <Grid item={ true } xs={ true }/>
-                                <Grid item={ true } container={ true } xs={ 12 } alignItems={ "flex-end" }
-                                      justifyContent={ "flex-end" }>
-                                    <Button variant="contained" color="primary" onClick={ onTestRerun }>
-                                        Rerun
-                                    </Button>
-                                    <Button variant="contained" color="secondary" onClick={ onCancelTestRun }>
-                                        Cancel
-                                    </Button>
+                                <Grid item={true} xs={true}/>
+                                <Grid item={true} container={true} xs={12} alignItems={"flex-end"}
+                                      justifyContent={"flex-end"} spacing={2}>
+                                    <Grid item={true}>
+                                        <Button variant="contained" color="primary" onClick={onTestRerun}>
+                                            Rerun
+                                        </Button>
+                                    </Grid>
+                                    <Grid item={true}>
+                                        {state.runsOpen > 0 &&
+                                            <Button variant="contained" color="secondary" onClick={onCancelTestRun}>
+                                                Cancel
+                                            </Button>}
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Grid>
                     </TitleCard>
-                    <TitleCard title={ "Test Functions" }>
-                        <Grid container justifyContent="flex-end" className={ classes.chip } padding={1} >
+                    <TitleCard title={"Test Functions"}>
+                        <Grid container justifyContent="flex-end" className={classes.chip} padding={1}>
                             <CheckCircle htmlColor={filter.Success ? 'green' : 'lightgray'}
-                                         onClick={ () => setFilter(prevState => ({...prevState, Success: !prevState.Success})) }
+                                         onClick={() => setFilter(prevState => ({
+                                             ...prevState,
+                                             Success: !prevState.Success
+                                         }))}
                             />
                             <Cancel htmlColor={filter.Failed ? 'red' : 'lightgray'}
-                                    onClick={ () => setFilter(prevState => ({...prevState, Failed: !prevState.Failed})) }
+                                    onClick={() => setFilter(prevState => ({...prevState, Failed: !prevState.Failed}))}
                             />
                             <DirectionsRun htmlColor={filter.Pending ? 'yellow' : 'lightgray'}
-                                      onClick={ () => setFilter(prevState => ({...prevState, Pending: !prevState.Pending})) }
+                                           onClick={() => setFilter(prevState => ({
+                                               ...prevState,
+                                               Pending: !prevState.Pending
+                                           }))}
                             />
                         </Grid>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} } >
+                        <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
                             <TableContainer>
                                 <Table size="small" aria-label="a dense table">
                                     <TableHead>
@@ -304,114 +308,115 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        { protocols.filter(value => (filter.Success && value.TestResult === TestResultState.TestResultSuccess) || (filter.Failed && value.TestResult === TestResultState.TestResultFailed) || (filter.Pending && value.TestResult === TestResultState.TestResultOpen) ).map((protocol) => {
+                                        {protocols.filter(value => (filter.Success && value.TestResult === TestResultState.TestResultSuccess) || (filter.Failed && value.TestResult === TestResultState.TestResultFailed) || (filter.Pending && value.TestResult === TestResultState.TestResultOpen)).map((protocol) => {
                                             const testName = protocol.TestName.split("/");
                                             return (
-                                                <TableRow key={ protocol.ID }>
+                                                <TableRow key={protocol.ID}>
                                                     <TableCell component="th" scope="row">
                                                         <Link
-                                                            href={ `/project/${ projectId }/app/${ testRun.Test.AppID }/test/${ testRun.TestID }/run/${ testRun.ID }/${ protocol.ID }` }
+                                                            href={`/project/${projectId}/app/${testRun.Test.AppID}/test/${testRun.TestID}/run/${testRun.ID}/${protocol.ID}`}
                                                             underline="none">
-                                                            { testName[0] } <br/> { testName[1] }
+                                                            {testName[0]} <br/> {testName[1]}
                                                         </Link>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Grid container={ true }>
-                                                            <Grid item={ true } xs={ 12 }>
-                                                                { protocol.Device && (protocol.Device.Alias.length > 0 ? protocol.Device.Alias : protocol.Device.Name) }
+                                                        <Grid container={true}>
+                                                            <Grid item={true} xs={12}>
+                                                                {protocol.Device && (protocol.Device.Alias.length > 0 ? protocol.Device.Alias : protocol.Device.Name)}
                                                             </Grid>
-                                                            <Grid item={ true } xs={ 12 }>
-                                                                { protocol.Device?.OS } { protocol.Device?.OSVersion }
+                                                            <Grid item={true} xs={12}>
+                                                                {protocol.Device?.OS} {protocol.Device?.OSVersion}
                                                             </Grid>
                                                         </Grid>
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        <TestStatusIconComponent status={ protocol.TestResult }/>
+                                                        <TestStatusIconComponent status={protocol.TestResult}/>
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                        }) }
+                                        })}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
                         </Paper>
                     </TitleCard>
-                    { testRun?.AppBinary &&
-                        <TitleCard title={ "App Bundle" }>
-                            <Box sx={ {p: 1, m: 1} }>
-                                <Grid container={ true }>
-                                    <Grid item={ true } xs={ 2 }>
+                    {
+                        testRun?.AppBinary &&
+                        <TitleCard title={"App Bundle"}>
+                            <Box sx={{p: 1, m: 1}}>
+                                <Grid container={true}>
+                                    <Grid item={true} xs={2}>
                                         Name:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Name }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Name}
                                     </Grid>
 
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Identifier:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Identifier }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Identifier}
                                     </Grid>
 
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Platform:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Platform }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Platform}
                                     </Grid>
 
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Version:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Version }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Version}
                                     </Grid>
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Hash:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Hash }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Hash}
                                     </Grid>
 
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Created:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
+                                    <Grid item={true} xs={10}>
                                         <Moment
-                                            format="YYYY/MM/DD HH:mm:ss">{ testRun?.AppBinary?.CreatedAt }</Moment>
+                                            format="YYYY/MM/DD HH:mm:ss">{testRun?.AppBinary?.CreatedAt}</Moment>
                                     </Grid>
 
-                                    <Grid item={ true } xs={ 2 }>
+                                    <Grid item={true} xs={2}>
                                         Addons:
                                     </Grid>
-                                    <Grid item={ true } xs={ 10 }>
-                                        { testRun?.AppBinary?.Additional }
+                                    <Grid item={true} xs={10}>
+                                        {testRun?.AppBinary?.Additional}
                                     </Grid>
                                 </Grid>
                             </Box>
                         </TitleCard>
                     }
-                    <TitleCard title={ "App Startup Time" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
-                            <ResponsiveContainer width={ '100%' } height={ 200 }>
-                                <BarChart width={ 600 } height={ 200 } data={startupTimes} margin={ {
+                    <TitleCard title={"App Startup Time"}>
+                        <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
+                            <ResponsiveContainer width={'100%'} height={200}>
+                                <BarChart width={600} height={200} data={startupTimes} margin={{
                                     top: 5,
                                     right: 30,
                                     left: 20,
                                     bottom: 5,
-                                } }>
+                                }}>
                                     <CartesianGrid strokeDasharray="3 3"/>
                                     <XAxis dataKey="Name"/>
                                     <Tooltip/>
-                                    <Bar dataKey="StartupTime" fill="#8884d8" label={{ position: 'top' }} unit={'ms'}/>
+                                    <Bar dataKey="StartupTime" fill="#8884d8" label={{position: 'top'}} unit={'ms'}/>
                                 </BarChart>
                             </ResponsiveContainer>
                         </Paper>
                     </TitleCard>
-                    <TitleCard title={ "Execution Log" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
-                            <Box sx={ {p: 1, m: 1} }>
+                    <TitleCard title={"Execution Log"}>
+                        <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
+                            <Box sx={{p: 1, m: 1}}>
                                 <TableContainer>
                                     <Table size="small" aria-label="a dense table">
                                         <TableHead>
@@ -422,13 +427,13 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            { log.map((entry) => <TableRow key={ entry.ID }>
-                                                <TableCell component="th" scope="row" style={ {whiteSpace: 'nowrap'} }>
-                                                    <Moment format="YYYY/MM/DD HH:mm:ss">{ entry.CreatedAt }</Moment>
+                                            {state.log.map((entry) => <TableRow key={entry.ID}>
+                                                <TableCell component="th" scope="row" style={{whiteSpace: 'nowrap'}}>
+                                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
                                                 </TableCell>
-                                                <TableCell>{ entry.Level }</TableCell>
-                                                <TableCell>{ entry.Log }</TableCell>
-                                            </TableRow>) }
+                                                <TableCell>{entry.Level}</TableCell>
+                                                <TableCell>{entry.Log}</TableCell>
+                                            </TableRow>)}
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
@@ -438,7 +443,8 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                 </Grid>
             </Grid>
         </Grid>
-    );
+    )
+        ;
 };
 
 export default TestRunContent;

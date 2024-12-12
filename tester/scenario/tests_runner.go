@@ -63,14 +63,14 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
-		tr.LogError("no lockable devices available")
+		tr.LogError("No lockable devices available")
 		return
 	}
 	defer tr.UnlockDevices(devices)
 
 	tr.LogInfo("Starting devices")
 	if err := tr.StartDevices(tr.ctx, devices); err != nil {
-		tr.LogError("unable to start devices")
+		tr.LogError("Unable to start devices")
 		return
 	}
 
@@ -85,18 +85,18 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	}
 
 	// stop app
-	tr.LogInfo("stop apps if running")
+	tr.LogInfo("Stop apps if running")
 	tr.StopApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("install app on devices")
+	tr.LogInfo("Install app on devices")
 	tr.InstallApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("start app on devices and wait for connection")
+	tr.LogInfo("Start app on devices and wait for connection")
 	connectedDevices, err := tr.StartApp(tr.ctx, tr.appParams, devices, func(d device.Device) {
 		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
 	}, nil)
 	if err == sync.TimeoutError {
-		tr.LogError("one or more apps didn't connect")
+		tr.LogError("Timeout while stating app")
 	}
 
 	var testList []models.UnityTestFunction
@@ -104,7 +104,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		tr.LogInfo("UnityTestCategoryType active requesting PlayMode tests")
 		a := &action.TestsGet{}
 		if err := tr.DeviceManager.SendAction(connectedDevices[0].Device, a); err != nil {
-			tr.LogError("send action to select all tests failed: %v", err)
+			tr.LogError("Send action to select all tests failed: %v", err)
 			return
 		}
 		for _, t := range a.Tests {
@@ -174,10 +174,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		close(parallelWorker)
 	}
 
-	tr.LogInfo("stop apps")
+	tr.LogInfo("Stop apps")
 	for _, d := range connectedDevices {
 		if err := d.Device.StopApp(&tr.appParams); err != nil {
-			tr.LogError("unable to start app: %v", err)
+			tr.LogError("Unable to start app: %v", err)
 		}
 	}
 }

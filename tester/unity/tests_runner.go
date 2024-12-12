@@ -106,26 +106,26 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	}
 
 	// stop app
-	tr.LogInfo("stop apps if running")
+	tr.LogInfo("Stop apps if running")
 	tr.StopApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("install app on devices")
+	tr.LogInfo("Install app on devices")
 	tr.InstallApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("start app on devices and wait for connection")
+	tr.LogInfo("Start app on devices and wait for connection")
 	connectedDevices, err := tr.StartApp(tr.ctx, tr.appParams, devices, nil, nil)
 	if errors.Is(err, sync.TimeoutError) {
-		tr.LogError("one or more apps didn't connect")
+		tr.LogError("Timeout while stating app")
 	}
 	if connectedDevices == nil {
-		tr.LogError("no devices connected can't execute tests...")
+		tr.LogError("No devices connected can't execute tests...")
 		return
 	}
 
-	tr.LogInfo("get test list")
+	tr.LogInfo("Get test list")
 	testList, err := tr.getTestList(connectedDevices)
 	if err != nil {
-		tr.LogError("get tests failed: %v", err)
+		tr.LogError("Get tests failed: %v", err)
 	} else {
 		if len(testList) == 0 {
 			tr.LogInfo("No Tests")
@@ -137,10 +137,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		tr.cancelFunc()
 	}
 
-	tr.LogInfo("stop apps")
+	tr.LogInfo("Stop apps")
 	for _, d := range connectedDevices {
 		if err := d.Device.StopApp(&tr.appParams); err != nil {
-			tr.LogError("unable to stop app: %v", err)
+			tr.LogError("Unable to stop app: %v", err)
 		}
 	}
 }
@@ -285,7 +285,7 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 
 	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
-		tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
+		tr.LogError("Unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
 	}
 	dev.Device.SetLogWriter(prot.Writer)
 	defer func() {
@@ -303,27 +303,41 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
 	executor := NewExecutor(tr.DeviceManager)
 	err = executor.Execute(tr.ctx, dev.Device, task, DefaultTestTimeout)
-	if err != nil || len(prot.Errors()) > 0 {
-		nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
-		fileName := fmt.Sprintf("%x.png", sha1.Sum(nameData))
-		filePath := filepath.Join(apps.TestDataPath, fileName)
 
-		rawData, _, _, err := dev.Device.GetScreenshot()
-		if rawData == nil {
-			var screenshotAction action.GetScreenshot
-			actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
-			if err := actionExecutor.Execute(tr.ctx, dev.Device, &screenshotAction, 10*time.Second); err != nil {
-				tr.LogError("take screenshot failed: %v", err)
-			} else {
-				rawData = screenshotAction.ScreenshotData()
-			}
+	if err != nil || len(prot.Errors()) > 0 {
+		tr.captureScreenShot(dev, task, err)
+		var errorlist []string
+		if err != nil {
+			errorlist = append(errorlist, err.Error())
 		}
-		if rawData != nil {
-			os.WriteFile(filePath, rawData, os.ModePerm)
-			dev.Device.Data("screen", fileName)
+		for _, err := range prot.Errors() {
+			errorlist = append(errorlist, err.Error())
 		}
-		tr.LogError("test execution failed: %v", err)
-	} else {
-		tr.LogInfo("test execution finished")
+		tr.LogError("Test execution failed: %v", strings.Join(errorlist, "\n"))
+		return
+	}
+
+	tr.LogInfo("Test execution finished")
+}
+
+func (tr *testsRunner) captureScreenShot(dev base.DeviceMap, task action.TestStart, err error) {
+
+	nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
+	fileName := fmt.Sprintf("%x.png", sha1.Sum(nameData))
+	filePath := filepath.Join(apps.TestDataPath, fileName)
+
+	rawData, _, _, err := dev.Device.GetScreenshot()
+	if rawData == nil {
+		var screenshotAction action.GetScreenshot
+		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
+		if err := actionExecutor.Execute(tr.ctx, dev.Device, &screenshotAction, 10*time.Second); err != nil {
+			tr.LogError("Take screenshot failed: %v", err)
+		} else {
+			rawData = screenshotAction.ScreenshotData()
+		}
+	}
+	if rawData != nil {
+		os.WriteFile(filePath, rawData, os.ModePerm)
+		dev.Device.Data("screen", fileName)
 	}
 }
