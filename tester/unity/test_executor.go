@@ -1,6 +1,7 @@
 package unity
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -31,15 +32,15 @@ func NewExecutor(devices manager.Devices) *testExecutor {
 	return executor
 }
 
-func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout time.Duration) error {
+func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test action.TestStart, timeout time.Duration) error {
 	dev.AddActionHandler(e)
 	defer func() {
 		dev.RemoveActionHandler(e)
 	}()
 
-	e.wg = sync.ExtendedWaitGroup{}
+	e.wg = sync.NewExtendedWaitGroup(ctx)
 	e.wg.Add(1)
-	go func(wg *sync.ExtendedWaitGroup) {
+	go func(wg sync.ExtendedWaitGroup) {
 		select {
 		case finished := <-e.fin:
 			{
@@ -49,7 +50,7 @@ func (e *testExecutor) Execute(dev device.Device, test action.TestStart, timeout
 				}
 			}
 		}
-	}(&e.wg)
+	}(e.wg)
 	if err := e.devicesManager.SendAction(dev, &test); err != nil {
 		dev.Error("testrunner", err.Error())
 		return err

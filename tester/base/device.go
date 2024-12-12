@@ -1,6 +1,7 @@
 package base
 
 import (
+	"context"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -35,8 +36,10 @@ func (tr *TestRunner) UnlockDevices(devices []DeviceMap) {
 	}
 }
 
-func (tr *TestRunner) StartDevices(devices []DeviceMap) error {
-	var wg sync.ExtendedWaitGroup
+func (tr *TestRunner) StartDevices(ctx context.Context, devices []DeviceMap) error {
+
+	wg := sync.NewExtendedWaitGroup(ctx)
+
 	for _, d := range devices {
 		switch d.Device.DeviceState() {
 		case device.StateUnknown:
@@ -45,13 +48,13 @@ func (tr *TestRunner) StartDevices(devices []DeviceMap) error {
 			fallthrough
 		case device.StateRemoteDisconnected:
 			wg.Add(1)
-			go func(dm manager.Devices, d device.Device, group *sync.ExtendedWaitGroup) {
+			go func(dm manager.Devices, d device.Device, group sync.ExtendedWaitGroup) {
 				if err := dm.Start(d); err != nil {
 					logrus.Errorf("%v", err)
 					tr.LogError("unable to start device: %v", err)
 				}
 				group.Done()
-			}(tr.DeviceManager, d.Device, &wg)
+			}(tr.DeviceManager, d.Device, wg)
 		case device.StateBooted:
 		}
 	}

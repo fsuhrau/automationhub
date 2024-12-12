@@ -54,5 +54,5 @@ export const executeTest = (projectId: string, appId: number, id: number | null 
 };
 
 export const cancelTestRun = (projectId: string, appId: number, testId: number, runId: number): Promise<AxiosResponse<void>> => {
-    return http.delete(`/${projectId}/app/${appId}/test/${testId}/run/${runId}`);
+    return http.post(`/${projectId}/app/${appId}/test/${testId}/run/${runId}/cancel`);
 };

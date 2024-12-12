@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -10,20 +11,30 @@ var (
 	TimeoutError = fmt.Errorf("group timed out")
 )
 
-type ExtendedWaitGroup struct {
-	group sync.WaitGroup
-	until time.Time
+type ExtendedWaitGroup interface {
+	Done()
+	Add(delta int)
+	WaitWithTimeout(duration time.Duration) error
+	WaitUntil(waitUntil time.Time) error
+	UpdateUntil(waitUntil time.Time)
+	Wait()
 }
 
-func (wg *ExtendedWaitGroup) Done() {
+type extendedWaitGroup struct {
+	group sync.WaitGroup
+	until time.Time
+	ctx   context.Context
+}
+
+func (wg *extendedWaitGroup) Done() {
 	wg.group.Done()
 }
 
-func (wg *ExtendedWaitGroup) Add(delta int) {
+func (wg *extendedWaitGroup) Add(delta int) {
 	wg.group.Add(delta)
 }
 
-func (wg *ExtendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
+func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	timeout := make(chan bool, 1)
 	go func() {
 		time.Sleep(duration)
@@ -37,14 +48,16 @@ func (wg *ExtendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	}()
 
 	select {
-	case _ = <-timeout:
+	case <-timeout:
 		return TimeoutError
-	case _ = <-wait:
+	case <-wait:
 		return nil
+	case <-wg.ctx.Done():
+		return wg.ctx.Err()
 	}
 }
 
-func (wg *ExtendedWaitGroup) WaitUntil(waitUntil time.Time) error {
+func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	wg.until = waitUntil
 
 	timeout := make(chan bool, 1)
@@ -65,17 +78,25 @@ func (wg *ExtendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	}()
 
 	select {
-	case _ = <-timeout:
+	case <-timeout:
 		return TimeoutError
-	case _ = <-wait:
+	case <-wait:
 		return nil
+	case <-wg.ctx.Done():
+		return wg.ctx.Err()
 	}
 }
 
-func (wg *ExtendedWaitGroup) UpdateUntil(waitUntil time.Time) {
+func (wg *extendedWaitGroup) UpdateUntil(waitUntil time.Time) {
 	wg.until = waitUntil
 }
 
-func (wg *ExtendedWaitGroup) Wait() {
+func (wg *extendedWaitGroup) Wait() {
 	wg.group.Wait()
+}
+
+func NewExtendedWaitGroup(ctx context.Context) *extendedWaitGroup {
+	return &extendedWaitGroup{
+		ctx: ctx,
+	}
 }

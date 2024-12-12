@@ -43,12 +43,10 @@ func (c *Connection) HandleMessages(ctx context.Context) {
 	}()
 
 	for {
-		/*
-			if err := c.Connection.SetReadDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
-				c.Logger.Errorf("SocketAccept SetDeadline: %v", err)
-				return
-			}
-		*/
+		if err := c.Connection.SetReadDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
+			c.Logger.Errorf("SocketAccept SetDeadline: %v", err)
+			return
+		}
 		time.Sleep(50 * time.Millisecond)
 		if c.Connection == nil {
 			return

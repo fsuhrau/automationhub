@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	device2 "github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -243,7 +244,8 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 	}
 
 	executor := unity.NewExecutor(s.devicesManager)
-	if err := executor.Execute(dev, runTestAction, 5*time.Minute); err != nil {
+
+	if err := executor.Execute(context.Background(), dev, runTestAction, 5*time.Minute); err != nil {
 		logrus.Errorf("Execute failed: %v", err)
 		s.error(c, http.StatusInternalServerError, err)
 		return
