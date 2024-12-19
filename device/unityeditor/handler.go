@@ -10,6 +10,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	sync2 "github.com/fsuhrau/automationhub/utils/sync"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -95,6 +96,7 @@ func (m *Handler) StartDevice(deviceID string) error {
 	m.mu.Lock()
 	dev, ok := m.devices[deviceID]
 	m.mu.Unlock()
+
 	if ok {
 		config := dev.GetConfig()
 		var projectDir string
@@ -111,18 +113,23 @@ func (m *Handler) StartDevice(deviceID string) error {
 
 		unityEditorPath := GetUnityEditorPath(m.managerCfg.UnityPath, projectVersion)
 
+		// Generate a random log file name
+		logFileName := fmt.Sprintf("automation_hub_unity_%d.log", rand.Int())
+		dev.instanceLogFile = filepath.Join(projectDir, logFileName)
+
 		unityParams := []string{
 			"-buildTarget",
 			m.managerCfg.UnityBuildTarget,
-			"-projectPath", projectDir, "-overrideProfile", "automation", "-executeMethod", "AutomationLoader.LoadSceneAndConnect", "-logFile", "automation_hub_unity.log", "-debugCodeOptimization", "--ump-channel-service-on-startup",
+			"-projectPath", projectDir, "-overrideProfile", "automation", "-executeMethod", "AutomationLoader.LoadSceneAndConnect", "-logFile", dev.instanceLogFile, "-debugCodeOptimization", "--ump-channel-service-on-startup",
 		}
 		dev.process = exec.NewCommand(unityEditorPath, unityParams...)
-		// dev.process.Stdout = os.Stdout
-		// dev.process.Stderr = os.Stdout
 		dev.startedAt = time.Now()
 		if err := dev.process.Start(); err != nil {
 			return err
 		}
+
+		dev.UnityLogStartListening()
+
 		m.mu.Lock()
 		m.devices[deviceID] = dev
 		m.mu.Unlock()
@@ -226,6 +233,7 @@ func (m *Handler) StopDevice(deviceID string) error {
 			}
 			dev.process = nil
 		}
+		dev.UnityLogStopListening()
 	}
 	return nil
 }

@@ -1,11 +1,15 @@
 package unityeditor
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/gorilla/websocket"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 
@@ -34,7 +38,11 @@ type Device struct {
 	client            *http.Client
 	managerConnection *websocket.Conn
 	sendChannel       chan []byte
-	process           *exec.Cmd
+
+	ctx             context.Context
+	cancel          context.CancelFunc
+	process         *exec.Cmd
+	instanceLogFile string
 }
 
 func (d *Device) DeviceModel() string {
@@ -191,4 +199,44 @@ func (d *Device) HandleManagerConnection() {
 
 	d.deviceState = device.StateShutdown
 	d.updated = true
+}
+
+func (d *Device) UnityLogStartListening() {
+	d.ctx, d.cancel = context.WithCancel(context.Background())
+	go d.processUnityLog()
+}
+
+func (d *Device) processUnityLog() {
+	time.Sleep(1 * time.Second)
+
+	file, err := os.Open(d.instanceLogFile)
+	if err != nil {
+		return
+	}
+	defer func() {
+		file.Close()
+	}()
+
+	reader := bufio.NewReader(file)
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		default:
+			line, err := reader.ReadString('\n')
+			if err != nil && err != io.EOF {
+				return
+			}
+			if len(line) == 0 {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+		}
+	}
+}
+
+func (d *Device) UnityLogStopListening() {
+	if d.cancel != nil {
+		d.cancel()
+	}
 }
