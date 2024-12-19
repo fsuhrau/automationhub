@@ -68,10 +68,11 @@ var nodeCmd = &cobra.Command{
 		}
 
 		nodeClient := node_client.New(logger, db, rpcNode, deviceManager, serviceConfig, deviceManagers, &reconnectHandler)
-
 		server.AddEndpoint(nodeClient)
 
-		go nodeClient.ConnectAndServe()
+		reconnectHandler.ConnectFunction = nodeClient.ConnectAndServe
+
+		reconnectHandler.HandleConnect()
 
 		return server.RunNode(&reconnectHandler)
 	},

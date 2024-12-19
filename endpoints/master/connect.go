@@ -40,7 +40,7 @@ func (s *nodeMaster) handleNode(conn *websocket.Conn, c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("node register: %v\n", request)
+	fmt.Printf("node registered: %s\n", request.Hostname)
 
 	rpcClient := node.NewRPCClient(conn)
 

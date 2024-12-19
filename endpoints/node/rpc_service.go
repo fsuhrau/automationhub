@@ -5,7 +5,6 @@ import (
 	node2 "github.com/fsuhrau/automationhub/hub/node"
 	"github.com/gorilla/websocket"
 	"github.com/matishsiao/goInfo"
-	"log"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"net/url"
@@ -20,7 +19,8 @@ func (s *Service) ConnectAndServe() {
 
 	c, _, err := websocket.DefaultDialer.Dial(serverURL.String(), nil)
 	if err != nil {
-		log.Fatal("dial: ", err)
+		fmt.Printf("%v\n", err)
+		return
 	}
 	s.c = c
 

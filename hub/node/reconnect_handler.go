@@ -11,9 +11,10 @@ type ConnectionHandler interface {
 }
 
 type ReconnectHandler struct {
-	lastPing time.Time
-	cfg      config.Service
-	managers []string
+	lastPing        time.Time
+	cfg             config.Service
+	managers        []string
+	ConnectFunction func()
 }
 
 func (h *ReconnectHandler) PingReceived() {
@@ -37,19 +38,6 @@ func (h *ReconnectHandler) ObserveConnectionState(ctx context.Context, cfg confi
 }
 
 func (h *ReconnectHandler) HandleConnect() error {
-	/*
-		serverURL := url.URL{Scheme: "ws", Host: h.cfg.MasterURL, Path: "/node/connect"}
-
-		c, _, err := websocket.DefaultDialer.Dial(serverURL.String(), nil)
-		if err != nil {
-			log.Fatal("dial: ", err)
-		}
-
-		gi, _ := goInfo.GetInfo()
-		if err := s.RegisterNode(s.cfg.Identifier, gi.Hostname, gi.OS, os.Getenv("PATH"), s.cfg.Port, s.managers); err != nil {
-			fmt.Printf("%v\n", err)
-			return
-		}
-	*/
+	go h.ConnectFunction()
 	return nil
 }

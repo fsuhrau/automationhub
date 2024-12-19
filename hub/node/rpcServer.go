@@ -5,6 +5,7 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/sirupsen/logrus"
 )
 
 type RPCNode struct {
@@ -22,7 +23,7 @@ func NewRPCNode(config config.Service, dm manager.Devices, ch ConnectionHandler)
 }
 
 func (s *RPCNode) DeviceStatus(req *DeviceStatusRequest, resp *DeviceResponse) error {
-	fmt.Println("RPC: DeviceStatus")
+	logrus.Info("RPC: DeviceStatus")
 	device, mng := s.dm.GetDevice(req.DeviceId)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceId)
@@ -32,7 +33,7 @@ func (s *RPCNode) DeviceStatus(req *DeviceStatusRequest, resp *DeviceResponse) e
 }
 
 func (s *RPCNode) Ping(args *Void, reply *Void) error {
-	// fmt.Println("RPC: Ping")
+	// logrus.Info("RPC: Ping")
 	if s.connectionHandler != nil {
 		s.connectionHandler.PingReceived()
 	}
@@ -40,7 +41,7 @@ func (s *RPCNode) Ping(args *Void, reply *Void) error {
 }
 
 func (s *RPCNode) StartDevice(req *DeviceRequest, resp *ErrorResponse) error {
-	fmt.Println("RPC: StartDevice")
+	logrus.Info("RPC: StartDevice")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -52,7 +53,7 @@ func (s *RPCNode) StartDevice(req *DeviceRequest, resp *ErrorResponse) error {
 }
 
 func (s *RPCNode) StopDevice(req *DeviceRequest, resp *ErrorResponse) error {
-	fmt.Println("RPC: StopDevice")
+	logrus.Info("RPC: StopDevice")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -64,7 +65,7 @@ func (s *RPCNode) StopDevice(req *DeviceRequest, resp *ErrorResponse) error {
 }
 
 func (s *RPCNode) GetDevices(req *Void, resp *DevicesResponse) error {
-	fmt.Println("RPC: GetDevices")
+	logrus.Info("RPC: GetDevices")
 	devices, err := s.dm.Devices()
 	if err != nil {
 		return err
@@ -94,7 +95,7 @@ func getAppParameter(req *AppParameterRequest) *app.Parameter {
 }
 
 func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: IsAppInstalled")
+	logrus.Info("RPC: IsAppInstalled")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -112,14 +113,14 @@ func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) e
 }
 
 func (s *RPCNode) UploadApp(req *UploadAppRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: UploadApp")
+	logrus.Info("RPC: UploadApp")
 	// needs to be implemented still
 	resp.Value = true
 	return nil
 }
 
 func (s *RPCNode) InstallApp(req *AppParameterRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: InstallApp")
+	logrus.Info("RPC: InstallApp")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -137,7 +138,7 @@ func (s *RPCNode) InstallApp(req *AppParameterRequest, resp *BoolResponse) error
 }
 
 func (s *RPCNode) UninstallApp(req *AppParameterRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: UninstallApp")
+	logrus.Info("RPC: UninstallApp")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -155,7 +156,7 @@ func (s *RPCNode) UninstallApp(req *AppParameterRequest, resp *BoolResponse) err
 }
 
 func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: StartApp")
+	logrus.Info("RPC: StartApp")
 	device, _ := s.dm.GetDevice(req.App.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.App.DeviceID)
@@ -173,7 +174,7 @@ func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
 }
 
 func (s *RPCNode) StopApp(req *AppParameterRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: StopApp")
+	logrus.Info("RPC: StopApp")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -191,7 +192,7 @@ func (s *RPCNode) StopApp(req *AppParameterRequest, resp *BoolResponse) error {
 }
 
 func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: IsConnected")
+	logrus.Info("RPC: IsConnected")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -204,7 +205,7 @@ func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 }
 
 func (s *RPCNode) GetScreenshot(req *DeviceRequest, resp *ScreenShotResponse) error {
-	fmt.Println("RPC: GetScreenshot")
+	logrus.Info("RPC: GetScreenshot")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -218,7 +219,7 @@ func (s *RPCNode) GetScreenshot(req *DeviceRequest, resp *ScreenShotResponse) er
 }
 
 func (s *RPCNode) HasFeature(req *FeatureRequest, resp *BoolResponse) error {
-	fmt.Println("RPC: HasFeature")
+	logrus.Info("RPC: HasFeature")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -231,7 +232,7 @@ func (s *RPCNode) HasFeature(req *FeatureRequest, resp *BoolResponse) error {
 }
 
 func (s *RPCNode) Execute(req *ExecuteRequest, resp *Void) error {
-	fmt.Println("RPC: Execute")
+	logrus.Info("RPC: Execute")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -243,7 +244,7 @@ func (s *RPCNode) Execute(req *ExecuteRequest, resp *Void) error {
 }
 
 func (s *RPCNode) ConnectionTimeout(req *DeviceRequest, resp *TimeoutResponse) error {
-	fmt.Println("RPC: ConnectionTimeout")
+	logrus.Info("RPC: ConnectionTimeout")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -255,7 +256,7 @@ func (s *RPCNode) ConnectionTimeout(req *DeviceRequest, resp *TimeoutResponse) e
 }
 
 func (s *RPCNode) RunNativeScript(req *ExecuteRequest, resp *Void) error {
-	fmt.Println("RPC: RunNativeScript")
+	logrus.Info("RPC: RunNativeScript")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
@@ -266,7 +267,7 @@ func (s *RPCNode) RunNativeScript(req *ExecuteRequest, resp *Void) error {
 }
 
 func (s *RPCNode) SendAction(req *ExecuteRequest, resp *Void) error {
-	fmt.Println("RPC: SendAction")
+	logrus.Info("RPC: SendAction")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)

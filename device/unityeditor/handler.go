@@ -1,6 +1,7 @@
 package unityeditor
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/generic"
@@ -8,6 +9,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
+	sync2 "github.com/fsuhrau/automationhub/utils/sync"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,7 +22,7 @@ import (
 
 const (
 	Manager        = "unity_editor"
-	StartupTimeout = 30 * time.Minute
+	StartupTimeout = 2 * time.Minute
 )
 
 var (
@@ -84,6 +86,12 @@ func (m *Handler) Stop() error {
 }
 
 func (m *Handler) StartDevice(deviceID string) error {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer func() {
+		cancelFunc()
+	}()
+
+	wg := sync2.NewExtendedWaitGroup(ctx)
 	m.mu.Lock()
 	dev, ok := m.devices[deviceID]
 	m.mu.Unlock()
@@ -109,8 +117,8 @@ func (m *Handler) StartDevice(deviceID string) error {
 			"-projectPath", projectDir, "-overrideProfile", "automation", "-executeMethod", "AutomationLoader.LoadSceneAndConnect", "-logFile", "automation_hub_unity.log", "-debugCodeOptimization", "--ump-channel-service-on-startup",
 		}
 		dev.process = exec.NewCommand(unityEditorPath, unityParams...)
-		//dev.process.Stdout = os.Stdout
-		//dev.process.Stderr = os.Stdout
+		// dev.process.Stdout = os.Stdout
+		// dev.process.Stderr = os.Stdout
 		dev.startedAt = time.Now()
 		if err := dev.process.Start(); err != nil {
 			return err
@@ -119,35 +127,65 @@ func (m *Handler) StartDevice(deviceID string) error {
 		m.devices[deviceID] = dev
 		m.mu.Unlock()
 		waitUntil := dev.startedAt.Add(StartupTimeout)
-		for {
-			if _, err := os.Stat(instanceFile); os.IsNotExist(err) {
-				if time.Now().After(waitUntil) {
-					return fmt.Errorf("device didn't start in time")
+
+		wg.Add(1)
+
+		var functionError error
+
+		go func() {
+			triggerTime := 5 * time.Second
+
+			defer wg.Done()
+			timer := time.NewTimer(triggerTime)
+			defer timer.Stop()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-timer.C:
+					if _, err := os.Stat(instanceFile); os.IsNotExist(err) {
+						if time.Now().After(waitUntil) {
+							functionError = fmt.Errorf("device didn't start in time")
+							return
+						}
+						timer.Reset(triggerTime)
+						continue
+					}
 				}
-
-				time.Sleep(5 * time.Second)
-				continue
-			}
-			break
-		}
-
-		for {
-			m.mu.Lock()
-			if m.devices[deviceID].DeviceState() == device.StateBooted {
-				m.mu.Unlock()
 				break
 			}
-			m.mu.Unlock()
+			timer.Reset(triggerTime)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-timer.C:
+					m.mu.Lock()
+					if m.devices[deviceID].DeviceState() == device.StateBooted {
+						m.mu.Unlock()
+						break
+					}
+					m.mu.Unlock()
 
-			if time.Now().After(waitUntil) {
-				return fmt.Errorf("device didn't start in time")
+					if time.Now().After(waitUntil) {
+						functionError = fmt.Errorf("device didn't start in time")
+						return
+					}
+					timer.Reset(triggerTime)
+					continue
+				}
+				break
 			}
+		}()
 
-			time.Sleep(5 * time.Second)
-			continue
+		err = wg.WaitUntil(waitUntil)
+
+		if functionError != nil {
+			return functionError
 		}
 
-		return nil
+		return err
 	}
 
 	return device.DeviceNotFoundError
@@ -238,6 +276,8 @@ func (m *Handler) HasDevice(dev device.Device) bool {
 func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	fmt.Printf("Register device: %v\n", data)
 
 	lastUpdate := time.Now().UTC()
 
