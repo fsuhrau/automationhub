@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
-import { Button, Card, CardMedia, Popover, Popper, Typography } from '@mui/material';
-import Paper from '@mui/material/Paper';
+import {Button, Card, CardMedia, Popover} from '@mui/material';
 
 interface CellExpandProps {
     id: number
@@ -10,7 +9,7 @@ interface CellExpandProps {
 }
 
 const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
-    const { id, value, data } = props;
+    const {id, value, data} = props;
 
     const [anchorLogScreenEl, setAnchorLogScreenEl] = useState<HTMLButtonElement | null>(null);
     const wrapper = React.useRef<HTMLDivElement | null>(null);
@@ -62,57 +61,57 @@ const CellExpand: React.FC<CellExpandProps> = (props: CellExpandProps) => {
 
     return (
         <div
-            ref={ wrapper }
-            onMouseEnter={ handleMouseEnter }
-            onMouseLeave={ handleMouseLeave }
-            style={{ display: 'block', maxWidth: 'inherit' }}
+            ref={wrapper}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            style={{display: 'block', maxWidth: 'inherit'}}
         >
             <div
-                ref={ cellDiv }
-                style={ {
+                ref={cellDiv}
+                style={{
                     height: 1,
                     display: 'block',
                     top: 0,
-                } }
+                }}
             />
-            { value === '' && (<>
-                <Button aria-describedby={ '$id' } variant="contained"
-                    onClick={ showLogScreenPopup }>
+            {value === '' && (<>
+                <Button aria-describedby={'$id'} variant="contained"
+                        onClick={showLogScreenPopup}>
                     Show
                 </Button>
                 <Popover
-                    id={ logScreenID }
-                    open={ logScreenOpen }
-                    anchorEl={ anchorLogScreenEl }
-                    onClose={ hideLogScreenPopup }
-                    anchorOrigin={ {
+                    id={logScreenID}
+                    open={logScreenOpen}
+                    anchorEl={anchorLogScreenEl}
+                    onClose={hideLogScreenPopup}
+                    anchorOrigin={{
                         vertical: 'bottom',
                         horizontal: 'left',
-                    } }
+                    }}
                 >
                     <Card>
                         <CardMedia
                             component="img"
                             height="400"
-                            image={ `/api/data/${ data }` }
+                            image={`/api/data/${data}`}
                             alt="green iguana"
                         />
                     </Card>
                 </Popover>
-            </>) }
-            { value !== '' && (<div style={{ display: 'block', maxWidth: 'inherit' }}>
-                <div ref={ cellValue } style={{ display: 'block', maxWidth: 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ value }</div>
-                <Popper
-                    open={ showFullCell && anchorEl != null }
-                    anchorEl={ anchorEl }
-                    style={{ maxWidth: '500px', marginLeft: -17 }}
+            </>)}
+            {value !== '' && (
+                <div
+                    ref={cellValue}
+                    style={{
+                        display: 'block',
+                        overflow: 'auto',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'pre-wrap',
+                        wordWrap: 'break-word',
+                    }}
                 >
-                    <Paper
-                        elevation={1}>
-                        <Typography variant={ 'body2' } style={{ padding: 8 }}>{ value }</Typography>
-                    </Paper>
-                </Popper>
-            </div>) }
+                    {value}
+                </div>)}
         </div>
     );
 };

@@ -65,10 +65,9 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                 <Grid
                     item={ true }
                     xs={ 12 }
-                    style={ {maxWidth: 800} }
                 >
                     <TitleCard title={ "Tests" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                        <Paper sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }>
                             <Grid container={ true }>
                                 <Grid item={ true } xs={ 6 } container={ true } sx={ {
                                     padding: 2,

@@ -77,7 +77,7 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
     return (
         <Grid container={ true } spacing={ 2 }>
             <Grid item={ true } xs={ 12 }>
-                <Typography variant={ "h1" }>Test Cases <FormControl variant="standard">
+                <Typography variant={ "h1" }>Applications <FormControl variant="standard">
                     <Select
                         id="app-select"
                         label="App"
@@ -103,10 +103,9 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
                 <Grid
                     item={ true }
                     xs={ 12 }
-                    style={ {maxWidth: 800} }
                 >
                     <TitleCard title={ "Bundles" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                        <Paper sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }>
                             <Grid container={ true }>
                                 <Grid item={ true } xs={ 12 } container={ true } spacing={1} sx={ {
                                     padding: 1,

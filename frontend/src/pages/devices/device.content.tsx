@@ -34,7 +34,6 @@ const Devices: React.FC = () => {
                 <Grid
                     item={ true }
                     xs={ 12 }
-                    style={ {maxWidth: 1000} }
                 >
                     <DeviceTableComponent/>
                 </Grid>

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 import { getAllRuns } from '../../services/test.run.service';
 import { useParams } from 'react-router-dom';
-import {Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography} from '@mui/material';
+import {Divider, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography} from '@mui/material';
 import ITestRunData from '../../types/test.run';
 import { TestResultState } from '../../types/test.result.state.enum';
 import { useProjectAppContext } from "../../project/app.context";
@@ -39,7 +38,7 @@ const TestRuns: React.FC = () => {
             <Grid item={ true } xs={ 6 }>
             </Grid>
             <Grid item={ true } xs={ 5 }>
-                <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+                <Paper sx={{ maxWidth: 1800, margin: 'auto', overflow: 'hidden' }}>
                     <Grid container={ true } spacing={ 2 }>
                         <Grid item={ true } xs={ 2 }>
                             Failed
@@ -78,7 +77,7 @@ const TestRuns: React.FC = () => {
             </Grid>
             <Grid item={ true } xs={ 12 }>
                 <TableContainer component={ Paper }>
-                    <Table sx={ { minWidth: 650 } } size="small" aria-label="a dense table">
+                    <Table sx={ { minWidth: 850 } } size="medium" aria-label="a dense table">
                         <TableHead>
                             <TableRow>
                                 <TableCell>Run</TableCell>

@@ -175,10 +175,10 @@ const DeviceTable: React.FC = () => {
                     return (
                         <TitleCard key={`device_table_group_${group}`}
                                    title={`Node: ${group === "null" ? "Master" : group}`}>
-                            <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
+                            <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
                                 <Grid container={true}>
                                     <Grid item={true} xs={12}>
-                                        <Table size="small" aria-label="a dense table">
+                                        <Table size="small">
                                             <TableHead>
                                                 <TableRow>
                                                     <TableCell>ID</TableCell>

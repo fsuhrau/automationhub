@@ -194,9 +194,10 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                 <Grid
                     item={true}
                     xs={12}
-                    style={{maxWidth: 800}}
+                    paddingX={5}
                 >
-                    <Grid item={true} container={true} xs={12} spacing={2} alignItems={"center"}>
+                    { /*Test Previous and Next Navigation*/}
+                    <Grid item={true} container={true} xs={12} spacing={2}>
                         <Grid item={true}>
                             {prevRunId !== undefined && prevRunId > 0 &&
                                 <Button variant="contained" color="primary" size="small"
@@ -216,69 +217,76 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                             }
                         </Grid>
                     </Grid>
-                    <TitleCard title={"Results"}>
-                        <Grid item={true} container={true} xs={12} alignItems={"center"}
-                              justifyContent={"center"}>
-                            <PieChart
-                                width={200}
-                                height={200}
-                            >
-                                <Pie
-                                    data={[
-                                        {name: "Open", value: state.runsOpen},
-                                        {name: "Failed", value: state.runsFailed},
-                                        {name: "Success", value: state.runsSuccess},
-                                    ]}
-                                    cx="50%"
-                                    cy="50%"
-                                    label
-                                    outerRadius={70}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    <Cell fill={'yellow'}/>
-                                    <Cell fill={'red'}/>
-                                    <Cell fill={'green'}/>
-                                </Pie>
-                                <Tooltip/>
-                            </PieChart>
-                            <Grid item={true} container={true} xs={12} alignItems={"center"}
-                                  justifyContent={"center"}>
-                                <Typography
-                                    variant={"caption"}> Open: {state.runsOpen} Failed: {state.runsFailed} Success: {state.runsSuccess}</Typography>
-                            </Grid>
-                        </Grid>
-                    </TitleCard>
-                    <TitleCard title={"Environment"}>
-                        <Grid item={true} container={true} xs={12}>
-                            <Grid container={true}>
-                                <Grid item={true} container={true} xs={12}>
+                    { /*Environment and Results*/}
+                    <Grid item={true} container={true} xs={12}>
+                        <Grid item={true} xs={6}>
+                            <TitleCard title={"Environment"}>
+                                <Grid item={true} container={true}>
                                     {environmentParameters.map((e, i) => (
-                                        <Grid key={`env_${i}`} item={true} xs={12}>
-                                            <Typography variant={"body1"}>
+                                        <Grid item={true} xs={12}>
+                                            <Typography key={`env_${i}`} variant={"body1"}>
                                                 {e}
                                             </Typography>
                                         </Grid>
                                     ))}
                                 </Grid>
-                                <Grid item={true} xs={true}/>
-                                <Grid item={true} container={true} xs={12} alignItems={"flex-end"}
-                                      justifyContent={"flex-end"} spacing={2}>
-                                    <Grid item={true}>
-                                        <Button variant="contained" color="primary" onClick={onTestRerun}>
-                                            Rerun
-                                        </Button>
-                                    </Grid>
-                                    <Grid item={true}>
-                                        {state.runsOpen > 0 &&
-                                            <Button variant="contained" color="secondary" onClick={onCancelTestRun}>
-                                                Cancel
-                                            </Button>}
+                                <Grid item={true} xs={true} sx={{flexGrow: 1}}></Grid>
+                            </TitleCard>
+                        </Grid>
+                        <Grid item={true} xs={6}>
+                            <TitleCard title={"Results"}>
+                                <Grid item={true} container={true} xs={12} alignItems={"center"}
+                                      justifyContent={"center"}>
+                                    <PieChart
+                                        width={200}
+                                        height={200}
+                                    >
+                                        <Pie
+                                            data={[
+                                                {name: "Open", value: state.runsOpen},
+                                                {name: "Failed", value: state.runsFailed},
+                                                {name: "Success", value: state.runsSuccess},
+                                            ]}
+                                            cx="50%"
+                                            cy="50%"
+                                            label
+                                            outerRadius={70}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                        >
+                                            <Cell fill={'yellow'}/>
+                                            <Cell fill={'red'}/>
+                                            <Cell fill={'green'}/>
+                                        </Pie>
+                                        <Tooltip/>
+                                    </PieChart>
+                                    <Grid item={true} container={true} xs={12} alignItems={"center"}
+                                          justifyContent={"center"}>
+                                        <Typography
+                                            variant={"caption"}> Open: {state.runsOpen} Failed: {state.runsFailed} Success: {state.runsSuccess}</Typography>
                                     </Grid>
                                 </Grid>
-                            </Grid>
+                                <Grid item={true} container={true} xs={12}>
+                                    <Grid item={true} container={true} xs={12} alignItems={"flex-end"}
+                                          justifyContent={"flex-end"} spacing={2}>
+                                        <Grid item={true}>
+                                            <Button variant="contained" color="primary" onClick={onTestRerun}>
+                                                Rerun
+                                            </Button>
+                                        </Grid>
+                                        <Grid item={true}>
+                                            {state.runsOpen > 0 &&
+                                                <Button variant="contained" color="secondary"
+                                                        onClick={onCancelTestRun}>
+                                                    Cancel
+                                                </Button>}
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </TitleCard>
                         </Grid>
-                    </TitleCard>
+                    </Grid>
+                    { /*Environment and Results*/}
                     <TitleCard title={"Test Functions"}>
                         <Grid container justifyContent="flex-end" className={classes.chip} padding={1}>
                             <CheckCircle htmlColor={filter.Success ? 'green' : 'lightgray'}
@@ -297,9 +305,9 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                            }))}
                             />
                         </Grid>
-                        <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
-                            <TableContainer>
-                                <Table size="small" aria-label="a dense table">
+                        <Grid container={true} xs={12} >
+                            <TableContainer component={Paper}>
+                                <Table size="small">
                                     <TableHead>
                                         <TableRow>
                                             <TableCell>Test</TableCell>
@@ -338,7 +346,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                        </Paper>
+                        </Grid>
                     </TitleCard>
                     {
                         testRun?.AppBinary &&
@@ -415,30 +423,26 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         </Paper>
                     </TitleCard>
                     <TitleCard title={"Execution Log"}>
-                        <Paper sx={{margin: 'auto', overflow: 'hidden'}}>
-                            <Box sx={{p: 1, m: 1}}>
-                                <TableContainer>
-                                    <Table size="small" aria-label="a dense table">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Date</TableCell>
-                                                <TableCell>Level</TableCell>
-                                                <TableCell>Log</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {state.log.map((entry) => <TableRow key={entry.ID}>
-                                                <TableCell component="th" scope="row" style={{whiteSpace: 'nowrap'}}>
-                                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
-                                                </TableCell>
-                                                <TableCell>{entry.Level}</TableCell>
-                                                <TableCell>{entry.Log}</TableCell>
-                                            </TableRow>)}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            </Box>
-                        </Paper>
+                        <TableContainer component={Paper}>
+                            <Table size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Date</TableCell>
+                                        <TableCell>Level</TableCell>
+                                        <TableCell>Log</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {state.log.map((entry) => <TableRow key={entry.ID}>
+                                        <TableCell component="th" scope="row" style={{whiteSpace: 'nowrap'}}>
+                                            <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
+                                        </TableCell>
+                                        <TableCell>{entry.Level}</TableCell>
+                                        <TableCell>{entry.Log}</TableCell>
+                                    </TableRow>)}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
                     </TitleCard>
                 </Grid>
             </Grid>
