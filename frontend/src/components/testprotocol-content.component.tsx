@@ -246,7 +246,6 @@ const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
                             <Grid item={true}>
                                 {duration(protocol.StartedAt, protocol.EndedAt)}
                             </Grid>
-
                             <Grid item={true}>
                                 <PhoneAndroid sx={{display: 'block'}} color="inherit"/>
                             </Grid>

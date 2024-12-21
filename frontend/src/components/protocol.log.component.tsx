@@ -1,24 +1,22 @@
 import React, {useRef, useState} from 'react';
-import {
-    Chip,
-    Menu,
-    MenuItem,
-    TextField,
-    Checkbox,
-    ListItemText,
-    Popover,
-    FormGroup,
-    FormControlLabel
-} from '@mui/material';
+import {Checkbox, Chip, Divider, FormControlLabel, FormGroup, IconButton, InputBase, Popover} from '@mui/material';
 import IProtocolEntryData from '../types/protocol.entry';
-import {DataGrid, gridClasses, GridColDef, GridRenderCellParams,   GridToolbarContainer,
+import {
+    DataGrid,
+    gridClasses,
+    GridColDef,
+    GridRenderCellParams,
     GridToolbarColumnsButton,
-    GridToolbarExport} from '@mui/x-data-grid';
-import { makeStyles } from '@mui/styles';
+    GridToolbarContainer,
+    GridToolbarExport
+} from '@mui/x-data-grid';
+import {makeStyles} from '@mui/styles';
 import CellExpand from './cell.expand.component';
 import Grid from "@mui/material/Grid";
 import {Box} from "@mui/system";
 import Button from "@mui/material/Button";
+import SearchIcon from '@mui/icons-material/Search';
+import {ClearIcon} from "@mui/x-date-pickers";
 
 const useStyles = makeStyles({
     dataGrid: {
@@ -109,7 +107,7 @@ interface TestProtocolContentProps {
 
 const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestProtocolContentProps) => {
     const classes = useStyles();
-    const { entries } = props;
+    const {entries} = props;
 
     const timeFrom = (value: number): string => {
         return new Date(value * 1000).toISOString().substr(11, 8);
@@ -122,7 +120,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
 
     const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
         return (
-            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data} />
+            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data}/>
         );
     };
 
@@ -141,18 +139,18 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         {
             field: 'Source',
             headerName: 'Source',
-            width: 100,
+            width: 110,
             sortable: false,
             filterable: false,
             disableColumnMenu: true,
             renderCell: (params) => {
-                return (<Chip className={`chip--${params.value}`} label={params.value} />);
+                return (<Chip className={`chip--${params.value}`} label={params.value}/>);
             },
         },
         {
             field: 'Level',
             headerName: 'Level',
-            width: 100,
+            width: 60,
             sortable: false,
             filterable: false,
             disableColumnMenu: true,
@@ -168,7 +166,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         },
     ];
 
-    type FilterType = {
+    type SourceType = {
         Errors: boolean,
         App: boolean,
         Action: boolean,
@@ -179,7 +177,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         Content: string,
     };
 
-    const [filter, setFilter] = useState<FilterType>({
+    const [source, setSource] = useState<SourceType>({
         Errors: false,
         App: true,
         Action: true,
@@ -190,17 +188,17 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         Content: "",
     });
 
-    const isVisible = (source: string): boolean => {
-        return (filter.App && source === 'app') ||
-            (filter.Action && source === 'action') ||
-            (filter.Device && source === 'device') ||
-            (filter.Status && source === 'status') ||
-            (filter.Step && source === 'step') ||
-            (filter.TestRunner && source === 'testrunner' ||
-                source === 'screen');
+    const isVisible = (value: string): boolean => {
+        return (source.App && value === 'app') ||
+            (source.Action && value === 'action') ||
+            (source.Device && value === 'device') ||
+            (source.Status && value === 'status') ||
+            (source.Step && value === 'step') ||
+            (source.TestRunner && value === 'testrunner' ||
+                value === 'screen');
     };
 
-    const filterEntries = entries.filter(value => (!filter.Errors && isVisible(value.Source) || (value.Level == 'error')) && (filter.Content.length < 2 || value.Message.indexOf(filter.Content) !== -1));
+    const filterEntries = entries.filter(value => (!source.Errors && isVisible(value.Source) || (value.Level == 'error')) && (source.Content.length < 2 || value.Message.indexOf(source.Content) !== -1));
 
     const anchorRef = useRef<HTMLButtonElement | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -212,19 +210,14 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         setAnchorEl(null);
     };
 
-    const handleMenuItemClick = (filterKey: keyof FilterType) => {
-        setFilter(prevState => ({ ...prevState, [filterKey]: !prevState[filterKey] }));
-        handleClose();
-    };
-
-    const handleCheckboxChange = (filterKey: keyof FilterType) => {
-        setFilter(prevState => ({ ...prevState, [filterKey]: !prevState[filterKey] }));
+    const handleCheckboxChange = (filterKey: keyof SourceType) => {
+        setSource(prevState => ({...prevState, [filterKey]: !prevState[filterKey]}));
     };
 
     function CustomToolbar() {
         return (
             <GridToolbarContainer>
-                <GridToolbarColumnsButton />
+                <GridToolbarColumnsButton/>
                 <Button
                     id="row-filter-button"
                     aria-controls={open ? 'row-filter-popover' : undefined}
@@ -233,7 +226,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
                     onClick={handleClick}
                     ref={anchorRef}
                 >
-                    Filters
+                    Source
                 </Button>
                 <Popover
                     id="row-filter-popover"
@@ -245,58 +238,83 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
                         horizontal: 'left',
                     }}
                 >
-                    <FormGroup sx={{ padding: 1 }}>
+                    <FormGroup sx={{padding: 1}}>
                         <FormControlLabel
-                            control={<Checkbox checked={filter.Errors} onChange={() => handleCheckboxChange('Errors')} />}
-                            label="Errors"
+                            control={<Checkbox checked={source.Errors}
+                                               onChange={() => handleCheckboxChange('Errors')}/>}
+                            label="Only Errors"
                         />
+                        <Divider />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.App} onChange={() => handleCheckboxChange('App')} />}
+                            control={<Checkbox checked={source.App} onChange={() => handleCheckboxChange('App')}/>}
                             label="App"
                         />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.Step} onChange={() => handleCheckboxChange('Step')} />}
+                            control={<Checkbox checked={source.Step} onChange={() => handleCheckboxChange('Step')}/>}
                             label="Step"
                         />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.Device} onChange={() => handleCheckboxChange('Device')} />}
+                            control={<Checkbox checked={source.Device}
+                                               onChange={() => handleCheckboxChange('Device')}/>}
                             label="Device"
                         />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.Status} onChange={() => handleCheckboxChange('Status')} />}
+                            control={<Checkbox checked={source.Status}
+                                               onChange={() => handleCheckboxChange('Status')}/>}
                             label="Status"
                         />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.TestRunner} onChange={() => handleCheckboxChange('TestRunner')} />}
+                            control={<Checkbox checked={source.TestRunner}
+                                               onChange={() => handleCheckboxChange('TestRunner')}/>}
                             label="TestRunner"
                         />
                         <FormControlLabel
-                            control={<Checkbox checked={filter.Action} onChange={() => handleCheckboxChange('Action')} />}
+                            control={<Checkbox checked={source.Action}
+                                               onChange={() => handleCheckboxChange('Action')}/>}
                             label="Action"
                         />
                     </FormGroup>
                 </Popover>
-                <Box sx={{ flexGrow: 1 }} >
-                    <TextField
-                        id="textfilter"
-                        label="Content"
-                        size={"small"}
-                        fullWidth={true}
-                        value={filter.Content}
-                        onChange={(e) => setFilter(prevState => ({ ...prevState, Content: e.target.value }))} />
+                <Box sx={{
+                    flexGrow: 1,
+                    p: '2px 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderStyle: 'solid',
+                    borderWidth: 1,
+                    borderRadius: 1,
+                    borderColor: 'lightgray',
+                    height: 32
+                }}>
+                    <IconButton sx={{p: '10px'}} aria-label="menu">
+                        <SearchIcon/>
+                    </IconButton>
+                    <InputBase
+                        sx={{ml: 1, flex: 1}}
+                        placeholder="Filter logs"
+                        inputProps={{'aria-label': 'Filter logs'}}
+                        value={source.Content}
+                        autoFocus={true}
+                        onChange={(e) => setSource(prevState => ({...prevState, Content: e.target.value}))}
+                    />
+                    <IconButton color="default" sx={{p: '10px'}} aria-label="clear"
+                                onClick={(e) => setSource(prevState => ({...prevState, Content: ''}))}>
+                        <ClearIcon/>
+                    </IconButton>
                 </Box>
                 <GridToolbarExport
                     slotProps={{
-                        tooltip: { title: 'Export data' },
-                        button: { variant: 'outlined' },
+                        tooltip: {title: 'Export data'},
+                        button: {variant: 'outlined'},
                     }}
                 />
             </GridToolbarContainer>
         );
     }
+
     return (
-        <Grid container={true} className={classes.chip} sx={{ padding: 1 }}>
-            <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{ padding: 1 }}>
+        <Grid container={true} className={classes.chip} sx={{padding: 1}}>
+            <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
 
             </Grid>
             <Grid item={true} xs={12}>

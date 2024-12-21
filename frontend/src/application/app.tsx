@@ -90,12 +90,12 @@ const App: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                 </Box> }
                 <Box sx={ {flex: 1, display: 'flex', flexDirection: 'column'} }>
                     <DefaultHeader color={'#eaeff1'} appstate={ appState } dispatch={ dispatch } onDrawerToggle={ handleDrawerToggle }/>
-                    <Box component="main" sx={ {flex: 1, padding: 2, bgcolor: '#eaeff1'} }>
+                    <Box component="main" sx={ {flex: 1, padding: 2, backgroundColor: '#eaeff1'} }>
                         <ProjectProvider>
                             <Outlet />
                         </ProjectProvider>
                     </Box>
-                    <Box component="footer" sx={ {p: 2, bgcolor: '#eaeff1'} }>
+                    <Box component="footer" sx={ {p: 2, backgroundColor: '#eaeff1'} }>
                         <Copyright/>
                     </Box>
                 </Box>

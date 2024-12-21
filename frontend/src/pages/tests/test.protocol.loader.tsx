@@ -38,9 +38,7 @@ const TestProtocolLoader: React.FC = () => {
         <div>
             { protocol && run
                 ? <TestProtocolContent run={ run } protocol={ protocol }/>
-                :  <Backdrop open={true} >
-                    <CircularProgress color="inherit" />
-                </Backdrop>
+                : <Backdrop sx={ { zIndex: 1, color: '#fff' } } open={ true }><CircularProgress color="inherit"/></Backdrop>
             }
         </div>
     );
