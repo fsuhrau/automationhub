@@ -1,6 +1,9 @@
+import type {} from '@mui/material/themeCssVarsAugmentation';
+
 import { createTheme } from "@mui/material/styles";
 
 let theme = createTheme({
+    cssVariables: true,
     palette: {
         primary: {
             light: '#63ccff',

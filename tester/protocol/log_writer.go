@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
@@ -22,6 +23,20 @@ type LogWriter struct {
 	errs               []error
 	startTime          time.Time
 	performanceMetrics PerformanceMetric
+	dev                *models.Device
+	parent             device.LogWriter
+}
+
+func (w *LogWriter) TestProtocolId() *uint {
+	return &w.protocolId
+}
+
+func (w *LogWriter) Device() interface{} {
+	return w.dev
+}
+
+func (w *LogWriter) Parent() device.LogWriter {
+	return w.parent
 }
 
 func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem float64) {
@@ -93,10 +108,12 @@ func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	w.write(source, "error", msg, "")
 }
 
-func NewLogWriter(db *gorm.DB, protocolId uint) *LogWriter {
+func NewLogWriter(db *gorm.DB, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {
 	return &LogWriter{
 		db:         db,
 		protocolId: protocolId,
 		startTime:  time.Now().UTC(),
+		dev:        dev,
+		parent:     parent,
 	}
 }

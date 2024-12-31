@@ -5,7 +5,7 @@ import IDeviceData from '../../types/device';
 import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';
 import DeviceShowContent from './device.show.content';
-import { useProjectContext } from "../../project/project.context";
+import {useProjectContext} from "../../hooks/ProjectProvider";
 
 interface DevicePageProps {
     edit: boolean

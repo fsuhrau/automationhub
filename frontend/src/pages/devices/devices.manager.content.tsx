@@ -14,8 +14,8 @@ import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import { useNavigate } from 'react-router-dom';
-import { useProjectContext } from "../../project/project.context";
 import {deviceState} from "../../components/device-table.component";
+import {useProjectContext} from "../../hooks/ProjectProvider";
 
 const DevicesManagerContent: React.FC = () => {
 

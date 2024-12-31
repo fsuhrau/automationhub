@@ -3,26 +3,28 @@ package action
 type ActionType int32
 
 const (
-	ActionType_Custom             ActionType = 0
-	ActionType_GetSceneGraph      ActionType = 1
-	ActionType_ElementIsDisplayed ActionType = 2
-	ActionType_ElementSetValue    ActionType = 3
-	ActionType_ElementGetValue    ActionType = 4
-	ActionType_Move               ActionType = 5
-	ActionType_TouchDown          ActionType = 6
-	ActionType_TouchMove          ActionType = 7
-	ActionType_TouchUp            ActionType = 8
-	ActionType_DragAndDrop        ActionType = 9
-	ActionType_LongTouch          ActionType = 10
-	ActionType_ElementTouch       ActionType = 11
-	ActionType_GetScreenshot      ActionType = 12
-	ActionType_GetTests           ActionType = 13
-	ActionType_ExecuteTest        ActionType = 14
-	ActionType_ExecutionResult    ActionType = 15
-	ActionType_Log                ActionType = 16
-	ActionType_UnityReset         ActionType = 17
-	ActionType_Performance        ActionType = 18
-	ActionType_NativeScript       ActionType = 19
+	ActionType_Custom                ActionType = 0
+	ActionType_GetSceneGraph         ActionType = 1
+	ActionType_ElementIsDisplayed    ActionType = 2
+	ActionType_ElementSetValue       ActionType = 3
+	ActionType_ElementGetValue       ActionType = 4
+	ActionType_Move                  ActionType = 5
+	ActionType_TouchDown             ActionType = 6
+	ActionType_TouchMove             ActionType = 7
+	ActionType_TouchUp               ActionType = 8
+	ActionType_DragAndDrop           ActionType = 9
+	ActionType_LongTouch             ActionType = 10
+	ActionType_ElementTouch          ActionType = 11
+	ActionType_GetScreenshot         ActionType = 12
+	ActionType_GetTests              ActionType = 13
+	ActionType_ExecuteTest           ActionType = 14
+	ActionType_ExecutionResult       ActionType = 15
+	ActionType_Log                   ActionType = 16
+	ActionType_UnityReset            ActionType = 17
+	ActionType_Performance           ActionType = 18
+	ActionType_NativeScript          ActionType = 19
+	ActionType_ExecuteMethodStart    ActionType = 20
+	ActionType_ExecuteMethodFinished ActionType = 21
 )
 
 type LogType int32
@@ -138,6 +140,7 @@ type LogData struct {
 }
 
 type TestDetails struct {
+	Test       string   `json:"test"`
 	Timeout    int64    `json:"timeout"`
 	Categories []string `json:"categories"`
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/authentication"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +16,11 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	oauth2gh "golang.org/x/oauth2/github"
+)
+
+const (
+	ProviderName = "github"
+	CodeKey      = "code"
 )
 
 type Credentials struct {
@@ -63,7 +69,7 @@ func Session(name string) gin.HandlerFunc {
 func loginRedirect(ctx *gin.Context) {
 	state = randToken()
 	session := sessions.Default(ctx)
-	session.Set("state", state)
+	session.Set(authentication.StateKey, state)
 	session.Save()
 	ctx.Redirect(http.StatusTemporaryRedirect, GetLoginURL(state))
 }
@@ -72,44 +78,36 @@ func GetLoginURL(state string) string {
 	return conf.AuthCodeURL(state)
 }
 
-type AuthUser struct {
-	Login   string `json:"login"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Company string `json:"company"`
-	URL     string `json:"url"`
-}
-
 func init() {
-	gob.Register(AuthUser{})
+	gob.Register(authentication.User{})
 }
 
 func Auth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var (
 			ok       bool
-			authUser AuthUser
+			authUser authentication.User
 			user     *github.User
 		)
 
 		// Handle the exchange code to initiate a transport.
 		session := sessions.Default(ctx)
-		mysession := session.Get("ginoauthgh")
-		if authUser, ok = mysession.(AuthUser); ok {
-			ctx.Set("user", authUser)
+		mysession := session.Get(authentication.SessionKey)
+		if authUser, ok = mysession.(authentication.User); ok {
+			ctx.Set(authentication.UserKey, authUser)
 			ctx.Next()
 			return
 		}
 
-		retrievedState := session.Get("state")
-		if retrievedState != ctx.Query("state") {
+		retrievedState := session.Get(authentication.StateKey)
+		if retrievedState != ctx.Query(authentication.StateKey) {
 			loginRedirect(ctx)
 			ctx.Abort()
 			return
 		}
 
 		// TODO: oauth2.NoContext -> context.Context from stdlib
-		tok, err := conf.Exchange(oauth2.NoContext, ctx.Query("code"))
+		tok, err := conf.Exchange(oauth2.NoContext, ctx.Query(CodeKey))
 		if err != nil {
 			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to do exchange: %v", err))
 			return
@@ -122,15 +120,15 @@ func Auth() gin.HandlerFunc {
 		}
 
 		// save userinfo, which could be used in Handlers
-		authUser = AuthUser{
+		authUser = authentication.User{
 			Login: *user.Login,
 			Name:  *user.Name,
 			URL:   *user.URL,
 		}
-		ctx.Set("user", authUser)
+		ctx.Set(authentication.UserKey, authUser)
 
 		// populate cookie
-		session.Set("ginoauthgh", authUser)
+		session.Set(authentication.SessionKey, authUser)
 		if err := session.Save(); err != nil {
 			logrus.Errorf("[Github-OAuth2]Failed to save session: %v", err)
 		}

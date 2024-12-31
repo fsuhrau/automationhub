@@ -29,14 +29,19 @@ type Hook struct {
 type Token struct {
 }
 
+type Password struct {
+	Secret string `yaml:"secret,omitempty" mapstructure:"secret"`
+}
+
 type Auth struct {
-	Token  *Token  `yaml:"token,omitempty" mapstructure:"token"`
-	OAuth2 *OAuth2 `yaml:"oauth2,omitempty" mapstructure:"oauth2"`
-	Github *Github `yaml:"github,omitempty" mapstrucutre:"github"`
+	Token    *Token    `yaml:"token,omitempty" mapstructure:"token"`
+	Password *Password `yaml:"token,omitempty" mapstructure:"password"`
+	OAuth2   *OAuth2   `yaml:"oauth2,omitempty" mapstructure:"oauth2"`
+	Github   *Github   `yaml:"github,omitempty" mapstrucutre:"github"`
 }
 
 func (a *Auth) AuthenticationRequired() bool {
-	return a.OAuth2 != nil || a.Github != nil || a.Token != nil
+	return a.OAuth2 != nil || a.Github != nil || a.Token != nil || a.Password != nil
 }
 
 type OAuth2 struct {

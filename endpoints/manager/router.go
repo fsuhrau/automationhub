@@ -96,4 +96,5 @@ func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Conte
 	}
 
 	_, _ = s.devicesManager.RegisterDevice(register)
+
 }

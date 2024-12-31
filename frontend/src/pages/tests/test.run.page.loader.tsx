@@ -4,11 +4,13 @@ import { useParams } from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
 import TestRunContent from '../../components/testrun-content.component';
 import { Backdrop, CircularProgress } from '@mui/material';
-import { useProjectAppContext } from "../../project/app.context";
+import { useProjectContext } from "../../hooks/ProjectProvider";
+import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const TestRunPageLoader: React.FC = () => {
 
-    const {projectId, appId} = useProjectAppContext();
+    const {projectId} = useProjectContext();
+    const {applicationId} = useApplicationContext();
 
     const { testId, runId } = useParams();
 
@@ -18,7 +20,7 @@ const TestRunPageLoader: React.FC = () => {
 
     useEffect(() => {
         if (runId !== undefined) {
-            getRun(projectId, appId, testId as string, runId).then(response => {
+            getRun(projectId, +applicationId, testId as string, runId).then(response => {
                 setTestRun(response.data.TestRun);
                 setNextRunId(response.data.NextRunId);
                 setPrevRunId(response.data.PrevRunId);
@@ -26,7 +28,7 @@ const TestRunPageLoader: React.FC = () => {
                 console.log(ex);
             });
         } else {
-            getLastRun(projectId, appId, testId as string).then(response => {
+            getLastRun(projectId, +applicationId, testId as string).then(response => {
                 setTestRun(response.data.TestRun);
                 setNextRunId(response.data.NextRunId);
                 setPrevRunId(response.data.PrevRunId);
@@ -34,7 +36,7 @@ const TestRunPageLoader: React.FC = () => {
                 console.log(ex);
             });
         }
-    }, [testId, appId, runId]);
+    }, [testId, applicationId, runId]);
 
     return (
         testRun

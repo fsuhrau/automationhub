@@ -94,6 +94,21 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
+func (d *Device) GetLogWriter() device.LogWriter {
+	return d.writer
+}
+
+func (d *Device) SetTestResult(success models.TestResultState) {
+
+}
+
+func (d *Device) TestProtocolId() *uint {
+	if d.writer != nil {
+		return d.writer.TestProtocolId()
+	}
+	return nil
+}
+
 func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float64, other string) {
 	if d.writer != nil {
 		d.writer.LogPerformance(checkpoint, cpu, fps, mem, other)

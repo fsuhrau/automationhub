@@ -20,7 +20,7 @@ import { deleteDevice } from '../../services/device.service';
 import { useNavigate } from 'react-router-dom';
 import { DeviceType } from '../../types/device.type.enum';
 import { DeviceConnectionType } from '../../types/device.connection.type.enum';
-import { useProjectContext } from "../../project/project.context";
+import {useProjectContext} from "../../hooks/ProjectProvider";
 
 interface DeviceShowProps {
     device: IDeviceData

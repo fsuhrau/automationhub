@@ -14,10 +14,11 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { useProjectAppContext } from "../../project/app.context";
+import { useProjectContext } from "../../hooks/ProjectProvider";
 import { getPlatformTypes, PlatformType } from "../../types/platform.type.enum";
 import { TransitionProps } from "@mui/material/transitions";
 import { Close } from "@mui/icons-material";
+import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -36,11 +37,8 @@ export interface ApplicationProps {
 
 const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
-    const {projectId, appId} = useProjectAppContext();
-
     const {open, onClose, onSubmit} = props;
 
-    const navigate = useNavigate();
     const platformTypes = getPlatformTypes();
 
     const [state, setState] = useState<IAppData>({

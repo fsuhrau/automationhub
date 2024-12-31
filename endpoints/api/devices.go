@@ -243,7 +243,7 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 		Env:    envParams,
 	}
 
-	executor := unity.NewExecutor(s.devicesManager)
+	executor := unity.NewExecutor(s.devicesManager, nil)
 
 	if err := executor.Execute(context.Background(), dev, runTestAction, 5*time.Minute); err != nil {
 		logrus.Errorf("Execute failed: %v", err)

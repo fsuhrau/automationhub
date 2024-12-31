@@ -16,16 +16,18 @@ import { AndroidRounded, Apple } from '@mui/icons-material';
 import DownloadIcon from '@mui/icons-material/Download';
 import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { ApplicationProps } from "../../application/application.props";
-import { useProjectAppContext } from "../../project/app.context";
+import { ApplicationProps } from "../../application/ApplicationProps";
+import { useProjectContext } from "../../hooks/ProjectProvider";
 import { TitleCard } from "../../components/title.card.component";
 import { PlatformType } from "../../types/platform.type.enum";
+import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
     const {appState, dispatch} = props;
 
-    const {projectId, appId} = useProjectAppContext();
+    const {project, projectId} = useProjectContext();
+    const {appId} = useApplicationContext();
 
     const navigate = useNavigate();
 
@@ -33,18 +35,9 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
         navigate('new');
     }
 
-    const app = appState.project?.Apps.find(a => a.ID === appId);
+    const app = project.Apps.find(a => a.ID === appId);
 
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
-
-    useEffect(() => {
-        if (appId === 0) {
-            const value = appState.project?.Apps === undefined ? null : appState.project?.Apps.length === 0 ? null : appState.project?.Apps[ 0 ].ID;
-            if (value !== null) {
-                navigate(`/project/${ projectId }/app/${ value }/bundles`)
-            }
-        }
-    }, [appId, appState.project?.Apps])
 
     useEffect(() => {
         if (projectId !== null && appId > 0) {
@@ -69,32 +62,10 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
         });
     };
 
-    const handleChange = (event: SelectChangeEvent): void => {
-        if (appState.appId != +event.target.value) {
-            navigate(`/project/${projectId}/app/${event.target.value}/bundles`)
-        }
-    };
     return (
         <Grid container={ true } spacing={ 2 }>
             <Grid item={ true } xs={ 12 }>
-                <Typography variant={ "h1" }>Applications <FormControl variant="standard">
-                    <Select
-                        id="app-select"
-                        label="App"
-                        defaultValue={ `${ appId }` }
-                        value={ `${ appId }` }
-                        autoWidth={ true }
-                        disableUnderline={ true }
-                        sx={ {color: "black"} }
-                        onChange={ handleChange }
-                    >
-                        {
-                            appState.project?.Apps.map(app => (
-                                <MenuItem key={ `app_item_${ app.ID }` } value={ app.ID }>{ app.Name }</MenuItem>
-                            ))
-                        }
-                    </Select>
-                </FormControl></Typography>
+                <Typography variant={ "h1" }>App Bundles</Typography>
             </Grid>
             <Grid item={ true } xs={ 12 }>
                 <Divider/>

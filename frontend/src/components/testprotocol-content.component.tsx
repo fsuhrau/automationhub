@@ -16,7 +16,7 @@ import ProtocolScreensComponent from './protocol.screens.component';
 import IProtocolPerformanceEntryData from '../types/protocol.performance.entry';
 import {CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {TitleCard} from "./title.card.component";
-import {useProjectContext} from "../project/project.context";
+import {useProjectContext} from "../hooks/ProjectProvider";
 
 interface TabPanelProps {
     children?: React.ReactNode;

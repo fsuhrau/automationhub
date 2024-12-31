@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device"
 	"net/http"
 	"time"
 )
@@ -12,6 +13,14 @@ type RemoteLogWriter struct {
 	masterURL string
 	node      string
 	deviceId  string
+}
+
+func (w *RemoteLogWriter) Device() interface{} {
+	return nil
+}
+
+func (w *RemoteLogWriter) Parent() device.LogWriter {
+	return nil
 }
 
 type LogType int32
@@ -115,4 +124,8 @@ func (w *RemoteLogWriter) Data(source, path string) {
 	if err := w.sendLog(log); err != nil {
 		fmt.Printf("failed to send log: %v\n", err)
 	}
+}
+
+func (w *RemoteLogWriter) TestProtocolId() *uint {
+	return nil
 }

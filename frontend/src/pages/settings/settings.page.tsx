@@ -12,7 +12,7 @@ import Moment from 'react-moment';
 import {
     Avatar,
     Box, Dialog, DialogActions, DialogContent,
-    Divider,
+    Divider, FormControl, FormGroup,
     List,
     ListItem,
     ListItemAvatar,
@@ -37,15 +37,16 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider, MobileDatePicker } from '@mui/x-date-pickers';
 import { Dayjs } from 'dayjs';
-import { ApplicationProps } from "../../application/application.props";
+import { ApplicationProps } from "../../application/ApplicationProps";
 import { PlatformType } from "../../types/platform.type.enum";
 import { IAppData } from "../../types/app";
 import { TitleCard } from "../../components/title.card.component";
 import { updateProject } from "../../project/project.service";
-import { ApplicationStateActions } from "../../application/application.state";
+import { ApplicationStateActions } from "../../application/ApplicationState";
 import IProject from "../../project/project";
 import { createApp, updateApp, updateAppBundle } from "../../services/app.service";
 import NewAppDialog from "../apps/newapp.dialog";
+import {useProjectContext} from "../../hooks/ProjectProvider";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -59,7 +60,7 @@ const TabPanel: React.FC<TabPanelProps> = (props: TabPanelProps) => {
         <Grid
             item={ true }
             xs={ 12 }
-            style={ {maxWidth: 800} }
+            style={ {width: '100%'} }
             role="tabpanel"
             hidden={ value !== index }
             id={ `simple-tabpanel-${ index }` }
@@ -102,9 +103,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
     const {appState, dispatch} = props;
 
-    let params = useParams();
-
-    const navigate = useNavigate();
+    const {project, projectId} = useProjectContext();
 
     function a11yProps(index: number): Map<string, string> {
         return new Map([
@@ -121,15 +120,15 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     const [accessTokens, setAccessTokens] = useState<IAccessTokenData[]>([]);
 
     useEffect(() => {
-        getAccessTokens(params.project_id as string).then(response => {
+        getAccessTokens(projectId as string).then(response => {
             setAccessTokens(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, [params.project_id]);
+    }, [projectId]);
 
     const handleDeleteAccessToken = (accessTokenID: number): void => {
-        deleteAccessToken(params.project_id as string, accessTokenID).then(value => {
+        deleteAccessToken(projectId as string, accessTokenID).then(value => {
             setAccessTokens(prevState => {
                 const newState = [...prevState];
                 const index = newState.findIndex(value1 => value1.ID == accessTokenID);
@@ -147,7 +146,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     });
 
     const createNewAccessToken = (): void => {
-        createAccessToken(params.project_id as string, newToken).then(response => {
+        createAccessToken(projectId as string, newToken).then(response => {
             setAccessTokens(prevState => {
                 const newState = [...prevState];
                 newState.push(response.data);
@@ -162,13 +161,13 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         });
     };
 
-    const [selectedAppID, setSelectedAppID] = useState<number | null>(appState.project?.Apps === undefined ? null : appState.project?.Apps.length === 0 ? null : appState.project?.Apps[0].ID);
-    const selectedApp = appState.project?.Apps.find(a => a.ID === selectedAppID);
+    const [selectedAppID, setSelectedAppID] = useState<number | null>(project.Apps === undefined ? null : project.Apps.length === 0 ? null : project.Apps[0].ID);
+    const selectedApp = project.Apps.find(a => a.ID === selectedAppID);
 
-    const iosApps = appState.project?.Apps.filter(a => a.Platform === PlatformType.iOS);
-    const androidApps = appState.project?.Apps.filter(a => a.Platform === PlatformType.Android);
-    const editorApps = appState.project?.Apps.filter(a => a.Platform === PlatformType.Editor);
-    const webApps = appState.project?.Apps.filter(a => a.Platform === PlatformType.Web);
+    const iosApps = project.Apps.filter(a => a.Platform === PlatformType.iOS);
+    const androidApps = project.Apps.filter(a => a.Platform === PlatformType.Android);
+    const editorApps = project.Apps.filter(a => a.Platform === PlatformType.Editor);
+    const webApps = project.Apps.filter(a => a.Platform === PlatformType.Web);
 
     const selectApp = (id:number) => {
         setSelectedAppID(id);
@@ -189,12 +188,12 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
     const handleEditSubmit = () => {
         if (changeAttributeDialogState.context === 'project') {
-            updateProject(appState.project?.Identifier as string, {...appState.project, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IProject).then(response => {
-                dispatch({type: ApplicationStateActions.UpdateProjectAttribute, payload: {attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
+            updateProject(project.Identifier as string, {...appState.project, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IProject).then(response => {
+                dispatch({type: ApplicationStateActions.UpdateProjectAttribute, payload: {projectId: projectId, attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
             })
         } else if (changeAttributeDialogState.context === 'app') {
-            updateApp(appState.project?.Identifier as string, selectedApp?.ID as number, {...selectedApp, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IAppData).then(response => {
-                dispatch({type: ApplicationStateActions.UpdateAppAttribute, payload: {app_id: selectedApp?.ID, attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
+            updateApp(project.Identifier as string, selectedApp?.ID as number, {...selectedApp, [changeAttributeDialogState.attribute]: changeAttributeDialogState.value} as IAppData).then(response => {
+                dispatch({type: ApplicationStateActions.UpdateAppAttribute, payload: {projectId: projectId, appId: selectedApp?.ID, attribute: changeAttributeDialogState.attribute, value: changeAttributeDialogState.value}})
             })
         }
 
@@ -204,13 +203,15 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     const [showNewAppDialog, setShowNewAppDialog] = useState<boolean>(false);
 
     const submitNewApp = (data: IAppData) => {
-        createApp(appState.project?.Identifier as string, data).then(response => {
+        createApp(project.Identifier as string, data).then(response => {
             dispatch({type: ApplicationStateActions.AddNewApp, payload: response.data})
         }).catch(ex => console.log(ex));
     }
 
     return (
-        <Grid container={ true } spacing={ 2 }>
+        <Grid container={ true } spacing={ 2 }
+            sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }
+        >
             <Grid item={true} xs={12}>
                 <Dialog open={changeAttributeDialogState.open} onClose={handleEditClose}>
                     <DialogContent>
@@ -249,32 +250,45 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                 </Tabs>
                 <Divider/>
             </Grid>
-            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" } justifyContent={ "center" }>
+            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" } justifyContent={ "center" }
+                  sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }
+            >
                 { /* General */ }
                 <TabPanel index={ value } value={ 0 }>
                     <TitleCard title={ "Project" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
-                            <Box sx={ {width: '100%', padding: 2} }>
+                        <Paper sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }>
+                            <Box sx={ { padding: 2} }>
+                                <FormGroup>
+                                    <FormControl>
+
+                                    </FormControl>
+                                </FormGroup>
                                 <Grid container={ true } spacing={ 4 }>
-                                    <Grid item={ true } xs={ 3 }>
+                                    <Grid item={ true } xs={ "auto" }>
                                         <Typography variant={ "body1" } color={ "dimgray" }>Project
                                             name</Typography>
                                     </Grid>
                                     <Grid item={ true } xs={ 9 }>
-                                        { appState.project?.Name }<IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Name', open: true}))}><Edit /></IconButton>
+                                        { project.Name }<IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Name', open: true}))}><Edit /></IconButton>
                                     </Grid>
                                     <Grid item={ true } xs={ 3 }>
                                         <Typography variant={ "body1" } color={ "dimgray" }>Project ID</Typography>
                                     </Grid>
                                     <Grid item={ true } xs={ 9 }>
-                                        { appState.project?.Identifier }{ appState.project?.Identifier === "default_project" && <IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Identifier', open: true}))}><Edit /></IconButton> }
+                                        { project.Identifier }{ project.Identifier === "default_project" && <IconButton aria-label="edit" size={'small'} onClick={() => setChangeAttributeDialogState(prevState => ({...prevState, context: "project", attribute: 'Identifier', open: true}))}><Edit /></IconButton> }
                                     </Grid>
                                 </Grid>
                             </Box>
                         </Paper>
+                    </TitleCard>                { /* Notifications */ }
+                <TabPanel index={ value } value={ 3 }>
+                    <TitleCard title={ "Notifications" }>
+                        not implemented
                     </TitleCard>
+                </TabPanel>
+
                     <TitleCard title={ "Apps" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                        <Paper sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }>
                             <Grid container={ true }>
                                 <Grid item={ true } xs={ 12 } container={ true } justifyContent={ "flex-end" } sx={ {
                                     padding: 1,
@@ -283,7 +297,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                 } }>
                                     <Button variant={ "contained" } onClick={() => setShowNewAppDialog(true)}>Add App</Button>
                                 </Grid>
-                                <Grid item={ true } container={ true } xs={ 4 }
+                                <Grid item={ true } container={ true } xs={ "auto" }
                                       sx={ {backgroundColor: '#fafafa', borderRight: '1px solid rgba(0, 0, 0, 0.12)'} }>
                                     <AppNavigation title={ "Android apps" } apps={ androidApps }
                                                    onSelect={ selectApp } icon={ <Android/> }/>
@@ -293,7 +307,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                                     <AppNavigation title={ "Web apps" } apps={ webApps } onSelect={ selectApp } icon={ <Web/> }/>
                                 </Grid>
                                 <NewAppDialog open={showNewAppDialog} onSubmit={submitNewApp} onClose={()=>setShowNewAppDialog(false)} />
-                                <Grid item={ true } container={ true } xs={ 8 } sx={ {padding: 2} }>
+                                <Grid item={ true } container={ true } xs={ true } sx={ {padding: 2} }>
                                     {
                                         selectedApp === null ? (<Typography variant={ "body1" } color={ "dimgray" }>No
                                             Apps</Typography>) : (<>
@@ -331,7 +345,7 @@ const SettingsPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                 { /* Access Tokens */ }
                 <TabPanel index={ value } value={ 1 }>
                     <TitleCard title={ "Access Tokens" }>
-                        <Paper sx={ {margin: 'auto', overflow: 'hidden'} }>
+                        <Paper sx={ {width: '100%', margin: 'auto', overflow: 'hidden'} }>
                             <Box sx={ {width: '100%'} }>
                                 <Box sx={ {p: 3} }>
                                     <Table size="small" aria-label="a dense table">

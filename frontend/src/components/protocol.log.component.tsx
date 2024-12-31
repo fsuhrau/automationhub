@@ -1,5 +1,15 @@
 import React, {useRef, useState} from 'react';
-import {Checkbox, Chip, Divider, FormControlLabel, FormGroup, IconButton, InputBase, Popover} from '@mui/material';
+import {
+    Checkbox,
+    Chip,
+    Divider,
+    FormControlLabel,
+    FormGroup,
+    IconButton,
+    InputBase,
+    Popover
+} from '@mui/material';
+import { makeStyles } from '@mui/styles';
 import IProtocolEntryData from '../types/protocol.entry';
 import {
     DataGrid,
@@ -10,7 +20,6 @@ import {
     GridToolbarContainer,
     GridToolbarExport
 } from '@mui/x-data-grid';
-import {makeStyles} from '@mui/styles';
 import CellExpand from './cell.expand.component';
 import Grid from "@mui/material/Grid";
 import {Box} from "@mui/system";

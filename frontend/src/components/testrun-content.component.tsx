@@ -15,6 +15,7 @@ import {
     TableRow,
     Typography,
 } from '@mui/material';
+import { makeStyles } from '@mui/styles';
 import ITestRunData from '../types/test.run';
 import {TestResultState} from '../types/test.result.state.enum';
 import TestStatusIconComponent from '../components/test-status-icon.component';
@@ -26,10 +27,10 @@ import {cancelTestRun, executeTest} from '../services/test.service';
 import {useNavigate} from 'react-router-dom';
 import {TestContext} from '../context/test.context';
 import {Cancel, CheckCircle, DirectionsRun, KeyboardArrowLeft, KeyboardArrowRight} from '@mui/icons-material';
-import {useProjectAppContext} from "../project/app.context";
+import {useProjectContext} from "../hooks/ProjectProvider";
 import {TitleCard} from "./title.card.component";
 import {Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis} from 'recharts';
-import {makeStyles} from "@mui/styles";
+import {useApplicationContext} from "../hooks/ApplicationProvider";
 
 interface TestRunContentProps {
     testRun: ITestRunData
@@ -80,7 +81,8 @@ const useStyles = makeStyles(theme => ({
 const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProps) => {
     const classes = useStyles();
 
-    const {projectId, appId} = useProjectAppContext();
+    const {projectId} = useProjectContext();
+    const {appId} = useApplicationContext();
 
     const {testRun, nextRunId, prevRunId} = props;
 
@@ -158,7 +160,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
 
     const onTestRerun = (): void => {
         executeTest(projectId, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
-            navigate(`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
+            navigate(`/project/${projectId}/app/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);
         });
@@ -201,7 +203,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         <Grid item={true}>
                             {prevRunId !== undefined && prevRunId > 0 &&
                                 <Button variant="contained" color="primary" size="small"
-                                        href={`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${prevRunId} `}>
+                                        href={`/project/${projectId}/app/test/${testRun.TestID}/run/${prevRunId} `}>
                                     <KeyboardArrowLeft/> Prev
                                 </Button>
                             }
@@ -211,7 +213,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         <Grid item={true}>
                             {nextRunId !== undefined && nextRunId > 0 &&
                                 <Button variant="contained" color="primary" size="small"
-                                        href={`/project/${projectId}/app/${appId}/test/${testRun.TestID}/run/${nextRunId} `}>
+                                        href={`/project/${projectId}/app/test/${testRun.TestID}/run/${nextRunId} `}>
                                     Next <KeyboardArrowRight/>
                                 </Button>
                             }
@@ -305,7 +307,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                            }))}
                             />
                         </Grid>
-                        <Grid container={true} xs={12} >
+                        <Grid container={true} xs={12}>
                             <TableContainer component={Paper}>
                                 <Table size="small">
                                     <TableHead>
@@ -322,7 +324,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                                 <TableRow key={protocol.ID}>
                                                     <TableCell component="th" scope="row">
                                                         <Link
-                                                            href={`/project/${projectId}/app/${testRun.Test.AppID}/test/${testRun.TestID}/run/${testRun.ID}/${protocol.ID}`}
+                                                            href={`/project/${projectId}/app/test/${testRun.TestID}/run/${testRun.ID}/${protocol.ID}`}
                                                             underline="none">
                                                             {testName[0]} <br/> {testName[1]}
                                                         </Link>

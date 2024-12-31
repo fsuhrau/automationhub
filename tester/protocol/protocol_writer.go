@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
@@ -34,6 +35,10 @@ func (p *logProtocol) Errors() []error {
 	return p.Writer.errs
 }
 
+func (p *logProtocol) TestProtocolId() *uint {
+	return &p.p.ID
+}
+
 type ProtocolWriter struct {
 	db        *gorm.DB
 	run       *models.TestRun
@@ -60,7 +65,34 @@ func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logPr
 	}
 	protocol.Device = &dev
 
-	writer := NewLogWriter(w.db, protocol.ID)
+	writer := NewLogWriter(w.db, protocol.ID, &dev, nil)
+
+	p := &logProtocol{w.db, protocol, writer}
+	w.protocols = append(w.protocols, p)
+
+	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
+
+	return p, nil
+}
+
+func (w *ProtocolWriter) NewSubProtocol(testname string, pw device.LogWriter) (*logProtocol, error) {
+
+	dev := pw.Device().(*models.Device)
+
+	protocol := &models.TestProtocol{
+		TestRunID:            w.run.ID,
+		ParentTestProtocolID: pw.TestProtocolId(),
+		DeviceID:             &dev.ID,
+		TestName:             testname,
+		StartedAt:            time.Now(),
+	}
+
+	if err := w.db.Create(protocol).Error; err != nil {
+		return nil, err
+	}
+	protocol.Device = dev
+
+	writer := NewLogWriter(w.db, protocol.ID, dev, pw)
 
 	p := &logProtocol{w.db, protocol, writer}
 	w.protocols = append(w.protocols, p)
@@ -85,14 +117,20 @@ func (w *ProtocolWriter) Close() {
 		unstableCount int
 	)
 
-	for _, p := range w.protocols {
-		switch p.p.TestResult {
+	for i := len(w.protocols) - 1; i > 0; i-- {
+		w.protocols[i].Close()
+
+		switch w.protocols[i].p.TestResult {
+		case models.TestResultOpen:
+			fallthrough
 		case models.TestResultSuccess:
 			successCount++
 		case models.TestResultUnstable:
 			unstableCount++
 		case models.TestResultFailed:
 			failedCount++
+		default:
+			panic("unhandled default case")
 		}
 	}
 

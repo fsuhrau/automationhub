@@ -301,7 +301,7 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 		}
 	*/
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
-	executor := NewExecutor(tr.DeviceManager)
+	executor := NewExecutor(tr.DeviceManager, tr.ProtocolWriter)
 	err = executor.Execute(tr.ctx, dev.Device, task, DefaultTestTimeout)
 
 	if err != nil || len(prot.Errors()) > 0 {

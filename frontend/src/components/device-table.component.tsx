@@ -22,10 +22,10 @@ import {
 import {ArrowForward, PlayArrow} from '@mui/icons-material';
 import {useSSE} from 'react-hooks-sse';
 import {useNavigate} from 'react-router-dom';
-import {useProjectContext} from "../project/project.context";
 import _ from "lodash";
 import {TitleCard} from "./title.card.component";
 import Grid from "@mui/material/Grid";
+import {useProjectContext} from "../hooks/ProjectProvider";
 
 interface DeviceChangePayload {
     DeviceID: number,

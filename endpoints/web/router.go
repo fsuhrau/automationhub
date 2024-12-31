@@ -1,9 +1,13 @@
 package web
 
 import (
+	"github.com/fsuhrau/automationhub/authentication/github"
+	"github.com/fsuhrau/automationhub/authentication/oauth2"
+	"github.com/fsuhrau/automationhub/authentication/password"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -16,11 +20,13 @@ type wf struct {
 	cfg         config.Service
 	filesystem  http.FileSystem
 	indexBuffer []byte
+	db          *gorm.DB
 }
 
-func New(config config.Service) *wf {
+func New(db *gorm.DB, config config.Service) *wf {
 	return &wf{
 		cfg: config,
+		db:  db,
 	}
 }
 
@@ -41,37 +47,48 @@ func (s *wf) StaticRoute(context *gin.Context) {
 
 func (s *wf) RegisterRoutes(r *gin.Engine) error {
 	s.filesystem = http.FS(Content)
-	/*
-		if s.cfg.Auth.AuthenticationRequired() {
-			if s.cfg.Auth.OAuth2 != nil {
-				oauth2.Setup(s.cfg.Auth.OAuth2.RedirectUrl, s.cfg.Auth.OAuth2.AuthUrl, s.cfg.Auth.OAuth2.TokenUrl, s.cfg.Auth.OAuth2.UserUrl, s.cfg.Auth.OAuth2.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-				r.Use(oauth2.Session("session"))
-			} else if s.cfg.Auth.Github != nil {
-				github.Setup(s.cfg.Auth.Github.RedirectUrl, s.cfg.Auth.Github.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-				r.Use(github.Session("session"))
-			}
+	var (
+		sessionFunc gin.HandlerFunc
+		authFunc    gin.HandlerFunc
+		authRouter  *gin.RouterGroup
+		authRoutes  func(group *gin.Engine)
+	)
+
+	if s.cfg.Auth.AuthenticationRequired() {
+		if s.cfg.Auth.OAuth2 != nil {
+			oauth2.Setup(s.cfg.Auth.OAuth2.RedirectUrl, s.cfg.Auth.OAuth2.AuthUrl, s.cfg.Auth.OAuth2.TokenUrl, s.cfg.Auth.OAuth2.UserUrl, s.cfg.Auth.OAuth2.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
+			sessionFunc = oauth2.Session("session")
+			authFunc = oauth2.Auth()
+		} else if s.cfg.Auth.Github != nil {
+			github.Setup(s.cfg.Auth.Github.RedirectUrl, s.cfg.Auth.Github.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
+			sessionFunc = github.Session("session")
+			authFunc = github.Auth()
+		} else if s.cfg.Auth.Password != nil {
+			password.Setup(s.db, []byte(s.cfg.Auth.Password.Secret))
+			sessionFunc = password.Session("session")
+			authFunc = password.Auth()
+			authRoutes = password.Routes
 		}
-	*/
-	uploads := r.Group("/upload")
-	{
-		/*
-			authorized := r.Group("/")
-			if s.cfg.Auth.AuthenticationRequired() {
-				if s.cfg.Auth.OAuth2 != nil {
-					authorized.Use(oauth2.Auth())
-					uploads.Use(oauth2.Auth())
-				} else if s.cfg.Auth.Github != nil {
-					authorized.Use(github.Auth())
-					uploads.Use(github.Auth())
-				}
-			}
-		*/
-		uploads.Static("/", apps.AppStoragePath)
 	}
-	data := r.Group("/data")
-	{
-		data.Static("/", apps.TestDataPath)
+
+	if sessionFunc != nil {
+		r.Use(sessionFunc)
 	}
+
+	if authRoutes != nil {
+		authRoutes(r)
+	}
+
+	authRouter = r.Group("/")
+	if authFunc != nil {
+		authRouter.Use(authFunc)
+	}
+
+	uploads := authRouter.Group("/upload")
+	uploads.Static("/", apps.AppStoragePath)
+
+	data := authRouter.Group("/data")
+	data.Static("/", apps.TestDataPath)
 
 	r.GET("/static/*filepath", s.StaticRoute)
 	r.GET("/asset-manifest.json", s.StaticRoute)

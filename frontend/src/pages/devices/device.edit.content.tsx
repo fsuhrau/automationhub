@@ -24,7 +24,7 @@ import { DeviceConnectionType } from '../../types/device.connection.type.enum';
 import IDeviceParameter from '../../types/device.parameter';
 import { Add, Remove } from '@mui/icons-material';
 import { DeviceType } from '../../types/device.type.enum';
-import { useProjectContext } from "../../project/project.context";
+import {useProjectContext} from "../../hooks/ProjectProvider";
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 

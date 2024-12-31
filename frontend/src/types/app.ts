@@ -5,7 +5,7 @@ export interface IAppData {
     ID: number,
     Name: string,
     Identifier: string,
-    ProjectID: number,
+    projectID: number,
     Project: IProject,
     DefaultParameter: string,
     Platform: PlatformType,

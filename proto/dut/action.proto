@@ -51,6 +51,8 @@ enum ActionType {
   UnityReset = 17;
   Performance = 18;
   NativeScript = 19;
+  ExecuteMethodStart = 20;
+  ExecuteMethodFinished = 21;
 }
 
 enum LogType {

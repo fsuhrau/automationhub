@@ -80,6 +80,8 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 			api.Use(s.handleSessionAccess(oauth2.Auth()))
 		} else if s.cfg.Auth.Github != nil {
 			api.Use(s.handleSessionAccess(github.Auth()))
+		} else if s.cfg.Auth.Password != nil {
+			api.Use(s.handleSessionAccess(nil))
 		} else {
 			api.Use(s.handleSessionAccess(nil))
 		}

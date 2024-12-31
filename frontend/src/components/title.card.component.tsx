@@ -1,7 +1,6 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
 import { Typography } from "@mui/material";
-import {yellow} from "@mui/material/colors";
+import Grid from "@mui/material/Grid2";
 
 interface TitleCardProps {
     title: string,
@@ -12,11 +11,11 @@ export const TitleCard: React.FC<TitleCardProps> = (props: TitleCardProps) => {
     const {children, title} = props;
     return (
         <>
-            <Grid container={ true } spacing={ 1 } sx={ {marginTop: 5 } }>
-                <Grid item={true} xs={12}>
-                    <Typography variant={"overline"}>{ title }</Typography>
-                </Grid>
-                <Grid item={ true } xs={ 12 } container={true} >
+            <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
+                { title }
+            </Typography>
+            <Grid container spacing={2} columns={1}>
+                <Grid size={{ xs: 12, lg: 12 }}>
                     { children }
                 </Grid>
             </Grid>

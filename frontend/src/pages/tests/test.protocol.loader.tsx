@@ -5,11 +5,11 @@ import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolContent from '../../components/testprotocol-content.component';
 import ITestRunData from '../../types/test.run';
 import { Backdrop, CircularProgress } from '@mui/material';
-import { useProjectAppContext } from "../../project/app.context";
+import { useProjectContext } from "../../hooks/ProjectProvider";
 
 const TestProtocolLoader: React.FC = () => {
 
-    const {projectId, appId} = useProjectAppContext();
+    const {projectId} = useProjectContext();
 
     const { testId, runId, protocolId } = useParams();
 

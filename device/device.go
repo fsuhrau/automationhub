@@ -43,6 +43,7 @@ type Device interface {
 	IsLocked() bool
 
 	SetLogWriter(LogWriter)
+	GetLogWriter() LogWriter
 	Data(string, string)
 	LogPerformance(checkpoint string, cpu, fps, mem float64, other string)
 	Log(string, string, ...interface{})

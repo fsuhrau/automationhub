@@ -60,7 +60,7 @@ var masterCmd = &cobra.Command{
 
 		server.AddEndpoint(api.New(logger, db, serviceConfig.NodeUrl, deviceManager, sessionManager, serviceConfig, nodeManager))
 		server.AddEndpoint(manager.New(logger, deviceManager, serviceConfig))
-		server.AddEndpoint(web.New(serviceConfig))
+		server.AddEndpoint(web.New(db, serviceConfig))
 		server.AddEndpoint(node_master.New(serviceConfig, deviceManager, nodeManager, nil))
 
 		// endpoint for websocket connection

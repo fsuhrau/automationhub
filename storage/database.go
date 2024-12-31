@@ -62,6 +62,9 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 		migrations.AddAliasToDevice,
 		migrations.AddPlatformTypeToDevice,
 		migrations.AddStatusToNode,
+		migrations.AddParentProtocolIdToTestProtocol,
+		migrations.AddRoleToUser,
+		migrations.AddIndexForUser,
 	})
 	m.InitSchema(migrations.InitSchema)
 
