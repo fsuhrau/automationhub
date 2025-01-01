@@ -28,7 +28,7 @@ interface DeviceShowProps {
 
 const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
 
@@ -50,7 +50,7 @@ const DeviceShowContent: React.FC<DeviceShowProps> = (props: DeviceShowProps) =>
     };
 
     const deleteAndClose = () => {
-        deleteDevice(projectId as string, device.ID as number).then((result) =>
+        deleteDevice(projectIdentifier, device.ID as number).then((result) =>
             navigate(-1),
         );
         handleClose()

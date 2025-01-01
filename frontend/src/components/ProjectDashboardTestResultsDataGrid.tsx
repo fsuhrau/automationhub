@@ -1,6 +1,5 @@
 import * as React from 'react';
-import {DataGrid, GridColDef, GridRowsProp} from '@mui/x-data-grid';
-import ITestProtocolData from "../types/test.protocol";
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import Chip from "@mui/material/Chip";
 import {TestResultState} from "../types/test.result.state.enum";
 import {getTestStatusChipColor, getTestStatusText} from "../helper/TestStatusHelper";
@@ -77,8 +76,18 @@ export const columns: GridColDef[] = [
      */
 ];
 
+export interface ProjectDashboardTestResultsData {
+    id: number,
+    name: string,
+    result: TestResultState,
+    fps: string,
+    mem: string,
+    cpu: string,
+    time: string,
+}
+
 export type ProjectDashboardTestResultsDataGridProps = {
-    data: GridRowsProp[];
+    data: ProjectDashboardTestResultsData[];
 };
 
 export default function ProjectDashboardTestResultsDataGrid(props: ProjectDashboardTestResultsDataGridProps) {

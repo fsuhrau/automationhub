@@ -25,8 +25,6 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
 
     const {test} = props;
 
-    const history = useNavigate();
-
     const unityTestConfig = getUnityTestsConfig();
     const deviceConfig = getDeviceOption();
 

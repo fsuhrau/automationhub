@@ -11,22 +11,19 @@ import TableBody from '@mui/material/TableBody';
 import { deleteAppBundle, getAppBundles } from '../../services/app.service';
 import { IAppBinaryData, prettySize } from '../../types/app';
 import Moment from 'react-moment';
-import { ButtonGroup, Divider, FormControl, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import { ButtonGroup, Divider, Typography } from '@mui/material';
 import { AndroidRounded, Apple } from '@mui/icons-material';
 import DownloadIcon from '@mui/icons-material/Download';
 import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { ApplicationProps } from "../../application/ApplicationProps";
 import { useProjectContext } from "../../hooks/ProjectProvider";
 import { TitleCard } from "../../components/title.card.component";
 import { PlatformType } from "../../types/platform.type.enum";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
-const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const AppBundlesPage: React.FC = () => {
 
-    const {appState, dispatch} = props;
-
-    const {project, projectId} = useProjectContext();
+    const {project, projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     const navigate = useNavigate();
@@ -40,17 +37,17 @@ const AppBundlesPage: React.FC<ApplicationProps> = (props: ApplicationProps) => 
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
 
     useEffect(() => {
-        if (projectId !== null && appId > 0) {
-            getAppBundles(projectId, appId).then(response => {
+        if (projectIdentifier !== null && appId as number > 0) {
+            getAppBundles(projectIdentifier, appId as number).then(response => {
                 setBundles(response.data);
             }).catch(e => {
                 console.log(e);
             });
         }
-    }, [projectId, appId]);
+    }, [projectIdentifier, appId]);
 
     const handleDeleteApp = (bundleId: number): void => {
-        deleteAppBundle(projectId, app?.ID as number, bundleId).then(value => {
+        deleteAppBundle(projectIdentifier, app?.ID as number, bundleId).then(value => {
             setBundles(prevState => {
                 const newState = [...prevState];
                 const index = newState.findIndex(value1 => value1.ID == bundleId);

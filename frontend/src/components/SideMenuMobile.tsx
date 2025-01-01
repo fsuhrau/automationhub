@@ -10,15 +10,13 @@ import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 
 import MenuButton from './MenuButton';
 import MenuContent from './MenuContent';
-import CardAlert from './CardAlert';
-import {NavigatorProps} from "./NavigatorProps";
 
-interface SideMenuMobileProps extends NavigatorProps{
+interface SideMenuMobileProps {
   open: boolean | undefined;
   toggleDrawer: (newOpen: boolean) => () => void;
 }
 
-export default function SideMenuMobile({ open, toggleDrawer, appState, dispatch }: SideMenuMobileProps) {
+export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobileProps) {
   return (
     <Drawer
       anchor="right"
@@ -59,7 +57,7 @@ export default function SideMenuMobile({ open, toggleDrawer, appState, dispatch 
         </Stack>
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
-          <MenuContent appState={appState} dispatch={dispatch} />
+          <MenuContent />
           <Divider />
         </Stack>
         {/*<CardAlert/>*/}

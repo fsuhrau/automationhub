@@ -81,7 +81,7 @@ const useStyles = makeStyles(theme => ({
 const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProps) => {
     const classes = useStyles();
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     const {testRun, nextRunId, prevRunId} = props;
@@ -159,15 +159,15 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
     }, [testRun]);
 
     const onTestRerun = (): void => {
-        executeTest(projectId, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
-            navigate(`/project/${projectId}/app/test/${testRun.TestID}/run/${response.data.ID}`);
+        executeTest(projectIdentifier, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
+            navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);
         });
     };
 
     const onCancelTestRun = (): void => {
-        cancelTestRun(projectId, appId, testRun.TestID, testRun.ID!).then(response => {
+        cancelTestRun(projectIdentifier, appId, testRun.TestID, testRun.ID!).then(response => {
             console.log("Test run cancelled", response);
         }).catch(error => {
             console.log(error);
@@ -203,7 +203,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         <Grid item={true}>
                             {prevRunId !== undefined && prevRunId > 0 &&
                                 <Button variant="contained" color="primary" size="small"
-                                        href={`/project/${projectId}/app/test/${testRun.TestID}/run/${prevRunId} `}>
+                                        href={`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${prevRunId} `}>
                                     <KeyboardArrowLeft/> Prev
                                 </Button>
                             }
@@ -213,7 +213,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                         <Grid item={true}>
                             {nextRunId !== undefined && nextRunId > 0 &&
                                 <Button variant="contained" color="primary" size="small"
-                                        href={`/project/${projectId}/app/test/${testRun.TestID}/run/${nextRunId} `}>
+                                        href={`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${nextRunId} `}>
                                     Next <KeyboardArrowRight/>
                                 </Button>
                             }
@@ -324,7 +324,7 @@ const TestRunContent: React.FC<TestRunContentProps> = (props: TestRunContentProp
                                                 <TableRow key={protocol.ID}>
                                                     <TableCell component="th" scope="row">
                                                         <Link
-                                                            href={`/project/${projectId}/app/test/${testRun.TestID}/run/${testRun.ID}/${protocol.ID}`}
+                                                            href={`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${testRun.ID}/${protocol.ID}`}
                                                             underline="none">
                                                             {testName[0]} <br/> {testName[1]}
                                                         </Link>

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {useEffect} from 'react';
 import MuiAvatar from '@mui/material/Avatar';
 import MuiListItemAvatar from '@mui/material/ListItemAvatar';
 import MenuItem from '@mui/material/MenuItem';
@@ -7,15 +6,14 @@ import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
 import Select, {SelectChangeEvent, selectClasses} from '@mui/material/Select';
 import {styled} from '@mui/material/styles';
-import {ApplicationProps} from "../application/ApplicationProps";
 import {getPlatformName} from "../types/platform.type.enum";
 import PlatformTypeIcon from "./PlatformTypeIcon";
 import {useProjectContext} from "../hooks/ProjectProvider";
-import {useNavigate} from "react-router-dom";
-import {ApplicationStateActions} from "../application/ApplicationState";
+import {HubStateActions} from "../application/HubState";
 import {Divider} from "@mui/material";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import {AddRounded} from "@mui/icons-material";
+import {useHubState} from "../hooks/HubStateProvider";
 
 const Avatar = styled(MuiAvatar)(({theme}) => ({
     width: 28,
@@ -30,23 +28,20 @@ const ListItemAvatar = styled(MuiListItemAvatar)({
     marginRight: 12,
 });
 
-export default function ApplicationSelection(props: ApplicationProps) {
+export default function ApplicationSelection() {
 
-    const {appState, dispatch} = props;
-
-    const {project, projectId} = useProjectContext();
-
-    const navigate = useNavigate();
+    const {state, dispatch} = useHubState()
+    const {project} = useProjectContext()
 
     const handleChange = (event: SelectChangeEvent) => {
-        if (appState.appId != +event.target.value) {
-            dispatch({type: ApplicationStateActions.ChangeActiveApp, payload: +event.target.value})
+        if (state.appId != +event.target.value) {
+            dispatch({type: HubStateActions.ChangeActiveApp, payload: +event.target.value})
         }
     };
 
-    const appId = appState.appId !== 0 && appState.appId !== null ? appState.appId.toString() : project.Apps === undefined || project.Apps.length === 0 ? "" : project.Apps[0].ID.toString();
-    if (appId !== appState.appId?.toString() && appId !== "") {
-        dispatch({type: ApplicationStateActions.ChangeActiveApp, payload: appId})
+    const appId = state.appId !== 0 && state.appId !== null ? state.appId.toString() : project.Apps === undefined || project.Apps.length === 0 ? "" : project.Apps[0].ID.toString();
+    if (appId !== state.appId?.toString() && appId !== "") {
+        dispatch({type: HubStateActions.ChangeActiveApp, payload: appId})
     }
 
     return (

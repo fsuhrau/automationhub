@@ -1,23 +1,21 @@
 import React from "react";
 import {Navigate, useParams} from "react-router-dom";
 import IProject from "../project/project";
-import {ApplicationState} from "../application/ApplicationState";
+import {useHubState} from "./HubStateProvider";
 
 type ProjectContextType = {
     project: IProject
-    projectId: string,
+    projectIdentifier: string,
 }
 
 const initialState: ProjectContextType = {
     project: {} as IProject,
-    projectId: "",
+    projectIdentifier: "",
 }
 
 const ProjectContext = React.createContext(initialState);
 
 type ProjectProps = {
-    appState: ApplicationState;
-    dispatch?: any;
     children: React.ReactNode;
 };
 
@@ -31,18 +29,26 @@ export const useProjectContext = (): ProjectContextType => {
 
 export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => {
 
-    const { appState } = props;
-    let {project_id} = useParams();
+    const {state} = useHubState()
 
-    if (project_id === undefined || project_id === "undefined" || project_id === null || project_id === "null") return <Navigate to="/"/>;
+    let {project_identifier} = useParams();
 
-    const project = appState.projects.find(p => p.Identifier === project_id)
-    if (project === undefined) return <Navigate to="/"/>
+
+    if (project_identifier === undefined || project_identifier === "undefined" || project_identifier === null || project_identifier === "null") {
+        debugger;
+        return <Navigate to="/"/>;
+    }
+
+    const project = state.projects.find(p => p.Identifier === project_identifier)
+    if (project === undefined) {
+        debugger;
+        return <Navigate to="/"/>
+    }
 
     return (
         <ProjectContext.Provider value={{
             project: project,
-            projectId: project_id,
+            projectIdentifier: project_identifier,
         }}>
             {props.children}
         </ProjectContext.Provider>

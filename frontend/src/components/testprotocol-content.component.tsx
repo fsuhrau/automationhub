@@ -98,9 +98,7 @@ const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: Perfor
 
 const TestProtocolContent: React.FC<TestProtocolContentProps> = (props) => {
 
-    const {run, protocol} = props;
-
-    const {projectId} = useProjectContext();
+    const {protocol} = props;
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
     const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {

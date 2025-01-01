@@ -38,7 +38,6 @@ import TableBody from "@mui/material/TableBody";
 import IDeviceData from "../../types/device";
 import {getAllDevices} from "../../services/device.service";
 import {useProjectContext} from "../../hooks/ProjectProvider";
-import {ApplicationProps} from "../../application/ApplicationProps";
 
 import {isEqual} from "lodash"
 import {IdName} from "../../helper/enum_to_array";
@@ -60,11 +59,9 @@ export function getDeviceOption(): Array<IdName> {
     return [{id: '0', name: 'All Devices'}, {id: '1', name: 'Selected Devices Only'}];
 }
 
-const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const AddTestPage: React.FC = () => {
 
-    const {appState} = props;
-
-    const {project, projectId} = useProjectContext();
+     const {project, projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     enum TestCreationSteps {
@@ -138,8 +135,8 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
             SelectedDevices: state.selectedDevices,
         };
 
-        createTest(projectId, appId, requestData).then(response => {
-            navigate(`/project/${projectId}/app/tests`);
+        createTest(projectIdentifier, appId, requestData).then(response => {
+            navigate(`/project/${projectIdentifier}/app/tests`);
         }).catch(ex => {
             console.log(ex);
         });
@@ -159,10 +156,10 @@ const AddTestPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     const [devices, setDevices] = useState<IDeviceData[]>([]);
     useEffect(() => {
         const app = project.Apps.find(a => a.ID === appId);
-        getAllDevices(projectId, app?.Platform).then(response => {
+        getAllDevices(projectIdentifier, app?.Platform).then(response => {
             setDevices(response.data);
         })
-    }, [project.Apps, projectId, appId])
+    }, [project.Apps, projectIdentifier, appId])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
         if (!isEqual(selectedDevices, state.selectedDevices)) {

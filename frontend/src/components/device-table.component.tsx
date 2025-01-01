@@ -41,7 +41,7 @@ export const deviceState = (state: number): string => {
         case 2:
             return 'shutdown';
         case 3:
-            return 'remote disconnected';
+            return 'disconnected';
         case 4:
             return 'booted';
         case 5:
@@ -52,7 +52,7 @@ export const deviceState = (state: number): string => {
 
 const DeviceTable: React.FC = () => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
 
@@ -70,12 +70,12 @@ const DeviceTable: React.FC = () => {
     }, [deviceStateChange]);
 
     useEffect(() => {
-        getAllDevices(projectId as string).then(response => {
+        getAllDevices(projectIdentifier).then(response => {
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, [projectId]);
+    }, [projectIdentifier]);
 
     // dialog
     const [testName, seTestName] = useState<string>('');
@@ -91,7 +91,7 @@ const DeviceTable: React.FC = () => {
     };
 
     const onRunTest = (): void => {
-        runTest(projectId as string, selectedDeviceID, testName, envParameter).then(response => {
+        runTest(projectIdentifier, selectedDeviceID, testName, envParameter).then(response => {
             console.log(response.data);
         }).catch(ex => {
             console.log(ex);
@@ -107,13 +107,13 @@ const DeviceTable: React.FC = () => {
     };
 
     const unlockDevice = (deviceId: string) => {
-        postUnlockDevice(projectId as string, deviceId).then(response => {
+        postUnlockDevice(projectIdentifier, deviceId).then(response => {
             setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
         });
     }
 
     const openDetails = (id: number): void => {
-        navigate(`/project/${projectId}/device/${id}`);
+        navigate(`/project/${projectIdentifier}/device/${id}`);
     };
 
     const groups = _.groupBy(devices, function (device) {

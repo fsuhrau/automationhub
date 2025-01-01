@@ -11,8 +11,6 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import SideMenuMobile from './SideMenuMobile';
 import MenuButton from './MenuButton';
 import ColorModeIconDropdown from '../shared-theme/ColorModeIconDropdown';
-import {NavigatorProps} from "./NavigatorProps";
-import app from "../application/HubMainLayout";
 
 const Toolbar = styled(MuiToolbar)({
   width: '100%',
@@ -30,9 +28,7 @@ const Toolbar = styled(MuiToolbar)({
   },
 });
 
-export default function AppNavbar(props: NavigatorProps) {
-
-    const {appState, dispatch} = props;
+export default function AppNavbar() {
 
     const [open, setOpen] = React.useState(false);
 
@@ -77,7 +73,7 @@ export default function AppNavbar(props: NavigatorProps) {
           <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
             <MenuRoundedIcon />
           </MenuButton>
-          <SideMenuMobile open={open} toggleDrawer={toggleDrawer} appState={appState} dispatch={dispatch}/>
+          <SideMenuMobile open={open} toggleDrawer={toggleDrawer} />
         </Stack>
       </Toolbar>
     </AppBar>

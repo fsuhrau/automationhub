@@ -13,7 +13,7 @@ interface DevicePageProps {
 
 const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
 
-    const { projectId } = useProjectContext();
+    const { projectIdentifier } = useProjectContext();
 
     const { deviceId } = useParams();
 
@@ -21,12 +21,12 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     const [device, setDevice] = useState<IDeviceData>();
 
     useEffect(() => {
-        getDevice(projectId as string, deviceId === undefined ? "" : deviceId).then(response => {
+        getDevice(projectIdentifier, deviceId === undefined ? "" : deviceId).then(response => {
             setDevice(response.data);
         }).catch(ex => {
             console.log(ex);
         });
-    }, [projectId, deviceId]);
+    }, [projectIdentifier, deviceId]);
 
     return (
         <div>

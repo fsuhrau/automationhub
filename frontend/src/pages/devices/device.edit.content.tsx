@@ -42,7 +42,7 @@ interface DeviceEditProps {
 
 const DeviceEditContent: React.FC<DeviceEditProps> = props => {
 
-    const {projectId} = useProjectContext()
+    const {projectIdentifier} = useProjectContext()
 
     const navigate = useNavigate();
 
@@ -104,8 +104,8 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
             IP: state.ipAddress,
             Port: state.port,
         };
-        updateDevice(projectId as string, device, device.ID).then(response => {
-            navigate(`/project/${ projectId }/device/${ device.ID }`);
+        updateDevice(projectIdentifier, device, device.ID).then(response => {
+            navigate(`/project/${ projectIdentifier }/device/${ device.ID }`);
         });
     };
 

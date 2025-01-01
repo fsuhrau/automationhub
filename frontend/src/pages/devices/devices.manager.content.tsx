@@ -19,7 +19,7 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 
 const DevicesManagerContent: React.FC = () => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
 
@@ -30,15 +30,15 @@ const DevicesManagerContent: React.FC = () => {
     }
 
     useEffect(() => {
-        getAllDevices(projectId as string).then(response => {
+        getAllDevices(projectIdentifier).then(response => {
             setDevices(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, [projectId]);
+    }, [projectIdentifier]);
 
     const unlockDevice = (deviceId: string) => {
-        postUnlockDevice(projectId as string, deviceId).then(response => {
+        postUnlockDevice(projectIdentifier, deviceId).then(response => {
             setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
         });
     }

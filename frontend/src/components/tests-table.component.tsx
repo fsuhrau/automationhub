@@ -1,11 +1,5 @@
 import React, {ChangeEvent, useEffect, useState} from 'react';
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import ITestData from '../types/test';
 import {executeTest, getAllTests} from '../services/test.service';
 import {
@@ -24,85 +18,18 @@ import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
 import {PlatformType} from '../types/platform.type.enum';
 import {IAppBinaryData} from "../types/app";
-import {ApplicationProps} from "../application/ApplicationProps";
 import {useProjectContext} from "../hooks/ProjectProvider";
-import {DataGrid, GridColDef, GridRowsProp} from "@mui/x-data-grid";
+import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
 
-function renderChip(type: string) {
-    return <Chip label={type} color={'default'} size="small"/>;
-}
-
-function renderActions(id: number) {
-    return <ButtonGroup color="primary" aria-label="text button group">
-        <Button variant="text" size="small"
-                href={`test/${id}`}>Show</Button>
-        <Button variant="text" size="small"
-                href={`test/${id}/runs/last`}>Protocol</Button>
-        <Button variant="text" size="small" endIcon={<PlayArrow/>}
-                onClick={() => {
-                    setState(prevState => ({...prevState, testId: id}))
-                    handleRunClickOpen();
-                }}>Run</Button>
-    </ButtonGroup>;
-}
-
-export const columns: GridColDef[] = [
-    {
-        field: 'name',
-        headerName: 'Name',
-        flex: 1.5,
-        minWidth: 300
-    },
-    {
-        field: 'type',
-        headerName: 'Type',
-        flex: 0.5,
-        minWidth: 90,
-        renderCell: (params) => renderChip(params.value as any),
-    },
-    {
-        field: 'execution',
-        headerName: 'Execution',
-        flex: 0.5,
-        minWidth: 90,
-        renderCell: (params) => renderChip(params.value as any),
-    },
-    {
-        field: 'devices',
-        headerName: 'Devices',
-        headerAlign: 'right',
-        align: 'right',
-        flex: 1,
-        minWidth: 100,
-    },
-    {
-        field: 'tests',
-        headerName: 'Tests',
-        headerAlign: 'right',
-        align: 'right',
-        flex: 0.5,
-        minWidth: 90,
-    },
-    {
-        field: 'actions',
-        headerName: '',
-        headerAlign: 'right',
-        align: 'right',
-        flex: 1,
-        minWidth: 100,
-        renderCell: (params) => renderActions(params.value as any),
-    },
-];
-
-interface TestTableProps extends ApplicationProps {
+interface TestTableProps {
     appId: number | null
 }
 
 const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
-    const {appId, appState} = props;
-    const {project, projectId} = useProjectContext();
+    const {appId} = props;
+    const {project, projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
 
@@ -110,7 +37,15 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     // dialog
     const [open, setOpen] = useState(false);
-    const [gridData, setGridData] = useState<GridRowsProp[]>([]);
+    const [gridData, setGridData] = useState<{
+        id: number,
+        name: string,
+        type: string,
+        execution: string,
+        devices: string,
+        tests: string,
+        actions: number
+    }[]>([]);
 
     const handleRunClickOpen = (): void => {
         setOpen(true);
@@ -133,9 +68,76 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         envParams: app === undefined ? '' : app?.DefaultParameter.replace(';', "\n"),
     });
 
+
+    const renderChip = (type: string) => {
+        return <Chip label={type} color={'default'} size="small"/>;
+    }
+
+    const renderActions = (id: number) => {
+        return <ButtonGroup color="primary" aria-label="text button group">
+            <Button variant="text" size="small"
+                    href={`test/${id}`}>Show</Button>
+            <Button variant="text" size="small"
+                    href={`test/${id}/runs/last`}>Protocol</Button>
+            <Button variant="text" size="small" endIcon={<PlayArrow/>}
+                    onClick={() => {
+                        setState(prevState => ({...prevState, testId: id}))
+                        handleRunClickOpen();
+                    }}>Run</Button>
+        </ButtonGroup>;
+    }
+
+    const columns: GridColDef[] = [
+        {
+            field: 'name',
+            headerName: 'Name',
+            flex: 1.5,
+            minWidth: 300
+        },
+        {
+            field: 'type',
+            headerName: 'Type',
+            flex: 0.5,
+            minWidth: 90,
+            renderCell: (params) => renderChip(params.value as any),
+        },
+        {
+            field: 'execution',
+            headerName: 'Execution',
+            flex: 0.5,
+            minWidth: 90,
+            renderCell: (params) => renderChip(params.value as any),
+        },
+        {
+            field: 'devices',
+            headerName: 'Devices',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 1,
+            minWidth: 100,
+        },
+        {
+            field: 'tests',
+            headerName: 'Tests',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 0.5,
+            minWidth: 90,
+        },
+        {
+            field: 'actions',
+            headerName: '',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 1,
+            minWidth: 100,
+            renderCell: (params) => renderActions(params.value as any),
+        },
+    ];
+
     useEffect(() => {
         if (appId !== null) {
-            getAllTests(projectId, appId).then(response => {
+            getAllTests(projectIdentifier, appId).then(response => {
                 setGridData(response.data.map(d => {
                     return {
                         id: d.ID,
@@ -151,7 +153,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                 console.log(e);
             });
         }
-    }, [projectId, appId]);
+    }, [projectIdentifier, appId]);
 
     const typeString = (type: number): string => {
         switch (type) {
@@ -179,8 +181,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const onRunTest = (): void => {
         if (appId !== null) {
-            executeTest(projectId as string, appId, state.testId, state.binaryId, state.envParams).then(response => {
-                navigate(`/project/${projectId}/app/test/${state.testId}/run/${response.data.ID}`);
+            executeTest(projectIdentifier, appId, state.testId, state.binaryId, state.envParams).then(response => {
+                navigate(`/project/${projectIdentifier}/app/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
                 console.log(error);
             });

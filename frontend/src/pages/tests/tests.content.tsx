@@ -2,30 +2,30 @@ import React, {useEffect} from 'react';
 import TestsTable from '../../components/tests-table.component';
 import {useNavigate} from 'react-router-dom';
 import {SelectChangeEvent, Typography} from '@mui/material';
-import {ApplicationProps} from "../../application/ApplicationProps";
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
+import {useHubState} from "../../hooks/HubStateProvider";
 
-const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const Tests: React.FC = () => {
 
-    const {project, projectId} = useProjectContext();
+    const {state} = useHubState()
+    const {project, projectIdentifier} = useProjectContext();
+
     const {appId} = useApplicationContext();
-
-    const {appState, dispatch} = props;
 
     const navigate = useNavigate();
 
     function newTestClick(): void {
-        navigate(`/project/${projectId}/app/test/new`)
+        navigate(`/project/${projectIdentifier}/app/test/new`)
     }
 
     const handleChange = (event: SelectChangeEvent): void => {
-        if (appState.appId != +event.target.value) {
-            navigate(`/project/${projectId}/app/tests`)
+        if (state.appId != +event.target.value) {
+            navigate(`/project/${projectIdentifier}/app/tests`)
         }
     };
 
@@ -33,7 +33,7 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         if (appId === 0) {
             const value = project.Apps === undefined ? null : project.Apps.length === 0 ? null : project.Apps[0].ID;
             if (value !== null) {
-                navigate(`/project/${projectId}/app/tests`)
+                navigate(`/project/${projectIdentifier}/app/tests`)
             }
         }
     }, [project.Apps, appId])
@@ -53,19 +53,19 @@ const Tests: React.FC<ApplicationProps> = (props: ApplicationProps) => {
             </Grid>
             <TitleCard title={'Tests'}>
                 <Grid container={true}>
-                    <Grid item={true} size={{xs: 6}} container={true} sx={{
+                    <Grid size={{xs: 6}} container={true} sx={{
                         padding: 2,
                         borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
                     </Grid>
-                    <Grid item={true} size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
+                    <Grid size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
                         padding: 1,
                         borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
                         <Button variant={"contained"} size={'small'} onClick={newTestClick}>Add new Test</Button>
                     </Grid>
-                    <Grid item={true} size={{xs: 12}}>
-                        <TestsTable appState={appState} appId={appState.appId}/>
+                    <Grid size={{xs: 12}}>
+                        <TestsTable appId={state.appId}/>
                     </Grid>
                 </Grid>
             </TitleCard>

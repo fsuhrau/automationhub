@@ -29,7 +29,7 @@ export const getTestStatusColor = (state: TestResultState): string => {
     return 'green'
 }
 
-export const getTestStatusChipColor = (state: TestResultState): OverridableStringUnion => {
+export const getTestStatusChipColor = (state: TestResultState): any => {
     switch (state) {
         case TestResultState.TestResultSuccess:
             return 'success';

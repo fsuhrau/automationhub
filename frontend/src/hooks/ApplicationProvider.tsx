@@ -1,7 +1,12 @@
-import React from "react";
+import React, {ReactNode} from "react";
 import {Navigate, Outlet, useParams} from "react-router-dom";
 import {useProjectContext} from "./ProjectProvider";
-import {ApplicationState, ApplicationStateActions} from "../application/ApplicationState";
+import {HubState, HubStateActions} from "../application/HubState";
+import {useHubState} from "./HubStateProvider";
+
+interface ApplicationProviderProps {
+    children: ReactNode;
+}
 
 type ApplicationContextType = {
     appId: number | null,
@@ -13,12 +18,6 @@ const initialState: ApplicationContextType = {
 
 const ApplicationContext = React.createContext(initialState);
 
-type ApplicationProps = {
-    children: React.ReactNode;
-    appState: ApplicationState;
-    dispatch?: any;
-};
-
 export const useApplicationContext = (): ApplicationContextType => {
     const contextState = React.useContext(ApplicationContext);
     if (contextState === null) {
@@ -27,40 +26,34 @@ export const useApplicationContext = (): ApplicationContextType => {
     return contextState;
 }
 
-const ApplicationProvider: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => {
 
-    const {project, projectId} = useProjectContext();
-
-    const {appState, dispatch} = props;
+    const {state, dispatch} = useHubState()
+    const {project, projectIdentifier} = useProjectContext();
 
     // no app in context
-    if (appState.appId === null || appState.appId === 0) {
+    if (state.appId === null || state.appId === 0) {
         // redirect to project settings if there are no apps
         if (project.Apps === undefined || project.Apps.length === 0) {
-            return (<Navigate to={`/project/${projectId}/settings`}/>);
+            return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
         }
 
-        dispatch({type: ApplicationStateActions.ChangeActiveApp, payload: project.Apps[0].ID})
+        dispatch({type: HubStateActions.ChangeActiveApp, payload: project.Apps[0].ID})
         return null
     }
 
     return (
         <ApplicationContext.Provider value={{
-            appId: appState.appId,
+            appId: state.appId,
         }}>
-            {props.children}
+            {children}
         </ApplicationContext.Provider>
     );
 };
 
-type ApplicationPageProps = {
-    appState: ApplicationState;
-    dispatch?: any;
-};
-
-const ApplicationPage: React.FC<ApplicationPageProps> = (props: ApplicationPageProps) => {
-    const {appState, dispatch} = props;
-    return <ApplicationProvider appState={appState} dispatch={dispatch}>
+const ApplicationPage: React.FC = () => {
+    debugger;
+    return <ApplicationProvider>
         <Outlet />
     </ApplicationProvider>;
 };

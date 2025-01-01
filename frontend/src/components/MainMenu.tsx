@@ -11,7 +11,6 @@ import Typography from '@mui/material/Typography';
 import ApplicationSelection from './ApplicationSelection';
 import MenuContent from './MenuContent';
 import OptionsMenu from './OptionsMenu';
-import {NavigatorProps} from "./NavigatorProps";
 import {useAuth} from "../hooks/AuthProvider";
 
 const drawerWidth = 240;
@@ -28,8 +27,8 @@ const Drawer = styled(MuiDrawer)({
 });
 
 
-export default function MainMenu(props: NavigatorProps) {
-    const {appState, dispatch} = props;
+export default function MainMenu() {
+
     const {user} = useAuth()
 
     return (
@@ -49,12 +48,12 @@ export default function MainMenu(props: NavigatorProps) {
                     p: 1.5,
                 }}
             >
-                <ApplicationSelection appState={appState} dispatch={dispatch}/>
+                <ApplicationSelection/>
             </Box>
             <Divider/>
-            <MenuContent appState={appState} dispatch={dispatch}/>
+            <MenuContent/>
             {/*<CardAlert/>*/}
-            <Stack
+            {user && <Stack
                 direction="row"
                 sx={{
                     p: 2,
@@ -79,7 +78,7 @@ export default function MainMenu(props: NavigatorProps) {
                     </Typography>
                 </Box>
                 <OptionsMenu/>
-            </Stack>
+            </Stack>}
         </Drawer>
     );
 }

@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {ButtonBase, CardContent, IconButton, Typography} from '@mui/material';
-import {ApplicationProps} from "../application/ApplicationProps";
 import CreateProjectDialog from "./create.project.dialog";
 import IProject from "./project";
 import {createProject, getProjects} from "./project.service";
@@ -11,9 +10,10 @@ import {styled} from "@mui/material/styles";
 import MuiCard from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
-import {ApplicationStateActions} from "../application/ApplicationState";
+import {HubStateActions} from "../application/HubState";
 import {Box} from "@mui/system";
 import PlatformTypeIcon from "../components/PlatformTypeIcon";
+import {useHubState} from "../hooks/HubStateProvider";
 
 const Card = styled(MuiCard)(({theme}) => ({
     display: 'flex',
@@ -57,13 +57,11 @@ const ProjectContainer = styled(Stack)(({theme}) => ({
     },
 }));
 
-const ProjectsIndexPage: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const ProjectsIndexPage: React.FC = (props: any) => {
 
-    const {appState, dispatch} = props;
+    const {state, dispatch} = useHubState()
 
     const navigate = useNavigate();
-
-    let params = useParams();
 
     const [openNewProjectDialog, setOpenNewProjectDialog] = useState<boolean>(false);
 
@@ -81,7 +79,7 @@ const ProjectsIndexPage: React.FC<ApplicationProps> = (props: ApplicationProps) 
 
     useEffect(() => {
         getProjects().then(response => {
-            dispatch({type: ApplicationStateActions.UpdateProjects, payload: response.data})
+            dispatch({type: HubStateActions.UpdateProjects, payload: response.data})
         })
     }, [])
 
@@ -120,7 +118,7 @@ const ProjectsIndexPage: React.FC<ApplicationProps> = (props: ApplicationProps) 
                     </ButtonBase>
                 </Card>
                 {
-                    appState.projects.map(project => (
+                    state.projects.map(project => (
                         <Card variant="outlined" key={`project_${project.Identifier}`} onClick={() => navigate(`/project/${project.Identifier}`)}>
                             <ButtonBase sx={{width: '100%', padding: 2, height: 200, display: 'block'}}>
                             <Typography

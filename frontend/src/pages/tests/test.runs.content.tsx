@@ -12,7 +12,7 @@ const TestRuns: React.FC = () => {
 
     const {testId} = useParams();
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     const [testRuns, setTestRuns] = useState<ITestRunData[]>([]);
@@ -23,12 +23,12 @@ const TestRuns: React.FC = () => {
             return;
         }
 
-        getAllRuns(projectId, appId, testId).then(response => {
+        getAllRuns(projectIdentifier, appId as number, testId).then(response => {
             setTestRuns(response.data);
         }).catch(e => {
             console.log(e);
         });
-    }, [projectId, appId, testId]);
+    }, [projectIdentifier, appId, testId]);
 
 
     function getStatus(run: ITestRunData): string {

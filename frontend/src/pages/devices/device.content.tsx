@@ -1,14 +1,11 @@
 import React from 'react';
-import Paper from '@mui/material/Paper';
 import DeviceTableComponent from '../../components/device-table.component';
-import { Divider, FormControl, IconButton, MenuItem, Select, Typography } from '@mui/material';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Grid from '@mui/material/Grid';
-import { useNavigate } from 'react-router-dom';
-import { Add } from '@mui/icons-material';
-import { TitleCard } from "../../components/title.card.component";
+import {Typography} from '@mui/material';
+import {useNavigate} from 'react-router-dom';
+import {Box} from "@mui/system";
 import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid2";
+import {TitleCard} from "../../components/title.card.component";
 
 const Devices: React.FC = () => {
     const navigate = useNavigate();
@@ -18,27 +15,38 @@ const Devices: React.FC = () => {
     }
 
     return (
-        <Grid container={ true } spacing={ 2 }>
-            <Grid item={ true } container={true} xs={ 12 }>
-                <Grid item={true} xs={true}>
-                    <Typography variant={ "h1" }>Device Pool</Typography>
-                </Grid>
-                <Grid item={true}>
-                    <Button variant={"text"}>Manage</Button>
-                </Grid>
+        <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
+            <Typography
+                component="h2" variant="h6" sx={{mb: 2}}>
+                Device Pool
+            </Typography>
+            <Grid
+                container
+                spacing={2}
+                columns={12}
+                sx={{mb: (theme) => theme.spacing(2)}}
+            >
+
             </Grid>
-            <Grid item={ true } xs={ 12 }>
-                <Divider/>
-            </Grid>
-            <Grid item={ true } container={ true } xs={ 12 } alignItems={ "center" } justifyContent={ "center" }>
-                <Grid
-                    item={ true }
-                    xs={ 12 }
-                >
-                    <DeviceTableComponent/>
+            <TitleCard title={'Nodes'}>
+                <Grid container={true}>
+                    <Grid size={{xs: 6}} container={true} sx={{
+                        padding: 2,
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                    }}>
+                    </Grid>
+                    <Grid size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
+                        padding: 1,
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                    }}>
+                        <Button variant={"text"} onClick={onManageDevices}>Manage</Button>
+                    </Grid>
+                    <Grid size={{xs: 12}}>
+                        <DeviceTableComponent/>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </Grid>
+            </TitleCard>
+        </Box>
     );
 };
 

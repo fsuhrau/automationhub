@@ -9,8 +9,8 @@ import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const TestRunPageLoader: React.FC = () => {
 
-    const {projectId} = useProjectContext();
-    const {applicationId} = useApplicationContext();
+    const {projectIdentifier} = useProjectContext();
+    const {appId} = useApplicationContext();
 
     const { testId, runId } = useParams();
 
@@ -20,7 +20,7 @@ const TestRunPageLoader: React.FC = () => {
 
     useEffect(() => {
         if (runId !== undefined) {
-            getRun(projectId, +applicationId, testId as string, runId).then(response => {
+            getRun(projectIdentifier, appId as number, testId as string, runId).then(response => {
                 setTestRun(response.data.TestRun);
                 setNextRunId(response.data.NextRunId);
                 setPrevRunId(response.data.PrevRunId);
@@ -28,7 +28,7 @@ const TestRunPageLoader: React.FC = () => {
                 console.log(ex);
             });
         } else {
-            getLastRun(projectId, +applicationId, testId as string).then(response => {
+            getLastRun(projectIdentifier, appId as number, testId as string).then(response => {
                 setTestRun(response.data.TestRun);
                 setNextRunId(response.data.NextRunId);
                 setPrevRunId(response.data.PrevRunId);
@@ -36,7 +36,7 @@ const TestRunPageLoader: React.FC = () => {
                 console.log(ex);
             });
         }
-    }, [testId, applicationId, runId]);
+    }, [projectIdentifier, testId, appId, runId]);
 
     return (
         testRun

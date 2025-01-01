@@ -1,5 +1,6 @@
-import { useContext, createContext, useState, useEffect } from "react";
+import React, {useContext, createContext, useState, useEffect, ReactNode, Dispatch} from "react";
 import { useNavigate } from "react-router-dom";
+import {HubState, HubStateAction} from "../application/HubState";
 
 export interface IUser {
     name: string,
@@ -29,9 +30,20 @@ type AuthContextProps = {
     logOut: () => {},
 };
 
-const AuthContext = createContext<AuthContextProps>({});
 
-const AuthProvider = ({ children }) => {
+interface AuthProviderProps {
+    children: ReactNode;
+}
+
+const AuthContext = createContext<AuthContextProps>({
+    user: null,
+    loginAction: async () => {},
+    registerAction: async () => {},
+    logOut: async () => {},
+});
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+
     const [user, setUser] = useState<IUser|null>(null);
     const navigate = useNavigate();
 
@@ -118,8 +130,6 @@ const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
-
-export default AuthProvider;
 
 export const useAuth = () : AuthContextProps => {
     return useContext(AuthContext);

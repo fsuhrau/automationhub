@@ -44,7 +44,7 @@ interface BinarySelectionProps {
 
 const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     const {binaryId, onSelectionChanged, upload} = props;
@@ -57,12 +57,12 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
 
     useEffect(() => {
         if (appId !== null) {
-            getAppBundles(projectId, appId).then(response => {
+            getAppBundles(projectIdentifier, appId as number).then(response => {
                 setBinaries(response.data);
             }).catch(e => {
             });
         }
-    }, [binaryId, projectId, appId]);
+    }, [binaryId, projectIdentifier, appId]);
 
     useEffect(() => {
         if (binary !== undefined && binary.ID !== binaryId) {
@@ -74,7 +74,7 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
         e.preventDefault();
         if (e.target.files != null) {
             const f = e.target.files[0] as File;
-            uploadNewApp(f, projectId, appId, progress => {
+            uploadNewApp(f, projectIdentifier, appId  as number, progress => {
                 setUploadProgress(progress);
             }, data => {
                 if (data.data !== undefined && data.data !== null) {

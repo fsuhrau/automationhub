@@ -1,8 +1,9 @@
 import IProject from "../project/project";
 import { useParams } from "react-router-dom";
 import { IAppData } from "../types/app";
+import IHubStatsData from "../types/hub.stats";
 
-export enum ApplicationStateActions {
+export enum HubStateActions {
     UpdateProjects = 'UpdateProjects',
     ToggleMobileOpen = 'ToggleMobileOpen',
     UpdateProjectAttribute = 'UpdateProjectAttribute',
@@ -11,61 +12,63 @@ export enum ApplicationStateActions {
     ChangeActiveApp = 'ChangeActiveApp',
 }
 
-export interface ApplicationStateAction {
-    type: ApplicationStateActions,
+export interface HubStateAction {
+    type: HubStateActions,
     payload?: any,
 }
 
-export interface ApplicationState {
+export interface HubState {
     mobileOpen: boolean,
     projects: IProject[],
     appId: number | null,
+    stats: IHubStatsData | null,
 }
 
-export const InitialApplicationState: ApplicationState = {
+export const InitialHubState: HubState = {
     mobileOpen: false,
     projects: [],
     appId: null,
+    stats: null,
 }
 
-export function appReducer(state: ApplicationState, action: ApplicationStateAction): ApplicationState {
+export function hubReducer(state: HubState, action: HubStateAction): HubState {
 
     const {type, payload} = action;
 
     switch (type) {
-        case ApplicationStateActions.ChangeActiveApp: {
+        case HubStateActions.ChangeActiveApp: {
             return {
                 ...state,
                 appId: payload as number,
             }
         }
-        case ApplicationStateActions.AddNewApp: {
+        case HubStateActions.AddNewApp: {
             return {
                 ...state,
                 projects: state.projects.map(p => {
-                    if (p.ID == payload.projectId) {
+                    if (p.Identifier == payload.projectIdentifier) {
                         p.Apps.push(payload)
                     }
                     return p
                 })
             }
         }
-        case ApplicationStateActions.UpdateAppAttribute: {
+        case HubStateActions.UpdateAppAttribute: {
             return {
                 ...state,
                 projects: state.projects.map(p => {
-                    if (payload.appId as number == payload.projectId) {
+                    if (p.Identifier === payload.projectIdentifier) {
                         p.Apps = p.Apps.map(a => (a.ID as number) === (payload.appId as number) ? {...a, [payload.attribute]: payload.value} as IAppData : a as IAppData)
                     }
                     return p
                 })
             }
         }
-        case ApplicationStateActions.UpdateProjectAttribute: {
+        case HubStateActions.UpdateProjectAttribute: {
             return {
                 ...state,
                 projects: state.projects.map(p => {
-                    if (p.ID == payload.projectId) {
+                    if (p.Identifier == payload.projectIdentifier) {
                         return {
                             ...p,
                             [payload.attribute]: payload.value
@@ -76,13 +79,13 @@ export function appReducer(state: ApplicationState, action: ApplicationStateActi
             }
         }
 
-        case ApplicationStateActions.UpdateProjects: {
+        case HubStateActions.UpdateProjects: {
             return {
                 ...state,
                 projects: payload,
             }
         }
-        case ApplicationStateActions.ToggleMobileOpen:
+        case HubStateActions.ToggleMobileOpen:
             return {
                 ...state,
                 mobileOpen: !state.mobileOpen,

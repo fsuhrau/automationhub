@@ -63,9 +63,9 @@ export default function OptionsMenu() {
             >
                 <MenuItem onClick={handleClose}>Profile</MenuItem>
                 <MenuItem onClick={handleClose}>My account</MenuItem>
-                {auth.user?.Role === "admin" && <Divider/> }
-                {auth.user?.Role === "admin" && <MenuItem onClick={handleClose}>Add another account</MenuItem> }
-                {auth.user?.Role === "admin" && <MenuItem onClick={handleClose}>Settings</MenuItem>}
+                {auth.user?.role === "admin" && <Divider/> }
+                {auth.user?.role === "admin" && <MenuItem onClick={handleClose}>Add another account</MenuItem> }
+                {auth.user?.role === "admin" && <MenuItem onClick={handleClose}>Settings</MenuItem>}
                 <Divider/>
                 <MenuItem
                     onClick={handleLogout}

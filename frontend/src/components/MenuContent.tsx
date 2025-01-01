@@ -12,27 +12,27 @@ import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 import {useNavigate} from "react-router-dom";
-import {NavigatorProps} from "./NavigatorProps";
 import DevicesRoundedIcon from "@mui/icons-material/DevicesRounded";
 import {useProjectContext} from "../hooks/ProjectProvider";
+import {useHubState} from "../hooks/HubStateProvider";
 
-export default function MenuContent(props: NavigatorProps) {
+export default function MenuContent() {
 
-    const {appState} = props;
+    const {state} = useHubState()
 
-    const {project, projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
 
     const mainListItems = [
-        { text: 'Home', ref: `/project/${project.Identifier}`, icon: <HomeRoundedIcon /> },
-        { text: 'Tests', ref: appState.appId ? `/project/${project.Identifier}/app/tests` : `/project/${project.Identifier}/tests`, icon: <AnalyticsRoundedIcon /> },
-        { text: 'Apps', ref: appState.appId ? `/project/${project.Identifier}/app/bundles` : `/project/${project.Identifier}/bundles`, icon: <PeopleRoundedIcon /> },
-        { text: 'Devices', ref: `/project/${project.Identifier}/devices`, icon: <DevicesRoundedIcon /> },
+        { text: 'Home', ref: `/project/${projectIdentifier}`, icon: <HomeRoundedIcon /> },
+        { text: 'Tests', ref: state.appId ? `/project/${projectIdentifier}/app/tests` : `/project/${projectIdentifier}/tests`, icon: <AnalyticsRoundedIcon /> },
+        { text: 'Apps', ref: state.appId ? `/project/${projectIdentifier}/app/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
+        { text: 'Devices', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon /> },
     ];
 
     const secondaryListItems = [
-        { text: 'Settings', ref: `/project/${project.Identifier}/settings`, icon: <SettingsRoundedIcon /> },
+        { text: 'Settings', ref: `/project/${projectIdentifier}/settings`, icon: <SettingsRoundedIcon /> },
         { text: 'About', ref: `https://github.com/fsuhrau/automationhub`, icon: <InfoRoundedIcon /> },
         { text: 'Feedback', ref: '', icon: <HelpRoundedIcon /> },
     ];

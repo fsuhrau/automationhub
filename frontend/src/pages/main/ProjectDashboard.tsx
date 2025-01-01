@@ -1,46 +1,44 @@
 import React, {useEffect, useState} from 'react';
 import Grid from '@mui/material/Grid2';
-import {useNavigate} from 'react-router-dom';
 import {Typography} from '@mui/material';
 import {Box} from '@mui/system';
 import {getHubStats} from '../../services/hub.stats.service';
 import {prettySize} from '../../types/app';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import StatCard, {StatCardProps} from "../../components/StatCard";
-import {GridRowsProp} from "@mui/x-data-grid";
-import ProjectDashboardTestResultsDataGrid from "../../components/ProjectDashboardTestResultsDataGrid";
+import ProjectDashboardTestResultsDataGrid, {
+    ProjectDashboardTestResultsData
+} from "../../components/ProjectDashboardTestResultsDataGrid";
 import {duration} from "../../types/test.protocol";
 
 const ProjectDashboard: React.FC = () => {
 
-    const navigate = useNavigate();
-
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const [stats, setStats] = useState<StatCardProps[]>([]);
-    const [resultData, setResultData] = useState<GridRowsProp[]>([]);
+    const [resultData, setResultData] = useState<ProjectDashboardTestResultsData[]>([]);
 
     useEffect(() => {
-        if (projectId !== null) {
-            getHubStats(projectId as string).then(response => {
+        if (stats.length === 0) {
+            getHubStats(projectIdentifier).then(response => {
                 setStats([{
                     title: 'Apps',
-                    value: response.data.AppsCount,
+                    value: response.data.AppsCount.toString(),
                 }, {
                     title: 'App Storage',
                     value: prettySize(response.data.AppsStorageSize),
                 }, {
                     title: 'Devices',
-                    value: response.data.DeviceCount,
+                    value: response.data.DeviceCount.toString(),
                 }, {
                     title: 'Booted',
-                    value: response.data.DeviceBooted,
+                    value: response.data.DeviceBooted.toString(),
                 },
                 ]);
                 setResultData(response.data.TestsLastProtocols.map(d => {
                     const testName = d.TestName.split('/');
                     return {
-                        id: d.ID,
+                        id: d.ID!,
                         name: testName.length > 1 ? testName[1] : d.TestName,
                         result: d.TestResult,
                         fps: (+d.AvgFPS).toFixed(0),
@@ -53,7 +51,7 @@ const ProjectDashboard: React.FC = () => {
                 console.log(e);
             });
         }
-    }, [projectId]);
+    }, []);
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>

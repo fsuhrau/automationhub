@@ -14,11 +14,9 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { useProjectContext } from "../../hooks/ProjectProvider";
 import { getPlatformTypes, PlatformType } from "../../types/platform.type.enum";
 import { TransitionProps } from "@mui/material/transitions";
 import { Close } from "@mui/icons-material";
-import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {

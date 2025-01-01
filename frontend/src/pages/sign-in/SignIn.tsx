@@ -88,7 +88,7 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
         }
 
         const data = new FormData(event.currentTarget);
-        auth.loginAction({email: data.get('email'), password: data.get('password')})
+        auth.loginAction({email: data.get('email') as string, password: data.get('password') as string})
     };
 
     const validateInputs = () => {

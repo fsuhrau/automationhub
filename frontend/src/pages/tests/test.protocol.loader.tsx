@@ -6,12 +6,14 @@ import TestProtocolContent from '../../components/testprotocol-content.component
 import ITestRunData from '../../types/test.run';
 import { Backdrop, CircularProgress } from '@mui/material';
 import { useProjectContext } from "../../hooks/ProjectProvider";
+import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 const TestProtocolLoader: React.FC = () => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const { testId, runId, protocolId } = useParams();
+    const {appId} = useApplicationContext()
 
     const [protocol, setProtocol] = useState<ITestProtocolData>();
     const [run, setRun] = useState<ITestRunData>();
@@ -21,7 +23,7 @@ const TestProtocolLoader: React.FC = () => {
             return;
         }
 
-        getTestProtocol(projectId, appId, testId as string, runId as string, protocolId as string).then(response => {
+        getTestProtocol(projectIdentifier, appId as number, testId as string, runId as string, protocolId as string).then(response => {
             setRun(response.data);
             for (let i = 0; i < response.data.Protocols.length; ++i) {
                 if (response.data.Protocols[ i ].ID == +protocolId) {
@@ -32,7 +34,7 @@ const TestProtocolLoader: React.FC = () => {
         }).catch(ex => {
             console.log(ex);
         });
-    }, [testId, runId, protocolId]);
+    }, [testId, runId, protocolId, appId]);
 
     return (
         <div>

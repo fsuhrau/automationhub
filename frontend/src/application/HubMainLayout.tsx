@@ -1,12 +1,10 @@
 import React, {useEffect} from 'react';
-import type {} from '@mui/material/themeCssVarsAugmentation';
-import {Outlet, useLocation, useParams} from 'react-router-dom';
+import {Outlet} from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import Moment from 'react-moment';
 import {SSEProvider} from 'react-hooks-sse';
 import {Box} from '@mui/system';
-import {ApplicationStateActions} from "./ApplicationState";
-import {ApplicationProps} from "./ApplicationProps";
+import {HubStateActions} from "./HubState";
 import AppTheme from "../shared-theme/AppTheme";
 import MainMenu from "../components/MainMenu";
 import AppNavbar from "../components/AppNavbar";
@@ -20,6 +18,7 @@ import {
     treeViewCustomizations,
 } from '../theme/customizations';
 import {ProjectProvider} from "../hooks/ProjectProvider";
+import {useHubState} from "../hooks/HubStateProvider";
 
 Moment.globalLocale = 'de';
 
@@ -36,21 +35,21 @@ declare module '@mui/material/Paper' {
     }
 }
 
-const HubMainLayout: React.FC<ApplicationProps> = (props: ApplicationProps) => {
+const HubMainLayout: React.FC = (props: any) => {
 
-    const {appState, dispatch} = props;
+    const {dispatch} = useHubState()
 
     const handleDrawerToggle = (): void => {
-        dispatch({type: ApplicationStateActions.ToggleMobileOpen});
+        dispatch({type: HubStateActions.ToggleMobileOpen, payload: {}});
     };
 
-    return <ProjectProvider appState={appState} dispatch={dispatch}>
+    return <ProjectProvider>
         <SSEProvider endpoint="/api/sse">
             <AppTheme {...props} themeComponents={xThemeComponents}>
                 <CssBaseline enableColorScheme/>
                 <Box sx={{display: 'flex'}}>
-                    <MainMenu appState={appState} dispatch={dispatch}/>
-                    <AppNavbar appState={appState} dispatch={dispatch}/>
+                    <MainMenu/>
+                    <AppNavbar/>
                     {/* Main content */}
                     <Box
                         component="main"
