@@ -1,11 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import {ButtonBase, CardContent, IconButton, Typography} from '@mui/material';
 import CreateProjectDialog from "./create.project.dialog";
 import IProject from "./project";
 import {createProject, getProjects} from "./project.service";
 import CssBaseline from "@mui/material/CssBaseline";
-import AppTheme from "../shared-theme/AppTheme";
 import {styled} from "@mui/material/styles";
 import MuiCard from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
@@ -84,7 +83,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
     }, [])
 
     return (
-        <AppTheme {...props}>
+        <>
             <CssBaseline enableColorScheme/>
             <ColorModeSelect sx={{position: 'fixed', top: '1rem', right: '1rem'}}>
             </ColorModeSelect>
@@ -151,7 +150,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
                     ))
                 }
             </ProjectContainer>
-        </AppTheme>
+        </>
     );
 };
 

@@ -16,11 +16,9 @@ import {AddRounded} from "@mui/icons-material";
 import {useHubState} from "../hooks/HubStateProvider";
 
 const Avatar = styled(MuiAvatar)(({theme}) => ({
-    width: 28,
-    height: 28,
-    backgroundColor: (theme.vars || theme).palette.background.paper,
-    color: (theme.vars || theme).palette.text.secondary,
-    border: `1px solid ${(theme.vars || theme).palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
+    border: `1px solid ${theme.palette.divider}`,
 }));
 
 const ListItemAvatar = styled(MuiListItemAvatar)({
@@ -72,9 +70,8 @@ export default function ApplicationSelection() {
                 project.Apps.map(app => (
                     <MenuItem key={`app_item_${app.ID}`} value={`${app.ID}`}>
                         <ListItemAvatar>
-                            <Avatar alt={app.Name}>
+                            <Avatar alt={app.Name} variant={'rounded'}>
                                 <PlatformTypeIcon platformType={app.Platform}/>
-                                {/*<DevicesRoundedIcon sx={{fontSize: '1rem'}}/>*/}
                             </Avatar>
                         </ListItemAvatar>
                         <ListItemText primary={app.Name} secondary={getPlatformName(app.Platform)}/>

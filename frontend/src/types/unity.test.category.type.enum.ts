@@ -1,4 +1,4 @@
-import { IdName, ToArray } from '../helper/enum_to_array';
+import {IdName, ToArray} from '../helper/enum_to_array';
 
 export enum UnityTestCategory {
     RunAllTests,
@@ -11,5 +11,13 @@ export const getUnityTestCategoryTypes = (): Array<IdName> => {
 };
 
 export const getUnityTestCategoryName = (type: UnityTestCategory): string => {
-    return UnityTestCategory[type];
+    switch (type) {
+        case UnityTestCategory.RunAllTests:
+            return 'All tests';
+        case UnityTestCategory.RunAllOfCategory:
+            return 'All of category';
+        case UnityTestCategory.RunSelectedTestsOnly:
+            return 'Selected tests only'
+    }
+    return ''
 };

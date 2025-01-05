@@ -52,7 +52,6 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
 };
 
 const ApplicationPage: React.FC = () => {
-    debugger;
     return <ApplicationProvider>
         <Outlet />
     </ApplicationProvider>;

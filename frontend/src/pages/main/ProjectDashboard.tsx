@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react';
 import Grid from '@mui/material/Grid2';
-import {Typography} from '@mui/material';
 import {Box} from '@mui/system';
 import {getHubStats} from '../../services/hub.stats.service';
 import {prettySize} from '../../types/app';
@@ -10,6 +9,7 @@ import ProjectDashboardTestResultsDataGrid, {
     ProjectDashboardTestResultsData
 } from "../../components/ProjectDashboardTestResultsDataGrid";
 import {duration} from "../../types/test.protocol";
+import {TitleCard} from "../../components/title.card.component";
 
 const ProjectDashboard: React.FC = () => {
 
@@ -55,22 +55,19 @@ const ProjectDashboard: React.FC = () => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <Typography
-                component="h2" variant="h6" sx={{mb: 2}}>
-                Overview
-            </Typography>
-            <Grid
-                container
-                spacing={2}
-                columns={12}
-                sx={{mb: (theme) => theme.spacing(2)}}
-            >
-                {stats.map((card, index) => (
-                    <Grid key={index} size={{xs: 12, sm: 6, lg: 3}}>
-                        <StatCard {...card} />
-                    </Grid>
-                ))}
-                {/*
+            <TitleCard title={'Overview'}>
+                <Grid
+                    container
+                    spacing={2}
+                    columns={12}
+                    sx={{mb: (theme) => theme.spacing(2)}}
+                >
+                    {stats.map((card, index) => (
+                        <Grid key={index} size={{xs: 12, sm: 6, lg: 3}}>
+                            <StatCard {...card} />
+                        </Grid>
+                    ))}
+                    {/*
                 <Grid size={{xs: 12, sm: 6, lg: 3}}>
                     <HighlightedCard/>
                 </Grid>
@@ -81,17 +78,17 @@ const ProjectDashboard: React.FC = () => {
                     <PageViewsBarChart/>
                 </Grid>
                 */}
-            </Grid>
-            <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-                Details
-            </Typography>
-            <Grid container spacing={2} columns={12}>
-                <Grid size={{ xs: 12, lg: 9 }}>
-                    <ProjectDashboardTestResultsDataGrid data={resultData} />
                 </Grid>
-            </Grid>
-            <Grid container={true} spacing={5}>
-                {/*
+            </TitleCard>
+
+            <TitleCard title={'Details'}>
+                <Grid container spacing={2} columns={12}>
+                    <Grid size={{xs: 12, lg: 9}}>
+                        <ProjectDashboardTestResultsDataGrid data={resultData}/>
+                    </Grid>
+                </Grid>
+                <Grid container={true} spacing={5}>
+                    {/*
                 <Grid item={true} xs={6}>
                     <Card>
                         <CardContent>
@@ -150,7 +147,8 @@ const ProjectDashboard: React.FC = () => {
                     </Card>
                 </Grid>
                 */}
-            </Grid>
+                </Grid>
+            </TitleCard>
         </Box>
     );
 };

@@ -105,7 +105,6 @@ func (s *Service) newTest(c *gin.Context, project *models.Project, application *
 	case models.TestTypeUnity:
 		unityConfig := models.TestConfigUnity{
 			TestConfigID:          config.ID,
-			RunAllTests:           request.UnityTestCategoryType == models.AllTest,
 			UnityTestCategoryType: request.UnityTestCategoryType,
 		}
 		if len(request.Categories) > 0 {
@@ -273,7 +272,6 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 			}
 		}
 
-		test.TestConfig.Unity.RunAllTests = req.UnityTestCategoryType == models.AllTest
 		test.TestConfig.Unity.UnityTestCategoryType = req.UnityTestCategoryType
 		test.TestConfig.Unity.Categories = req.Categories
 		if err := s.db.Save(&test.TestConfig.Unity).Error; err != nil {

@@ -65,6 +65,7 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 		migrations.AddParentProtocolIdToTestProtocol,
 		migrations.AddRoleToUser,
 		migrations.AddIndexForUser,
+		migrations.RemoveRunAllTestsFromUnityConfig,
 	})
 	m.InitSchema(migrations.InitSchema)
 

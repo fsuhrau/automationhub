@@ -35,13 +35,13 @@ export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => 
 
 
     if (project_identifier === undefined || project_identifier === "undefined" || project_identifier === null || project_identifier === "null") {
-        debugger;
+        // debugger;
         return <Navigate to="/"/>;
     }
 
     const project = state.projects.find(p => p.Identifier === project_identifier)
     if (project === undefined) {
-        debugger;
+        // debugger;
         return <Navigate to="/"/>
     }
 

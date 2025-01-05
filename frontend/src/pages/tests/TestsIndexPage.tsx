@@ -10,7 +10,7 @@ import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
 import {useHubState} from "../../hooks/HubStateProvider";
 
-const Tests: React.FC = () => {
+const TestsIndexPage: React.FC = () => {
 
     const {state} = useHubState()
     const {project, projectIdentifier} = useProjectContext();
@@ -40,17 +40,6 @@ const Tests: React.FC = () => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <Typography
-                component="h2" variant="h6" sx={{mb: 2}}>
-                Test Cases
-            </Typography>
-            <Grid
-                container
-                spacing={2}
-                columns={12}
-                sx={{mb: (theme) => theme.spacing(2)}}
-            >
-            </Grid>
             <TitleCard title={'Tests'}>
                 <Grid container={true}>
                     <Grid size={{xs: 6}} container={true} sx={{
@@ -73,4 +62,4 @@ const Tests: React.FC = () => {
     );
 };
 
-export default Tests;
+export default TestsIndexPage;

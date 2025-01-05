@@ -13,12 +13,12 @@ export const TitleCard: React.FC<TitleCardProps> = (props: TitleCardProps) => {
     const {title, titleElement, children} = props;
     return (
         <>
-            {title && <Typography component="h2" variant="h6" sx={{mb: 2, mt: 2}}>
-                {title}
-            </Typography>}
-            {titleElement && <Box sx={{mb: 2, mt: 2}}>
+            <Box sx={{mb: 2, mt: 2, display: 'flex', gap: 2}}>
+                {title && <Typography component="h2" variant="h6">
+                    {title}
+                </Typography>}
                 {titleElement}
-            </Box>}
+            </Box>
             <Grid container spacing={2} columns={1}>
                 <Grid size={{xs: 12, lg: 12}}>
                     {children}

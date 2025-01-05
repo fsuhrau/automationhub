@@ -4,7 +4,7 @@ import { Typography } from '@mui/material';
 import IDeviceData from '../../types/device';
 import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';
-import DeviceShowContent from './device.show.content';
+import DeviceShowPage from './DeviceShowPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 
 interface DevicePageProps {
@@ -31,7 +31,7 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     return (
         <div>
             { device
-                ? (edit ? <DeviceEditContent device={ device } /> : <DeviceShowContent device={ device } />)
+                ? (edit ? <DeviceEditContent device={ device } /> : <DeviceShowPage device={ device } />)
                 : <Typography variant={ 'h1' }>Loading</Typography>
             }
         </div>

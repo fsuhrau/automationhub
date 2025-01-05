@@ -1,13 +1,12 @@
 import React from 'react';
 import DeviceTableComponent from '../../components/device-table.component';
-import {Typography} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
 import {Box} from "@mui/system";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid2";
 import {TitleCard} from "../../components/title.card.component";
 
-const Devices: React.FC = () => {
+const DevicesPage: React.FC = () => {
     const navigate = useNavigate();
 
     function onManageDevices(): void {
@@ -16,18 +15,6 @@ const Devices: React.FC = () => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <Typography
-                component="h2" variant="h6" sx={{mb: 2}}>
-                Device Pool
-            </Typography>
-            <Grid
-                container
-                spacing={2}
-                columns={12}
-                sx={{mb: (theme) => theme.spacing(2)}}
-            >
-
-            </Grid>
             <TitleCard title={'Nodes'}>
                 <Grid container={true}>
                     <Grid size={{xs: 6}} container={true} sx={{
@@ -50,4 +37,4 @@ const Devices: React.FC = () => {
     );
 };
 
-export default Devices;
+export default DevicesPage;

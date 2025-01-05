@@ -21,6 +21,7 @@ import {IAppBinaryData} from "../types/app";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
+import {UnityTestCategory} from "../types/unity.test.category.type.enum";
 
 interface TestTableProps {
     appId: number | null
@@ -73,12 +74,16 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         return <Chip label={type} color={'default'} size="small"/>;
     }
 
+    const navigateAction = (route: string) => {
+        navigate(route)
+    }
+
     const renderActions = (id: number) => {
         return <ButtonGroup color="primary" aria-label="text button group">
             <Button variant="text" size="small"
-                    href={`test/${id}`}>Show</Button>
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app/test/${id}`)}>Show</Button>
             <Button variant="text" size="small"
-                    href={`test/${id}/runs/last`}>Protocol</Button>
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app/test/${id}/runs/last`)}>Protocol</Button>
             <Button variant="text" size="small" endIcon={<PlayArrow/>}
                     onClick={() => {
                         setState(prevState => ({...prevState, testId: id}))
@@ -201,7 +206,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const getTests = (test: ITestData): string => {
         if (test.TestConfig.Unity !== undefined && test.TestConfig.Unity !== null) {
-            if (test.TestConfig.Unity?.RunAllTests) {
+            if (test.TestConfig.Unity?.UnityTestCategoryType == UnityTestCategory.RunAllTests) {
                 return 'all';
             }
             if (test.TestConfig.Unity.UnityTestFunctions !== null) {

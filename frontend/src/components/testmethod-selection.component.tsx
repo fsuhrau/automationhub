@@ -1,5 +1,4 @@
 import React, { ChangeEvent, ReactElement, useEffect } from 'react';
-import Grid from '@mui/material/Grid';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -10,8 +9,10 @@ import Paper from '@mui/material/Paper';
 import IAppFunctionData from '../types/app.function';
 import { Alert, CircularProgress, TextField, Typography } from '@mui/material';
 import { getTestFunctions } from '../services/unity.service';
+import Grid from "@mui/material/Grid2";
 
 interface TestMethodSelectionProps {
+    selectedTestFunctions?: IAppFunctionData[]
     onSelectionChanged: (functions: IAppFunctionData[]) => void;
 }
 
@@ -24,7 +25,7 @@ function intersection(a: IAppFunctionData[], b: IAppFunctionData[]): IAppFunctio
 }
 
 const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
-    const { onSelectionChanged } = props;
+    const { onSelectionChanged, selectedTestFunctions } = props;
 
     const [loading, setLoading] = React.useState<boolean>(true);
 
@@ -33,7 +34,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
     const [testJson, setTestJson] = React.useState<string>('');
 
     const [left, setLeft] = React.useState<IAppFunctionData[]>([]);
-    const [right, setRight] = React.useState<IAppFunctionData[]>([]);
+    const [right, setRight] = React.useState<IAppFunctionData[]>(selectedTestFunctions ? selectedTestFunctions : []);
 
     const leftChecked = intersection(checked, left);
     const rightChecked = intersection(checked, right);
@@ -76,8 +77,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
     useEffect(() => {
         if (testJson !== '') {
             const testFunctions: IAppFunctionData[] = JSON.parse(testJson);
-            setLeft(testFunctions);
-            setRight([]);
+            setLeft(not(testFunctions, right));
         }
     }, [testJson]);
 
@@ -130,8 +130,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
     useEffect(() => {
         setLoading(true);
         getTestFunctions().then(response => {
-            setLeft(response.data);
-            setRight([]);
+            setLeft(not(response.data, right));
         }).finally(() => {
             setLoading(false);
         });
@@ -145,7 +144,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                 alignItems={ 'center' }
                 direction={ 'column' }>
                 { (left.length == 0 && right.length == 0 && (
-                    <Grid item={ true }>
+                    <Grid >
                         <Alert severity="info">Unable to Connect to your local Unity Editor or no tests found please check your settings in Unity "Tools" - "Automation Hub" - "Settings"<br />You can also copy the tests json from unity and paste them here.</Alert><br/>
                         <TextField
                             id="outlined-multiline-static"
@@ -158,7 +157,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                         />
                     </Grid>))
                 }
-                <Grid item={ true }>
+                <Grid >
                     <Grid
                         container={ true }
                         spacing={ 2 }
@@ -166,11 +165,11 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                         alignItems="center"
                     >
 
-                        <Grid item={ true }>
+                        <Grid >
                             <Typography variant={ 'subtitle1' }>Available Test Functions</Typography><br/>
                             { customList(left) }
                         </Grid>
-                        <Grid item={ true }>
+                        <Grid >
                             <Grid container={ true } direction="column" alignItems="center">
                                 <Button
                                     variant="outlined"
@@ -210,7 +209,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                 </Button>
                             </Grid>
                         </Grid>
-                        <Grid item={ true }>
+                        <Grid>
                             <Typography variant={ 'subtitle1' }>Selected Test Functions</Typography><br/>
                             { customList(right) }
                         </Grid>

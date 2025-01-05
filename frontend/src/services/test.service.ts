@@ -24,7 +24,6 @@ export interface UpdateTestData {
     ExecutionType: TestExecutionType,
     AllDevices: boolean,
     Devices: number[],
-    RunAllTests: boolean,
     UnityTestCategoryType: UnityTestCategory,
     Categories: string,
     TestFunctions: IUnityTestFunctionData[],

@@ -4,7 +4,6 @@ import { UnityTestCategory } from "./unity.test.category.type.enum";
 export default interface ITestConfigUnityData {
     ID?: number | null,
     TestConfigID: number,
-    RunAllTests: boolean,
     UnityTestCategoryType: UnityTestCategory,
     UnityTestFunctions: Array<IUnityTestFunctionData>,
     Categories: string,

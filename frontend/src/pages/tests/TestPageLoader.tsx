@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Backdrop, CircularProgress } from '@mui/material';
 import ITestData from '../../types/test';
-import EditTestPage from './edit.test.content';
+import EditTestPage from './EditTestPage';
 import { getTest } from '../../services/test.service';
-import ShowTestPage from './show.test.content';
+import ShowTestPage from './ShowTestPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useHubState} from "../../hooks/HubStateProvider";
 
