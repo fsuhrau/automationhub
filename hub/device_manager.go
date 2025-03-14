@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"reflect"
@@ -42,8 +43,8 @@ func NewDeviceManager(logger *logrus.Logger, masterUrl, nodeIdentifier string) *
 		deviceHandlers: make(map[string]device.Handler),
 		deviceCache:    make(map[string]*models.Device),
 		upgrader: websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
+			ReadBufferSize:  protocol.SocketFrameSize,
+			WriteBufferSize: protocol.SocketFrameSize,
 		},
 	}
 }
@@ -355,7 +356,16 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 					d.Connection().ActionChannel <- resp
 					continue
 				}
+				if resp.ActionType == action.ActionType_ExecuteMethodStart {
+					continue
+				}
+				if resp.ActionType == action.ActionType_ExecuteMethodFinished {
+					continue
+				}
 				if resp.ActionType == action.ActionType_ExecuteTest {
+					continue
+				}
+				if resp.ActionType == action.ActionType_ExecutionResult {
 					continue
 				}
 

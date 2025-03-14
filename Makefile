@@ -5,8 +5,8 @@ DST_DIR=./out
 .PHONY: proto
 proto:
 	mkdir -p $(DST_DIR)/csharp $(DST_DIR)/cpp
-	protoc --proto_path=$(SRC_DIR)/dut -I=$(SRC_DIR)/dut --go_out=. --cpp_out=$(DST_DIR)/cpp --csharp_out=$(DST_DIR)/csharp action.proto
 	protoc --proto_path=$(SRC_DIR)/node -I=$(SRC_DIR)/node --go_out=. node.proto
+	#protoc --proto_path=$(SRC_DIR)/dut -I=$(SRC_DIR)/dut --go_out=. --cpp_out=$(DST_DIR)/cpp --csharp_out=$(DST_DIR)/csharp action.proto
 
 # run the frontend locally
 .PHONY: run

@@ -2,7 +2,6 @@ package base
 
 import (
 	"context"
-	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -18,6 +17,14 @@ func (tr *TestRunner) InstallApp(ctx context.Context, params app.Parameter, devi
 		wg.Add(1)
 		go func(appp app.Parameter, d device.Device, group sync.ExtendedWaitGroup) {
 			defer group.Done()
+
+			/*
+				available, err := d.IsAppBundleAvailable(&params)
+				if err != nil {
+					tr.LogError("check installation failed: %v", err)
+					return
+				}
+			*/
 
 			installed, err := d.IsAppInstalled(&params)
 			if err != nil {
@@ -65,10 +72,7 @@ func (tr *TestRunner) StopApp(ctx context.Context, params app.Parameter, devices
 func (tr *TestRunner) StartApp(ctx context.Context, params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) ([]DeviceMap, error) {
 
 	cancelContext, cancel := context.WithCancel(ctx)
-	defer func() {
-		fmt.Println("StartApp: cancel")
-		cancel()
-	}()
+	defer cancel()
 
 	wg := sync.NewExtendedWaitGroup(cancelContext)
 

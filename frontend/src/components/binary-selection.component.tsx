@@ -1,5 +1,4 @@
 import React, {ChangeEvent, ReactElement, useCallback, useEffect, useState} from 'react';
-import Grid from '@mui/material/Grid';
 import {
     Box,
     Button,
@@ -19,6 +18,7 @@ import {useParams} from "react-router-dom";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {useDropzone} from "react-dropzone";
 import {useApplicationContext} from "../hooks/ApplicationProvider";
+import Grid from "@mui/material/Grid2";
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
@@ -51,7 +51,7 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
 
     const [binary, setBinary] = useState<IAppBinaryData>();
     const [binaries, setBinaries] = useState<IAppBinaryData[]>([]);
-    const [selectedAppID, setSelectedAppID] = useState<number>(1);
+    const [selectedBinaryID, setSelectedBinaryID] = useState<number | null>(binaryId);
 
     const [uploadProgress, setUploadProgress] = useState<number>(0);
 
@@ -84,19 +84,19 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
                         return newState;
                     });
                     setBinary(data.data);
-                    setSelectedAppID(data.data.ID);
+                    setSelectedBinaryID(data.data.ID);
                 }
             });
         }
     };
 
-    const handleChange = (e: SelectChangeEvent<number>): void => {
+    const handleChange = (e: SelectChangeEvent<number|null>): void => {
         e.preventDefault();
         if (e.target.value !== undefined) {
-            const appId = e.target.value as number;
-            const a = binaries.find(element => element.ID == appId);
+            const binaryId = e.target.value as number;
+            const a = binaries.find(element => element.ID == binaryId);
             setBinary(a);
-            setSelectedAppID(appId);
+            setSelectedBinaryID(binaryId);
         }
     };
 
@@ -114,53 +114,41 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
             alignItems="center"
             direction={'column'}
         >
-            <Grid item={true}>
-                <FormControl>
-                    <InputLabel id="app-selection-label">App</InputLabel>
-                    <Select
-                        labelId="app-selection-label"
-                        id="app-selection"
-                        value={selectedAppID}
-                        onChange={event => handleChange(event)}
-                        label={'App'}
-                    >
-                        <MenuItem value={0}>Select an App</MenuItem>
-                        {binaries.map((a) =>
-                            <MenuItem key={`bin_select_item_${a.ID}`}
-                                      value={a.ID}>{a.Platform} {a.Name} ({a.Version})</MenuItem>,
-                        )}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item={true}>
-                <Grid
-                    container={true}
-                    spacing={2}
-                    justifyContent="center"
-                    alignItems="center"
+            <Grid size={12}>
+                <Select
+                    fullWidth={true}
+                    id="app-selection"
+                    value={selectedBinaryID}
+                    onChange={event => handleChange(event)}
+                    label={'App'}
                 >
-                    {upload && (
-                        <Grid item={true}>
-                            <Box sx={{width: '250px'}}>
-                                <LinearProgressWithLabel value={uploadProgress}/>
-                            </Box>
-                        </Grid>
+                    <MenuItem value={0}>Select an App</MenuItem>
+                    {binaries.map((a) =>
+                        <MenuItem key={`bin_select_item_${a.ID}`}
+                                  value={a.ID}>{a.Platform} {a.Name} ({a.Version})</MenuItem>,
                     )}
-                    {upload && (
-                        <Grid item={true}>
-                            <label htmlFor="app-upload">
-                                <Input
-                                    id="app-upload"
-                                    type="file"
-                                    sx={{visibility: 'hidden'}}
-                                    onChange={selectUploadFile}/>
-                                <Button variant="contained" component="span">
-                                    Upload New
-                                </Button>
-                            </label>
-                        </Grid>
-                    )}
-                </Grid>
+                </Select>
+            </Grid>
+            <Grid size={12} container={true} justifyContent="center" alignItems="center">
+                {upload && (
+                    <Grid size={8}>
+                            <LinearProgressWithLabel value={uploadProgress}/>
+                    </Grid>
+                )}
+                {upload && (
+                    <Grid size={4} justifyContent="center" alignItems="center" container={true} textAlign={"center"} justifyItems={"center"} justifySelf={"center"}>
+                        <label htmlFor="app-upload">
+                            <Input
+                                id="app-upload"
+                                type="file"
+                                sx={{visibility: 'hidden'}}
+                                onChange={selectUploadFile}/>
+                            <Button variant="contained" component="span">
+                                Upload New
+                            </Button>
+                        </label>
+                    </Grid>
+                )}
             </Grid>
         </Grid>
     );

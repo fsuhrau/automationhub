@@ -1,6 +1,7 @@
 package inspector
 
 import (
+	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/endpoints/inspector/handler/dashboard"
 	"github.com/fsuhrau/automationhub/endpoints/inspector/handler/devices"
 	"github.com/fsuhrau/automationhub/endpoints/inspector/handler/gui"
@@ -14,15 +15,15 @@ import (
 )
 
 type Inspector struct {
-	logger *logrus.Entry
-	devices manager.Devices
+	logger   *logrus.Entry
+	devices  manager.Devices
 	sessions manager.Sessions
 }
 
 func New(logger *logrus.Logger, dm manager.Devices, sm manager.Sessions) *Inspector {
 	return &Inspector{
-		logger: logger.WithField("service", "inspector"),
-		devices: dm,
+		logger:   logger.WithField("service", "inspector"),
+		devices:  dm,
 		sessions: sm,
 	}
 }
@@ -42,18 +43,18 @@ func (s *Inspector) RegisterRoutes(r *gin.Engine) error {
 	r.GET("/inspector/devices", devices.Index(s.devices))
 	r.GET("/inspector/sessions", sessions.Index(s.sessions))
 	r.GET("/inspector/session/:sessionID/show", sessions.Show(s.sessions))
-	r.GET("/ws", func (c *gin.Context) {
+	r.GET("/ws", func(c *gin.Context) {
 		wshandler(c.Writer, c.Request)
 	})
 	//router.GET("/tests", gui.Tests)
 	return nil
 }
 
-
 var wsupgrader = websocket.Upgrader{
-	ReadBufferSize: 1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  protocol.SocketFrameSize,
+	WriteBufferSize: protocol.SocketFrameSize,
 }
+
 func wshandler(w http.ResponseWriter, r *http.Request) {
 	wsupgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := wsupgrader.Upgrade(w, r, nil)

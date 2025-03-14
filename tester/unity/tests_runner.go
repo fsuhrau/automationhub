@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/device/node"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
@@ -98,6 +99,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 			Name:           appData.Name,
 			Version:        appData.Version,
 			Hash:           appData.Hash,
+			Size:           appData.Size,
 		}
 	} else {
 		tr.appParams = app.Parameter{
@@ -108,6 +110,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	// stop app
 	tr.LogInfo("Stop apps if running")
 	tr.StopApp(tr.ctx, tr.appParams, devices)
+
+	tr.UploadApp(tr.ctx, tr.appParams, devices)
 
 	tr.LogInfo("Install app on devices")
 	tr.InstallApp(tr.ctx, tr.appParams, devices)
@@ -339,5 +343,29 @@ func (tr *testsRunner) captureScreenShot(dev base.DeviceMap, task action.TestSta
 	if rawData != nil {
 		os.WriteFile(filePath, rawData, os.ModePerm)
 		dev.Device.Data("screen", fileName)
+	}
+}
+
+func (tr *testsRunner) UploadApp(ctx context.Context, params app.Parameter, devices []base.DeviceMap) {
+
+	usedNodes := make(map[manager.NodeIdentifier]manager.Nodes)
+
+	// get unique nodes
+	for _, dev := range devices {
+		if nodeDev, success := dev.Device.(*node.NodeDevice); success {
+			if _, found := usedNodes[nodeDev.GetNodeID()]; !found {
+				usedNodes[nodeDev.GetNodeID()] = nodeDev.NodeManager()
+			}
+		}
+	}
+
+	if len(usedNodes) > 0 {
+		tr.LogInfo("Upload new App to Nodes")
+		for nodeId, mng := range usedNodes {
+			err := mng.UploadApp(nodeId, &params)
+			if err != nil {
+				tr.LogError("Upload app to nodes failed: %v", err)
+			}
+		}
 	}
 }

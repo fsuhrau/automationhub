@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/gin-gonic/gin"
@@ -14,8 +15,8 @@ import (
 )
 
 var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  protocol.SocketFrameSize,
+	WriteBufferSize: protocol.SocketFrameSize,
 }
 
 type Service struct {

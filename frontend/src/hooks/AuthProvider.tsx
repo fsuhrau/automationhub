@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         const checkSession = async () => {
             try {
-                const response = await fetch("/api/auth/session", {
+                const response = await fetch("/auth/session", {
                     method: "GET",
                     credentials: "include", // Include cookies in the request
                 });
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const loginAction = async (data: LoginData) => {
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch("/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const registerAction = async (data: RegisterData) => {
         try {
-            const response = await fetch("/api/auth/register", {
+            const response = await fetch("/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const logOut = async () => {
         try {
-            const res = await fetch("/api/auth/logout", {
+            const res = await fetch("/auth/logout", {
                 method: "POST",
                 credentials: "include", // Include cookies in the request
             });

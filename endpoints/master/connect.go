@@ -2,6 +2,7 @@ package master
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/node"
@@ -11,8 +12,8 @@ import (
 )
 
 var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  protocol.SocketFrameSize,
+	WriteBufferSize: protocol.SocketFrameSize,
 }
 
 func (s *nodeMaster) Connect(c *gin.Context) {
@@ -42,7 +43,7 @@ func (s *nodeMaster) handleNode(conn *websocket.Conn, c *gin.Context) {
 
 	fmt.Printf("node registered: %s\n", request.Hostname)
 
-	rpcClient := node.NewRPCClient(conn)
+	rpcClient := node.NewRPCClient(conn, s.cfg.MasterURL)
 
 	s.nm.RegisterNode(manager.NodeIdentifier(request.GetIdentifier()), rpcClient, request.GetHostname(), c.RemoteIP(), request.GetOperationSystem(), request.GetEnvironmentVariables(), request.GetPort(), request.GetManagers())
 

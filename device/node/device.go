@@ -28,6 +28,10 @@ type NodeDevice struct {
 	nodeManager manager.Nodes
 }
 
+func (d *NodeDevice) GetNodeID() manager.NodeIdentifier {
+	return d.nodeId
+}
+
 func (d *NodeDevice) DeviceModel() string {
 	return d.deviceModel
 }
@@ -127,4 +131,8 @@ func (d *NodeDevice) RunNativeScript(script []byte) {
 func (d *NodeDevice) Send(script []byte) error {
 	d.nodeManager.SendAction(d.nodeId, d.deviceID, script)
 	return nil
+}
+
+func (d *NodeDevice) NodeManager() manager.Nodes {
+	return d.nodeManager
 }

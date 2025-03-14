@@ -13,6 +13,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+/*
+	// maintenance
+	adb connect $DEVICE_ID || exit 1
+	adb -s $DEVICE_ID shell 'cd data/app/; du -hs .; rm -rf *.tmp; du -hs .' || exit 1
+	adb -s $DEVICE_ID reboot || exit 1
+	adb -s $DEVICE_ID wait-for-device || exit 1
+*/
+
 const (
 	ADB  = "adb"
 	AAPT = "aapt"

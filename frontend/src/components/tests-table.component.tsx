@@ -2,17 +2,7 @@ import React, {ChangeEvent, useEffect, useState} from 'react';
 
 import ITestData from '../types/test';
 import {executeTest, getAllTests} from '../services/test.service';
-import {
-    Button,
-    ButtonGroup,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    TextField,
-    Typography,
-} from '@mui/material';
+import {Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Typography,} from '@mui/material';
 import {PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
@@ -22,6 +12,8 @@ import {useProjectContext} from "../hooks/ProjectProvider";
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
 import {UnityTestCategory} from "../types/unity.test.category.type.enum";
+import Grid from "@mui/material/Grid2";
+import {TextareaAutosize as BaseTextareaAutosize} from '@mui/base/TextareaAutosize';
 
 interface TestTableProps {
     appId: number | null
@@ -66,7 +58,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         disableStart: true,
         testId: null,
         binaryId: 0,
-        envParams: app === undefined ? '' : app?.DefaultParameter.replace(';', "\n"),
+        envParams: app === undefined ? '' : app?.DefaultParameter.replaceAll(';', '\n'),
     });
 
 
@@ -223,7 +215,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         setState(prevState => ({...prevState, binaryId: app.ID, disableStart: requiresApp && app.ID === 0}));
     };
 
-    const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
+    const onEnvParamsChanged = (event: ChangeEvent<HTMLTextAreaElement>): void => {
         setState(prevState => ({...prevState, envParams: event.target.value}));
     };
 
@@ -233,45 +225,57 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             setState(prevState => ({
                 ...prevState,
                 disableStart: requiresApp && app.ID === 0,
-                envParams: app.DefaultParameter.replace(";", "\n")
+                envParams: app.DefaultParameter.replaceAll(";", "\n")
             }));
         }
     }, [app]);
 
     return (
-        <>
-            <Dialog open={open} onClose={handleRunClose} aria-labelledby="form-dialog-title">
+        <div style={{display: 'flex', flexDirection: 'column'}}>
+            <Dialog fullWidth={true}
+                    maxWidth={"sm"}
+                    open={open} onClose={handleRunClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
-                    {requiresApp && (
-                        <>
-                            <DialogContentText>
-                                Select an existing App to execute the tests.<br/>
-                                Or Upload a new one.<br/>
-                                <br/>
-                            </DialogContentText>
-                            <BinarySelection binaryId={state.binaryId} upload={true}
-                                             onSelectionChanged={onBinarySelectionChanged}/>
-                        </>
-                    )}
-                    You can change parameters of your app by providing key value pairs in an environment like
-                    format:<br/>
-                    <br/>
-                    <Typography variant={'subtitle2'}>
-                        server=http://localhost:8080<br/>
-                        user=autohub
-                    </Typography>
-                    <br/>
-                    <TextField
-                        label="Parameter"
-                        fullWidth={true}
-                        multiline={true}
-                        rows={4}
-                        defaultValue={state.envParams}
-                        value={state.envParams}
-                        variant="outlined"
-                        onChange={onEnvParamsChanged}
-                    />
+                    <Grid container={true} spacing={2}>
+                        {requiresApp && (
+                            <Grid size={12}>
+                                <Grid size={12}>
+                                    <Typography variant={"body1"}>
+                                        Select an existing App to execute the tests.<br/>
+                                        Or Upload a new one.<br/>
+                                    </Typography>
+                                </Grid>
+                                <Grid size={12}>
+                                    <BinarySelection binaryId={state.binaryId} upload={true}
+                                                     onSelectionChanged={onBinarySelectionChanged}/>
+                                </Grid>
+                            </Grid>
+                        )}
+                        <Grid size={12}>
+                            <Typography variant={"body1"}>
+                                You can change parameters of your app by providing key value pairs in an environment
+                                like
+                                format:
+                            </Typography>
+                        </Grid>
+                        <Grid size={12}>
+                            <Typography variant={'subtitle2'}>
+                                server=http://localhost:8080<br/>
+                                user=autohub
+                            </Typography>
+                        </Grid>
+                        <Grid size={12}>
+                            <BaseTextareaAutosize
+                                style={{width: '100%', height: '100px'}}
+                                placeholder={"Parameter"}
+                                defaultValue={state.envParams}
+                                value={state.envParams}
+                                onChange={onEnvParamsChanged}
+                            />
+
+                        </Grid>
+                    </Grid>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleRunClose} color="primary">
@@ -286,7 +290,6 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                 </DialogActions>
             </Dialog>
             <DataGrid
-                autoHeight
                 disableRowSelectionOnClick
                 rows={gridData}
                 columns={columns}
@@ -326,7 +329,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                     },
                 }}
             />
-        </>
+        </div>
     );
 };
 

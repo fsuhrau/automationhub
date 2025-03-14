@@ -1,24 +1,47 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/sirupsen/logrus"
+	"io"
+	"net/http"
+	"sync"
+	"time"
 )
+
+type UploadProgress struct {
+	Request           *UploadAppRequest
+	NextProgressPrint *time.Time
+	Data              []byte
+}
 
 type RPCNode struct {
 	config            config.Service
 	dm                manager.Devices
 	connectionHandler ConnectionHandler
+	abm               *AppBundleManager
+	mutex             sync.Mutex
+	uploadRequests    map[int32]*UploadProgress
+	screenshots       map[string][]byte
 }
 
 func NewRPCNode(config config.Service, dm manager.Devices, ch ConnectionHandler) *RPCNode {
+	abm, err := NewAppBundleManager(apps.AppBundleStoragePath)
+	if err != nil {
+		panic(err)
+	}
 	return &RPCNode{
 		config:            config,
 		dm:                dm,
 		connectionHandler: ch,
+		abm:               abm,
+		uploadRequests:    make(map[int32]*UploadProgress),
+		screenshots:       make(map[string][]byte),
 	}
 }
 
@@ -80,7 +103,11 @@ func (s *RPCNode) GetDevices(req *Void, resp *DevicesResponse) error {
 	return nil
 }
 
-func getAppParameter(req *AppParameterRequest) *app.Parameter {
+func getAppParameter(req *AppParameterRequest, data *AppBundleMetaData) *app.Parameter {
+	appPath := ""
+	if data != nil {
+		appPath = data.FilePath
+	}
 	return &app.Parameter{
 		AppBinaryID:    uint(req.AppID),
 		Platform:       req.Platform,
@@ -90,6 +117,7 @@ func getAppParameter(req *AppParameterRequest) *app.Parameter {
 		LaunchActivity: req.LaunchActivity,
 		Additional:     req.Additional,
 		Hash:           req.Hash,
+		AppPath:        appPath,
 		Size:           int(req.Size),
 	}
 }
@@ -101,7 +129,13 @@ func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) e
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	installed, err := device.IsAppInstalled(getAppParameter(req))
+	data, err := s.abm.GetAppParameter(req.Hash)
+	if err != nil {
+		resp.Value = false
+		return nil
+	}
+
+	installed, err := device.IsAppInstalled(getAppParameter(req, data))
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
@@ -112,10 +146,105 @@ func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) e
 	return nil
 }
 
+func (s *RPCNode) IsAppUploaded(req *AppParameterRequest, resp *BoolResponse) error {
+	logrus.Info("RPC: IsAppUploaded")
+
+	if _, err := s.abm.GetAppParameter(req.Hash); errors.Is(err, ErrAppNotFound) {
+		resp.Value = false
+		return nil
+	}
+
+	resp.Value = true
+	return nil
+}
+
 func (s *RPCNode) UploadApp(req *UploadAppRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: UploadApp")
-	// needs to be implemented still
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	progress := &UploadProgress{
+		Request: req,
+	}
+
+	s.uploadRequests[req.AppID] = progress
+
+	go s.downloadFile(progress)
+
 	resp.Value = true
+	return nil
+}
+
+func (s *RPCNode) downloadFile(progress *UploadProgress) {
+	resp, err := http.Get(progress.Request.URL)
+	if err != nil {
+		logrus.Error("Failed to download file: ", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logrus.Error("Failed to download file: ", resp.Status)
+		return
+	}
+
+	progress.Data = make([]byte, 0, progress.Request.Size)
+	buffer := make([]byte, 10*1024*1024) // 10MB buffer size
+	totalRead := int64(0)
+
+	for {
+		n, err := resp.Body.Read(buffer)
+		if n > 0 {
+			progress.Data = append(progress.Data, buffer[:n]...)
+			totalRead += int64(n)
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			logrus.Error("Failed to read file data: ", err)
+			return
+		}
+	}
+
+	logrus.Infof("Download Complete stroging file")
+	if err := s.abm.StoreData(progress.Data, &AppBundleMetaData{
+		Filename: progress.Request.Name,
+		FileHash: progress.Request.Hash,
+		FileSize: progress.Request.Size,
+	}); err != nil {
+		logrus.Error(err)
+	}
+}
+
+func humanReadableSize(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+func (s *RPCNode) UploadAppProgress(req *UploadAppProgressRequest, resp *UploadAppProgressResponse) error {
+	// logrus.Info("RPC: UploadApp")
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	progress, exists := s.uploadRequests[req.AppID]
+	if !exists {
+		err := fmt.Errorf("No Meta Progress found for Upload Data")
+		return err
+	}
+
+	resp.AppID = req.AppID
+	resp.DataReceived = int64(len(progress.Data))
+
 	return nil
 }
 
@@ -126,7 +255,12 @@ func (s *RPCNode) InstallApp(req *AppParameterRequest, resp *BoolResponse) error
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	err := device.InstallApp(getAppParameter(req))
+	data, err := s.abm.GetAppParameter(req.Hash)
+	if err != nil {
+		return err
+	}
+
+	err = device.InstallApp(getAppParameter(req, data))
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
@@ -144,7 +278,7 @@ func (s *RPCNode) UninstallApp(req *AppParameterRequest, resp *BoolResponse) err
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	err := device.UninstallApp(getAppParameter(req))
+	err := device.UninstallApp(getAppParameter(req, nil))
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
@@ -162,7 +296,7 @@ func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
 		return fmt.Errorf("device with id %v not found", req.App.DeviceID)
 	}
 
-	err := device.StartApp(getAppParameter(req.App), req.SessionID, s.config.NodeUrl)
+	err := device.StartApp(getAppParameter(req.App, nil), req.SessionID, s.config.NodeUrl)
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
@@ -180,7 +314,7 @@ func (s *RPCNode) StopApp(req *AppParameterRequest, resp *BoolResponse) error {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	err := device.StopApp(getAppParameter(req))
+	err := device.StopApp(getAppParameter(req, nil))
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
@@ -204,18 +338,28 @@ func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 	return nil
 }
 
-func (s *RPCNode) GetScreenshot(req *DeviceRequest, resp *ScreenShotResponse) error {
-	logrus.Info("RPC: GetScreenshot")
+func (s *RPCNode) TakeScreenshot(req *DeviceRequest, resp *ScreenShotResponse) error {
+	logrus.Info("RPC: TakeScreenshot")
 	device, _ := s.dm.GetDevice(req.DeviceID)
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
 	b, w, h, err := device.GetScreenshot()
-	resp.Data = b
+	resp.Hash = req.DeviceID
+	resp.Size = int32(len(b))
 	resp.Width = int32(w)
 	resp.Height = int32(h)
+
+	s.screenshots[req.DeviceID] = b
 	return err
+}
+
+func (s *RPCNode) GetScreenshotData(req *ScreenShotDataRequest, resp *ScreenShotDataResponse) error {
+	if data, ok := s.screenshots[req.Hash]; ok {
+		resp.Data = data[req.Start:req.End]
+	}
+	return nil
 }
 
 func (s *RPCNode) HasFeature(req *FeatureRequest, resp *BoolResponse) error {

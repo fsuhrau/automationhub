@@ -25,4 +25,6 @@ type RPCClient interface {
 	ConnectionTimeout(deviceId string) time.Duration
 	RunNativeScript(deviceId string, script []byte)
 	SendAction(deviceId string, action []byte)
+	UploadApp(parameter *app.Parameter) error
+	IsAppUploaded(parameter *app.Parameter) (bool, error)
 }

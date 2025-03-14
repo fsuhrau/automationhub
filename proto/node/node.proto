@@ -59,7 +59,16 @@ message UploadAppRequest {
   string Name = 3;
   string Hash = 4;
   int64 Size = 5;
-  bytes Data = 6;
+  string URL = 6;
+}
+
+message UploadAppProgressRequest {
+  int32 AppID = 1;
+}
+
+message UploadAppProgressResponse {
+  int32 AppID = 1;
+  int64 DataReceived = 2;
 }
 
 message AppParameterRequest {
@@ -75,7 +84,6 @@ message AppParameterRequest {
   int64 Size = 10;
 }
 
-
 message StartAppRequest {
   AppParameterRequest App = 1;
   string SessionID = 2;
@@ -89,9 +97,20 @@ message BoolResponse {
 }
 
 message ScreenShotResponse {
+  string hash = 1;
+  int32 Size = 2;
+  int32 Width = 3;
+  int32 Height = 4;
+}
+
+message ScreenShotDataRequest {
+  string hash = 1;
+  int32 Start = 2;
+  int32 End = 3;
+}
+
+message ScreenShotDataResponse {
   bytes Data = 1;
-  int32 Width = 2;
-  int32 Height = 3;
 }
 
 message FeatureRequest {
@@ -106,33 +125,4 @@ message ExecuteRequest {
 
 message TimeoutResponse {
   int64 Timeout = 1;
-}
-
-service Node {
-  rpc DeviceStatus (DeviceStatusRequest) returns (DeviceResponse) {}
-  rpc Ping (Void) returns (Void) {}
-  rpc StartDevice(DeviceRequest) returns (ErrorResponse) {}
-  rpc StopDevice(DeviceRequest) returns (ErrorResponse) {}
-  rpc GetDevices(Void) returns (DevicesResponse) {}
-
-  rpc IsAppInstalled(AppParameterRequest) returns (BoolResponse) {}
-  rpc UploadApp(UploadAppRequest) returns (BoolResponse) {}
-  rpc InstallApp(AppParameterRequest) returns (BoolResponse) {}
-  rpc UninstallApp(AppParameterRequest) returns (BoolResponse) {}
-
-  rpc StartApp(StartAppRequest) returns (BoolResponse) {}
-  rpc StopApp(AppParameterRequest) returns (BoolResponse) {}
-
-  rpc IsConnected(DeviceRequest) returns (BoolResponse) {}
-
-  // rpc StartRecording(DeviceRequest) returns (BoolResponse) {}
-  // rpc StopRecording(DeviceRequest) returns (BoolResponse) {}
-
-  rpc GetScreenshot(DeviceRequest) returns (ScreenShotResponse) {}
-  rpc HasFeature(FeatureRequest) returns (BoolResponse) {}
-  rpc Execute(ExecuteRequest) returns (Void) {}
-
-  rpc ConnectionTimeout(DeviceRequest) returns (TimeoutResponse) {}
-
-  rpc RunNativeScript(ExecuteRequest) returns (Void) {}
 }

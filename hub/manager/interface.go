@@ -57,6 +57,8 @@ type Nodes interface {
 	StopDevice(nodeIdentifier NodeIdentifier, deviceId string) error
 
 	// Device Actions
+	IsAppUploaded(node NodeIdentifier, parameter *app.Parameter) (bool, error)
+	UploadApp(node NodeIdentifier, parameter *app.Parameter) error
 	IsAppInstalled(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) (bool, error)
 	InstallApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	UninstallApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error

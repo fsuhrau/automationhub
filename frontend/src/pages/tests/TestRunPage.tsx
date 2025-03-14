@@ -101,12 +101,14 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     const navigate = useNavigate();
 
     const [state, setState] = useState<{
+        currentRunID: number,
         log: ITesRunLogEntryData[],
         protocols: ITestProtocolData[],
         runsOpen: number,
         runsFailed: number,
         runsSuccess: number
     }>({
+        currentRunID: testRun.ID as number,
         log: [],
         protocols: testRun.Protocols === undefined ? [] : testRun.Protocols,
         runsOpen: 0,
@@ -120,20 +122,26 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         return [...protocols, protocol]
     }
 
-    const testProtocolEntry = useSSE<ITestProtocolData | null>(`test_run_${testRun.ID}_protocol`, null)
+    const testProtocolEntry = useSSE<ITestProtocolData | null>(`test_run_${state.currentRunID}_protocol`, null)
     useEffect(() => {
         if (testProtocolEntry === null) return;
-
+        console.log("Received new protocol entry: " + testProtocolEntry.ID)
         setState(prevState => ({
             ...prevState,
             protocols: patchProtocols(prevState.protocols, testProtocolEntry),
         }));
     }, [testProtocolEntry]);
 
+    useEffect(() => {
+        console.log("TestRun changed to: " + testRun.ID)
+        setState(prevState => ({...prevState, currentRunID: testRun.ID as number}));
+    }, [testRun.ID]);
+
     const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${testRun.ID}_log`, null);
     useEffect(() => {
         if (testRunEntry === null)
             return;
+        console.log("Received Test Run Log:  " + testRunEntry.Entry.ID)
         setState(prevState => ({...prevState, log: [...prevState.log, testRunEntry.Entry]}))
     }, [testRunEntry]);
 

@@ -118,6 +118,18 @@ func (nm *NodeManager) getNode(nodeIdentifier manager.NodeIdentifier) (error, *N
 	return ErrNodeNotFound, nil
 }
 
+func (nm *NodeManager) getHandler(nodeIdentifier manager.NodeIdentifier) (manager.RPCClient, error) {
+	err, n := nm.getNode(nodeIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if n.Handler == nil {
+		return nil, ErrNodeNotConnected
+	}
+	return n.Handler, nil
+}
+
 func (nm *NodeManager) GetStatus(nodeIdentifier manager.NodeIdentifier) (int, error) {
 	err, n := nm.getNode(nodeIdentifier)
 	if err != nil {
@@ -129,210 +141,173 @@ func (nm *NodeManager) GetStatus(nodeIdentifier manager.NodeIdentifier) (int, er
 
 // Manager Actions
 func (nm *NodeManager) StartDevice(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StartDevice(deviceId)
+	return handler.StartDevice(deviceId)
 }
 func (nm *NodeManager) StopDevice(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StopDevice(deviceId)
+	return handler.StopDevice(deviceId)
 }
 
 // Device Actions
 func (nm *NodeManager) IsAppInstalled(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) (bool, error) {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return false, err
 	}
 
-	if n.Handler == nil {
-		return false, ErrNodeNotConnected
+	return handler.IsAppInstalled(deviceId, parameter)
+}
+
+func (nm *NodeManager) IsAppUploaded(nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) (bool, error) {
+	handler, err := nm.getHandler(nodeIdentifier)
+	if err != nil {
+		return false, err
 	}
-	return n.Handler.IsAppInstalled(deviceId, parameter)
+
+	return handler.IsAppUploaded(parameter)
+}
+
+func (nm *NodeManager) UploadApp(nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) error {
+	handler, err := nm.getHandler(nodeIdentifier)
+	if err != nil {
+		return err
+	}
+
+	// check if we need to upload or of it exists already
+	exists, err := handler.IsAppUploaded(parameter)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
+	return handler.UploadApp(parameter)
 }
 
 func (nm *NodeManager) InstallApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	// upload first?
-
-	return n.Handler.InstallApp(deviceId, parameter)
+	return handler.InstallApp(deviceId, parameter)
 }
 
 func (nm *NodeManager) UninstallApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.UninstallApp(deviceId, parameter)
+	return handler.UninstallApp(deviceId, parameter)
 }
 
 func (nm *NodeManager) StartApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter, sessionId string, nodeUrl string) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StartApp(deviceId, parameter, sessionId, nodeUrl)
+	return handler.StartApp(deviceId, parameter, sessionId, nodeUrl)
 }
 
 func (nm *NodeManager) StopApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StopApp(deviceId, parameter)
+	return handler.StopApp(deviceId, parameter)
 }
 
 func (nm *NodeManager) IsConnected(nodeIdentifier manager.NodeIdentifier, deviceId string) bool {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return false
 	}
 
-	if n.Handler == nil {
-		return false
-	}
-
-	return n.Handler.IsConnected(deviceId)
+	return handler.IsConnected(deviceId)
 }
 
 func (nm *NodeManager) StartRecording(nodeIdentifier manager.NodeIdentifier, deviceId string, path string) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StartRecording(deviceId, "")
+	return handler.StartRecording(deviceId, "")
 }
 
 func (nm *NodeManager) StopRecording(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	if n.Handler == nil {
-		return ErrNodeNotConnected
-	}
-
-	return n.Handler.StopRecording(deviceId)
+	return handler.StopRecording(deviceId)
 }
 
 func (nm *NodeManager) GetScreenshot(nodeIdentifier manager.NodeIdentifier, deviceId string) ([]byte, int, int, error) {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return nil, 0, 0, err
 	}
 
-	if n.Handler == nil {
-		return nil, 0, 0, ErrNodeNotConnected
-	}
-
-	return n.Handler.GetScreenshot(deviceId)
+	return handler.GetScreenshot(deviceId)
 }
 
 func (nm *NodeManager) HasFeature(nodeIdentifier manager.NodeIdentifier, deviceId string, feature string) bool {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return false
 	}
 
-	if n.Handler == nil {
-		return false
-	}
-
-	return n.Handler.HasFeature(deviceId, feature)
+	return handler.HasFeature(deviceId, feature)
 }
 
 func (nm *NodeManager) Execute(nodeIdentifier manager.NodeIdentifier, deviceId string, data string) {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return
 	}
 
-	if n.Handler == nil {
-		return
-	}
-
-	n.Handler.Execute(deviceId, data)
+	handler.Execute(deviceId, data)
 }
 
 func (nm *NodeManager) ConnectionTimeout(nodeIdentifier manager.NodeIdentifier, deviceId string) time.Duration {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return 5 * time.Minute
 	}
 
-	if n.Handler == nil {
-		return 5 * time.Second
-	}
-
-	return n.Handler.ConnectionTimeout(deviceId)
+	return handler.ConnectionTimeout(deviceId)
 }
 
 func (nm *NodeManager) RunNativeScript(nodeIdentifier manager.NodeIdentifier, deviceId string, script []byte) {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return
 	}
 
-	if n.Handler == nil {
-		return
-	}
-
-	n.Handler.RunNativeScript(deviceId, script)
+	handler.RunNativeScript(deviceId, script)
 }
 
 func (nm *NodeManager) SendAction(nodeIdentifier manager.NodeIdentifier, deviceId string, action []byte) {
-	err, n := nm.getNode(nodeIdentifier)
+	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return
 	}
 
-	if n.Handler == nil {
-		return
-	}
-
-	n.Handler.SendAction(deviceId, action)
+	handler.SendAction(deviceId, action)
 }
