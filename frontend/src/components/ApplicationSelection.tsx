@@ -63,8 +63,11 @@ export default function ApplicationSelection() {
             if (location.pathname.indexOf("app:") >= 0) {
                 const newPath = location.pathname.replace(regex, `app:${appId}`);
                 navigate(newPath);
-            } else if (location.pathname.indexOf("settings") == -1
-                && location.pathname.indexOf("users") == -1) {
+            } else if (location.pathname.indexOf("/settings") == -1
+                && location.pathname.indexOf("/users") == -1
+                && location.pathname.indexOf("/devices") == -1
+                && location.pathname.indexOf("/device") == -1
+            ) {
                 navigate(`/project/${project.Identifier}/app:${appId}/home`);
             }
         }

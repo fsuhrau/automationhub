@@ -17,6 +17,8 @@ import {CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, 
 import {TitleCard} from "../../components/title.card.component";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid2";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import {useLocation} from "react-router-dom";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -96,9 +98,48 @@ const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: Perfor
     );
 };
 
+const indexForQuery = (t: string | null) => {
+    switch (t)
+    {
+        case 'status': return 0;
+        case 'log': return 1;
+        case 'screenshots': return 2;
+        case 'video': return 3;
+        case 'performance': return 4;
+        case 'checkpoint': return 5;
+    }
+    return 0
+}
+
+const queryForIndex = (t: number) => {
+    switch (t)
+    {
+        case 0: return 'status';
+        case 1: return 'log';
+        case 2: return 'screenshots';
+        case 3: return 'video';
+        case 4: return 'performance';
+        case 5: return 'checkpoint';
+    }
+    return 'status'
+}
+
+const useQuery = () => {
+    return new URLSearchParams(useLocation().search);
+};
+
+const useUpdateQueryParam = (key: string, value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    window.history.pushState({}, '', url.toString());
+};
+
 const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
 
     const {protocol} = props;
+
+    const query = useQuery();
+    const t = query.get('t');
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
     const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -170,9 +211,12 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         }))
     };
 
-    const [value, setValue] = useState(0);
+
+    const [value, setValue] = useState(indexForQuery(t));
+
     const handleChange = (event: React.ChangeEvent<{}>, newValue: number): void => {
         setValue(newValue);
+        useUpdateQueryParam('t', queryForIndex(newValue))
     };
 
     useEffect(() => {

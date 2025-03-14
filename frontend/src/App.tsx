@@ -85,13 +85,13 @@ function App(props: any) {
                                                    element={<SettingsPage/>}/>
                                             <Route path={":project_identifier/users"}/>
 
-                                            <Route path={":project_identifier/:appId/device/:deviceId/edit"}
+                                            <Route path={":project_identifier/device/:deviceId/edit"}
                                                    element={<DevicePageLoader edit={true}/>}/>
-                                            <Route path={":project_identifier/:appId/device/:deviceId"}
+                                            <Route path={":project_identifier/device/:deviceId"}
                                                    element={<DevicePageLoader edit={false}/>}/>
-                                            <Route path={":project_identifier/:appId/devices/manager"}
+                                            <Route path={":project_identifier/devices/manager"}
                                                    element={<DevicesManagerContent/>}/>
-                                            <Route path={":project_identifier/:appId/devices"} element={<DevicesContent/>}/>
+                                            <Route path={":project_identifier/devices"} element={<DevicesContent/>}/>
                                         </Route>
                                     </Route>
                                 </Route>
