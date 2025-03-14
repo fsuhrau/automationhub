@@ -163,14 +163,12 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                         Name:
                     </Grid>
                     <Grid size={{xs: 12, md: 10}}>
-                        <FormControl>
-                            <TextField required={true} id="test-name" label="Name"
-                                       value={uiState.testName}
-                                       onChange={event => setUiState(prevState => ({
-                                           ...prevState,
-                                           testName: event.target.value
-                                       }))}/>
-                        </FormControl>
+                        <TextField required={true} id="test-name" placeholder="Name"
+                                   value={uiState.testName}
+                                   onChange={event => setUiState(prevState => ({
+                                       ...prevState,
+                                       testName: event.target.value
+                                   }))}/>
                     </Grid>
                 </Grid>
             </TitleCard>
@@ -312,18 +310,16 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
                                             <TableRow>
                                                 <TableCell>
-                                                    <FormControl>
-                                                        <TextField required={true}
-                                                                   id="test-name"
-                                                                   label="Category Name"
-                                                                   value={uiState.category}
-                                                                   fullWidth={true}
-                                                                   onChange={event => setUiState(prevState => ({
-                                                                       ...prevState,
-                                                                       category: event.target.value
-                                                                   }))}
-                                                        />
-                                                    </FormControl>
+                                                    <TextField required={true}
+                                                               id="test-name"
+                                                               placeholder="Category Name"
+                                                               value={uiState.category}
+                                                               fullWidth={true}
+                                                               onChange={event => setUiState(prevState => ({
+                                                                   ...prevState,
+                                                                   category: event.target.value
+                                                               }))}
+                                                    />
                                                 </TableCell>
                                                 <TableCell>
                                                     <Button variant={'outlined'}

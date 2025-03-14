@@ -195,7 +195,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
 
     const onTestRerun = (): void => {
         executeTest(projectIdentifier, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
-            navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${response.data.ID}`);
+            navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);
         });
@@ -260,7 +260,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     </TableCell>
                     <TableCell component="th" scope="row">
                         <Link
-                            onClick={() => navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${testRun.ID}/${row.ID}`)}
+                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${testRun.ID}/${row.ID}`)}
                             underline="none">
                             {testName}
                         </Link>
@@ -300,7 +300,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link
-                                                            onClick={() => navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${testRun.ID}/${historyRow.ID}`)}
+                                                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${testRun.ID}/${historyRow.ID}`)}
                                                             underline="none">
                                                             {historyTestName.length > 1 ? historyTestName[1] : historyTestName[0]}
                                                         </Link>
@@ -341,7 +341,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     }}>
                         {prevRunId !== null && prevRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${prevRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${prevRunId}`)}>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                         }
@@ -352,7 +352,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     }}>
                         {nextRunId !== null && nextRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app/test/${testRun.TestID}/run/${nextRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${nextRunId}`)}>
                                 Next <KeyboardArrowRight/>
                             </Button>
                         }

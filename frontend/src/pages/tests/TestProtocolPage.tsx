@@ -4,7 +4,7 @@ import ITestRunData from '../../types/test.run';
 import {TestResultState} from '../../types/test.result.state.enum';
 import ITestProtocolData, {duration} from '../../types/test.protocol';
 import Typography from '@mui/material/Typography';
-import {AvTimer, DateRange, PhoneAndroid, Speed} from '@mui/icons-material';
+import {AvTimer, DateRange, Deblur, PhoneAndroid, Speed} from '@mui/icons-material';
 import {Button, Card, CardMedia, Divider, Popover, Tab, Tabs} from '@mui/material';
 import moment from 'moment';
 import IProtocolEntryData from '../../types/protocol.entry';
@@ -279,34 +279,40 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                             <Grid container={true} size={{xs: 12, md: 12}}>
                                 {protocol?.TestResult == TestResultState.TestResultFailed &&
                                     <Grid container={true} sx={{padding: 1, backgroundColor: '#ff2b40'}} size={{xs: 12, md: 12}}>
-                                        <Grid container={true} size={{xs: 12, md: 12}}>
+                                        <Grid container={true} size={{xs: 12, md: 12}} spacing={2}>
                                             {state.lastStep &&
-                                                <Grid container={true}>
+                                                <Grid container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
                                                             variant={"body2"}>{moment(state.lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
                                                     </Grid>
-                                                    <Grid size={{xs: 12, md: 121}}>
+                                                    <Grid size={{xs: 12, md: 10}}>
                                                         <Typography
                                                             variant={"body2"}>{state.lastStep.Message}</Typography>
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <Divider />
                                                     </Grid>
                                                 </Grid>
                                             }
                                             {state.lastErrors.map((lastError, index) =>
-                                                (<Grid key={`last_error_${index}`} container={true}>
+                                                (<Grid key={`last_error_${index}`} container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
                                                             variant={"body2"}>{moment(lastError.CreatedAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
                                                     </Grid>
-                                                    <Grid size={{xs: 12, md: 12}}>
+                                                    <Grid size={{xs: 12, md: 10}}>
                                                         <Typography
                                                             variant={"body2"}>{lastError.Message}</Typography>
+                                                    </Grid>
+                                                    <Grid size={12}>
+                                                        <Divider />
                                                     </Grid>
                                                 </Grid>)
                                             )}
                                         </Grid>
                                         <Grid size={{xs: 12, md: 12}} container={true}
-                                              justifyContent={"center"}>
+                                              justifyContent={"center"} alignItems={"center"} justifyItems={"center"}>
                                             {state.lastScreen && <div>
                                                 <Button aria-describedby={'last_screen_' + state.lastScreen.ID}
                                                         variant="contained" onClick={showScreenPopup}>

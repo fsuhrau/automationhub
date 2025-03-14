@@ -22,9 +22,11 @@ const (
 )
 
 type Handler struct {
-	devices       map[string]*Device
-	deviceStorage storage.Device
-	init          bool
+	devices        map[string]*Device
+	deviceStorage  storage.Device
+	init           bool
+	masterURL      string
+	nodeIdentifier string
 }
 
 func NewHandler(ds storage.Device) *Handler {
@@ -40,6 +42,8 @@ func (m *Handler) Name() string {
 
 func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 	m.init = true
+	m.masterURL = masterUrl
+	m.nodeIdentifier = nodeIdentifier
 	defer func() {
 		m.init = false
 	}()
@@ -224,6 +228,10 @@ func (m *Handler) RefreshDevices(force bool) error {
 					ConnectionType: models.ConnectionTypeUSB,
 				},
 			}
+
+			m.devices[deviceID].SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, deviceID))
+			m.devices[deviceID].AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, deviceID))
+
 			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
 			m.devices[deviceID].Config = &dev

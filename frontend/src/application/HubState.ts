@@ -20,14 +20,14 @@ export interface HubStateAction {
 export interface HubState {
     mobileOpen: boolean,
     projects: IProject[],
-    appId: number | null,
+    //appId: number | null,
     stats: IHubStatsData | null,
 }
 
 export const InitialHubState: HubState = {
     mobileOpen: false,
     projects: [],
-    appId: null,
+    //appId: null,
     stats: null,
 }
 
@@ -36,12 +36,14 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
     const {type, payload} = action;
 
     switch (type) {
+        /*
         case HubStateActions.ChangeActiveApp: {
             return {
                 ...state,
                 appId: payload as number,
             }
         }
+         */
         case HubStateActions.AddNewApp: {
             return {
                 ...state,

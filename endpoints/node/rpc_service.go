@@ -6,7 +6,6 @@ import (
 	node2 "github.com/fsuhrau/automationhub/hub/node"
 	"github.com/gorilla/websocket"
 	"github.com/matishsiao/goInfo"
-	"net/http"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"net/url"
@@ -20,10 +19,10 @@ func (s *Service) ConnectAndServe() {
 
 	serverURL := url.URL{Scheme: "ws", Host: s.cfg.MasterURL, Path: "/node/connect"}
 
-	proxyURL, _ := url.Parse("http://10.35.111.236:8888")
+	// proxyURL, _ := url.Parse("http://10.35.111.236:8888")
 
 	dialer := websocket.Dialer{
-		Proxy:             http.ProxyURL(proxyURL),
+		// Proxy:             http.ProxyURL(proxyURL),
 		HandshakeTimeout:  45 * time.Second,
 		ReadBufferSize:    protocol.SocketFrameSize,
 		WriteBufferSize:   protocol.SocketFrameSize,

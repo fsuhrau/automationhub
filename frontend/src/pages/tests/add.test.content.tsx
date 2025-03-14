@@ -6,7 +6,6 @@ import {
     Button,
     FormControl,
     FormControlLabel,
-    Grid,
     InputLabel,
     MenuItem,
     Radio,
@@ -15,9 +14,10 @@ import {
     Step,
     StepLabel,
     Stepper,
-    TextField,
     Typography,
 } from '@mui/material';
+import Grid from "@mui/material/Grid2";
+import TextField from '@mui/material/TextField';
 import {getExecutionTypes, TestExecutionType} from '../../types/test.execution.type.enum';
 import {getTestTypes, TestType} from '../../types/test.type.enum';
 import DeviceSelection from '../../components/device-selection.component';
@@ -136,7 +136,7 @@ const AddTestPage: React.FC = () => {
         };
 
         createTest(projectIdentifier, appId, requestData).then(response => {
-            navigate(`/project/${projectIdentifier}/app/tests`);
+            navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
             console.log(ex);
         });
@@ -183,15 +183,9 @@ const AddTestPage: React.FC = () => {
             >
                 <Toolbar>
                     <Grid container={true} spacing={2} alignItems="center">
-                        <Grid item={true}>
-                            <Typography variant={'h6'}>
-                                Create a new Test
-                            </Typography>
-                        </Grid>
-                        <Grid item={true} xs={true}>
-                        </Grid>
-                        <Grid item={true}>
-                        </Grid>
+                        <Typography variant={'h6'}>
+                            Create a new Test
+                        </Typography>
                     </Grid>
                 </Toolbar>
             </AppBar>
@@ -213,49 +207,46 @@ const AddTestPage: React.FC = () => {
                     ) : (
                         <div>
                             <Grid container={true} spacing={5}>
-                                <Grid item={true} xs={12}>
+                                <Grid size={12}>
                                     <Grid container={true} justifyContent="center" spacing={5}>
-                                        <Grid item={true}>
+                                        <Grid>
                                             {activeStep === TestCreationSteps.Basics && (
-                                                <Grid container={true} justifyContent="center" spacing={1}
-                                                      alignItems={'center'}>
-                                                    <Grid item={true} xs={6}>
-                                                        <FormControl fullWidth={true}>
-                                                            <TextField required={true} id="test-name" label="Name"
-                                                                       value={state.testName}
-                                                                       onChange={event => setState(prevState => ({
-                                                                           ...prevState,
-                                                                           testName: event.target.value
-                                                                       }))}/>
-                                                        </FormControl>
+                                                <Grid container={true} justifyContent="center" spacing={2} alignItems={'center'}>
+                                                    <Grid size={6}>
+                                                        <TextField required={true} id="test-name"
+                                                                   placeholder={"Name"}
+                                                                   value={state.testName}
+                                                                   fullWidth={true}
+                                                                   onChange={event => setState(prevState => ({
+                                                                       ...prevState,
+                                                                       testName: event.target.value
+                                                                   }))}/>
                                                     </Grid>
-                                                    <Grid item={true} xs={12}/>
-                                                    <Grid item={true} xs={2}>
-                                                        <FormControl fullWidth={true}>
-                                                            <InputLabel id="test-type-selection">Test Type</InputLabel>
-                                                            <Select
-                                                                defaultValue={state.testType}
-                                                                labelId="test-type-selection"
-                                                                id="test-type"
-                                                                label="Test Type"
-                                                                onChange={event => setState(prevState => ({
-                                                                    ...prevState,
-                                                                    testType: +event.target.value as TestType
-                                                                }))}
-                                                            >
-                                                                {testTypes.map((value) => (
-                                                                    <MenuItem key={'tt_' + value.id}
-                                                                              value={value.id}>{value.name}</MenuItem>
-                                                                ))}
-                                                            </Select>
-                                                        </FormControl>
+                                                    <Grid size={12}/>
+                                                    <Grid size={6}>
+                                                        <Select
+                                                            fullWidth={true}
+                                                            defaultValue={state.testType}
+                                                            labelId="test-type-selection"
+                                                            id="test-type"
+                                                            label="Test Type"
+                                                            onChange={event => setState(prevState => ({
+                                                                ...prevState,
+                                                                testType: +event.target.value as TestType
+                                                            }))}
+                                                        >
+                                                            {testTypes.map((value) => (
+                                                                <MenuItem key={'tt_' + value.id}
+                                                                          value={value.id}>{value.name}</MenuItem>
+                                                            ))}
+                                                        </Select>
                                                     </Grid>
-                                                    <Grid item={true} xs={12}/>
-                                                    <Grid item={true} xs={6}>
+                                                    <Grid size={12}/>
+                                                    <Grid size={6}>
                                                         <Grid container={true} spacing={2}
                                                               alignItems={'center'}
                                                               direction={'row'}>
-                                                            <Grid item={true}>
+                                                            <Grid>
                                                                 <RadioGroup
                                                                     name="execution-type-selection"
                                                                     aria-label="spacing"
@@ -290,7 +281,7 @@ const AddTestPage: React.FC = () => {
                                                       alignItems={'center'} direction={'column'}>
                                                     {state.testType === TestType.Unity && (
                                                         <>
-                                                            <Grid item={true}>
+                                                            <Grid>
                                                                 <RadioGroup
                                                                     name="unity-test-execution-selection"
                                                                     aria-label="spacing"
@@ -311,11 +302,11 @@ const AddTestPage: React.FC = () => {
                                                                     ))}
                                                                 </RadioGroup>
                                                             </Grid>
-                                                            <Grid item={true}>
+                                                            <Grid>
                                                                 {state.unityTestCategoryType === UnityTestCategory.RunAllOfCategory && (
                                                                     <Grid container={true} justifyContent="center"
                                                                           spacing={1} alignItems={'center'}>
-                                                                        <Grid item={true}>
+                                                                        <Grid>
                                                                             <Table size="small"
                                                                                    aria-label="a dense table"
                                                                                    width={600}>
@@ -341,19 +332,17 @@ const AddTestPage: React.FC = () => {
 
                                                                                     <TableRow>
                                                                                         <TableCell>
-                                                                                            <FormControl>
                                                                                                 <TextField
+                                                                                                    fullWidth={true}
                                                                                                     required={true}
                                                                                                     id="test-name"
-                                                                                                    label="Category Name"
+                                                                                                    placeholder={"Category Name"}
                                                                                                     value={state.category}
-                                                                                                    fullWidth={true}
                                                                                                     onChange={event => setState(prevState => ({
                                                                                                         ...prevState,
                                                                                                         category: event.target.value
                                                                                                     }))}
                                                                                                 />
-                                                                                            </FormControl>
                                                                                         </TableCell>
                                                                                         <TableCell>
                                                                                             <Button variant={'outlined'}
@@ -377,7 +366,7 @@ const AddTestPage: React.FC = () => {
                                             {activeStep === TestCreationSteps.Devices && (
                                                 <Grid container={true} justifyContent="center" spacing={2}
                                                       alignItems={'center'} direction={'column'}>
-                                                    <Grid item={true}>
+                                                    <Grid>
                                                         <RadioGroup
                                                             name="device-selection"
                                                             aria-label="spacing"
@@ -403,12 +392,12 @@ const AddTestPage: React.FC = () => {
                                             {activeStep === TestCreationSteps.Devices && state.deviceType === 1 && (
                                                 <Grid container={true} justifyContent="center" spacing={2}
                                                       alignItems={'center'} direction={'column'}>
-                                                    <Grid item={true}>
+                                                    <Grid>
                                                         <Typography variant={'h6'}>
                                                             Select Devices
                                                         </Typography>
                                                     </Grid>
-                                                    <Grid item={true}>
+                                                    <Grid>
                                                         {
                                                             devices !== undefined && devices.length > 0 &&
                                                             <DeviceSelection
@@ -428,7 +417,7 @@ const AddTestPage: React.FC = () => {
                 </Box>
             </Box>
             <Grid container={true} justifyContent={'flex-end'}>
-                <Grid item={true}>
+                <Grid>
                     <Box sx={{p: 2, m: 2}}>
                         <Button
                             disabled={activeStep === 0}

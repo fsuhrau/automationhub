@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Outlet} from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import Moment from 'react-moment';
@@ -12,16 +12,26 @@ import Stack from "@mui/material/Stack";
 import Header from "../components/Header";
 import {ProjectProvider} from "../hooks/ProjectProvider";
 import {useHubState} from "../hooks/HubStateProvider";
+import {getProjects} from "../project/project.service";
 
 Moment.globalLocale = 'de';
 
 const HubMainLayout: React.FC = () => {
 
-    const {dispatch} = useHubState()
+    const {dispatch, state} = useHubState()
 
     const handleDrawerToggle = (): void => {
         dispatch({type: HubStateActions.ToggleMobileOpen, payload: {}});
     };
+
+    useEffect(() => {
+        debugger;
+        if (state.projects.length == 0) {
+            getProjects().then(response => {
+                dispatch({type: HubStateActions.UpdateProjects, payload: response.data})
+            })
+        }
+    }, [state.projects])
 
     return <ProjectProvider>
         <SSEProvider endpoint="/api/sse">

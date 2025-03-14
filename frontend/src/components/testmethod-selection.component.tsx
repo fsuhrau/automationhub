@@ -148,7 +148,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                         <Alert severity="info">Unable to Connect to your local Unity Editor or no tests found please check your settings in Unity "Tools" - "Automation Hub" - "Settings"<br />You can also copy the tests json from unity and paste them here.</Alert><br/>
                         <TextField
                             id="outlined-multiline-static"
-                            label="Paste Test Functions here"
+                            placeholder="Paste Test Functions here"
                             multiline={ true }
                             rows={ 6 }
                             defaultValue={ testJson }

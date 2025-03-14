@@ -6,7 +6,7 @@ import EditTestPage from './EditTestPage';
 import { getTest } from '../../services/test.service';
 import ShowTestPage from './ShowTestPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
-import {useHubState} from "../../hooks/HubStateProvider";
+import {useApplicationContext} from "../../hooks/ApplicationProvider";
 
 interface TestPageProps {
     edit: boolean
@@ -15,23 +15,23 @@ interface TestPageProps {
 const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
     const { edit } = props;
 
-    const {state, dispatch} = useHubState()
-    const {project, projectIdentifier} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const { testId } = useParams();
+    const { appId } = useApplicationContext()
 
     const [test, setTest] = useState<ITestData>();
 
 
     useEffect(() => {
-        if (state.appId !== null && testId !== undefined) {
-            getTest(projectIdentifier, state.appId, testId).then(response => {
+        if (appId !== null && testId !== undefined) {
+            getTest(projectIdentifier, appId, testId).then(response => {
                 setTest(response.data);
             }).catch(ex => {
                 console.log(ex);
             });
         }
-    }, [projectIdentifier, state.appId, testId]);
+    }, [projectIdentifier, appId, testId]);
     return (
         <div>
             { test ? (edit ? (<EditTestPage test={ test }/>) : (<ShowTestPage test={ test }/>) ) : (<Backdrop open={true} ><CircularProgress color="inherit" /></Backdrop>) }

@@ -1,6 +1,5 @@
 import React, {useContext, createContext, useState, useEffect, ReactNode, Dispatch} from "react";
 import { useNavigate } from "react-router-dom";
-import {HubState, HubStateAction} from "../application/HubState";
 
 export interface IUser {
     name: string,

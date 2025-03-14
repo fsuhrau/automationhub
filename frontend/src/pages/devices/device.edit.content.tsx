@@ -150,7 +150,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                             Alias:
                         </Grid>
                         <Grid size={{xs: 12, md: 10}}>
-                            <TextField id="alias_edit" label="Alias" variant="standard" value={state.alias}
+                            <TextField id="alias_edit" placeholder="Alias" variant="standard" value={state.alias}
                                        onChange={event => {
                                            setState(prevState => ({...prevState, alias: event.target.value}))
                                        }}/>
@@ -227,28 +227,25 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                                     IP:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    <FormControl>
-                                        <TextField id="connection_address"
-                                                   label="Address"
-                                                   variant="standard"
-                                                   size={"small"}
-                                                   value={state.ipAddress}
-                                                   fullWidth={true}
-                                                   onChange={event => {
-                                                       setState(prevState => ({
-                                                           ...prevState, ipAddress: event.target.value
-                                                       }))
-                                                   }}
-                                        />
-                                    </FormControl>
+                                    <TextField id="connection_address"
+                                               placeholder="Address"
+                                               variant="standard"
+                                               size={"small"}
+                                               value={state.ipAddress}
+                                               fullWidth={true}
+                                               onChange={event => {
+                                                   setState(prevState => ({
+                                                       ...prevState, ipAddress: event.target.value
+                                                   }))
+                                               }}
+                                    />
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Port:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    <FormControl>
                                         <TextField id="connection_port"
-                                                   label="Port"
+                                                   placeholder="Port"
                                                    variant="standard"
                                                    size={"small"}
                                                    value={state.port}
@@ -259,7 +256,6 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                                                        }))
                                                    }}
                                         />
-                                    </FormControl>
                                 </Grid>
                             </Grid>
                         )}
@@ -271,12 +267,12 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                                 <Grid size={{xs: 12, md: 12}} container={true} spacing={1}>
                                     <Grid size={{xs: 12, md: 2}}>
                                         <TextField id={`update_parameter_key_${index}`} value={value.Key}
-                                                   label={"Key"} variant={"standard"}
+                                                   placeholder={"Key"} variant={"standard"}
                                                    onChange={event => updateParameterKey(index, event.target.value)}/>
                                     </Grid>
                                     <Grid size={{xs: 12, md: 2}}>
                                         <TextField id={`update_parameter_value_${index}`} value={value.Value}
-                                                   label={"Value"} variant={"standard"}
+                                                   placeholder={"Value"} variant={"standard"}
                                                    onChange={event => updateParameterValue(index, event.target.value)}/>
                                     </Grid>
                                     <Grid size={{xs: 12, md: 8}}>

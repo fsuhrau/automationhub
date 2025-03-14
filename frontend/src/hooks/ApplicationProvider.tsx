@@ -1,7 +1,6 @@
 import React, {ReactNode} from "react";
 import {Navigate, Outlet, useParams} from "react-router-dom";
 import {useProjectContext} from "./ProjectProvider";
-import {HubState, HubStateActions} from "../application/HubState";
 import {useHubState} from "./HubStateProvider";
 
 interface ApplicationProviderProps {
@@ -28,23 +27,26 @@ export const useApplicationContext = (): ApplicationContextType => {
 
 const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => {
 
-    const {state, dispatch} = useHubState()
     const {project, projectIdentifier} = useProjectContext();
+    const {appId: urlAppId} = useParams<{ appId: string }>();
 
-    // no app in context
-    if (state.appId === null || state.appId === 0) {
-        // redirect to project settings if there are no apps
-        if (project.Apps === undefined || project.Apps.length === 0) {
-            return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
-        }
-
-        dispatch({type: HubStateActions.ChangeActiveApp, payload: project.Apps[0].ID})
-        return null
+    // redirect to project settings if there are no apps
+    if (project.Apps === undefined || project.Apps.length === 0) {
+        return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
     }
+
+    let appIdString
+    if (urlAppId) {
+        appIdString = urlAppId.replace("app:", "")
+    } else {
+        appIdString = localStorage.getItem('appId') || (project.Apps.length > 0 ? project.Apps[0].ID : "");
+    }
+    const appId = appIdString !== "" ? +appIdString : null;
+
 
     return (
         <ApplicationContext.Provider value={{
-            appId: state.appId,
+            appId: appId,
         }}>
             {children}
         </ApplicationContext.Provider>
@@ -53,7 +55,7 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
 
 const ApplicationPage: React.FC = () => {
     return <ApplicationProvider>
-        <Outlet />
+        <Outlet/>
     </ApplicationProvider>;
 };
 

@@ -11,7 +11,7 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import DevicesRoundedIcon from "@mui/icons-material/DevicesRounded";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {useHubState} from "../hooks/HubStateProvider";
@@ -21,14 +21,23 @@ export default function MenuContent() {
     const {state} = useHubState()
 
     const {projectIdentifier} = useProjectContext();
-
+    const {appId: urlAppId} = useParams<{ appId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const stAppId = localStorage.getItem('appId')
+    let appId = "";
+    if (urlAppId) {
+        appId = urlAppId.replace("app:", "")
+    } else if (stAppId) {
+        appId = stAppId
+    }
 
     const mainListItems = [
-        { text: 'Home', ref: `/project/${projectIdentifier}`, icon: <HomeRoundedIcon /> },
-        { text: 'Tests', ref: state.appId ? `/project/${projectIdentifier}/app/tests` : `/project/${projectIdentifier}/tests`, icon: <AnalyticsRoundedIcon /> },
-        { text: 'Apps', ref: state.appId ? `/project/${projectIdentifier}/app/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
-        { text: 'Devices', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon /> },
+        { text: 'Home', ref: `/project/${projectIdentifier}/app:${appId}/home`, icon: <HomeRoundedIcon /> },
+        { text: 'Tests', ref: appId ? `/project/${projectIdentifier}/app:${appId}/tests` : `/project/${projectIdentifier}/tests`, icon: <AnalyticsRoundedIcon /> },
+        { text: 'Apps', ref: appId ? `/project/${projectIdentifier}/app:${appId}/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
+        { text: 'Devices', ref: `/project/${projectIdentifier}/app:${appId}/devices`, icon: <DevicesRoundedIcon /> },
     ];
 
     const secondaryListItems = [
@@ -42,7 +51,7 @@ export default function MenuContent() {
       <List dense>
         {mainListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton selected={index === 0} onClick={event => {
+            <ListItemButton selected={location.pathname.startsWith(item.ref)} onClick={event => {
                 navigate(item.ref)
             }}>
               <ListItemIcon>{item.icon}</ListItemIcon>

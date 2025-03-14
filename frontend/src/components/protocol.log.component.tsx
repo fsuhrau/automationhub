@@ -21,11 +21,11 @@ import {
     GridToolbarExport
 } from '@mui/x-data-grid';
 import CellExpand from './cell.expand.component';
-import Grid from "@mui/material/Grid";
-import {Box} from "@mui/system";
-import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid2";
 import SearchIcon from '@mui/icons-material/Search';
 import {ClearIcon} from "@mui/x-date-pickers";
+import Paper from "@mui/material/Paper";
+import MenuIcon from '@mui/icons-material/Menu';
 
 const useStyles = makeStyles({
     dataGrid: {
@@ -227,90 +227,86 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         return (
             <GridToolbarContainer>
                 <GridToolbarColumnsButton/>
-                <Button
-                    id="row-filter-button"
-                    aria-controls={open ? 'row-filter-popover' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? 'true' : undefined}
-                    onClick={handleClick}
-                    ref={anchorRef}
+
+                <Paper
+                    component="form"
+                    sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', flexGrow: 1 }}
                 >
-                    Source
-                </Button>
-                <Popover
-                    id="row-filter-popover"
-                    anchorEl={anchorRef.current}
-                    open={open}
-                    onClose={handleClose}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'left',
-                    }}
-                >
-                    <FormGroup sx={{padding: 1}}>
-                        <FormControlLabel
-                            control={<Checkbox checked={source.Errors}
-                                               onChange={() => handleCheckboxChange('Errors')}/>}
-                            label="Only Errors"
-                        />
-                        <Divider />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.App} onChange={() => handleCheckboxChange('App')}/>}
-                            label="App"
-                        />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.Step} onChange={() => handleCheckboxChange('Step')}/>}
-                            label="Step"
-                        />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.Device}
-                                               onChange={() => handleCheckboxChange('Device')}/>}
-                            label="Device"
-                        />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.Status}
-                                               onChange={() => handleCheckboxChange('Status')}/>}
-                            label="Status"
-                        />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.TestRunner}
-                                               onChange={() => handleCheckboxChange('TestRunner')}/>}
-                            label="TestRunner"
-                        />
-                        <FormControlLabel
-                            control={<Checkbox checked={source.Action}
-                                               onChange={() => handleCheckboxChange('Action')}/>}
-                            label="Action"
-                        />
-                    </FormGroup>
-                </Popover>
-                <Box sx={{
-                    flexGrow: 1,
-                    p: '2px 4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderStyle: 'solid',
-                    borderWidth: 1,
-                    borderRadius: 1,
-                    borderColor: 'lightgray',
-                    height: 32
-                }}>
-                    <IconButton sx={{p: '10px'}} aria-label="menu">
-                        <SearchIcon/>
+                    <IconButton sx={{ p: '10px' }} aria-label="menu"
+                                id="row-filter-button"
+                                aria-controls={open ? 'row-filter-popover' : undefined}
+                                aria-haspopup="true"
+                                aria-expanded={open ? 'true' : undefined}
+                                onClick={handleClick}
+                                ref={anchorRef}
+                    >
+                        <MenuIcon />
                     </IconButton>
+                    <Popover
+                        id="row-filter-popover"
+                        anchorEl={anchorRef.current}
+                        open={open}
+                        onClose={handleClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                        }}
+                    >
+                        <FormGroup sx={{padding: 1}}>
+                            <FormControlLabel
+                                control={<Checkbox checked={source.Errors}
+                                                   onChange={() => handleCheckboxChange('Errors')}/>}
+                                label="Only Errors"
+                            />
+                            <Divider />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.App} onChange={() => handleCheckboxChange('App')}/>}
+                                label="App"
+                            />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.Step} onChange={() => handleCheckboxChange('Step')}/>}
+                                label="Step"
+                            />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.Device}
+                                                   onChange={() => handleCheckboxChange('Device')}/>}
+                                label="Device"
+                            />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.Status}
+                                                   onChange={() => handleCheckboxChange('Status')}/>}
+                                label="Status"
+                            />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.TestRunner}
+                                                   onChange={() => handleCheckboxChange('TestRunner')}/>}
+                                label="TestRunner"
+                            />
+                            <FormControlLabel
+                                control={<Checkbox checked={source.Action}
+                                                   onChange={() => handleCheckboxChange('Action')}/>}
+                                label="Action"
+                            />
+                        </FormGroup>
+                    </Popover>
                     <InputBase
-                        sx={{ml: 1, flex: 1}}
-                        placeholder="Filter logs"
-                        inputProps={{'aria-label': 'Filter logs'}}
+                        sx={{ ml: 1, flex: 1 }}
+                        placeholder="Filter log"
+                        inputProps={{ 'aria-label': 'Filter log' }}
                         value={source.Content}
                         autoFocus={true}
-                        onChange={(e) => setSource(prevState => ({...prevState, Content: e.target.value}))}
+                        onChange={(e) => setSource(prevState => ({...prevState, Content: e.currentTarget.value}))}
                     />
-                    <IconButton color="default" sx={{p: '10px'}} aria-label="clear"
+                    <IconButton type="button" sx={{ p: '10px' }} aria-label="search"
+                    >
+                        <SearchIcon />
+                    </IconButton>
+                    <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
+                    <IconButton color="primary" sx={{ p: '10px' }} aria-label="clear"
                                 onClick={(e) => setSource(prevState => ({...prevState, Content: ''}))}>
                         <ClearIcon/>
                     </IconButton>
-                </Box>
+                </Paper>
                 <GridToolbarExport
                     slotProps={{
                         tooltip: {title: 'Export data'},
@@ -323,10 +319,10 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
 
     return (
         <Grid container={true} className={classes.chip} sx={{padding: 1}}>
-            <Grid item={true} xs={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
+            <Grid size={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
 
             </Grid>
-            <Grid item={true} xs={12}>
+            <Grid size={12}>
                 <DataGrid
                     density={"compact"}
                     getRowId={(row) => row.ID}

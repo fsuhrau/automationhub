@@ -73,9 +73,9 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     const renderActions = (id: number) => {
         return <ButtonGroup color="primary" aria-label="text button group">
             <Button variant="text" size="small"
-                    onClick={() => navigateAction(`/project/${projectIdentifier}/app/test/${id}`)}>Show</Button>
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}`)}>Show</Button>
             <Button variant="text" size="small"
-                    onClick={() => navigateAction(`/project/${projectIdentifier}/app/test/${id}/runs/last`)}>Protocol</Button>
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}/runs/last`)}>Protocol</Button>
             <Button variant="text" size="small" endIcon={<PlayArrow/>}
                     onClick={() => {
                         setState(prevState => ({...prevState, testId: id}))
@@ -179,7 +179,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     const onRunTest = (): void => {
         if (appId !== null) {
             executeTest(projectIdentifier, appId, state.testId, state.binaryId, state.envParams).then(response => {
-                navigate(`/project/${projectIdentifier}/app/test/${state.testId}/run/${response.data.ID}`);
+                navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
                 console.log(error);
             });

@@ -137,7 +137,7 @@ const DeviceTable: React.FC = () => {
                     <br/>
                     <TextField
                         id="outlined-multiline-static"
-                        label="Parameter"
+                        placeholder="Parameter"
                         fullWidth={true}
                         multiline={true}
                         rows={4}
@@ -151,7 +151,7 @@ const DeviceTable: React.FC = () => {
                     <br/>
                     <TextField
                         id="outlined-static"
-                        label="Parameter"
+                        placeholder="Parameter"
                         fullWidth={true}
                         defaultValue=""
                         variant="outlined"

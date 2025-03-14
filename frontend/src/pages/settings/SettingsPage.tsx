@@ -33,7 +33,7 @@ import {
 } from '../../services/settings.service';
 import IAccessTokenData from '../../types/access.token';
 import CopyToClipboard from '../../components/copy.clipboard.component';
-import {Apple, ContentCopy, Edit, Web} from '@mui/icons-material';
+import {ContentCopy, Edit} from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
@@ -245,7 +245,7 @@ const SettingsPage: React.FC = () => {
                         autoFocus
                         margin="dense"
                         id="change_attribute"
-                        label={changeAttributeDialogState.attribute}
+                        placeholder={changeAttributeDialogState.attribute}
                         value={changeAttributeDialogState.value}
                         onChange={(e) => setChangeAttributeDialogState(prevState => ({
                             ...prevState,
@@ -326,27 +326,31 @@ const SettingsPage: React.FC = () => {
 
                             <TitleCard title={"Apps"}>
                                 <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
-                                    <Grid container={true}>
-                                        <Grid size={{xs: 12, md: 12}} container={true} justifyContent={"flex-end"} sx={{
-                                            padding: 1,
-                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                        }}>
-                                            <Button variant={"contained"} onClick={() => setShowNewAppDialog(true)}>Add
-                                                App</Button>
+                                    <Grid container={true} spacing={1} padding={1}>
+                                        <Grid size={{xs: 12, md: 12}} container={true} justifyContent={"flex-end"}>
+                                            <Button variant={"contained"} onClick={() => setShowNewAppDialog(true)}>Add App</Button>
                                         </Grid>
-                                        <Grid container={true} sx={{borderRight: '1px solid rgba(0, 0, 0, 0.12)'}}>
+                                        <Grid size={12}>
+                                            <Divider />
+                                        </Grid>
+                                        <Grid container={true} size={{xs: 12, md: 2}}>
                                             <AppNavigation title={"Android apps"} apps={androidApps}
-                                                           onSelect={selectApp} icon={<PlatformTypeIcon platformType={PlatformType.Android}/>}/>
+                                                           onSelect={selectApp} icon={<PlatformTypeIcon
+                                                platformType={PlatformType.Android}/>}/>
                                             <AppNavigation title={"Apple apps"} apps={iosApps} onSelect={selectApp}
                                                            icon={<PlatformTypeIcon platformType={PlatformType.iOS}/>}/>
                                             <AppNavigation title={"Unity Editor"} apps={editorApps}
-                                                           onSelect={selectApp} icon={<PlatformTypeIcon platformType={PlatformType.Editor}/>}/>
+                                                           onSelect={selectApp} icon={<PlatformTypeIcon
+                                                platformType={PlatformType.Editor}/>}/>
                                             <AppNavigation title={"Web apps"} apps={webApps} onSelect={selectApp}
                                                            icon={<PlatformTypeIcon platformType={PlatformType.Web}/>}/>
                                         </Grid>
                                         <NewAppDialog open={showNewAppDialog} onSubmit={submitNewApp}
                                                       onClose={() => setShowNewAppDialog(false)}/>
-                                        <Grid container={true} sx={{padding: 2}}>
+                                        <Grid size={{xs: 12, md: 1}}>
+                                            <Divider orientation={"vertical"}/>
+                                        </Grid>
+                                        <Grid container={true} size={{xs: 12, md: 8}} sx={{padding: 2}}>
                                             {
                                                 selectedApp === null ? (<Typography variant={"body1"} color={"dimgray"}>No
                                                     Apps</Typography>) : (<>
@@ -411,7 +415,7 @@ const SettingsPage: React.FC = () => {
                                                 <TableHead>
                                                     <TableRow>
                                                         <TableCell>Name</TableCell>
-                                                        <TableCell>Token</TableCell>
+                                                        <TableCell align="right">Token</TableCell>
                                                         <TableCell align="right">Expires</TableCell>
                                                         <TableCell></TableCell>
                                                     </TableRow>
@@ -420,18 +424,25 @@ const SettingsPage: React.FC = () => {
                                                     {accessTokens.map((accessToken) => <TableRow key={accessToken.ID}>
                                                         <TableCell>{accessToken.Name}</TableCell>
                                                         <TableCell>
-                                                            {accessToken.Token}
-                                                            <CopyToClipboard>
-                                                                {({copy}) => (
-                                                                    <IconButton
-                                                                        color={'primary'}
-                                                                        size={'small'}
-                                                                        onClick={() => copy(accessToken.Token)}
-                                                                    >
-                                                                        <ContentCopy/>
-                                                                    </IconButton>
-                                                                )}
-                                                            </CopyToClipboard>
+                                                            <Grid container={true} direction={"row"} spacing={1} justifyContent={"right"} alignItems={"center"}>
+                                                                <Grid>
+                                                                    {accessToken.Token}
+                                                                </Grid>
+                                                                <Grid>
+                                                                    <CopyToClipboard>
+                                                                        {({copy}) => (
+                                                                            <IconButton
+                                                                                color={'primary'}
+                                                                                size={'small'}
+                                                                                onClick={() => copy(accessToken.Token)}
+                                                                            >
+                                                                                <ContentCopy/>
+                                                                            </IconButton>
+                                                                        )}
+                                                                    </CopyToClipboard>
+
+                                                                </Grid>
+                                                            </Grid>
                                                         </TableCell>
                                                         <TableCell align="right">{accessToken.ExpiresAt !== null ? (
                                                             <Moment
@@ -447,7 +458,9 @@ const SettingsPage: React.FC = () => {
 
                                                     <TableRow>
                                                         <TableCell>
-                                                            <TextField id="new_name" label="Name" variant="outlined"
+                                                            <TextField id="new_name" placeholder="Name"
+                                                                       variant="outlined"
+                                                                       fullWidth={true}
                                                                        value={newToken.Name} size="small"
                                                                        onChange={event => setNewToken(prevState => ({
                                                                            ...prevState,
@@ -458,7 +471,6 @@ const SettingsPage: React.FC = () => {
                                                         <TableCell align="right">
                                                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                                                 <MobileDatePicker
-                                                                    label="Expires At"
                                                                     value={newToken.ExpiresAt}
                                                                     onChange={(newValue: Dayjs | null) => {
                                                                         setNewToken(prevState => ({

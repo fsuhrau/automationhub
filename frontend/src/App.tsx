@@ -60,11 +60,9 @@ function App(props: any) {
                                                element={<HubMainLayout/>}>
                                             <Route path={":project_identifier"}
                                                    element={<ProjectDashboard/>}/>
-                                            <Route path={":project_identifier/tests"}
-                                                   element={<TestsIndexPage/>}/>
-                                            <Route path={":project_identifier/bundles"}
-                                                   element={<AppBundlesPage/>}/>
-                                            <Route path={":project_identifier/app"}
+                                            <Route path={":project_identifier/:appId/home"}
+                                                   element={<ProjectDashboard/>}/>
+                                            <Route path={":project_identifier/:appId"}
                                                    element={<ApplicationPage/>}>
                                                 <Route path={'bundles'}
                                                        element={<AppBundlesPage/>}/>
@@ -82,16 +80,18 @@ function App(props: any) {
                                                 <Route path={"results"}/>
                                                 <Route path={"performance"}/>
                                             </Route>
+
                                             <Route path={":project_identifier/settings"}
                                                    element={<SettingsPage/>}/>
                                             <Route path={":project_identifier/users"}/>
-                                            <Route path={":project_identifier/device/:deviceId/edit"}
+
+                                            <Route path={":project_identifier/:appId/device/:deviceId/edit"}
                                                    element={<DevicePageLoader edit={true}/>}/>
-                                            <Route path={":project_identifier/device/:deviceId"}
+                                            <Route path={":project_identifier/:appId/device/:deviceId"}
                                                    element={<DevicePageLoader edit={false}/>}/>
-                                            <Route path={":project_identifier/devices/manager"}
+                                            <Route path={":project_identifier/:appId/devices/manager"}
                                                    element={<DevicesManagerContent/>}/>
-                                            <Route path={":project_identifier/devices"} element={<DevicesContent/>}/>
+                                            <Route path={":project_identifier/:appId/devices"} element={<DevicesContent/>}/>
                                         </Route>
                                     </Route>
                                 </Route>

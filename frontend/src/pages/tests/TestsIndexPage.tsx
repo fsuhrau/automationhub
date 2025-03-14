@@ -1,18 +1,15 @@
 import React, {useEffect} from 'react';
 import TestsTable from '../../components/tests-table.component';
 import {useNavigate} from 'react-router-dom';
-import {SelectChangeEvent, Typography} from '@mui/material';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
-import {useHubState} from "../../hooks/HubStateProvider";
 
 const TestsIndexPage: React.FC = () => {
 
-    const {state} = useHubState()
     const {project, projectIdentifier} = useProjectContext();
 
     const {appId} = useApplicationContext();
@@ -20,20 +17,14 @@ const TestsIndexPage: React.FC = () => {
     const navigate = useNavigate();
 
     function newTestClick(): void {
-        navigate(`/project/${projectIdentifier}/app/test/new`)
+        navigate(`/project/${projectIdentifier}/app:${appId}/test/new`)
     }
-
-    const handleChange = (event: SelectChangeEvent): void => {
-        if (state.appId != +event.target.value) {
-            navigate(`/project/${projectIdentifier}/app/tests`)
-        }
-    };
 
     useEffect(() => {
         if (appId === 0) {
             const value = project.Apps === undefined ? null : project.Apps.length === 0 ? null : project.Apps[0].ID;
             if (value !== null) {
-                navigate(`/project/${projectIdentifier}/app/tests`)
+                navigate(`/project/${projectIdentifier}/app:${appId}/tests`)
             }
         }
     }, [project.Apps, appId])
@@ -54,7 +45,7 @@ const TestsIndexPage: React.FC = () => {
                         <Button variant={"contained"} size={'small'} onClick={newTestClick}>Add new Test</Button>
                     </Grid>
                     <Grid size={{xs: 12}}>
-                        <TestsTable appId={state.appId}/>
+                        <TestsTable appId={appId}/>
                     </Grid>
                 </Grid>
             </TitleCard>

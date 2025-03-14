@@ -33,13 +33,14 @@ const AppBundlesPage: React.FC = () => {
         navigate('new');
     }
 
+    console.log(appId)
     console.log(project.Apps)
     const app = project.Apps.find(a => a.ID === appId);
 
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
 
     useEffect(() => {
-        if (projectIdentifier !== null && appId as number > 0) {
+        if (projectIdentifier !== null && appId != null) {
             getAppBundles(projectIdentifier, appId as number).then(response => {
                 setBundles(response.data);
             }).catch(e => {
@@ -102,7 +103,7 @@ const AppBundlesPage: React.FC = () => {
                                             <TableCell>{bundle.Version}</TableCell>
                                             <TableCell align="right">{prettySize(bundle.Size)}</TableCell>
                                             <TableCell>{bundle.Tags}</TableCell>
-                                            <TableCell><ButtonGroup>
+                                            <TableCell align="right"><ButtonGroup>
                                                 <IconButton color="primary" size="small"
                                                             href={`/upload/${bundle.AppPath}`}>
                                                     <DownloadIcon/>
