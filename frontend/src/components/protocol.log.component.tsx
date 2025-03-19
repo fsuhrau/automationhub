@@ -227,7 +227,6 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         return (
             <GridToolbarContainer>
                 <GridToolbarColumnsButton/>
-
                 <Paper
                     component="form"
                     sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', flexGrow: 1 }}
@@ -318,31 +317,26 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     }
 
     return (
-        <Grid container={true} className={classes.chip} sx={{padding: 1}}>
-            <Grid size={12} container={true} justifyContent={"center"} sx={{padding: 1}}>
-
-            </Grid>
-            <Grid size={12}>
-                <DataGrid
-                    density={"compact"}
-                    getRowId={(row) => row.ID}
-                    rows={filterEntries}
-                    columns={columns}
-                    checkboxSelection={false}
-                    disableRowSelectionOnClick={true}
-                    disableColumnFilter={true}
-                    getRowHeight={() => 'auto'}
-                    className={classes.dataGrid}
-                    sx={{
-                        [`& .${gridClasses.cell}`]: {
-                            py: 1,
-                        },
-                    }}
-                    slots={{
-                        toolbar: CustomToolbar
-                    }}
-                />
-            </Grid>
+        <Grid container={true} size={12} className={classes.chip}>
+            <DataGrid
+                density={"compact"}
+                getRowId={(row) => row.ID}
+                rows={filterEntries}
+                columns={columns}
+                checkboxSelection={false}
+                disableRowSelectionOnClick={true}
+                disableColumnFilter={true}
+                getRowHeight={() => 'auto'}
+                className={classes.dataGrid}
+                sx={{
+                    [`& .${gridClasses.cell}`]: {
+                        py: 1,
+                    },
+                }}
+                slots={{
+                    toolbar: CustomToolbar
+                }}
+            />
         </Grid>
     );
 };

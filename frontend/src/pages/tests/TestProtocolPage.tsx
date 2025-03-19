@@ -97,41 +97,7 @@ const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: Perfor
     );
 };
 
-const indexForQuery = (t: string | null) => {
-    switch (t) {
-        case 'status':
-            return 0;
-        case 'log':
-            return 1;
-        case 'screenshots':
-            return 2;
-        case 'video':
-            return 3;
-        case 'performance':
-            return 4;
-        case 'checkpoint':
-            return 5;
-    }
-    return 0
-}
-
-const queryForIndex = (t: number) => {
-    switch (t) {
-        case 0:
-            return 'status';
-        case 1:
-            return 'log';
-        case 2:
-            return 'screenshots';
-        case 3:
-            return 'video';
-        case 4:
-            return 'performance';
-        case 5:
-            return 'checkpoint';
-    }
-    return 'status'
-}
+const tabs = ['status', 'log', 'screenshots', 'video', 'performance', 'checkpoint'];
 
 const useQuery = () => {
     return new URLSearchParams(useLocation().search);
@@ -148,7 +114,31 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const {protocol} = props;
 
     const query = useQuery();
-    const t = query.get('t');
+
+    const tabIndexOrDefault = (t: string | null): number => {
+        return t && tabs.includes(t) ? tabs.indexOf(t) : 0;
+    }
+
+    const [value, setValue] = useState(tabIndexOrDefault(query.get('t')));
+
+    const handleChange = (event: React.ChangeEvent<{}>, newValue: number): void => {
+        setValue(newValue);
+        useUpdateQueryParam('t', tabs[newValue])
+    };
+
+    // handle browser back button with query parameter
+    useEffect(() => {
+        const handlePopState = () => {
+            const newQuery = new URLSearchParams(window.location.search);
+            setValue(tabIndexOrDefault(newQuery.get('t')))
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, []);
 
     const [anchorScreenEl, setAnchorScreenEl] = useState<HTMLButtonElement | null>(null);
     const showScreenPopup = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -218,14 +208,6 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
             steps: numSteps,
             screenEntries: screenEntries
         }))
-    };
-
-
-    const [value, setValue] = useState(indexForQuery(t));
-
-    const handleChange = (event: React.ChangeEvent<{}>, newValue: number): void => {
-        setValue(newValue);
-        useUpdateQueryParam('t', queryForIndex(newValue))
     };
 
     useEffect(() => {
