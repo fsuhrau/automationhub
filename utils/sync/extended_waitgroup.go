@@ -34,14 +34,20 @@ func (wg *extendedWaitGroup) Add(delta int) {
 	wg.group.Add(delta)
 }
 
+func (wg *extendedWaitGroup) UpdateUntil(waitUntil time.Time) {
+	wg.until = waitUntil
+}
+
 func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	timeout := make(chan bool, 1)
+	//defer close(timeout)
 	go func() {
 		time.Sleep(duration)
 		timeout <- true
 	}()
 
 	wait := make(chan bool, 1)
+	//defer close(wait)
 	go func() {
 		wg.group.Wait()
 		wait <- true
@@ -61,6 +67,7 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	wg.until = waitUntil
 
 	timeout := make(chan bool, 1)
+	//defer close(timeout)
 	go func() {
 		for {
 			time.Sleep(50 * time.Millisecond)
@@ -72,6 +79,7 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	}()
 
 	wait := make(chan bool, 1)
+	//defer close(wait)
 	go func() {
 		wg.group.Wait()
 		wait <- true
@@ -87,12 +95,21 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	}
 }
 
-func (wg *extendedWaitGroup) UpdateUntil(waitUntil time.Time) {
-	wg.until = waitUntil
-}
-
 func (wg *extendedWaitGroup) Wait() {
-	wg.group.Wait()
+	wait := make(chan bool, 1)
+	//defer close(wait)
+
+	go func() {
+		wg.group.Wait()
+		wait <- true
+	}()
+
+	select {
+	case <-wait:
+		return
+	case <-wg.ctx.Done():
+		return
+	}
 }
 
 func NewExtendedWaitGroup(ctx context.Context) *extendedWaitGroup {

@@ -141,6 +141,8 @@ message PerformanceData {
   float cpu = 2;
   float memory = 3;
   float fps = 4;
+  float vertexCount = 5;
+  float triangles = 6;
 }
 
 message Response {

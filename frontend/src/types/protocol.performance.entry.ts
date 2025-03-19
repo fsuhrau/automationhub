@@ -6,6 +6,8 @@ export default interface IProtocolPerformanceEntryData {
     FPS: number,
     MEM: number,
     CPU: number,
+    VertexCount: number,
+    Triangles: number,
     Other: string,
     Runtime: number,
     ExecutionTime: number,

@@ -172,6 +172,7 @@ const SettingsPage: React.FC = () => {
     const androidApps = project.Apps.filter(a => a.Platform === PlatformType.Android);
     const editorApps = project.Apps.filter(a => a.Platform === PlatformType.Editor);
     const webApps = project.Apps.filter(a => a.Platform === PlatformType.Web);
+    const macApps = project.Apps.filter(a => a.Platform === PlatformType.Mac);
 
     const selectApp = (id: number) => {
         setSelectedAppID(id);
@@ -339,6 +340,8 @@ const SettingsPage: React.FC = () => {
                                                 platformType={PlatformType.Android}/>}/>
                                             <AppNavigation title={"Apple apps"} apps={iosApps} onSelect={selectApp}
                                                            icon={<PlatformTypeIcon platformType={PlatformType.iOS}/>}/>
+                                            <AppNavigation title={"MacOS apps"} apps={macApps} onSelect={selectApp}
+                                                           icon={<PlatformTypeIcon platformType={PlatformType.Mac}/>}/>
                                             <AppNavigation title={"Unity Editor"} apps={editorApps}
                                                            onSelect={selectApp} icon={<PlatformTypeIcon
                                                 platformType={PlatformType.Editor}/>}/>

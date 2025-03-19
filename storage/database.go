@@ -66,6 +66,7 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 		migrations.AddRoleToUser,
 		migrations.AddIndexForUser,
 		migrations.RemoveRunAllTestsFromUnityConfig,
+		migrations.AddGameMetricsToPerformance,
 	})
 	m.InitSchema(migrations.InitSchema)
 

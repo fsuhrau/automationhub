@@ -103,7 +103,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		}
 	} else {
 		tr.appParams = app.Parameter{
-			LaunchActivity: "BootScene",
+			LaunchActivity: "TestRunnerScene",
 		}
 	}
 
@@ -150,8 +150,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 }
 
 func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList []models.UnityTestFunction) {
-	group := sync.NewExtendedWaitGroup(tr.ctx)
 	ctx, cancelFunc := context.WithCancel(tr.ctx)
+	group := sync.NewExtendedWaitGroup(ctx)
 
 	switch tr.Config.ExecutionType {
 	case models.SimultaneouslyExecutionType:
@@ -277,7 +277,7 @@ func (tr *testsRunner) workerFunction(ctx context.Context, channel workerChannel
 			if len(methodParts) > 1 {
 				method = methodParts[1]
 			}
-			tr.runTest(dev, task, method)
+			tr.runTest(ctx, dev, task, method)
 			group.Done()
 		case <-ctx.Done():
 			return
@@ -285,7 +285,7 @@ func (tr *testsRunner) workerFunction(ctx context.Context, channel workerChannel
 	}
 }
 
-func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
+func (tr *testsRunner) runTest(ctx context.Context, dev base.DeviceMap, task action.TestStart, method string) {
 
 	prot, err := tr.ProtocolWriter.NewProtocol(dev.Model, fmt.Sprintf("%s/%s", task.Class, method))
 	if err != nil {
@@ -306,10 +306,10 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 	*/
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
 	executor := NewExecutor(tr.DeviceManager, tr.ProtocolWriter)
-	err = executor.Execute(tr.ctx, dev.Device, task, DefaultTestTimeout)
+	err = executor.Execute(ctx, dev.Device, task, DefaultTestTimeout)
 
 	if err != nil || len(prot.Errors()) > 0 {
-		tr.captureScreenShot(dev, task, err)
+		tr.captureScreenShot(ctx, dev, task, err)
 		var errorlist []string
 		if err != nil {
 			errorlist = append(errorlist, err.Error())
@@ -324,7 +324,7 @@ func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method
 	tr.LogInfo("Test execution finished")
 }
 
-func (tr *testsRunner) captureScreenShot(dev base.DeviceMap, task action.TestStart, err error) {
+func (tr *testsRunner) captureScreenShot(ctx context.Context, dev base.DeviceMap, task action.TestStart, err error) {
 
 	nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
 	fileName := fmt.Sprintf("%x.png", sha1.Sum(nameData))
@@ -334,14 +334,14 @@ func (tr *testsRunner) captureScreenShot(dev base.DeviceMap, task action.TestSta
 	if rawData == nil {
 		var screenshotAction action.GetScreenshot
 		actionExecutor := tester_action.NewExecutor(tr.DeviceManager)
-		if err := actionExecutor.Execute(tr.ctx, dev.Device, &screenshotAction, 10*time.Second); err != nil {
+		if err := actionExecutor.Execute(ctx, dev.Device, &screenshotAction, 10*time.Second); err != nil {
 			tr.LogError("Take screenshot failed: %v", err)
 		} else {
 			rawData = screenshotAction.ScreenshotData()
 		}
 	}
 	if rawData != nil {
-		os.WriteFile(filePath, rawData, os.ModePerm)
+		_ = os.WriteFile(filePath, rawData, os.ModePerm)
 		dev.Device.Data("screen", fileName)
 	}
 }
@@ -362,7 +362,7 @@ func (tr *testsRunner) UploadApp(ctx context.Context, params app.Parameter, devi
 	if len(usedNodes) > 0 {
 		tr.LogInfo("Upload new App to Nodes")
 		for nodeId, mng := range usedNodes {
-			err := mng.UploadApp(nodeId, &params)
+			err := mng.UploadApp(ctx, nodeId, &params)
 			if err != nil {
 				tr.LogError("Upload app to nodes failed: %v", err)
 			}

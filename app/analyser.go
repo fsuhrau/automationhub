@@ -1,16 +1,19 @@
 package app
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"crypto/sha1"
 	"fmt"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"howett.net/plist"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -68,21 +71,25 @@ func (a *analyser) extractAppInfos() error {
 	}
 
 	if extension == ".app" {
-		return a.analyseAPP()
+		return a.analyseAPP(a.appPath)
 	}
 
 	if extension == ".ipa" {
 		return a.analyseIPA()
 	}
 
+	if extension == ".zip" {
+		return a.analyseZIP()
+	}
 	return nil
 }
 
-func (a *analyser) analyseAPP() error {
+func (a *analyser) analyseAPP(path string) error {
 
 	// apple app
-	iosAppInfoPlist := filepath.Join(a.appPath, "Info.plist")
+	iosAppInfoPlist := filepath.Join(path, "Info.plist")
 	if fileExists(iosAppInfoPlist) {
+		a.parameter.Platform = "ios"
 		plistData, err := ioutil.ReadFile(iosAppInfoPlist)
 		if err != nil {
 			return err
@@ -93,10 +100,11 @@ func (a *analyser) analyseAPP() error {
 		if err != nil {
 			return err
 		}
-
-		if val, ok := plistContent["DTPlatformName"]; ok {
-			a.parameter.Platform = val.(string)
-		}
+		/*
+			if val, ok := plistContent["DTPlatformName"]; ok {
+				a.parameter.Platform = val.(string)
+			}
+		*/
 		if val, ok := plistContent["CFBundleVersion"]; ok {
 			a.parameter.Version = val.(string)
 		}
@@ -105,22 +113,36 @@ func (a *analyser) analyseAPP() error {
 		}
 	}
 
-	macAppInfoPlist := filepath.Join(a.appPath, "Contents/Info.plist")
+	macAppInfoPlist := filepath.Join(path, "Contents/Info.plist")
 	if fileExists(macAppInfoPlist) {
+		a.parameter.Platform = "macos"
+
 		plistData, err := ioutil.ReadFile(macAppInfoPlist)
 		if err != nil {
 			return err
 		}
+
+		a.parameter.Name = filepath.Base(path)
+
+		executableDir := filepath.Join(path, "Contents", "MacOS")
+
+		file, err := getFirstFile(executableDir)
+		if err != nil {
+			return err
+		}
+
+		a.parameter.LaunchActivity = "Contents/MacOS/" + filepath.Base(file)
 
 		plistContent := map[string]interface{}{}
 		_, err = plist.Unmarshal(plistData, &plistContent)
 		if err != nil {
 			return err
 		}
-
-		if val, ok := plistContent["DTSDKName"]; ok {
-			a.parameter.Platform = val.(string)
-		}
+		/*
+			if val, ok := plistContent["DTSDKName"]; ok {
+				a.parameter.Platform = val.(string)
+			}
+		*/
 		if val, ok := plistContent["CFBundleVersion"]; ok {
 			a.parameter.Version = val.(string)
 		}
@@ -134,7 +156,52 @@ func (a *analyser) analyseAPP() error {
 
 func (a *analyser) analyseIPA() error {
 
-	return a.analyseAPP()
+	return a.analyseAPP(a.appPath)
+}
+
+func getFirstDirectory(dirPath string) (string, error) {
+	files, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			return filepath.Join(dirPath, file.Name()), nil
+		}
+	}
+
+	return "", fmt.Errorf("no directory found in %s", dirPath)
+}
+
+func getFirstFile(dirPath string) (string, error) {
+	files, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			return filepath.Join(dirPath, file.Name()), nil
+		}
+	}
+
+	return "", fmt.Errorf("no file found in %s", dirPath)
+}
+
+func (a *analyser) analyseZIP() error {
+
+	tmpAppDir := filepath.Join(os.TempDir(), "automation_hub")
+	os.MkdirAll(tmpAppDir, os.ModePerm)
+	files, err := Unzip(a.appPath, tmpAppDir)
+	if err != nil {
+		return err
+	}
+	_ = files
+
+	firstDir, _ := getFirstDirectory(tmpAppDir)
+
+	return a.analyseAPP(firstDir)
 }
 
 func (a *analyser) analyseAPK() error {
@@ -161,32 +228,6 @@ func (a *analyser) analyseAPK() error {
 		}
 	}
 	return nil
-}
-
-/*
-func (a *analyser) Unity() error {
-
-	blubb := filepath.Join(os.TempDir(), "automation_hub")
-	os.MkdirAll(blubb, os.ModePerm)
-	files, err := Unzip(a.appPath, blubb)
-	if err != nil {
-		return err
-	}
-	for _, f := range files {
-		if strings.Contains(f, "globalgamemanagers.assets") {
-			bundle, err := unity.ReadBundle(f)
-			if err != nil {
-				return err
-			}
-			logrus.Info(bundle.Name)
-			unity.AssetFromBundle(bundle, )
-			reader, err := unity.NewReader(data)
-			if err != nil {
-				return err
-			}
-			reader.
-		}
-	}
 }
 
 func Unzip(src string, dest string) ([]string, error) {
@@ -244,4 +285,3 @@ func Unzip(src string, dest string) ([]string, error) {
 	}
 	return filenames, nil
 }
-*/

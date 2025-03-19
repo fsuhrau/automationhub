@@ -48,16 +48,14 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     };
 
     type RunTestState = {
-        disableStart: boolean,
         testId: number | null,
-        binaryId: number,
+        binaryId: number | null,
         envParams: string,
     }
 
     const [state, setState] = useState<RunTestState>({
-        disableStart: true,
         testId: null,
-        binaryId: 0,
+        binaryId: null,
         envParams: app === undefined ? '' : app?.DefaultParameter.replaceAll(';', '\n'),
     });
 
@@ -178,7 +176,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const onRunTest = (): void => {
         if (appId !== null) {
-            executeTest(projectIdentifier, appId, state.testId, state.binaryId, state.envParams).then(response => {
+            executeTest(projectIdentifier, appId, state.testId, state.binaryId!, state.envParams).then(response => {
                 navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
                 console.log(error);
@@ -211,8 +209,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const requiresApp = app?.Platform !== PlatformType.Editor
 
-    const onBinarySelectionChanged = (app: IAppBinaryData): void => {
-        setState(prevState => ({...prevState, binaryId: app.ID, disableStart: requiresApp && app.ID === 0}));
+    const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
+        setState(prevState => ({...prevState, binaryId: binary ? binary.ID : null}));
     };
 
     const onEnvParamsChanged = (event: ChangeEvent<HTMLTextAreaElement>): void => {
@@ -224,7 +222,6 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         if (app !== null && app !== undefined) {
             setState(prevState => ({
                 ...prevState,
-                disableStart: requiresApp && app.ID === 0,
                 envParams: app.DefaultParameter.replaceAll(";", "\n")
             }));
         }
@@ -284,7 +281,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                     <Button onClick={() => {
                         onRunTest();
                         handleRunClose();
-                    }} color="primary" variant={'contained'} disabled={state.disableStart}>
+                    }} color="primary" variant={'contained'} disabled={requiresApp && state.binaryId === null}>
                         Start
                     </Button>
                 </DialogActions>

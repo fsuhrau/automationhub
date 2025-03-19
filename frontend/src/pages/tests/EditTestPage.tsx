@@ -113,7 +113,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
             Devices: uiState.selectedDevices,
             TestFunctions: uiState.selectedTestFunctions,
         } as UpdateTestData).then(response => {
-            navigate(`/project/${projectIdentifier}/tests`);
+            navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
             console.log(ex);
         });

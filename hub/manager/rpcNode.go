@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"time"
@@ -25,6 +26,6 @@ type RPCClient interface {
 	ConnectionTimeout(deviceId string) time.Duration
 	RunNativeScript(deviceId string, script []byte)
 	SendAction(deviceId string, action []byte)
-	UploadApp(parameter *app.Parameter) error
+	UploadApp(ctx context.Context, parameter *app.Parameter) error
 	IsAppUploaded(parameter *app.Parameter) (bool, error)
 }

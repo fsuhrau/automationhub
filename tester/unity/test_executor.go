@@ -129,7 +129,7 @@ func (tr *testExecutor) handleTestMethodFinished(dev device.Device, response *ac
 }
 
 func (tr *testExecutor) handlePerformance(dev device.Device, response *action.Response) {
-	dev.LogPerformance(response.Payload.PerformanceData.Checkpoint, response.Payload.PerformanceData.CPU, response.Payload.PerformanceData.FPS, response.Payload.PerformanceData.Memory, "")
+	dev.LogPerformance(response.Payload.PerformanceData.Checkpoint, response.Payload.PerformanceData.CPU, response.Payload.PerformanceData.FPS, response.Payload.PerformanceData.Memory, response.Payload.PerformanceData.VertexCount, response.Payload.PerformanceData.Triangles, "")
 }
 
 func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.Response) {

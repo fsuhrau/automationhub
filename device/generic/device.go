@@ -109,9 +109,9 @@ func (d *Device) TestProtocolId() *uint {
 	return nil
 }
 
-func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float64, other string) {
+func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	if d.writer != nil {
-		d.writer.LogPerformance(checkpoint, cpu, fps, mem, other)
+		d.writer.LogPerformance(checkpoint, cpu, fps, mem, vertexCount, triangles, other)
 	}
 }
 

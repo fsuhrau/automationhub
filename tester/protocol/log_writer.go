@@ -11,10 +11,12 @@ import (
 )
 
 type PerformanceMetric struct {
-	Count int
-	CPU   float64
-	FPS   float64
-	MEM   float64
+	Count       int
+	CPU         float64
+	FPS         float64
+	MEM         float64
+	VertexCount float64
+	Triangles   float64
 }
 
 type LogWriter struct {
@@ -39,14 +41,16 @@ func (w *LogWriter) Parent() device.LogWriter {
 	return w.parent
 }
 
-func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem float64) {
+func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem, vertexCount, triangles float64) {
 	cpu = w.performanceMetrics.CPU / float64(w.performanceMetrics.Count)
 	fps = w.performanceMetrics.FPS / float64(w.performanceMetrics.Count)
 	mem = w.performanceMetrics.MEM / float64(w.performanceMetrics.Count)
+	vertexCount = w.performanceMetrics.VertexCount / float64(w.performanceMetrics.Count)
+	triangles = w.performanceMetrics.Triangles / float64(w.performanceMetrics.Count)
 	return
 }
 
-func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float64, other string) {
+func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	w.performanceMetrics.Count++
 	if math.IsNaN(cpu) {
 		cpu = 0
@@ -60,12 +64,16 @@ func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float64, oth
 	w.performanceMetrics.CPU += cpu
 	w.performanceMetrics.FPS += fps
 	w.performanceMetrics.MEM += mem
+	w.performanceMetrics.VertexCount += vertexCount
+	w.performanceMetrics.Triangles += triangles
 	entry := models.ProtocolPerformanceEntry{
 		TestProtocolID: w.protocolId,
 		Checkpoint:     checkpoint,
 		CPU:            cpu,
 		FPS:            fps,
 		MEM:            mem,
+		VertexCount:    vertexCount,
+		Triangles:      triangles,
 		Other:          other,
 		Runtime:        w.getRuntime(),
 	}

@@ -176,7 +176,7 @@ func (nm *NodeManager) IsAppUploaded(nodeIdentifier manager.NodeIdentifier, para
 	return handler.IsAppUploaded(parameter)
 }
 
-func (nm *NodeManager) UploadApp(nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) error {
+func (nm *NodeManager) UploadApp(ctx context.Context, nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) error {
 	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func (nm *NodeManager) UploadApp(nodeIdentifier manager.NodeIdentifier, paramete
 		return nil
 	}
 
-	return handler.UploadApp(parameter)
+	return handler.UploadApp(ctx, parameter)
 }
 
 func (nm *NodeManager) InstallApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {

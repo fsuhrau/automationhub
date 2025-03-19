@@ -26,7 +26,7 @@ func (p *logProtocol) Close() {
 	endTime := time.Now()
 	p.p.TestResult = state
 	p.p.EndedAt = &endTime
-	p.p.AvgCPU, p.p.AvgFPS, p.p.AvgMEM = p.Writer.GetAvgPerformanceMetrics()
+	p.p.AvgCPU, p.p.AvgFPS, p.p.AvgMEM, p.p.AvgVertexCount, p.p.AvgTriangles = p.Writer.GetAvgPerformanceMetrics()
 	p.db.Updates(&p.p)
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: p.p.TestRunID, Protocol: p.p})
 }

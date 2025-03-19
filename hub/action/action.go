@@ -146,10 +146,12 @@ type TestDetails struct {
 }
 
 type PerformanceData struct {
-	Checkpoint string  `json:"checkpoint"`
-	CPU        float64 `json:"CPU"`
-	Memory     float64 `json:"memory"`
-	FPS        float64 `json:"FPS"`
+	Checkpoint  string  `json:"checkpoint"`
+	CPU         float64 `json:"CPU"`
+	Memory      float64 `json:"memory"`
+	FPS         float64 `json:"FPS"`
+	VertexCount float64 `json:"VertexCount"`
+	Triangles   float64 `json:"Triangles"`
 }
 
 type ResponseData struct {

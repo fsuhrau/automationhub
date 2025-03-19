@@ -1,6 +1,7 @@
 package node
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config/protocol"
@@ -130,7 +131,7 @@ func (rpc *RPCClient) IsAppUploaded(parameter *app.Parameter) (bool, error) {
 	return resp.Value, nil
 }
 
-func (rpc *RPCClient) UploadApp(parameter *app.Parameter) error {
+func (rpc *RPCClient) UploadApp(ctx context.Context, parameter *app.Parameter) error {
 	logrus.Info("RPCNode.UploadApp")
 
 	filename := filepath.Base(parameter.AppPath)

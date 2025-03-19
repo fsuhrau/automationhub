@@ -2,10 +2,10 @@ package macos
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/storage"
-	"time"
-
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
+	"github.com/fsuhrau/automationhub/storage"
 )
 
 const (
@@ -13,8 +13,11 @@ const (
 )
 
 type Handler struct {
-	devices       map[string]*Device
-	deviceStorage storage.Device
+	devices        map[string]*Device
+	deviceStorage  storage.Device
+	init           bool
+	masterURL      string
+	nodeIdentifier string
 }
 
 func NewHandler(ds storage.Device) *Handler {
@@ -26,6 +29,28 @@ func (m *Handler) Name() string {
 }
 
 func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+
+	m.init = true
+
+	m.masterURL = masterUrl
+	m.nodeIdentifier = nodeIdentifier
+
+	defer func() {
+		m.init = false
+	}()
+
+	dev := &Device{}
+	dev.UpdateDeviceInfos()
+	//dev.SetConfig(devs[i])
+	dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
+	dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
+	dev.SetDeviceState("StateBooted")
+	m.devices[dev.deviceID] = dev
+	m.deviceStorage.Update(m.Name(), dev)
+
+	if err := m.RefreshDevices(true); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -54,17 +79,19 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 }
 
 func (m *Handler) RefreshDevices(force bool) error {
-	if len(m.devices) == 0 {
-		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
-			deviceName:      "MacOS",
-			deviceID:        "54decb62-3993-4031-9c6a-18ce048cc63c",
-			deviceOSName:    "MacOSX",
-			deviceOSVersion: "10-14",
-			lastUpdateAt:    time.Now().UTC(),
+	/*
+		if len(m.devices) == 0 {
+			m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
+				deviceName:      "MacOS",
+				deviceID:        "54decb62-3993-4031-9c6a-18ce048cc63c",
+				deviceOSName:    "MacOSX",
+				deviceOSVersion: "10-14",
+				lastUpdateAt:    time.Now().UTC(),
+			}
+			m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")
+			m.deviceStorage.Update(m.Name(), m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
 		}
-		m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")
-		m.deviceStorage.Update(m.Name(), m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
-	}
+	*/
 	return nil
 }
 

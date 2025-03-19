@@ -13,4 +13,6 @@ type ProtocolPerformanceEntry struct {
 	CPU            float64 `sql:"type:decimal(10,2);"`
 	Other          string
 	Runtime        float64
+	VertexCount    float64 `sql:"type:decimal(10,2);"`
+	Triangles      float64 `sql:"type:decimal(10,2);"`
 }

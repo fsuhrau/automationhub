@@ -21,6 +21,8 @@ type TestProtocol struct {
 	AvgFPS               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
 	AvgMEM               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
 	AvgCPU               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
+	AvgVertexCount       float64 `sql:"type:decimal(10,2);" json:",omitempty"`
+	AvgTriangles         float64 `sql:"type:decimal(10,2);" json:",omitempty"`
 	// calculated fields
 	HistAvgFPS          float64        `db:"-" gorm:"-:all" json:",omitempty"`
 	HistAvgMEM          float64        `db:"-" gorm:"-:all" json:",omitempty"`
