@@ -49,7 +49,7 @@ var nodeCmd = &cobra.Command{
 		logger := logrus.New()
 
 		deviceStore := node.NewMemoryDeviceStore(serviceConfig.DeviceManager)
-		deviceManager := hub.NewDeviceManager(logger, serviceConfig.MasterURL, serviceConfig.Identifier)
+		deviceManager := hub.NewDeviceManager(logger, serviceConfig)
 
 		reconnectHandler := node_hub.ReconnectHandler{}
 		rpcNode := node_hub.NewRPCNode(serviceConfig, deviceManager, &reconnectHandler)

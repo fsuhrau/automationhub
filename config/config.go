@@ -10,12 +10,13 @@ type Device struct {
 }
 
 type Manager struct {
-	Enabled          bool       `yaml:"enabled,omitempty" mapstructure:"enabled"`
-	UseOSScreenshot  bool       `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
-	WebDriver        *WebDriver `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
-	UnityPath        string     `yaml:"unity_path,omitempty" mapstructure:"unity_path"`
-	UnityBuildTarget string     `yaml:"unity_build_target,omitempty" mapstructure:"unity_build_target"`
-	Devices          []Device   `yaml:"devices,omitempty" mapstructure:"devices"`
+	Enabled          bool              `yaml:"enabled,omitempty" mapstructure:"enabled"`
+	UseOSScreenshot  bool              `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
+	WebDriver        *WebDriver        `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
+	UnityPath        string            `yaml:"unity_path,omitempty" mapstructure:"unity_path"`
+	UnityBuildTarget string            `yaml:"unity_build_target,omitempty" mapstructure:"unity_build_target"`
+	Devices          []Device          `yaml:"devices,omitempty" mapstructure:"devices"`
+	Browser          map[string]string `yaml:"browser,omitempty" mapstructure:"browser"`
 }
 
 type Hook struct {
@@ -73,6 +74,7 @@ type Service struct {
 	HostIP        string             `yaml:"host_ip,omitempty" mapstructure:"host_ip"`
 	NodeUrl       string             `yaml:"node_url,omitempty" mapstructure:"node_url"`
 	MasterURL     string             `yaml:"master_url,omitempty" mapstructure:"master_url"`
+	Cors          []string           `yaml:"cors,omitempty" mapstructure:"cors"`
 	DeviceManager map[string]Manager `yaml:"managers,omitempty" mapstructure:"managers"`
 	Hooks         []Hook             `yaml:"hooks,omitempty" mapstructure:"hooks"`
 	Auth          Auth               `yaml:"auth,omitempty" mapstructure:"auth"`

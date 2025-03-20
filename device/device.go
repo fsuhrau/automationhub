@@ -15,6 +15,8 @@ type Device interface {
 	DeviceName() string
 	DeviceModel() string
 
+	TargetVersion() string
+
 	// IsAppBundleAvailable(*app.Parameter) (bool, error)
 	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error

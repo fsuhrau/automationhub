@@ -166,15 +166,15 @@ func (s *Service) uploadBinary(c *gin.Context, project *models.Project, applicat
 
 	ext := filepath.Ext(filename)
 	newFileName := strings.TrimSuffix(filename, ext)
-	params.AppPath = fmt.Sprintf("%s_%s%s", newFileName, params.Hash, ext)
-	newFilePath := filepath.Join(apps.AppStoragePath, params.AppPath)
+	params.App.AppPath = fmt.Sprintf("%s_%s%s", newFileName, params.App.Hash, ext)
+	newFilePath := filepath.Join(apps.AppStoragePath, params.App.AppPath)
 	if err := os.Rename(filePath, newFilePath); err != nil {
 		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to store file err: %s", err.Error()))
 		return
 	}
 
 	a := models.AppBinary{}
-	result := s.db.First(&a, "hash = '%s'", params.Hash)
+	result := s.db.First(&a, "hash = '%s'", params.App.Hash)
 	if result.RowsAffected > 0 {
 		s.error(c, http.StatusBadRequest, fmt.Errorf("app exists already "))
 		return
@@ -184,17 +184,31 @@ func (s *Service) uploadBinary(c *gin.Context, project *models.Project, applicat
 		return
 	}
 
+	var launchActivity string
+	if params.App.Android != nil {
+		launchActivity = params.App.Android.LaunchActivity
+	}
+	var executable string
+	if params.App.Executable != nil {
+		executable = params.App.Executable.Executable
+	}
+
 	appDto := models.AppBinary{
-		AppPath:        params.AppPath,
-		Hash:           params.Hash,
-		Name:           params.Name,
-		Identifier:     params.Identifier,
-		AppID:          application.ID,
-		Version:        params.Version,
-		LaunchActivity: params.LaunchActivity,
-		Platform:       params.Platform,
-		Additional:     params.Additional,
-		Size:           params.Size,
+		AppPath:    params.App.AppPath,
+		Hash:       params.App.Hash,
+		Name:       params.Name,
+		Identifier: params.Identifier,
+		AppID:      application.ID,
+		Version:    params.Version,
+		Android: models.Android{
+			LaunchActivity: launchActivity,
+		},
+		Executable: models.Executable{
+			Executable: executable,
+		},
+		Platform:   params.Platform,
+		Additional: params.App.Additional,
+		Size:       params.App.Size,
 	}
 	if err := s.db.Create(&appDto).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to create app err: %s", err.Error()))

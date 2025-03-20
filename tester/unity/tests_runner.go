@@ -68,7 +68,7 @@ func (tr *testsRunner) Cancel(runId string) error {
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
@@ -90,20 +90,24 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		return
 	}
 
+	tr.appParams = app.Parameter{}
+
 	if appData != nil {
-		tr.appParams = app.Parameter{
-			AppBinaryID:    appData.ID,
-			Identifier:     appData.App.Identifier,
-			AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
-			LaunchActivity: appData.LaunchActivity,
-			Name:           appData.Name,
-			Version:        appData.Version,
-			Hash:           appData.Hash,
-			Size:           appData.Size,
+		tr.appParams.Identifier = appData.App.Identifier
+		tr.appParams.Name = appData.Name
+		tr.appParams.Version = appData.Version
+		tr.appParams.App = &app.AppParams{
+			AppBinaryID: appData.ID,
+			AppPath:     filepath.Join(apps.AppStoragePath, appData.AppPath),
+			Hash:        appData.Hash,
+			Size:        appData.Size,
 		}
 	} else {
+		// TODO handle the correct params
 		tr.appParams = app.Parameter{
-			LaunchActivity: "TestRunnerScene",
+			Web: &app.WebParams{
+				StartURL: startupUrl,
+			},
 		}
 	}
 
@@ -111,10 +115,12 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 	tr.LogInfo("Stop apps if running")
 	tr.StopApp(tr.ctx, tr.appParams, devices)
 
-	tr.UploadApp(tr.ctx, tr.appParams, devices)
+	if tr.appParams.App != nil {
+		tr.UploadApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("Install app on devices")
-	tr.InstallApp(tr.ctx, tr.appParams, devices)
+		tr.LogInfo("Install app on devices")
+		tr.InstallApp(tr.ctx, tr.appParams, devices)
+	}
 
 	tr.LogInfo("Start app on devices and wait for connection")
 	connectedDevices, err := tr.StartApp(tr.ctx, tr.appParams, devices, nil, nil)
@@ -249,7 +255,7 @@ func (tr *testsRunner) getTestList(connectedDevices []base.DeviceMap) ([]models.
 	return testList, nil
 }
 
-func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, startupUrl string) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
@@ -259,11 +265,11 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*mod
 	if binary != nil {
 		binaryId = binary.ID
 	}
-	if err := tr.InitNewTestSession(binaryId, strings.Join(params, "\n")); err != nil {
+	if err := tr.InitNewTestSession(binaryId, startupUrl, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
-	go tr.exec(devs, binary)
+	go tr.exec(devs, binary, startupUrl)
 
 	return &tr.TestRun, nil
 }

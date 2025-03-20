@@ -11,6 +11,7 @@ type RegisterData struct {
 	Name            string
 	DeviceOS        string
 	DeviceOSVersion string
+	TargetVersion   string
 	DeviceOSInfos   string
 	ProjectDir      string
 	DeviceModel     string

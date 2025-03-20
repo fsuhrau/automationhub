@@ -60,17 +60,18 @@ func (s *Service) RegisterRoutes(r *gin.Engine) error {
 func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
 
 	type Request struct {
-		Type        string
-		DeviceID    string
-		IP          string
-		Version     string
-		OS          string
-		Name        string
-		DeviceModel string
-		RAM         float32
-		GPU         string
-		SOC         string
-		ProjectDir  string
+		Type         string
+		DeviceID     string
+		IP           string
+		Version      string
+		OS           string
+		UnityVersion string
+		Name         string
+		DeviceModel  string
+		RAM          float32
+		GPU          string
+		SOC          string
+		ProjectDir   string
 	}
 
 	clientIp := net.ParseIP(c.ClientIP())
@@ -86,6 +87,7 @@ func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Conte
 		Name:            req.Name,
 		DeviceOS:        req.OS,
 		DeviceID:        req.DeviceID,
+		TargetVersion:   req.UnityVersion,
 		ManagerType:     req.Type,
 		GPU:             req.GPU,
 		RAM:             req.RAM,

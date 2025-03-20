@@ -1,4 +1,4 @@
-package macos
+package web
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -17,13 +18,10 @@ import (
 )
 
 var (
-	AppInstallPath   string
 	ScreenshotTmpDir string
 )
 
 func init() {
-	AppInstallPath = filepath.Join(os.Getenv("HOME"), ".automationhub", "installs")
-	os.MkdirAll(AppInstallPath, os.ModePerm)
 	ScreenshotTmpDir = filepath.Join(os.TempDir(), "automation_hub")
 	os.MkdirAll(ScreenshotTmpDir, os.ModePerm)
 }
@@ -32,6 +30,9 @@ const ConnectionTimeout = 10 * time.Second
 
 type Device struct {
 	generic.Device
+	browser            string
+	browserPath        string
+	browserVersion     string
 	deviceOSName       string
 	deviceOSVersion    string
 	deviceName         string
@@ -57,16 +58,16 @@ func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
 }
 
-func (d *Device) TargetVersion() string {
-	return ""
-}
-
 func (d *Device) DeviceName() string {
-	return d.deviceName
+	return d.browser + " @ " + d.deviceName
 }
 
 func (d *Device) DeviceID() string {
-	return d.deviceID
+	return d.deviceID + "/" + d.browser
+}
+
+func (d *Device) TargetVersion() string {
+	return d.browserVersion
 }
 
 func (d *Device) DeviceIP() net.IP {
@@ -119,38 +120,28 @@ func (d *Device) UpdateDeviceInfos() error {
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
-	appDir := filepath.Join(AppInstallPath, params.App.Hash, params.Name)
-
-	info, err := os.Stat(appDir)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return info.IsDir(), nil
+	return true, nil
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
-	appDir := filepath.Join(AppInstallPath, params.App.Hash)
-	_, err := app.Unzip(params.App.AppPath, appDir)
-	if err != nil {
-		return err
-	}
-
-	executable := filepath.Join(AppInstallPath, params.App.Hash, params.Name, params.App.Executable.Executable)
-	return os.Chmod(executable, 0755)
+	return nil
 }
 
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	return os.RemoveAll(filepath.Join(AppInstallPath, params.App.Hash))
+	return nil
 }
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
-	appDir := filepath.Join(AppInstallPath, params.App.Hash, params.Name)
-	executable := filepath.Join(appDir, params.App.Executable.Executable)
-	d.runningExecutable = filepath.Base(executable)
-	cmd := exec2.NewCommand(executable, "--sessionId="+sessionId, "NODE_URL", "--nodeURL="+nodeUrl, "--deviceId="+d.deviceID)
+	applicationURL := fmt.Sprintf("%s?sessionId=%s&nodeURL=%s&deviceId=%s", params.Web.StartURL, sessionId, nodeUrl, d.DeviceID())
+	var cmd *exec.Cmd
+	if strings.Contains(runtime.GOOS, "windows") {
+		cmd = exec2.NewCommand("start", d.browser, applicationURL)
+	} else if strings.Contains(runtime.GOOS, "darwin") {
+		cmd = exec2.NewCommand("open", "-a", d.browserPath, applicationURL)
+	} else if strings.Contains(runtime.GOOS, "linux") {
+		cmd = exec2.NewCommand(d.browserPath, applicationURL)
+	}
+
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -158,11 +149,14 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl strin
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	executable := filepath.Base(params.App.Executable.Executable)
-
-	d.runningExecutable = ""
-
-	cmd := exec2.NewCommand("killall", executable)
+	var cmd *exec.Cmd
+	if strings.Contains(runtime.GOOS, "windows") {
+		cmd = exec2.NewCommand("taskkill /im ", filepath.Base(d.browserPath))
+	} else if strings.Contains(runtime.GOOS, "darwin") {
+		cmd = exec2.NewCommand("killall", d.browserPath)
+	} else if strings.Contains(runtime.GOOS, "linux") {
+		cmd = exec2.NewCommand("killall", d.browserPath)
+	}
 	return cmd.Run()
 }
 
@@ -179,40 +173,8 @@ func (d *Device) StopRecording() error {
 	return err
 }
 
-// getWindowID retrieves the window ID of the specified process
-func getWindowID(processName string) (string, error) {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("osascript -e 'tell application \"%s\" to id of window 1'", processName))
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(output)), nil
-}
-
-// takeScreenshot captures the screen of the specified window ID
-func takeScreenshot(windowID, filePath string) error {
-	cmd := exec.Command("screencapture", "-l", windowID, filePath)
-	return cmd.Run()
-}
-
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
-	id, err := getWindowID(d.runningExecutable)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-
-	tmpFile := filepath.Join(ScreenshotTmpDir, id+".png")
-
-	if err := takeScreenshot(id, tmpFile); err != nil {
-		return nil, 0, 0, err
-	}
-
-	data, err := os.ReadFile(tmpFile)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-
-	return data, 0, 0, nil
+	return nil, 0, 0, fmt.Errorf("GetScreenshot not Supported by this device")
 }
 
 func (d *Device) HasFeature(string) bool {

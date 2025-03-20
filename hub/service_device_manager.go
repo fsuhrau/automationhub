@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/device/iossim"
 	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/device/unityeditor"
+	"github.com/fsuhrau/automationhub/device/web"
 )
 
 func (s *Service) RegisterDeviceHandler(masterUrl string) {
@@ -29,5 +30,9 @@ func (s *Service) RegisterDeviceHandler(masterUrl string) {
 	if d, ok := s.cfg.DeviceManager[unityeditor.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager unity_editor")
 		s.deviceManager.AddHandler(unityeditor.NewHandler(d, s.sd))
+	}
+	if d, ok := s.cfg.DeviceManager[web.Manager]; ok && d.Enabled {
+		s.logger.Info("adding manager web")
+		s.deviceManager.AddHandler(web.NewHandler(d, s.sd))
 	}
 }

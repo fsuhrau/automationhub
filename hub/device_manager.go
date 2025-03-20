@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"net/http"
 	"reflect"
 	"time"
 
@@ -34,17 +36,28 @@ type DeviceManager struct {
 	nodeIdentifier string
 }
 
-func NewDeviceManager(logger *logrus.Logger, masterUrl, nodeIdentifier string) *DeviceManager {
+func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceManager {
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
-		masterUrl:      masterUrl,
-		nodeIdentifier: nodeIdentifier,
+		masterUrl:      service.MasterURL,
+		nodeIdentifier: service.Identifier,
 		deviceHandlers: make(map[string]device.Handler),
 		deviceCache:    make(map[string]*models.Device),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  protocol.SocketFrameSize,
 			WriteBufferSize: protocol.SocketFrameSize,
+			CheckOrigin: func(r *http.Request) bool {
+				origin := r.Header.Get("Origin")
+				fmt.Println(origin)
+				for i := range service.Cors {
+					if service.Cors[i] == origin {
+						return true
+					}
+				}
+
+				return false
+			},
 		},
 	}
 }

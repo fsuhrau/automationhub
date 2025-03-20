@@ -57,6 +57,7 @@ type Device struct {
 	OSInfos             string
 	GPU                 string
 	ABI                 string
+	TargetVersion       string
 	OpenGLESVersion     float32
 	Parameter           []DeviceParameter
 	StatusLog           []DeviceLog

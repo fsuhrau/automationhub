@@ -61,6 +61,7 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 			deviceOSName:    devs[i].OS,
 			deviceOSVersion: devs[i].OSVersion,
 			deviceOSInfos:   devs[i].OSInfos,
+			unityVersion:    devs[i].TargetVersion,
 			deviceName:      devs[i].Name,
 			deviceID:        devs[i].DeviceIdentifier,
 		}
@@ -292,6 +293,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 	if d, ok := m.devices[data.DeviceID]; ok {
 		d.deviceOSName = data.DeviceOS
 		d.deviceOSVersion = data.DeviceOSVersion
+		d.unityVersion = data.TargetVersion
 		d.deviceOSInfos = data.DeviceOSInfos
 		d.deviceName = fmt.Sprintf("Unity on %s", data.Name)
 		d.deviceIP = data.DeviceIP
@@ -307,6 +309,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			deviceID:          data.DeviceID,
 			deviceOSName:      data.DeviceOS,
 			deviceOSVersion:   data.DeviceOSVersion,
+			unityVersion:      data.TargetVersion,
 			deviceOSInfos:     data.DeviceOSInfos,
 			deviceIP:          data.DeviceIP,
 			lastUpdateAt:      lastUpdate,
@@ -321,6 +324,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			OS:               data.DeviceOS,
 			OSVersion:        data.DeviceOSVersion,
 			OSInfos:          data.DeviceOSInfos,
+			TargetVersion:    data.TargetVersion,
 			SOC:              data.SOC,
 			RAM:              data.RAM,
 			GPU:              data.GPU,

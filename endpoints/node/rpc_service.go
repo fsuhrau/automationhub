@@ -3,11 +3,10 @@ package node
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/config/protocol"
-	node2 "github.com/fsuhrau/automationhub/hub/node"
+	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
 	"github.com/matishsiao/goInfo"
 	"net/rpc"
-	"net/rpc/jsonrpc"
 	"net/url"
 	"os"
 	"time"
@@ -41,5 +40,7 @@ func (s *Service) ConnectAndServe() {
 		return
 	}
 
-	rpcServer.ServeCodec(jsonrpc.NewServerCodec(&node2.WebSocketConn{Conn: c}))
+	// DefaultServer.ServeConn(c)
+
+	rpcServer.ServeCodec(jsonrpc.NewServerCodec(c))
 }

@@ -19,6 +19,7 @@ type NodeDevice struct {
 	deviceOSVersion  string
 	deviceName       string
 	deviceID         string
+	targetVersion    string
 	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
@@ -42,6 +43,9 @@ func (d *NodeDevice) DeviceOSName() string {
 
 func (d *NodeDevice) DeviceOSVersion() string {
 	return d.deviceOSVersion
+}
+func (d *NodeDevice) TargetVersion() string {
+	return d.targetVersion
 }
 
 func (d *NodeDevice) DeviceName() string {

@@ -38,6 +38,7 @@ message DeviceResponse {
   string DeviceIP = 8;
   string DeviceModel = 9;
   DeviceState State = 10;
+  string TargetVersion = 11;
 }
 
 message DeviceRequest {
@@ -71,17 +72,36 @@ message UploadAppProgressResponse {
   int64 DataReceived = 2;
 }
 
+message AndroidParams {
+  string LaunchActivity = 1;
+}
+
+message ExecutableParams {
+  string Executable = 1;
+}
+
+message AppParams {
+  int32 AppID = 1;
+  string AppPath = 2;
+  string Additional = 3;
+  string hash = 4;
+  int64 Size = 5;
+  optional AndroidParams Android = 6;
+  optional ExecutableParams Executable = 7;
+}
+
+message WebParams {
+  string StartURL = 1;
+}
+
 message AppParameterRequest {
   string DeviceID = 1;
-  int32 AppID = 2;
-  string Platform = 3;
+  string Platform = 2;
+  string Identifier = 3;
   string Name = 4;
-  string Identifier = 5;
-  string Version = 6;
-  string LaunchActivity = 7;
-  string Additional = 8;
-  string Hash = 9;
-  int64 Size = 10;
+  string Version = 5;
+  optional AppParams App = 6;
+  optional WebParams Web = 7;
 }
 
 message StartAppRequest {

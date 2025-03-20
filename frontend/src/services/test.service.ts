@@ -45,11 +45,14 @@ export const findTest = (projectId: string, appId: number | null, filter?: TestF
     return http.get(`/${projectId}/app/${appId}/tests`, { params: filter });
 };
 
-export const executeTest = (projectId: string, appId: number | null, id: number | null | undefined, bundleId: number, envParams: string): Promise<AxiosResponse<ITestRunData>> => {
-    return http.post(`/${projectId}/app/${appId}/test/${id}/run`, {
-        AppBinaryID: bundleId,
-        Params: envParams,
-    });
+export interface RunTestData {
+    AppBinaryID: number | null,
+    StartURL: string | null,
+    Params: string,
+}
+
+export const executeTest = (projectId: string, appId: number | null, id: number | null | undefined, testData: RunTestData): Promise<AxiosResponse<ITestRunData>> => {
+    return http.post(`/${projectId}/app/${appId}/test/${id}/run`, testData);
 };
 
 export const cancelTestRun = (projectId: string, appId: number | null, testId: number, runId: number): Promise<AxiosResponse<void>> => {

@@ -25,6 +25,7 @@ type Device struct {
 	deviceOSName     string
 	deviceOSVersion  string
 	deviceOSInfos    string
+	unityVersion     string
 	deviceName       string
 	deviceID         string
 	deviceIP         net.IP
@@ -55,6 +56,10 @@ func (d *Device) DeviceOSName() string {
 
 func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
+}
+
+func (d *Device) TargetVersion() string {
+	return d.unityVersion
 }
 
 func (d *Device) DeviceName() string {

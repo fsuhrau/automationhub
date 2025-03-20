@@ -36,6 +36,10 @@ func (d *RPCDevice) DeviceOSVersion() string {
 	return d.Dev.DeviceOSVersion
 }
 
+func (d *RPCDevice) TargetVersion() string {
+	return d.Dev.TargetVersion
+}
+
 func (d *RPCDevice) DeviceName() string {
 	return d.Dev.Name
 }

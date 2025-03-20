@@ -48,7 +48,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
-		AllowOrigins:     []string{"http://localhost:7109", "http://localhost:3000", "http://localhost:8002", "http://10.35.111.12"},
+		AllowOrigins:     cfg.Cors,
 		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With", "X-Auth-Token"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},
 		MaxAge:           12 * time.Hour,

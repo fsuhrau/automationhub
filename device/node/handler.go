@@ -9,6 +9,7 @@ import (
 	"github.com/fsuhrau/automationhub/device/iossim"
 	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/device/unityeditor"
+	"github.com/fsuhrau/automationhub/device/web"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage"
@@ -88,6 +89,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string) error {
 			nodeManager:     h.nodeManager,
 			deviceOSName:    devs[i].OS,
 			deviceOSVersion: devs[i].OSVersion,
+			targetVersion:   devs[i].TargetVersion,
 			deviceName:      devs[i].Name,
 			deviceID:        devs[i].DeviceIdentifier,
 			deviceState:     device.StateRemoteDisconnected,
@@ -129,6 +131,10 @@ func managerToPlatformType(mng string) models.PlatformType {
 
 	if mng == unityeditor.Manager {
 		return models.PlatformTypeEditor
+	}
+
+	if mng == web.Manager {
+		return models.PlatformTypeWeb
 	}
 
 	panic("manager not handled")

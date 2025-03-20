@@ -194,7 +194,11 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     }, [testRun]);
 
     const onTestRerun = (): void => {
-        executeTest(projectIdentifier, appId, testRun.TestID, testRun.AppBinaryID, testRun.Parameter).then(response => {
+        executeTest(projectIdentifier, appId, testRun.TestID, {
+            AppBinaryID: testRun.AppBinaryID,
+            Params: testRun.Parameter,
+            StartURL: testRun.StartURL,
+        }).then(response => {
             navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
             console.log(error);

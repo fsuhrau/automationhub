@@ -70,10 +70,13 @@ func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
 		tx.Rollback()
 		return err
 	}
-	dev.ConnectionParameter.DeviceID = dev.ID
-	if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
-		tx.Rollback()
-		return err
+
+	if dev.ConnectionParameter != nil {
+		dev.ConnectionParameter.DeviceID = dev.ID
+		if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	d.devices[manager] = append(d.devices[manager], &dev)

@@ -2,7 +2,16 @@ import React, {ChangeEvent, useEffect, useState} from 'react';
 
 import ITestData from '../types/test';
 import {executeTest, getAllTests} from '../services/test.service';
-import {Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, Typography,} from '@mui/material';
+import {
+    Button,
+    ButtonGroup,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    TextField,
+    Typography,
+} from '@mui/material';
 import {PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
@@ -14,6 +23,8 @@ import Chip from "@mui/material/Chip";
 import {UnityTestCategory} from "../types/unity.test.category.type.enum";
 import Grid from "@mui/material/Grid2";
 import {TextareaAutosize as BaseTextareaAutosize} from '@mui/base/TextareaAutosize';
+import {getTestTypeName} from "../types/test.type.enum";
+import {getTestExecutionName} from "../types/test.execution.type.enum";
 
 interface TestTableProps {
     appId: number | null
@@ -51,11 +62,13 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         testId: number | null,
         binaryId: number | null,
         envParams: string,
+        startURL: string | null,
     }
 
     const [state, setState] = useState<RunTestState>({
         testId: null,
         binaryId: null,
+        startURL: null,
         envParams: app === undefined ? '' : app?.DefaultParameter.replaceAll(';', '\n'),
     });
 
@@ -137,8 +150,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                     return {
                         id: d.ID,
                         name: d.Name,
-                        type: typeString(d.TestConfig.Type),
-                        execution: executionString(d.TestConfig.ExecutionType),
+                        type: getTestTypeName(d.TestConfig.Type),
+                        execution: getTestExecutionName(d.TestConfig.ExecutionType),
                         devices: getDevices(d),
                         tests: getTests(d),
                         actions: d.ID,
@@ -150,33 +163,13 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         }
     }, [projectIdentifier, appId]);
 
-    const typeString = (type: number): string => {
-        switch (type) {
-            case 0:
-                return 'Unity';
-            case 1:
-                return 'Cocos';
-            case 2:
-                return 'Serenity';
-            case 3:
-                return 'Scenario';
-        }
-        return '';
-    };
-
-    const executionString = (type: number): string => {
-        switch (type) {
-            case 0:
-                return 'Concurrent';
-            case 1:
-                return 'Simultaneously';
-        }
-        return '';
-    };
-
     const onRunTest = (): void => {
         if (appId !== null) {
-            executeTest(projectIdentifier, appId, state.testId, state.binaryId!, state.envParams).then(response => {
+            executeTest(projectIdentifier, appId, state.testId, {
+                AppBinaryID: state.binaryId!,
+                Params: state.envParams,
+                StartURL: state.startURL,
+            }).then(response => {
                 navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
                 console.log(error);
@@ -207,7 +200,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         return 'n/a';
     };
 
-    const requiresApp = app?.Platform !== PlatformType.Editor
+    const requiresApp = app?.Platform !== PlatformType.Editor && app?.Platform !== PlatformType.Web;
+    const requiresURL = app?.Platform === PlatformType.Web;
 
     const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
         setState(prevState => ({...prevState, binaryId: binary ? binary.ID : null}));
@@ -236,7 +230,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                 <DialogContent>
                     <Grid container={true} spacing={2}>
                         {requiresApp && (
-                            <Grid size={12}>
+                            <Grid container={true} size={12} spacing={2}>
                                 <Grid size={12}>
                                     <Typography variant={"body1"}>
                                         Select an existing App to execute the tests.<br/>
@@ -249,6 +243,16 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                 </Grid>
                             </Grid>
                         )}
+                        {requiresURL && <Grid size={12}>
+                            <Grid size={12} container={true} spacing={2}>
+                                <Typography variant={"body1"}>
+                                    Set the Startup URL for your test<br/>
+                                </Typography>
+                            </Grid>
+                            <Grid size={12}>
+                                <TextField required={true} fullWidth={true} value={state.startURL} onChange={(e) => setState(prevState => ({...prevState, startURL: e.target.value}))}/>
+                            </Grid>
+                        </Grid>}
                         <Grid size={12}>
                             <Typography variant={"body1"}>
                                 You can change parameters of your app by providing key value pairs in an environment

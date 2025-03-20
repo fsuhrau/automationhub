@@ -108,17 +108,45 @@ func getAppParameter(req *AppParameterRequest, data *AppBundleMetaData) *app.Par
 	if data != nil {
 		appPath = data.FilePath
 	}
+
+	var appParams *app.AppParams
+	if req.App != nil {
+		var androidParams *app.AndroidParams
+		if req.App.Android != nil {
+			androidParams = &app.AndroidParams{
+				LaunchActivity: req.App.Android.LaunchActivity,
+			}
+		}
+
+		var executableParams *app.ExecutableParams
+		if req.App.Executable != nil {
+			executableParams = &app.ExecutableParams{
+				Executable: req.App.Executable.Executable,
+			}
+		}
+		appParams = &app.AppParams{
+			AppPath:    appPath,
+			Additional: req.App.Additional,
+			Hash:       req.App.Hash,
+			Size:       int(req.App.Size),
+			Android:    androidParams,
+			Executable: executableParams,
+		}
+	}
+	var webParams *app.WebParams
+	if req.Web != nil {
+		webParams = &app.WebParams{
+			StartURL: req.Web.StartURL,
+		}
+	}
+
 	return &app.Parameter{
-		AppBinaryID:    uint(req.AppID),
-		Platform:       req.Platform,
-		Name:           req.Name,
-		Identifier:     req.Identifier,
-		Version:        req.Version,
-		LaunchActivity: req.LaunchActivity,
-		Additional:     req.Additional,
-		Hash:           req.Hash,
-		AppPath:        appPath,
-		Size:           int(req.Size),
+		Platform:   req.Platform,
+		Name:       req.Name,
+		Identifier: req.Identifier,
+		Version:    req.Version,
+		App:        appParams,
+		Web:        webParams,
 	}
 }
 
@@ -129,7 +157,7 @@ func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) e
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	data, err := s.abm.GetAppParameter(req.Hash)
+	data, err := s.abm.GetAppParameter(req.App.Hash)
 	if err != nil {
 		resp.Value = false
 		return nil
@@ -149,7 +177,7 @@ func (s *RPCNode) IsAppInstalled(req *AppParameterRequest, resp *BoolResponse) e
 func (s *RPCNode) IsAppUploaded(req *AppParameterRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: IsAppUploaded")
 
-	if _, err := s.abm.GetAppParameter(req.Hash); errors.Is(err, ErrAppNotFound) {
+	if _, err := s.abm.GetAppParameter(req.App.Hash); errors.Is(err, ErrAppNotFound) {
 		resp.Value = false
 		return nil
 	}
@@ -255,7 +283,7 @@ func (s *RPCNode) InstallApp(req *AppParameterRequest, resp *BoolResponse) error
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	data, err := s.abm.GetAppParameter(req.Hash)
+	data, err := s.abm.GetAppParameter(req.App.Hash)
 	if err != nil {
 		return err
 	}

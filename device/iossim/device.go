@@ -42,6 +42,10 @@ func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
 }
 
+func (d *Device) TargetVersion() string {
+	return ""
+}
+
 func (d *Device) DeviceName() string {
 	return d.deviceName
 }
@@ -76,7 +80,7 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
-	cmd := exec2.NewCommand("xcrun", "simctl", "install", d.DeviceID(), params.AppPath)
+	cmd := exec2.NewCommand("xcrun", "simctl", "install", d.DeviceID(), params.App.AppPath)
 	return cmd.Run()
 }
 

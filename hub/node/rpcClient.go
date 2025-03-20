@@ -6,10 +6,10 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/rpc"
-	"net/rpc/jsonrpc"
 	"net/url"
 	"path/filepath"
 	"time"
@@ -22,7 +22,7 @@ type RPCClient struct {
 
 func NewRPCClient(conn *websocket.Conn, masterURL string) *RPCClient {
 	conn.SetReadLimit(protocol.SocketFrameSize)
-	client := jsonrpc.NewClient(&WebSocketConn{Conn: conn})
+	client := jsonrpc.NewClient(conn)
 	return &RPCClient{
 		client:    client,
 		masterURL: masterURL,
@@ -91,17 +91,47 @@ func (rpc *RPCClient) StopDevice(deviceId string) error {
 }
 
 func getAppParameterRequest(deviceId string, parameter *app.Parameter) *AppParameterRequest {
+	var appParams *AppParams
+	if parameter.App != nil {
+		var androidParams *AndroidParams
+		if parameter.App.Android != nil {
+			androidParams = &AndroidParams{
+				LaunchActivity: parameter.App.Android.LaunchActivity,
+			}
+		}
+
+		var executableParams *ExecutableParams
+		if parameter.App.Executable != nil {
+			executableParams = &ExecutableParams{
+				Executable: parameter.App.Executable.Executable,
+			}
+		}
+
+		appParams = &AppParams{
+			AppID:      int32(parameter.App.AppBinaryID),
+			Additional: parameter.App.Additional,
+			Hash:       parameter.App.Hash,
+			Size:       int64(parameter.App.Size),
+			Android:    androidParams,
+			Executable: executableParams,
+		}
+	}
+
+	var webParams *WebParams
+	if parameter.Web != nil {
+		webParams = &WebParams{
+			StartURL: parameter.Web.StartURL,
+		}
+	}
+
 	return &AppParameterRequest{
-		DeviceID:       deviceId,
-		AppID:          int32(parameter.AppBinaryID),
-		Platform:       parameter.Platform,
-		Name:           parameter.Name,
-		Identifier:     parameter.Identifier,
-		Version:        parameter.Version,
-		LaunchActivity: parameter.LaunchActivity,
-		Additional:     parameter.Additional,
-		Hash:           parameter.Hash,
-		Size:           int64(parameter.Size),
+		DeviceID:   deviceId,
+		Platform:   parameter.Platform,
+		Name:       parameter.Name,
+		Identifier: parameter.Identifier,
+		Version:    parameter.Version,
+		App:        appParams,
+		Web:        webParams,
 	}
 }
 
@@ -134,16 +164,16 @@ func (rpc *RPCClient) IsAppUploaded(parameter *app.Parameter) (bool, error) {
 func (rpc *RPCClient) UploadApp(ctx context.Context, parameter *app.Parameter) error {
 	logrus.Info("RPCNode.UploadApp")
 
-	filename := filepath.Base(parameter.AppPath)
+	filename := filepath.Base(parameter.App.AppPath)
 
 	fileURL, _ := url.JoinPath("http://"+rpc.masterURL, "upload", filename)
-	appId := int32(parameter.AppBinaryID)
-	appSize := int64(parameter.Size)
+	appId := int32(parameter.App.AppBinaryID)
+	appSize := int64(parameter.App.Size)
 	uploadRequest := &UploadAppRequest{
 		AppID:      appId,
 		Identifier: parameter.Identifier,
 		Name:       filename,
-		Hash:       parameter.Hash,
+		Hash:       parameter.App.Hash,
 		Size:       appSize,
 		URL:        fileURL,
 	}

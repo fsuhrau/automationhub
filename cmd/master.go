@@ -52,7 +52,7 @@ var masterCmd = &cobra.Command{
 
 		logger := logrus.New()
 
-		deviceManager := hub.NewDeviceManager(logger, "", "")
+		deviceManager := hub.NewDeviceManager(logger, serviceConfig)
 		sessionManager := hub.NewSessionManager(logger, deviceManager)
 		nodeManager := hub.NewNodeManager(logger, db)
 

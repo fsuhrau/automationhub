@@ -309,6 +309,7 @@ func extractParams(param string) map[string]string {
 
 type RunTestRequest struct {
 	AppBinaryID int
+	StartURL    string
 	Params      string
 }
 
@@ -330,7 +331,7 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 	}
 
 	var binary *models.AppBinary
-	if test.App.Platform != models.PlatformTypeEditor {
+	if test.App.Platform != models.PlatformTypeEditor && test.App.Platform != models.PlatformTypeWeb {
 		binary = &models.AppBinary{}
 		if err := s.db.Preload("App").First(binary, req.AppBinaryID).Error; err != nil {
 			s.error(c, http.StatusNotFound, err)
@@ -384,7 +385,7 @@ func (s *Service) runTest(c *gin.Context, project *models.Project, application *
 	s.runnersMutex.Unlock()
 
 	var err error
-	run, err = testRunner.Run(devices, binary)
+	run, err = testRunner.Run(devices, binary, req.StartURL)
 	if err != nil {
 		s.error(c, http.StatusInternalServerError, err) // Todo status code
 		return

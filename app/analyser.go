@@ -39,7 +39,7 @@ func NewAnalyser(appPath string) *analyser {
 	return &analyser{
 		appPath: appPath,
 		parameter: Parameter{
-			AppPath: appPath,
+			App: &AppParams{AppPath: appPath},
 		},
 	}
 }
@@ -55,12 +55,12 @@ func (a *analyser) AnalyseFile() error {
 
 	data, err := ioutil.ReadFile(a.appPath)
 
-	a.parameter.Size = len(data)
+	a.parameter.App.Size = len(data)
 
 	if err != nil {
 		return err
 	}
-	a.parameter.Hash = fmt.Sprintf("%x", sha1.Sum(data))
+	a.parameter.App.Hash = fmt.Sprintf("%x", sha1.Sum(data))
 	return nil
 }
 
@@ -131,7 +131,9 @@ func (a *analyser) analyseAPP(path string) error {
 			return err
 		}
 
-		a.parameter.LaunchActivity = "Contents/MacOS/" + filepath.Base(file)
+		a.parameter.App.Executable = &ExecutableParams{
+			Executable: "Contents/MacOS/" + filepath.Base(file),
+		}
 
 		plistContent := map[string]interface{}{}
 		_, err = plist.Unmarshal(plistData, &plistContent)
@@ -222,7 +224,7 @@ func (a *analyser) analyseAPK() error {
 			continue
 		}
 		if matches := LaunchActivityRegex.FindAllStringSubmatch(line, -1); len(matches) > 0 {
-			a.parameter.LaunchActivity = matches[0][1]
+			a.parameter.App.Android = &AndroidParams{LaunchActivity: matches[0][1]}
 			a.parameter.Name = matches[0][2]
 			continue
 		}

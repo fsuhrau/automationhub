@@ -8,12 +8,10 @@ import (
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
-	"path/filepath"
 	"strings"
 )
 
@@ -74,15 +72,18 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		return
 	}
 
-	tr.appParams = app.Parameter{
-		AppBinaryID:    appData.ID,
-		Identifier:     appData.App.Identifier,
-		AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
-		LaunchActivity: appData.LaunchActivity,
-		Name:           appData.Name,
-		Version:        appData.Version,
-		Hash:           appData.Hash,
-	}
+	/*
+		TODO build new screnario
+		tr.appParams = app.Parameter{
+			AppBinaryID:    appData.ID,
+			Identifier:     appData.App.Identifier,
+			AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
+			LaunchActivity: appData.LaunchActivity,
+			Name:           appData.Name,
+			Version:        appData.Version,
+			Hash:           appData.Hash,
+		}
+	*/
 
 	// stop app
 	tr.LogInfo("Stop apps if running")
@@ -186,7 +187,7 @@ func (tr *testsRunner) OnDeviceConnected(d device.Device) {
 
 }
 
-func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, startURL string) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
@@ -195,7 +196,7 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*mod
 	if binary != nil {
 		binaryID = binary.ID
 	}
-	if err := tr.InitNewTestSession(binaryID, strings.Join(params, "\n")); err != nil {
+	if err := tr.InitNewTestSession(binaryID, startURL, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
