@@ -39,73 +39,52 @@ const useStyles = makeStyles({
     chip: {
         '& .chip--error': {
             backgroundColor: '#DB3A34',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--error--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#DB3A34',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
         '& .chip--app': {
             backgroundColor: '#177E89',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--app--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#177E89',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
         '& .chip--testrunner': {
             backgroundColor: '#084C61',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--testrunner--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#084C61',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
         '& .chip--step': {
             backgroundColor: '#DB3A34',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--step--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#DB3A34',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
         '& .chip--status': {
             backgroundColor: '#FFC857',
-            color: '#000000',
             margin: '5px',
-        },
-        '& .chip--status--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#FFC857',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'black', // Set the desired color
+            },
         },
         '& .chip--device': {
             backgroundColor: '#323031',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--device--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#323031',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
         '& .chip--action': {
             backgroundColor: '#323031',
-            color: '#ffffff',
             margin: '5px',
-        },
-        '& .chip--action--unchecked': {
-            backgroundColor: '#ffffff',
-            fontcolor: '#323031',
-            margin: '5px',
+            '& .MuiChip-label': {
+                color: 'white', // Set the desired color
+            },
         },
     },
 });

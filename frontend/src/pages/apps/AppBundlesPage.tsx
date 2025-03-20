@@ -33,8 +33,6 @@ const AppBundlesPage: React.FC = () => {
         navigate('new');
     }
 
-    console.log(appId)
-    console.log(project.Apps)
     const app = project.Apps.find(a => a.ID === appId);
 
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);

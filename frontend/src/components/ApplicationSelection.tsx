@@ -41,6 +41,10 @@ export default function ApplicationSelection() {
 
     const handleChange = (event: SelectChangeEvent) => {
         const newAppId = event.target.value;
+        if (+newAppId < 0) {
+            navigate(`/project/${project.Identifier}/settings`);
+            return;
+        }
         setAppId(newAppId);
         localStorage.setItem('appId', newAppId);
         if (location.pathname.indexOf("app:") >= 0) {
@@ -137,7 +141,7 @@ export default function ApplicationSelection() {
       </MenuItem>
       */}
             <Divider sx={{mx: -1}}/>
-            <MenuItem value={40}>
+            <MenuItem value={-1}>
                 <ListItemIcon>
                     <AddRounded/>
                 </ListItemIcon>
