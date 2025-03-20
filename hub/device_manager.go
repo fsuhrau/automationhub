@@ -50,6 +50,11 @@ func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceMana
 			CheckOrigin: func(r *http.Request) bool {
 				origin := r.Header.Get("Origin")
 				fmt.Println(origin)
+				// mobile has no origin find a better check
+				if origin == "" {
+					return true
+				}
+
 				for i := range service.Cors {
 					if service.Cors[i] == origin {
 						return true
@@ -367,18 +372,6 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 				}
 				if resp.ActionID != "" {
 					d.Connection().ActionChannel <- resp
-					continue
-				}
-				if resp.ActionType == action.ActionType_ExecuteMethodStart {
-					continue
-				}
-				if resp.ActionType == action.ActionType_ExecuteMethodFinished {
-					continue
-				}
-				if resp.ActionType == action.ActionType_ExecuteTest {
-					continue
-				}
-				if resp.ActionType == action.ActionType_ExecutionResult {
 					continue
 				}
 

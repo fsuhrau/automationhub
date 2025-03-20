@@ -90,26 +90,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 		return
 	}
 
-	tr.appParams = app.Parameter{}
-
-	if appData != nil {
-		tr.appParams.Identifier = appData.App.Identifier
-		tr.appParams.Name = appData.Name
-		tr.appParams.Version = appData.Version
-		tr.appParams.App = &app.AppParams{
-			AppBinaryID: appData.ID,
-			AppPath:     filepath.Join(apps.AppStoragePath, appData.AppPath),
-			Hash:        appData.Hash,
-			Size:        appData.Size,
-		}
-	} else {
-		// TODO handle the correct params
-		tr.appParams = app.Parameter{
-			Web: &app.WebParams{
-				StartURL: startupUrl,
-			},
-		}
-	}
+	tr.appParams = base.GetParams(appData, startupUrl)
 
 	// stop app
 	tr.LogInfo("Stop apps if running")

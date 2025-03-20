@@ -55,7 +55,7 @@ func (tr *testsRunner) Cancel(runId string) error {
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
@@ -72,18 +72,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		return
 	}
 
-	/*
-		TODO build new screnario
-		tr.appParams = app.Parameter{
-			AppBinaryID:    appData.ID,
-			Identifier:     appData.App.Identifier,
-			AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
-			LaunchActivity: appData.LaunchActivity,
-			Name:           appData.Name,
-			Version:        appData.Version,
-			Hash:           appData.Hash,
-		}
-	*/
+	tr.appParams = base.GetParams(appData, startupUrl)
 
 	// stop app
 	tr.LogInfo("Stop apps if running")
@@ -200,7 +189,7 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, start
 		return nil, err
 	}
 
-	go tr.exec(devs, binary)
+	go tr.exec(devs, binary, startURL)
 
 	return &tr.TestRun, nil
 }
