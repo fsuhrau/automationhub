@@ -38,7 +38,7 @@ export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => 
         return <Navigate to="/"/>;
     }
 
-    const project = state.projects.find(p => p.Identifier === project_identifier)
+    const project = state.projects?.find(p => p.Identifier === project_identifier)
     if (project === undefined) {
         return null;
         /*

@@ -1,34 +1,38 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/migrations"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/pkg/errors"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"os"
 )
 
 var db *gorm.DB
 
+func getDialect(database config.Database) gorm.Dialector {
+	if database.SQLite != nil {
+		return sqlite.Open(database.SQLite.Path)
+	}
+	if database.Postgres != nil {
+		return postgres.Open(fmt.Sprintf("postgres://%v:%v@%v/%v?sslmode=disable", database.Postgres.User, database.Postgres.Password, database.Postgres.Host+":"+database.Postgres.Port, database.Postgres.Database))
+	}
+
+	panic(errors.New("database not found in config"))
+	return nil
+}
+
 func GetDB(database config.Database) (*gorm.DB, error) {
+
 	if db != nil {
 		return db, nil
 	}
 
-	checkForInitialSchemaMigration := false
-	if _, err := os.Stat(database.SQLiteDBPath); err == nil {
-		// old db need to check for initial schema migration
-		checkForInitialSchemaMigration = true
-	} else if errors.Is(err, os.ErrNotExist) {
-		// all fine new db
-	} else {
-		return nil, err
-	}
-
 	var err error
-	db, err = gorm.Open(sqlite.Open(database.SQLiteDBPath), &gorm.Config{
+	db, err = gorm.Open(getDialect(database), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 
@@ -37,22 +41,6 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 	}
 	tx := db.Begin()
 
-	if checkForInitialSchemaMigration {
-		// in case we have already a DB check if we need to apply the initial migration since migrations were introduced later...
-		type Migration struct {
-			ID string `gorm:"primarykey"`
-		}
-		if !tx.Migrator().HasTable(&Migration{}) {
-			if err = tx.AutoMigrate(&Migration{}); err != nil {
-				return nil, err
-			}
-			if err := tx.Create(&Migration{
-				ID: "SCHEMA_INIT",
-			}).Error; err != nil {
-				return nil, err
-			}
-		}
-	}
 	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{
 		migrations.IntroduceProjects,
 		migrations.AddOsInfosToDevice,

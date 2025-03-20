@@ -62,8 +62,21 @@ type Github struct {
 	Secret      string   `yaml:"secret,omitempty" mapstructure:"secret"`
 }
 
+type SQLite struct {
+	Path string `yaml:"path,omitempty" mapstructure:"path"`
+}
+
+type Postgres struct {
+	Host     string `yaml:"host,omitempty" mapstructure:"host"`
+	Port     string `yaml:"port,omitempty" mapstructure:"port"`
+	User     string `yaml:"user,omitempty" mapstructure:"user"`
+	Password string `yaml:"password,omitempty" mapstructure:"password"`
+	Database string `yaml:"database,omitempty" mapstructure:"database"`
+}
+
 type Database struct {
-	SQLiteDBPath string `yaml:"sqlite_db_path,omitempty" mapstructure:"sqlite_db_path"`
+	SQLite   *SQLite   `yaml:"sqlite,omitempty" mapstructure:"sqlite"`
+	Postgres *Postgres `yaml:"postgres,omitempty" mapstructure:"postgres"`
 }
 
 type Service struct {

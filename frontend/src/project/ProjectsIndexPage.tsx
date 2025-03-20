@@ -76,7 +76,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
     };
 
     useEffect(() => {
-        if (state.projects.length === 0) {
+        if (state.projects === null) {
             getProjects().then(response => {
                 dispatch({type: HubStateActions.UpdateProjects, payload: response.data})
             })
@@ -125,7 +125,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
                         </Grid>
 
                         {
-                            state.projects.map(project => (
+                            state.projects?.map(project => (
                                 <Grid size={3}>
                                     <Card variant="outlined" key={`project_${project.Identifier}`}
                                           onClick={() => navigate(`/project/${project.Identifier}`)}>

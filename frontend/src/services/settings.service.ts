@@ -23,7 +23,6 @@ export const deleteAccessToken = (projectId: string, id: number): Promise<AxiosR
 };
 
 
-
 export const getNodes = (projectId: string): Promise<AxiosResponse<INodeData[]>> => {
     return http.get(`/${projectId}/settings/nodes`);
 };

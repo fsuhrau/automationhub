@@ -26,10 +26,10 @@ import {
     Typography
 } from '@mui/material';
 import {
-    createAccessToken,
-    deleteAccessToken,
-    getAccessTokens,
-    NewAccessTokenRequest,
+    createAccessToken, createNode,
+    deleteAccessToken, deleteNode,
+    getAccessTokens, getNodes,
+    NewAccessTokenRequest, NewNodeRequest,
 } from '../../services/settings.service';
 import IAccessTokenData from '../../types/access.token';
 import CopyToClipboard from '../../components/copy.clipboard.component';
@@ -50,6 +50,7 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useHubState} from "../../hooks/HubStateProvider";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
 import NewAppDialog from "../apps/newapp.dialog";
+import {INodeData} from "../../types/node";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -122,6 +123,7 @@ const SettingsPage: React.FC = () => {
     };
 
     const [accessTokens, setAccessTokens] = useState<IAccessTokenData[]>([]);
+    const [nodes, setNodes] = useState<INodeData[]>([]);
 
     useEffect(() => {
         getAccessTokens(projectIdentifier).then(response => {
@@ -129,13 +131,51 @@ const SettingsPage: React.FC = () => {
         }).catch(e => {
             console.log(e);
         });
+
+        getNodes(projectIdentifier).then(response => {
+            setNodes(response.data);
+        }).catch(e => {
+            console.log(e);
+        });
     }, [projectIdentifier]);
+
+    const [newNode, setNewNode] = useState<NewNodeRequest>({
+        Name: '',
+    });
+
+    const handleCreateNode = (): void => {
+        createNode(projectIdentifier, newNode).then(response => {
+            setNodes(prevState => {
+                const newState = [...prevState];
+                newState.push(response.data);
+                return newState;
+            });
+            setNewNode({
+                Name: '',
+            })
+        }).catch(ex => {
+            console.log(ex);
+        });
+    };
 
     const handleDeleteAccessToken = (accessTokenID: number): void => {
         deleteAccessToken(projectIdentifier, accessTokenID).then(value => {
             setAccessTokens(prevState => {
                 const newState = [...prevState];
                 const index = newState.findIndex(value1 => value1.ID == accessTokenID);
+                if (index > -1) {
+                    newState.splice(index, 1);
+                }
+                return newState;
+            });
+        });
+    };
+
+    const handleDeleteNode = (nodeID: number): void => {
+        deleteNode(projectIdentifier, nodeID).then(value => {
+            setNodes(prevState => {
+                const newState = [...prevState];
+                const index = newState.findIndex(value1 => value1.ID == nodeID);
                 if (index > -1) {
                     newState.splice(index, 1);
                 }
@@ -277,6 +317,7 @@ const SettingsPage: React.FC = () => {
                             <Tab label="Access Tokens" {...a11yProps(1)} />
                             <Tab label="Users and Permissions" {...a11yProps(2)} />
                             <Tab label="Notifications" {...a11yProps(3)} />
+                            <Tab label="Nodes" {...a11yProps(4)} />
                         </Tabs>
                         <Divider/>
                     </Grid>
@@ -508,6 +549,79 @@ const SettingsPage: React.FC = () => {
                         <TabPanel index={value} value={3}>
                             <TitleCard title={"Notifications"}>
                                 not implemented
+                            </TitleCard>
+                        </TabPanel>
+                        { /* Nodes */}
+                        <TabPanel index={value} value={4}>
+                            <TitleCard title={"Nodes"}>
+                                <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
+                                    <Box sx={{width: '100%'}}>
+                                        <Box sx={{p: 3}}>
+                                            <Table size="small" aria-label="a dense table">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell>Name</TableCell>
+                                                        <TableCell align="right">Identifier</TableCell>
+                                                        <TableCell></TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {nodes.map((node) => <TableRow key={node.ID}>
+                                                        <TableCell>{node.Name}</TableCell>
+                                                        <TableCell>
+                                                            <Grid container={true} direction={"row"} spacing={1} justifyContent={"right"} alignItems={"center"}>
+                                                                <Grid>
+                                                                    {node.Identifier}
+                                                                </Grid>
+                                                                <Grid>
+                                                                    <CopyToClipboard>
+                                                                        {({copy}) => (
+                                                                            <IconButton
+                                                                                color={'primary'}
+                                                                                size={'small'}
+                                                                                onClick={() => copy(node.Identifier)}
+                                                                            >
+                                                                                <ContentCopy/>
+                                                                            </IconButton>
+                                                                        )}
+                                                                    </CopyToClipboard>
+
+                                                                </Grid>
+                                                            </Grid>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <IconButton color="secondary" size="small" onClick={() => {
+                                                                handleDeleteNode(node.ID as number);
+                                                            }}>
+                                                                <DeleteForeverIcon/>
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>)}
+
+                                                    <TableRow>
+                                                        <TableCell>
+                                                            <TextField id="new_node_name" placeholder="Name"
+                                                                       variant="outlined"
+                                                                       fullWidth={true}
+                                                                       value={newNode.Name} size="small"
+                                                                       onChange={event => setNewNode(prevState => ({
+                                                                           ...prevState,
+                                                                           Name: event.target.value
+                                                                       }))}/>
+                                                        </TableCell>
+                                                        <TableCell></TableCell>
+                                                        <TableCell>
+                                                            <Button variant="contained" color="primary" size="small"
+                                                                    onClick={handleCreateNode}>
+                                                                Add
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </Box>
+                                    </Box>
+                                </Paper>
                             </TitleCard>
                         </TabPanel>
                     </Grid>

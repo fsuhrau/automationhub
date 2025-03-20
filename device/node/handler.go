@@ -158,7 +158,7 @@ func (h *Handler) RefreshDevices(force bool) error {
 
 	for nodeIdentifier, _ := range h.nodes {
 		var no models.Node
-		if err := h.db.First(&no, "identifier = ?", nodeIdentifier).Error; err != nil {
+		if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
 			return err
 		}
 

@@ -130,7 +130,9 @@ var configureCmd = &cobra.Command{
 		os.MkdirAll(d, 0744)
 
 		cfg.Database = config.Database{
-			SQLiteDBPath: filepath.Join(d, "ah.db"),
+			SQLite: &config.SQLite{
+				Path: filepath.Join(d, "sqlite.db"),
+			},
 		}
 
 		y, err := yaml.Marshal(&cfg)

@@ -19,14 +19,14 @@ export interface HubStateAction {
 
 export interface HubState {
     mobileOpen: boolean,
-    projects: IProject[],
+    projects: IProject[] | null,
     //appId: number | null,
     stats: IHubStatsData | null,
 }
 
 export const InitialHubState: HubState = {
     mobileOpen: false,
-    projects: [],
+    projects: null,
     //appId: null,
     stats: null,
 }
@@ -47,18 +47,18 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
         case HubStateActions.AddNewApp: {
             return {
                 ...state,
-                projects: state.projects.map(p => {
+                projects: state.projects ? state.projects.map(p => {
                     if (p.Identifier == payload.projectIdentifier) {
                         p.Apps.push(payload)
                     }
                     return p
-                })
+                }) : [payload]
             }
         }
         case HubStateActions.UpdateAppAttribute: {
             return {
                 ...state,
-                projects: state.projects.map(p => {
+                projects: state.projects!.map(p => {
                     if (p.Identifier === payload.projectIdentifier) {
                         p.Apps = p.Apps.map(a => (a.ID as number) === (payload.appId as number) ? {...a, [payload.attribute]: payload.value} as IAppData : a as IAppData)
                     }
@@ -69,7 +69,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
         case HubStateActions.UpdateProjectAttribute: {
             return {
                 ...state,
-                projects: state.projects.map(p => {
+                projects: state.projects!.map(p => {
                     if (p.Identifier == payload.projectIdentifier) {
                         return {
                             ...p,

@@ -73,7 +73,7 @@ func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
 
 	if dev.ConnectionParameter != nil {
 		dev.ConnectionParameter.DeviceID = dev.ID
-		if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
+		if err := d.db.FirstOrCreate(&dev.ConnectionParameter).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
