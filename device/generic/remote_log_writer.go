@@ -13,6 +13,11 @@ type RemoteLogWriter struct {
 	masterURL string
 	node      string
 	deviceId  string
+	passed    bool
+}
+
+func (w *RemoteLogWriter) HasPassed() bool {
+	return w.passed
 }
 
 func (w *RemoteLogWriter) Device() interface{} {
@@ -30,6 +35,7 @@ const (
 	LogType_Data        LogType = 1
 	LogType_Log         LogType = 2
 	LogType_Error       LogType = 3
+	LogType_Result      LogType = 4
 )
 
 type request struct {
@@ -124,6 +130,20 @@ func (w *RemoteLogWriter) Data(source, path string) {
 		Source:  source,
 		Message: fmt.Sprintf("Data path: %s", path),
 		Type:    LogType_Data,
+	}
+	if err := w.sendLog(log); err != nil {
+		fmt.Printf("failed to send log: %v\n", err)
+	}
+}
+
+func (w *RemoteLogWriter) Passed(passed bool) {
+	result := "passed"
+	if !passed {
+		result = "failed"
+	}
+	log := &request{
+		Type:  LogType_Result,
+		Other: result,
 	}
 	if err := w.sendLog(log); err != nil {
 		fmt.Printf("failed to send log: %v\n", err)

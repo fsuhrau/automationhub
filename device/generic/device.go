@@ -129,6 +129,14 @@ func (d *Device) Log(source, format string, params ...interface{}) {
 	}
 }
 
+func (d *Device) Passed(result bool) {
+	if d.writer != nil {
+		d.writer.Passed(result)
+	} else {
+		logrus.Infof("Test: %s", result)
+	}
+}
+
 func (d *Device) Error(source, format string, params ...interface{}) {
 	if d.writer != nil {
 		d.writer.Error(source, format, params...)

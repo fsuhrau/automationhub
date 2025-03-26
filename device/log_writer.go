@@ -8,4 +8,6 @@ type LogWriter interface {
 	TestProtocolId() *uint
 	Device() interface{}
 	Parent() LogWriter
+	Passed(passed bool)
+	HasPassed() bool
 }

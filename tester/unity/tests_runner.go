@@ -295,6 +295,12 @@ func (tr *testsRunner) runTest(ctx context.Context, dev base.DeviceMap, task act
 	executor := NewExecutor(tr.DeviceManager, tr.ProtocolWriter)
 	err = executor.Execute(ctx, dev.Device, task, DefaultTestTimeout)
 
+	passed := prot.Writer.HasPassed()
+	finished := "finished successful"
+	if !passed {
+		finished = "failed"
+	}
+
 	if err != nil || len(prot.Errors()) > 0 {
 		tr.captureScreenShot(ctx, dev, task, err)
 		var errorlist []string
@@ -304,11 +310,12 @@ func (tr *testsRunner) runTest(ctx context.Context, dev base.DeviceMap, task act
 		for _, err := range prot.Errors() {
 			errorlist = append(errorlist, err.Error())
 		}
-		tr.LogError("Test execution failed: %v", strings.Join(errorlist, "\n"))
+
+		tr.LogError("Test execution %s with errors: %v", finished, strings.Join(errorlist, "\n"))
 		return
 	}
 
-	tr.LogInfo("Test execution finished")
+	tr.LogInfo("Test execution %s ", finished)
 }
 
 func (tr *testsRunner) captureScreenShot(ctx context.Context, dev base.DeviceMap, task action.TestStart, err error) {

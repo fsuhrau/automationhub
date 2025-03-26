@@ -25,7 +25,6 @@ const HubMainLayout: React.FC = () => {
     };
 
     useEffect(() => {
-        debugger;
         if (state.projects == null) {
             getProjects().then(response => {
                 dispatch({type: HubStateActions.UpdateProjects, payload: response.data})

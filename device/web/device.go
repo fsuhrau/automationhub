@@ -44,6 +44,8 @@ type Device struct {
 	deviceModel        string
 	deviceSerialNumber string
 	runningExecutable  string
+
+	applicationProcess *exec.Cmd
 }
 
 func (d *Device) DeviceModel() string {
@@ -133,31 +135,31 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 
 func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	applicationURL := fmt.Sprintf("%s?sessionId=%s&nodeURL=%s&deviceId=%s", params.Web.StartURL, sessionId, nodeUrl, d.DeviceID())
-	var cmd *exec.Cmd
 	if strings.Contains(runtime.GOOS, "windows") {
-		cmd = exec2.NewCommand("start", d.browser, applicationURL)
+		d.applicationProcess = exec2.NewCommand(d.browserPath, applicationURL)
 	} else if strings.Contains(runtime.GOOS, "darwin") {
-		cmd = exec2.NewCommand("open", "-a", d.browserPath, applicationURL)
+		d.applicationProcess = exec2.NewCommand(d.browserPath, applicationURL)
 	} else if strings.Contains(runtime.GOOS, "linux") {
-		cmd = exec2.NewCommand(d.browserPath, applicationURL)
+		d.applicationProcess = exec2.NewCommand(d.browserPath, applicationURL)
 	}
 
-	if err := cmd.Start(); err != nil {
+	if d.applicationProcess == nil {
+		return fmt.Errorf("no start application process found")
+	}
+
+	if err := d.applicationProcess.Start(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
-	var cmd *exec.Cmd
-	if strings.Contains(runtime.GOOS, "windows") {
-		cmd = exec2.NewCommand("taskkill /im ", filepath.Base(d.browserPath))
-	} else if strings.Contains(runtime.GOOS, "darwin") {
-		cmd = exec2.NewCommand("killall", d.browserPath)
-	} else if strings.Contains(runtime.GOOS, "linux") {
-		cmd = exec2.NewCommand("killall", d.browserPath)
+	if d.applicationProcess != nil && d.applicationProcess.Process != nil {
+		d.applicationProcess.Process.Kill()
 	}
-	return cmd.Run()
+	d.applicationProcess = nil
+	return nil
 }
 
 func (d *Device) IsAppConnected() bool {

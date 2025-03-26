@@ -17,10 +17,10 @@ type logProtocol struct {
 func (p *logProtocol) Close() {
 	var state models.TestResultState
 
-	if len(p.Writer.errs) > 0 {
-		state = models.TestResultFailed
-	} else {
+	if p.Writer.passed {
 		state = models.TestResultSuccess
+	} else {
+		state = models.TestResultFailed
 	}
 
 	endTime := time.Now()

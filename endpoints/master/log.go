@@ -39,6 +39,8 @@ func (s *nodeMaster) Log(c *gin.Context) {
 			device.Log(req.Source, req.Message)
 		case 3:
 			device.Error(req.Source, req.Message)
+		case 4:
+			device.Passed(req.Other == "passed")
 		default:
 			fmt.Println("unhandled: " + req.Source + " " + req.Message)
 		}

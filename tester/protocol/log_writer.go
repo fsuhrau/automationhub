@@ -27,6 +27,11 @@ type LogWriter struct {
 	performanceMetrics PerformanceMetric
 	dev                *models.Device
 	parent             device.LogWriter
+	passed             bool
+}
+
+func (l *LogWriter) HasPassed() bool {
+	return l.passed
 }
 
 func (w *LogWriter) TestProtocolId() *uint {
@@ -114,6 +119,10 @@ func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	msg := fmt.Sprintf(format, params...)
 	w.errs = append(w.errs, fmt.Errorf(msg))
 	w.write(source, "error", msg, "")
+}
+
+func (w *LogWriter) Passed(passed bool) {
+	w.passed = passed
 }
 
 func NewLogWriter(db *gorm.DB, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {

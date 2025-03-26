@@ -56,4 +56,5 @@ type Device interface {
 	RemoveActionHandler(action.ActionHandler)
 	ActionHandlers() []action.ActionHandler
 	RunNativeScript(data []byte)
+	Passed(result bool)
 }

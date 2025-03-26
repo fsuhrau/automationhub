@@ -87,6 +87,10 @@ func (tr *testExecutor) handleExecutionResult(dev device.Device, response *actio
 	} else {
 		dev.Error("testrunner", "Test finished with errors")
 	}
+	writer := dev.GetLogWriter()
+	if writer != nil {
+		writer.Passed(response.Success)
+	}
 	tr.fin <- true
 }
 
@@ -124,6 +128,7 @@ func (tr *testExecutor) handleTestMethodFinished(dev device.Device, response *ac
 
 	currentWriter := dev.GetLogWriter()
 	if currentWriter != nil {
+		currentWriter.Passed(response.Success)
 		dev.SetLogWriter(currentWriter.Parent())
 	}
 }
