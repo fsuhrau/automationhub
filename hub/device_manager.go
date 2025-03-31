@@ -211,8 +211,8 @@ func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
 }
 */
 
-func (dm *DeviceManager) RegisterRoutes(r *gin.Engine) error {
-	deviceApi := r.Group("/device")
+func (dm *DeviceManager) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
+	deviceApi := auth.Group("/device")
 	deviceApi.GET("/connect", func(c *gin.Context) {
 		conn, err := dm.upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {

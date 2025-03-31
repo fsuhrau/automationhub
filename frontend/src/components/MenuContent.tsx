@@ -15,6 +15,7 @@ import {useLocation, useNavigate, useParams} from "react-router-dom";
 import DevicesRoundedIcon from "@mui/icons-material/DevicesRounded";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {useHubState} from "../hooks/HubStateProvider";
+import { redirect } from "react-router";
 
 export default function MenuContent() {
 
@@ -41,9 +42,9 @@ export default function MenuContent() {
     ];
 
     const secondaryListItems = [
-        { text: 'Settings', ref: `/project/${projectIdentifier}/settings`, icon: <SettingsRoundedIcon /> },
-        { text: 'About', ref: `https://github.com/fsuhrau/automationhub`, icon: <InfoRoundedIcon /> },
-        { text: 'Feedback', ref: '', icon: <HelpRoundedIcon /> },
+        { text: 'Settings', external: false, ref: `/project/${projectIdentifier}/settings`, icon: <SettingsRoundedIcon /> },
+        { text: 'About', external: true, ref: `https://github.com/fsuhrau/automationhub`, icon: <InfoRoundedIcon /> },
+        /* { text: 'Feedback', external: false, ref: '', icon: <HelpRoundedIcon /> },*/
     ];
 
   return (
@@ -65,7 +66,11 @@ export default function MenuContent() {
         {secondaryListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
             <ListItemButton onClick={event => {
-                navigate(item.ref)
+                if (item.external) {
+                    window.open(item.ref, '_blank');
+                } else {
+                    navigate(item.ref);
+                }
             }}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />

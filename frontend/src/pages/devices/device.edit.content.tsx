@@ -25,6 +25,7 @@ import {Add, Remove} from '@mui/icons-material';
 import {DeviceType} from '../../types/device.type.enum';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
+import {useError} from "../../ErrorProvider";
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -45,6 +46,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
     const {projectIdentifier} = useProjectContext()
 
     const navigate = useNavigate();
+    const {setError} = useError()
 
     const {device} = props;
 
@@ -106,7 +108,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
         };
         updateDevice(projectIdentifier, device, device.ID).then(response => {
             navigate(`/project/${projectIdentifier}/device/${device.ID}`);
-        });
+        }).catch(ex => setError(ex));
     };
 
     return (

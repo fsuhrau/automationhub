@@ -6,6 +6,7 @@ import DeviceEditContent from './device.edit.content';
 import { getDevice } from '../../services/device.service';
 import DeviceShowPage from './DeviceShowPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
+import {useError} from "../../ErrorProvider";
 
 interface DevicePageProps {
     edit: boolean
@@ -16,6 +17,7 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     const { projectIdentifier } = useProjectContext();
 
     const { deviceId } = useParams();
+    const {setError} = useError()
 
     const { edit } = props;
     const [device, setDevice] = useState<IDeviceData>();
@@ -24,7 +26,7 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
         getDevice(projectIdentifier, deviceId === undefined ? "" : deviceId).then(response => {
             setDevice(response.data);
         }).catch(ex => {
-            console.log(ex);
+            setError(ex);
         });
     }, [projectIdentifier, deviceId]);
 

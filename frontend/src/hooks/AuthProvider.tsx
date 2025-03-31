@@ -2,6 +2,7 @@ import React, {useContext, createContext, useState, useEffect, ReactNode, Dispat
 import { useNavigate } from "react-router-dom";
 
 export interface IUser {
+    id: number,
     name: string,
     email: string,
     login: string,
@@ -24,7 +25,7 @@ export interface LoginData {
 
 type AuthContextProps = {
     user: IUser | null,
-    loginAction: (d: LoginData) => {},
+    loginAction: (d: LoginData, onError: (error: string) => void) => {},
     registerAction: (d: RegisterData) => {},
     logOut: () => {},
 };
@@ -56,7 +57,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const res = await response.json();
                 if (res.user) {
                     setUser(res.user);
-                    navigate("/");
                 }
             } catch (err) {
                 console.error(err);
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }, [user, navigate]);
 
-    const loginAction = async (data: LoginData) => {
+    const loginAction = async (data: LoginData, onError: (error: string) => void) => {
         try {
             const response = await fetch("/auth/login", {
                 method: "POST",
@@ -84,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 navigate("/");
                 return;
             }
+            onError("Invalid email or password");
         } catch (err) {
             console.error(err);
         }

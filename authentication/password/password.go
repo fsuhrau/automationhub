@@ -62,11 +62,11 @@ func init() {
 func Routes(r *gin.Engine) {
 	r.POST("/auth/login", LoginRoute)
 	r.POST("/auth/register", RegisterRoute)
-	r.GET("/auth/session", SessionRoute)
+	r.GET("/auth/session", ValidateSessionRoute)
 	r.POST("/auth/logout", LogoutRoute)
 }
 
-func Auth() gin.HandlerFunc {
+func SessionHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		var (
@@ -83,12 +83,12 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		loginRedirect(ctx)
-		ctx.Abort()
+		// loginRedirect(ctx)
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized", "url": GetLoginURL()})
 	}
 }
 
-func SessionRoute(ctx *gin.Context) {
+func ValidateSessionRoute(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 
 	mysession := session.Get(authentication.SessionKey)
@@ -99,7 +99,6 @@ func SessionRoute(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-	return
 }
 
 func LogoutRoute(ctx *gin.Context) {
@@ -109,7 +108,7 @@ func LogoutRoute(ctx *gin.Context) {
 	if _, ok := mysession.(authentication.User); ok {
 		session.Delete(authentication.SessionKey)
 		if err := session.Save(); err != nil {
-			logrus.Errorf("[Github-OAuth2]Failed to save session: %v", err)
+			logrus.Errorf("Failed to save session: %v", err)
 		}
 	}
 

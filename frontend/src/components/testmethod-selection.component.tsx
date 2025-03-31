@@ -10,6 +10,7 @@ import IAppFunctionData from '../types/app.function';
 import {Alert, CircularProgress, TextField, Typography} from '@mui/material';
 import {getTestFunctions} from '../services/unity.service';
 import Grid from "@mui/material/Grid2";
+import {useError} from "../ErrorProvider";
 
 interface TestMethodSelectionProps {
     selectedTestFunctions?: IAppFunctionData[]
@@ -26,6 +27,7 @@ function intersection(a: IAppFunctionData[], b: IAppFunctionData[]): IAppFunctio
 
 const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
     const {onSelectionChanged, selectedTestFunctions} = props;
+    const {setError} = useError()
 
     const [loading, setLoading] = React.useState<boolean>(true);
 
@@ -132,7 +134,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
         setLoading(true);
         getTestFunctions().then(response => {
             setLeft(not(response.data, right));
-        }).finally(() => {
+        }).catch(ex=> setError(ex)).finally(() => {
             setLoading(false);
         });
     }, []);

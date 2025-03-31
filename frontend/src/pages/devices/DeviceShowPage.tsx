@@ -22,6 +22,7 @@ import {DeviceType} from '../../types/device.type.enum';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
+import {useError} from "../../ErrorProvider";
 
 interface DeviceShowPageProps {
     device: IDeviceData
@@ -32,6 +33,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
     const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
+    const {setError} = useError()
 
     const {device} = props;
     const [expanded, setExpanded] = React.useState<string | false>(false);
@@ -53,7 +55,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
     const deleteAndClose = () => {
         deleteDevice(projectIdentifier, device.ID as number).then((result) =>
             navigate(-1),
-        );
+        ).catch(ex => setError(ex));
         handleClose()
     };
 

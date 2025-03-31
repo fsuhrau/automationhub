@@ -1,15 +1,24 @@
 import IProject from "../project/project";
-import { useParams } from "react-router-dom";
-import { IAppData } from "../types/app";
+import {IAppData} from "../types/app";
 import IHubStatsData from "../types/hub.stats";
+import IAccessTokenData from "../types/access.token";
+import {INodeData} from "../types/node";
+import {IUserData} from "../types/user";
 
 export enum HubStateActions {
-    UpdateProjects = 'UpdateProjects',
+    ProjectsUpdate = 'ProjectsUpdate',
     ToggleMobileOpen = 'ToggleMobileOpen',
-    UpdateProjectAttribute = 'UpdateProjectAttribute',
-    UpdateAppAttribute = 'UpdateAppAttribute',
-    AddNewApp = 'AddNewApp',
-    ChangeActiveApp = 'ChangeActiveApp',
+    ProjectAttributeUpdate = 'ProjectAttributeUpdate',
+    AppsUpdate = 'AppsUpdate',
+    AppAdd = 'AppAdd',
+    AppAttributeUpdate = 'AppAttributeUpdate',
+    AccessTokensUpdate = 'AccessTokensUpdate',
+    AccessTokenAdd = 'AccessTokenAdd',
+    AccessTokenDelete = 'AccessTokenDelete',
+    NodesUpdate = 'NodesUpdate',
+    NodeAdd = 'NodeAdd',
+    NodeDelete = 'NodeDelete',
+    UsersUpdate = 'UsersUpdate',
 }
 
 export interface HubStateAction {
@@ -20,15 +29,21 @@ export interface HubStateAction {
 export interface HubState {
     mobileOpen: boolean,
     projects: IProject[] | null,
-    //appId: number | null,
     stats: IHubStatsData | null,
+    accessTokens: IAccessTokenData[] | null,
+    nodes: INodeData[] | null,
+    apps: IAppData[] | null,
+    users: IUserData[] | null,
 }
 
 export const InitialHubState: HubState = {
     mobileOpen: false,
     projects: null,
-    //appId: null,
     stats: null,
+    accessTokens: null,
+    nodes: null,
+    apps: null,
+    users: null,
 }
 
 export function hubReducer(state: HubState, action: HubStateAction): HubState {
@@ -36,37 +51,34 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
     const {type, payload} = action;
 
     switch (type) {
-        /*
-        case HubStateActions.ChangeActiveApp: {
+        case HubStateActions.UsersUpdate: {
             return {
                 ...state,
-                appId: payload as number,
+                users: payload,
             }
         }
-         */
-        case HubStateActions.AddNewApp: {
+        case HubStateActions.AppsUpdate: {
             return {
                 ...state,
-                projects: state.projects ? state.projects.map(p => {
-                    if (p.Identifier == payload.projectIdentifier) {
-                        p.Apps.push(payload)
-                    }
-                    return p
-                }) : [payload]
+                apps: payload,
             }
         }
-        case HubStateActions.UpdateAppAttribute: {
+        case HubStateActions.AppAdd: {
             return {
                 ...state,
-                projects: state.projects!.map(p => {
-                    if (p.Identifier === payload.projectIdentifier) {
-                        p.Apps = p.Apps.map(a => (a.ID as number) === (payload.appId as number) ? {...a, [payload.attribute]: payload.value} as IAppData : a as IAppData)
-                    }
-                    return p
-                })
+                apps: state.apps ? [...state.apps, payload] : [payload],
             }
         }
-        case HubStateActions.UpdateProjectAttribute: {
+        case HubStateActions.AppAttributeUpdate: {
+            return {
+                ...state,
+                apps: state.apps ? state.apps.map(a => (a.ID as number) === (payload.appId as number) ? {
+                    ...a,
+                    [payload.attribute]: payload.value
+                } as IAppData : a as IAppData) : [],
+            }
+        }
+        case HubStateActions.ProjectAttributeUpdate: {
             return {
                 ...state,
                 projects: state.projects!.map(p => {
@@ -81,7 +93,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
             }
         }
 
-        case HubStateActions.UpdateProjects: {
+        case HubStateActions.ProjectsUpdate: {
             return {
                 ...state,
                 projects: payload,
@@ -92,6 +104,42 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 ...state,
                 mobileOpen: !state.mobileOpen,
             }
+        case HubStateActions.AccessTokensUpdate: {
+            return {
+                ...state,
+                accessTokens: payload,
+            }
+        }
+        case HubStateActions.AccessTokenAdd: {
+            return {
+                ...state,
+                accessTokens: state.accessTokens ? [...state.accessTokens, payload] : [payload],
+            }
+        }
+        case HubStateActions.AccessTokenDelete: {
+            return {
+                ...state,
+                accessTokens: state.accessTokens ? state.accessTokens.filter(token => token.ID !== payload) : [],
+            }
+        }
+        case HubStateActions.NodesUpdate: {
+            return {
+                ...state,
+                nodes: payload,
+            }
+        }
+        case HubStateActions.NodeAdd: {
+            return {
+                ...state,
+                nodes: state.nodes ? [...state.nodes, payload] : [payload],
+            }
+        }
+        case HubStateActions.NodeDelete: {
+            return {
+                ...state,
+                nodes: state.nodes ? state.nodes.filter(node => node.ID !== payload) : [],
+            }
+        }
         default:
             return state
     }

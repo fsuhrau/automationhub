@@ -1,8 +1,6 @@
 package api
 
 import (
-	"github.com/fsuhrau/automationhub/authentication/github"
-	"github.com/fsuhrau/automationhub/authentication/oauth2"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
@@ -72,24 +70,14 @@ func (s *Service) handleSessionAccess(fallbackFunc gin.HandlerFunc) gin.HandlerF
 	}
 }
 
-func (s *Service) RegisterRoutes(r *gin.Engine) error {
-	api := r.Group("/api")
-
-	if s.cfg.Auth.AuthenticationRequired() {
-		if s.cfg.Auth.OAuth2 != nil {
-			api.Use(s.handleSessionAccess(oauth2.Auth()))
-		} else if s.cfg.Auth.Github != nil {
-			api.Use(s.handleSessionAccess(github.Auth()))
-		} else if s.cfg.Auth.Password != nil {
-			api.Use(s.handleSessionAccess(nil))
-		} else {
-			api.Use(s.handleSessionAccess(nil))
-		}
-	}
+func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
+	api := auth.Group("/api")
 
 	s.initSSE(api)
 
 	api.GET("/stats", s.getStats)
+
+	api.GET("/:project_id/settings/users", s.getUsers)
 
 	api.POST("/:project_id/settings/access_token", s.createAccessToken)
 	api.GET("/:project_id/settings/access_tokens", s.getAccessTokens)

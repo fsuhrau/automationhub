@@ -4,9 +4,7 @@ import {
     Alert,
     Box,
     Button,
-    FormControl,
     FormControlLabel,
-    InputLabel,
     MenuItem,
     Radio,
     RadioGroup,
@@ -43,6 +41,7 @@ import {isEqual} from "lodash"
 import {IdName} from "../../helper/enum_to_array";
 import {getUnityTestCategoryTypes, UnityTestCategory} from "../../types/unity.test.category.type.enum";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
+import {useError} from "../../ErrorProvider";
 
 function getSteps(): Array<string> {
     return ['Select Test Type', 'Test Configuration', 'Device Selection'];
@@ -61,8 +60,9 @@ export function getDeviceOption(): Array<IdName> {
 
 const AddTestPage: React.FC = () => {
 
-     const {project, projectIdentifier} = useProjectContext();
+    const {project, projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
+    const {setError} = useError()
 
     enum TestCreationSteps {
         Basics,
@@ -138,7 +138,7 @@ const AddTestPage: React.FC = () => {
         createTest(projectIdentifier, appId, requestData).then(response => {
             navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
-            console.log(ex);
+            setError(ex);
         });
     };
 
@@ -158,7 +158,7 @@ const AddTestPage: React.FC = () => {
         const app = project.Apps.find(a => a.ID === appId);
         getAllDevices(projectIdentifier, app?.Platform).then(response => {
             setDevices(response.data);
-        })
+        }).catch(ex => setError(ex))
     }, [project.Apps, projectIdentifier, appId])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
@@ -211,7 +211,8 @@ const AddTestPage: React.FC = () => {
                                     <Grid container={true} justifyContent="center" spacing={5}>
                                         <Grid>
                                             {activeStep === TestCreationSteps.Basics && (
-                                                <Grid container={true} justifyContent="center" spacing={2} alignItems={'center'}>
+                                                <Grid container={true} justifyContent="center" spacing={2}
+                                                      alignItems={'center'}>
                                                     <Grid size={6}>
                                                         <TextField required={true} id="test-name"
                                                                    placeholder={"Name"}
@@ -332,17 +333,17 @@ const AddTestPage: React.FC = () => {
 
                                                                                     <TableRow>
                                                                                         <TableCell>
-                                                                                                <TextField
-                                                                                                    fullWidth={true}
-                                                                                                    required={true}
-                                                                                                    id="test-name"
-                                                                                                    placeholder={"Category Name"}
-                                                                                                    value={state.category}
-                                                                                                    onChange={event => setState(prevState => ({
-                                                                                                        ...prevState,
-                                                                                                        category: event.target.value
-                                                                                                    }))}
-                                                                                                />
+                                                                                            <TextField
+                                                                                                fullWidth={true}
+                                                                                                required={true}
+                                                                                                id="test-name"
+                                                                                                placeholder={"Category Name"}
+                                                                                                value={state.category}
+                                                                                                onChange={event => setState(prevState => ({
+                                                                                                    ...prevState,
+                                                                                                    category: event.target.value
+                                                                                                }))}
+                                                                                            />
                                                                                         </TableCell>
                                                                                         <TableCell>
                                                                                             <Button variant={'outlined'}

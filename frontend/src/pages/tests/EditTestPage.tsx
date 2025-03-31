@@ -35,6 +35,7 @@ import {UnityTestCategory} from "../../types/unity.test.category.type.enum";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import Grid from "@mui/material/Grid2";
 import {TitleCard} from "../../components/title.card.component";
+import {useError} from "../../ErrorProvider";
 
 interface TestContentProps {
     test: ITestData
@@ -44,6 +45,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const {project, projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
+    const {setError} = useError()
 
     const navigate = useNavigate();
 
@@ -115,7 +117,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         } as UpdateTestData).then(response => {
             navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
-            console.log(ex);
+            setError(ex);
         });
     };
 
@@ -129,7 +131,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
     useEffect(() => {
         getAllDevices(projectIdentifier, app?.Platform).then(response => {
             setDevices(response.data);
-        })
+        }).catch(ex => setError(ex))
     }, [projectIdentifier, app?.Platform])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {

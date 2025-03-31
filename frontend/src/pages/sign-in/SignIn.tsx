@@ -14,10 +14,10 @@ import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import {styled} from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
-import {FacebookIcon, GoogleIcon, AutomationHubIcon} from './CustomIcons';
-import AppTheme from '../../shared-theme/AppTheme';
+import {AutomationHubIcon, FacebookIcon, GoogleIcon} from './CustomIcons';
 import ColorModeSelect from '../../shared-theme/ColorModeSelect';
 import {useAuth} from "../../hooks/AuthProvider";
+import {useError} from "../../ErrorProvider";
 
 const Card = styled(MuiCard)(({theme}) => ({
     display: 'flex',
@@ -63,32 +63,44 @@ const SignInContainer = styled(Stack)(({theme}) => ({
 
 export default function SignIn(props: { disableCustomTheme?: boolean }) {
 
-    const [emailError, setEmailError] = React.useState(false);
-    const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
-
-    const [passwordError, setPasswordError] = React.useState(false);
-    const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
-
-    const [open, setOpen] = React.useState(false);
-
     const auth = useAuth();
+    const {error, setError} = useError();
+
+    const [uiState, setUiState] = React.useState<{
+        emailError: boolean,
+        emailErrorMessage: string,
+        passwordError: boolean,
+        passwordErrorMessage: string,
+        open: boolean
+    }>({
+        emailError: false,
+        emailErrorMessage: '',
+        passwordError: false,
+        passwordErrorMessage: '',
+        open: false
+    })
+
 
     const handleClickOpen = () => {
-        setOpen(true);
+        setUiState(prevState => ({...prevState, open: true}));
     };
 
     const handleClose = () => {
-        setOpen(false);
+        setUiState(prevState => ({...prevState, open: false}));
     };
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        setError(null);
+
         event.preventDefault();
-        if (emailError || passwordError) {
+        if (uiState.emailError || uiState.passwordError) {
             return;
         }
 
         const data = new FormData(event.currentTarget);
-        auth.loginAction({email: data.get('email') as string, password: data.get('password') as string})
+        auth.loginAction({email: data.get('email') as string, password: data.get('password') as string}, error => {
+            setError(error);
+        })
     };
 
     const validateInputs = () => {
@@ -98,21 +110,17 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
         let isValid = true;
 
         if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-            setEmailError(true);
-            setEmailErrorMessage('Please enter a valid email address.');
+            setUiState(prevState => ({...prevState, emailError: true, emailErrorMessage: 'Please enter a valid email address.'}));
             isValid = false;
         } else {
-            setEmailError(false);
-            setEmailErrorMessage('');
+            setUiState(prevState => ({...prevState, emailError: false, emailErrorMessage: ''}));
         }
 
         if (!password.value || password.value.length < 6) {
-            setPasswordError(true);
-            setPasswordErrorMessage('Password must be at least 6 characters long.');
+            setUiState(prevState => ({...prevState, passwordError: true, passwordErrorMessage: 'Password must be at least 6 characters long.'}));
             isValid = false;
         } else {
-            setPasswordError(false);
-            setPasswordErrorMessage('');
+            setUiState(prevState => ({...prevState, passwordError: false, passwordErrorMessage: ''}));
         }
 
         return isValid;
@@ -146,8 +154,8 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                         <FormControl>
                             <FormLabel htmlFor="email">Email</FormLabel>
                             <TextField
-                                error={emailError}
-                                helperText={emailErrorMessage}
+                                error={uiState.emailError}
+                                helperText={uiState.emailErrorMessage}
                                 id="email"
                                 type="email"
                                 name="email"
@@ -157,14 +165,14 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                                 required
                                 fullWidth
                                 variant="outlined"
-                                color={emailError ? 'error' : 'primary'}
+                                color={uiState.emailError ? 'error' : 'primary'}
                             />
                         </FormControl>
                         <FormControl>
                             <FormLabel htmlFor="password">Password</FormLabel>
                             <TextField
-                                error={passwordError}
-                                helperText={passwordErrorMessage}
+                                error={uiState.passwordError}
+                                helperText={uiState.passwordErrorMessage}
                                 name="password"
                                 placeholder="••••••"
                                 type="password"
@@ -174,14 +182,14 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                                 required
                                 fullWidth
                                 variant="outlined"
-                                color={passwordError ? 'error' : 'primary'}
+                                color={uiState.passwordError ? 'error' : 'primary'}
                             />
                         </FormControl>
                         <FormControlLabel
                             control={<Checkbox value="remember" color="primary"/>}
                             label="Remember me"
                         />
-                        <ForgotPassword open={open} handleClose={handleClose}/>
+                        <ForgotPassword open={uiState.open} handleClose={handleClose}/>
                         <Button
                             type="submit"
                             fullWidth

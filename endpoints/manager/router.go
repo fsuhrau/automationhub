@@ -48,8 +48,8 @@ func (s *Service) socketHandler(c *gin.Context, w http.ResponseWriter, r *http.R
 	s.registerDevices(msg, conn, c)
 }
 
-func (s *Service) RegisterRoutes(r *gin.Engine) error {
-	deviceApi := r.Group("/manager")
+func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
+	deviceApi := auth.Group("/manager")
 	deviceApi.GET("/register", func(c *gin.Context) {
 		s.socketHandler(c, c.Writer, c.Request)
 	})

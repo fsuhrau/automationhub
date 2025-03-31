@@ -26,6 +26,7 @@ import _ from "lodash";
 import {TitleCard} from "./title.card.component";
 import Grid from "@mui/material/Grid";
 import {useProjectContext} from "../hooks/ProjectProvider";
+import {useError} from "../ErrorProvider";
 
 interface DeviceChangePayload {
     DeviceID: number,
@@ -53,11 +54,10 @@ export const deviceState = (state: number): string => {
 const DeviceTable: React.FC = () => {
 
     const {projectIdentifier} = useProjectContext();
-
+    const {setError} = useError()
     const navigate = useNavigate();
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
-
     const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
 
     useEffect(() => {
@@ -73,7 +73,7 @@ const DeviceTable: React.FC = () => {
         getAllDevices(projectIdentifier).then(response => {
             setDevices(response.data);
         }).catch(e => {
-            console.log(e);
+            setError(e);
         });
     }, [projectIdentifier]);
 
@@ -94,7 +94,7 @@ const DeviceTable: React.FC = () => {
         runTest(projectIdentifier, selectedDeviceID, testName, envParameter).then(response => {
             console.log(response.data);
         }).catch(ex => {
-            console.log(ex);
+            setError(ex);
         });
     };
 
@@ -109,7 +109,7 @@ const DeviceTable: React.FC = () => {
     const unlockDevice = (deviceId: string) => {
         postUnlockDevice(projectIdentifier, deviceId).then(response => {
             setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
-        });
+        }).catch(ex => setError(ex));
     }
 
     const openDetails = (id: number): void => {

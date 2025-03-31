@@ -21,11 +21,13 @@ import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid2";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
+import {useError} from "../../ErrorProvider";
 
 const AppBundlesPage: React.FC = () => {
 
     const {project, projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
+    const {setError} = useError()
 
     const navigate = useNavigate();
 
@@ -41,8 +43,8 @@ const AppBundlesPage: React.FC = () => {
         if (projectIdentifier !== null && appId != null) {
             getAppBundles(projectIdentifier, appId as number).then(response => {
                 setBundles(response.data);
-            }).catch(e => {
-                console.log(e);
+            }).catch(ex => {
+                setError(ex);
             });
         }
     }, [projectIdentifier, appId]);
@@ -57,7 +59,7 @@ const AppBundlesPage: React.FC = () => {
                 }
                 return newState;
             });
-        });
+        }).catch(ex => setError(ex));
     };
 
     return (

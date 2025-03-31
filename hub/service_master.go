@@ -32,7 +32,7 @@ func (s *Service) RunMaster(nodeManager *NodeManager, sessionManager *SessionMan
 		nodeManager.Run(ctx)
 	}
 
-	s.router.GET("/ping", func(c *gin.Context) {
+	s.publicRouter.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
 
@@ -41,7 +41,7 @@ func (s *Service) RunMaster(nodeManager *NodeManager, sessionManager *SessionMan
 	}
 
 	runOn := fmt.Sprintf(":%d", s.cfg.Port)
-	err := s.router.Run(runOn)
+	err := s.publicRouter.Run(runOn)
 	logrus.Infof("Stopping Server")
 	if err != nil {
 		return err

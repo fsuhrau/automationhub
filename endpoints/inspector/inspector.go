@@ -28,7 +28,7 @@ func New(logger *logrus.Logger, dm manager.Devices, sm manager.Sessions) *Inspec
 	}
 }
 
-func (s *Inspector) RegisterRoutes(r *gin.Engine) error {
+func (s *Inspector) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	render := renderer.New()
 	render.Debug = gin.IsDebugging()
 	render.Layout = "layouts/index"

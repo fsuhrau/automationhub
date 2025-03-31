@@ -1,6 +1,9 @@
 package hub
 
 import (
+	"github.com/fsuhrau/automationhub/authentication/github"
+	"github.com/fsuhrau/automationhub/authentication/oauth2"
+	"github.com/fsuhrau/automationhub/authentication/password"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -25,12 +28,13 @@ type Service struct {
 	deviceManager manager.Devices
 	logger        *logrus.Logger
 	// hostIP        net.IP
-	endpoints []endpoints.ServiceEndpoint
-	router    *gin.Engine
-	cfg       config.Service
-	hooks     []hooks.Hook
-	sd        storage.Device
-	db        *gorm.DB
+	endpoints           []endpoints.ServiceEndpoint
+	publicRouter        *gin.Engine
+	authenticatedRouter *gin.RouterGroup
+	cfg                 config.Service
+	hooks               []hooks.Hook
+	sd                  storage.Device
+	db                  *gorm.DB
 }
 
 func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg config.Service, sd storage.Device, db *gorm.DB) *Service {
@@ -54,7 +58,51 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 		MaxAge:           12 * time.Hour,
 	}))
 
-	return &Service{logger: logger, deviceManager: devices, router: router, cfg: cfg, sd: sd, db: db}
+	var (
+		sessionFunc    gin.HandlerFunc
+		sessionHandler gin.HandlerFunc
+		authRouter     *gin.RouterGroup
+		authRoutes     func(group *gin.Engine)
+	)
+
+	if cfg.Auth.AuthenticationRequired() {
+		if cfg.Auth.OAuth2 != nil {
+			oauth2.Setup(db, cfg.Auth.OAuth2.RedirectUrl, cfg.Auth.OAuth2.AuthUrl, cfg.Auth.OAuth2.TokenUrl, cfg.Auth.OAuth2.UserUrl, cfg.Auth.OAuth2.Credentials, cfg.Auth.Github.Scopes, []byte(cfg.Auth.Github.Secret))
+			sessionFunc = oauth2.Session("session")
+			sessionHandler = oauth2.SessionHandler()
+			authRoutes = oauth2.Routes
+		} else if cfg.Auth.Github != nil {
+			github.Setup(db, cfg.Auth.Github.RedirectUrl, cfg.Auth.Github.Credentials, cfg.Auth.Github.Scopes, []byte(cfg.Auth.Github.Secret))
+			sessionFunc = github.Session("session")
+			sessionHandler = github.SessionHandler()
+			authRoutes = github.Routes
+		} else if cfg.Auth.Password != nil {
+			password.Setup(db, []byte(cfg.Auth.Password.Secret))
+			sessionFunc = password.Session("session")
+			sessionHandler = password.SessionHandler()
+			authRoutes = password.Routes
+		}
+	} else {
+
+		router.GET("/auth/session", func(context *gin.Context) {
+			context.JSON(200, gin.H{"status": "ok"})
+		})
+	}
+
+	if sessionFunc != nil {
+		router.Use(sessionFunc)
+	}
+
+	if authRoutes != nil {
+		authRoutes(router)
+	}
+
+	authRouter = router.Group("/")
+	if sessionHandler != nil {
+		authRouter.Use(sessionHandler)
+	}
+
+	return &Service{logger: logger, deviceManager: devices, publicRouter: router, authenticatedRouter: authRouter, cfg: cfg, sd: sd, db: db}
 }
 
 func newRouter(logger *logrus.Logger) *gin.Engine {
@@ -65,7 +113,7 @@ func newRouter(logger *logrus.Logger) *gin.Engine {
 }
 
 func (s *Service) AddEndpoint(endpoint endpoints.ServiceEndpoint) error {
-	if err := endpoint.RegisterRoutes(s.router); err != nil {
+	if err := endpoint.RegisterRoutes(s.publicRouter, s.authenticatedRouter); err != nil {
 		return err
 	}
 	s.endpoints = append(s.endpoints, endpoint)

@@ -26,7 +26,7 @@ func (s *Service) RunNode(handler *node.ReconnectHandler) error {
 
 	go handler.ObserveConnectionState(ctx, s.cfg, s.deviceManager.Managers())
 
-	err := s.router.Run(fmt.Sprintf(":%d", s.cfg.Port))
+	err := s.publicRouter.Run(fmt.Sprintf(":%d", s.cfg.Port))
 	logrus.Infof("Stopping Server")
 	if err != nil {
 		return err

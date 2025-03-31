@@ -25,6 +25,7 @@ import Grid from "@mui/material/Grid2";
 import {TextareaAutosize as BaseTextareaAutosize} from '@mui/base/TextareaAutosize';
 import {getTestTypeName} from "../types/test.type.enum";
 import {getTestExecutionName} from "../types/test.execution.type.enum";
+import {useError} from "../ErrorProvider";
 
 interface TestTableProps {
     appId: number | null
@@ -34,6 +35,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const {appId} = props;
     const {project, projectIdentifier} = useProjectContext();
+    const {setError} = useError()
 
     const navigate = useNavigate();
 
@@ -158,7 +160,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                     }
                 }));
             }).catch(e => {
-                console.log(e);
+                setError(e);
             });
         }
     }, [projectIdentifier, appId]);
@@ -172,7 +174,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             }).then(response => {
                 navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
-                console.log(error);
+                setError(error);
             });
         }
     };

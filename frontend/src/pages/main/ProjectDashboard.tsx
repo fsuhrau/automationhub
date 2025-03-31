@@ -10,10 +10,12 @@ import ProjectDashboardTestResultsDataGrid, {
 } from "../../components/ProjectDashboardTestResultsDataGrid";
 import {duration} from "../../types/test.protocol";
 import {TitleCard} from "../../components/title.card.component";
+import {useError} from "../../ErrorProvider";
 
 const ProjectDashboard: React.FC = () => {
 
     const {projectIdentifier} = useProjectContext();
+    const {setError} = useError()
 
     const [stats, setStats] = useState<StatCardProps[]>([]);
     const [resultData, setResultData] = useState<ProjectDashboardTestResultsData[]>([]);
@@ -48,7 +50,7 @@ const ProjectDashboard: React.FC = () => {
                     }
                 }));
             }).catch(e => {
-                console.log(e);
+                setError(e);
             });
         }
     }, []);

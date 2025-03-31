@@ -5,11 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/authentication"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -32,6 +35,7 @@ var (
 	state          string
 	store          sessions.CookieStore
 	userRequestURL string
+	db             *gorm.DB
 )
 
 func randToken() string {
@@ -42,9 +46,10 @@ func randToken() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func Setup(redirectURL, authURL, tokenURL, userURL, credFile string, scopes []string, secret []byte) {
+func Setup(gormDb *gorm.DB, redirectURL, authURL, tokenURL, userURL, credFile string, scopes []string, secret []byte) {
 	userRequestURL = userURL
 	store = sessions.NewCookieStore(secret)
+	db = gormDb
 	var c Credentials
 	file, err := ioutil.ReadFile(credFile)
 	if err != nil {
@@ -92,12 +97,18 @@ func init() {
 	gob.Register(authentication.User{})
 }
 
-func Auth() gin.HandlerFunc {
+func Routes(r *gin.Engine) {
+	r.GET("/auth/session", validateSessionRoute)
+	r.POST("/auth/logout", logoutRoute)
+	r.Any("/auth/oauth2", oauthRoute)
+}
+
+func SessionHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+
 		var (
 			ok       bool
 			authUser authentication.User
-			user     userResponse
 		)
 
 		// Handle the exchange code to initiate a transport.
@@ -109,48 +120,112 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		retrievedState := session.Get(authentication.StateKey)
-		if retrievedState != ctx.Query(authentication.StateKey) {
-			loginRedirect(ctx)
-			ctx.Abort()
-			return
-		}
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized", "url": "/auth/oauth2"})
+	}
+}
 
-		// TODO: oauth2.NoContext -> context.Context from stdlib
-		tok, err := conf.Exchange(oauth2.NoContext, ctx.Query(CodeKey))
-		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to do exchange: %v", err))
-			return
-		}
+func validateSessionRoute(ctx *gin.Context) {
+	session := sessions.Default(ctx)
 
-		client := conf.Client(oauth2.NoContext, tok)
-
-		req, err := http.NewRequest("GET", userRequestURL, nil)
-		// Headers
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tok.AccessToken))
-		req.Header.Add("Content-Type", "application/json; charset=utf-8")
-
-		// Fetch Request
-		resp, err := client.Do(req)
-		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to get user: %v", err))
-			return
-		}
-
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &user)
-
-		// save userinfo, which could be used in Handlers
-		authUser = authentication.User{
-			Login: user.Login,
-			Name:  user.Name,
-		}
+	mysession := session.Get(authentication.SessionKey)
+	if authUser, ok := mysession.(authentication.User); ok {
 		ctx.Set(authentication.UserKey, authUser)
+		ctx.JSON(http.StatusOK, gin.H{"user": authUser})
+		return
+	}
 
-		// populate cookie
-		session.Set(authentication.SessionKey, authUser)
+	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+}
+
+func logoutRoute(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+
+	mysession := session.Get(authentication.SessionKey)
+	if _, ok := mysession.(authentication.User); ok {
+		session.Delete(authentication.SessionKey)
 		if err := session.Save(); err != nil {
 			logrus.Errorf("Failed to save session: %v", err)
 		}
+	}
+
+	ctx.JSON(http.StatusOK, nil)
+	return
+}
+
+func oauthRoute(ctx *gin.Context) {
+	var (
+		ok       bool
+		authUser authentication.User
+		user     userResponse
+	)
+
+	// Handle the exchange code to initiate a transport.
+	session := sessions.Default(ctx)
+	mysession := session.Get(authentication.SessionKey)
+	if authUser, ok = mysession.(authentication.User); ok {
+		ctx.Set(authentication.UserKey, authUser)
+		ctx.Next()
+		return
+	}
+
+	retrievedState := session.Get(authentication.StateKey)
+	if retrievedState != ctx.Query(authentication.StateKey) {
+		loginRedirect(ctx)
+		ctx.Abort()
+		return
+	}
+
+	// TODO: oauth2.NoContext -> context.Context from stdlib
+	tok, err := conf.Exchange(oauth2.NoContext, ctx.Query(CodeKey))
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to do exchange: %v", err))
+		return
+	}
+
+	client := conf.Client(oauth2.NoContext, tok)
+
+	req, err := http.NewRequest("GET", userRequestURL, nil)
+	// Headers
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tok.AccessToken))
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+
+	// Fetch Request
+	resp, err := client.Do(req)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to get user: %v", err))
+		return
+	}
+
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &user)
+
+	auth := models.UserAuth{
+		ProviderUserID: user.Login,
+		Provider:       ProviderName,
+	}
+
+	if err := db.First(&auth, "provider = ? and provider_user_id = ?", ProviderName, auth.ProviderUserID).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		u := models.User{
+			Name: user.Name,
+			Role: "",
+			Auth: []models.UserAuth{auth},
+		}
+		if err := db.Create(&u).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+			return
+		}
+	}
+
+	// save userinfo, which could be used in Handlers
+	authUser = authentication.User{
+		Login: user.Login,
+		Name:  user.Name,
+	}
+	ctx.Set(authentication.UserKey, authUser)
+
+	// populate cookie
+	session.Set(authentication.SessionKey, authUser)
+	if err := session.Save(); err != nil {
+		logrus.Errorf("Failed to save session: %v", err)
 	}
 }

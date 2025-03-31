@@ -23,8 +23,8 @@ func New(config config.Service, dm manager.Devices, nm manager.Nodes, ch node.Co
 	}
 }
 
-func (s *nodeMaster) RegisterRoutes(r *gin.Engine) error {
-	apiNode := r.Group("/node")
+func (s *nodeMaster) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
+	apiNode := auth.Group("/node")
 
 	apiNode.POST("/log", s.Log)
 	apiNode.POST("/action", s.Action)

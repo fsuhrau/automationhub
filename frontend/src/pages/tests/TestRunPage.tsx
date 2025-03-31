@@ -40,6 +40,7 @@ import Grid from "@mui/material/Grid2";
 import TestStatusIconComponent from "../../components/test-status-icon.component";
 import Collapse from "@mui/material/Collapse";
 import Link from "@mui/material/Link";
+import {useError} from "../../ErrorProvider";
 
 interface TestRunPageProps {
     testRun: ITestRunData
@@ -94,6 +95,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     const {appId} = useApplicationContext();
 
     const {testRun, nextRunId, prevRunId} = props;
+    const {setError} = useError()
 
     const testContext = useContext(TestContext);
     const {test, setTest} = testContext;
@@ -201,7 +203,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         }).then(response => {
             navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
         }).catch(error => {
-            console.log(error);
+            setError(error);
         });
     };
 
@@ -209,7 +211,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         cancelTestRun(projectIdentifier, appId, testRun.TestID, testRun.ID!).then(response => {
             console.log("Test run cancelled", response);
         }).catch(error => {
-            console.log(error);
+            setError(error);
         });
     };
 

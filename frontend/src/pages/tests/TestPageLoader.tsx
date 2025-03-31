@@ -7,6 +7,7 @@ import { getTest } from '../../services/test.service';
 import ShowTestPage from './ShowTestPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
+import {useError} from "../../ErrorProvider";
 
 interface TestPageProps {
     edit: boolean
@@ -16,6 +17,7 @@ const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
     const { edit } = props;
 
     const {projectIdentifier} = useProjectContext();
+    const {setError} = useError()
 
     const { testId } = useParams();
     const { appId } = useApplicationContext()
@@ -28,7 +30,7 @@ const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
             getTest(projectIdentifier, appId, testId).then(response => {
                 setTest(response.data);
             }).catch(ex => {
-                console.log(ex);
+                setError(ex);
             });
         }
     }, [projectIdentifier, appId, testId]);

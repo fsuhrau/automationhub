@@ -16,6 +16,7 @@ import {useProjectContext} from "../hooks/ProjectProvider";
 import {useDropzone} from "react-dropzone";
 import {useApplicationContext} from "../hooks/ApplicationProvider";
 import Grid from "@mui/material/Grid2";
+import {useError} from "../ErrorProvider";
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {
     return (
@@ -43,6 +44,7 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
 
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
+    const {setError} = useError()
 
     const {binaryId, onSelectionChanged, upload} = props;
 
@@ -68,7 +70,8 @@ const BinarySelection: React.FC<BinarySelectionProps> = (props) => {
         if (appId !== null) {
             getAppBundles(projectIdentifier, appId as number).then(response => {
                 setState(prevState => ({...prevState, binaries: response.data}));
-            }).catch(e => {
+            }).catch(ex => {
+                setError(ex)
             });
         }
     }, [binaryId, projectIdentifier, appId]);

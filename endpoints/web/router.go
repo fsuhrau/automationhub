@@ -42,52 +42,12 @@ func (s *wf) StaticRoute(context *gin.Context) {
 	context.FileFromFS(file, s.filesystem)
 }
 
-func (s *wf) RegisterRoutes(r *gin.Engine) error {
+func (s *wf) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	s.filesystem = http.FS(Content)
-	var (
-		sessionFunc gin.HandlerFunc
-		authFunc    gin.HandlerFunc
-		authRouter  *gin.RouterGroup
-		authRoutes  func(group *gin.Engine)
-	)
 
-	/*
-
-		TODO check authentication
-			if s.cfg.Auth.AuthenticationRequired() {
-				if s.cfg.Auth.OAuth2 != nil {
-					oauth2.Setup(s.cfg.Auth.OAuth2.RedirectUrl, s.cfg.Auth.OAuth2.AuthUrl, s.cfg.Auth.OAuth2.TokenUrl, s.cfg.Auth.OAuth2.UserUrl, s.cfg.Auth.OAuth2.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-					sessionFunc = oauth2.Session("session")
-					authFunc = oauth2.Auth()
-				} else if s.cfg.Auth.Github != nil {
-					github.Setup(s.cfg.Auth.Github.RedirectUrl, s.cfg.Auth.Github.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-					sessionFunc = github.Session("session")
-					authFunc = github.Auth()
-				} else if s.cfg.Auth.Password != nil {
-					password.Setup(s.db, []byte(s.cfg.Auth.Password.Secret))
-					sessionFunc = password.Session("session")
-					authFunc = password.Auth()
-					authRoutes = password.Routes
-				}
-			}
-	*/
-	if sessionFunc != nil {
-		r.Use(sessionFunc)
-	}
-
-	if authRoutes != nil {
-		authRoutes(r)
-	}
-
-	authRouter = r.Group("/")
-	if authFunc != nil {
-		authRouter.Use(authFunc)
-	}
-
-	uploads := authRouter.Group("/upload")
+	uploads := auth.Group("/upload")
 	uploads.Static("/", apps.AppStoragePath)
-
-	data := authRouter.Group("/data")
+	data := auth.Group("/data")
 	data.Static("/", apps.TestDataPath)
 
 	r.GET("/static/*filepath", s.StaticRoute)

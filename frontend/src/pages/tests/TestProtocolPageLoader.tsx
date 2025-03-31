@@ -7,6 +7,7 @@ import ITestRunData from '../../types/test.run';
 import {Backdrop, CircularProgress} from '@mui/material';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
+import {useError} from "../../ErrorProvider";
 
 const TestProtocolPageLoader: React.FC = () => {
 
@@ -14,6 +15,7 @@ const TestProtocolPageLoader: React.FC = () => {
 
     const {testId, runId, protocolId} = useParams();
     const {appId} = useApplicationContext()
+    const {setError} = useError()
 
     const [state, setState] = useState<{
         loading: boolean,
@@ -35,7 +37,7 @@ const TestProtocolPageLoader: React.FC = () => {
                 protocol: protocol === undefined ? null : protocol,
             }));
         }).catch(ex => {
-            console.log(ex);
+            setError(ex);
         });
     }, [testId, runId, protocolId, appId]);
 

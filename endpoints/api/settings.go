@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+func (s *Service) getUsers(c *gin.Context) {
+	var users []models.User
+	if err := s.db.Find(&users).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
 func (s *Service) createAccessToken(c *gin.Context) {
 	type Request struct {
 		Name      string

@@ -3,6 +3,7 @@ import { AxiosResponse } from 'axios';
 import IAccessTokenData from '../types/access.token';
 import { Dayjs } from "dayjs";
 import { INodeData } from "../types/node";
+import {IUser} from "../hooks/AuthProvider";
 
 
 export const getAccessTokens = (projectId: string): Promise<AxiosResponse<IAccessTokenData[]>> => {
@@ -43,3 +44,6 @@ export const deleteNode = (projectId: string, id: number): Promise<AxiosResponse
     return http.delete(`/${projectId}/settings/nodes/${ id }`);
 };
 
+export const getUsers = (projectId: string): Promise<AxiosResponse<IUser[]>> => {
+    return http.get(`/${projectId}/settings/users`);
+};

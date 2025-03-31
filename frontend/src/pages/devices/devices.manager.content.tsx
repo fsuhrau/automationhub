@@ -16,12 +16,14 @@ import TableBody from '@mui/material/TableBody';
 import { useNavigate } from 'react-router-dom';
 import {deviceState} from "../../components/device-table.component";
 import {useProjectContext} from "../../hooks/ProjectProvider";
+import {useError} from "../../ErrorProvider";
 
 const DevicesManagerContent: React.FC = () => {
 
     const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
+    const {setError} = useError()
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
@@ -33,14 +35,14 @@ const DevicesManagerContent: React.FC = () => {
         getAllDevices(projectIdentifier).then(response => {
             setDevices(response.data);
         }).catch(e => {
-            console.log(e);
+            setError(e);
         });
     }, [projectIdentifier]);
 
     const unlockDevice = (deviceId: string) => {
         postUnlockDevice(projectIdentifier, deviceId).then(response => {
             setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
-        });
+        }).catch(ex => setError(ex));
     }
 
 

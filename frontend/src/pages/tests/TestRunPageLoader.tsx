@@ -6,6 +6,7 @@ import TestRunPage from './TestRunPage';
 import {Backdrop, CircularProgress} from '@mui/material';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
+import {useError} from "../../ErrorProvider";
 
 const TestRunPageLoader: React.FC = () => {
 
@@ -13,6 +14,7 @@ const TestRunPageLoader: React.FC = () => {
     const {appId} = useApplicationContext();
 
     const {testId, runId} = useParams();
+    const {setError} = useError()
 
     const [uiState, setUiState] = useState<{
         testRun: ITestRunData | null,
@@ -34,7 +36,7 @@ const TestRunPageLoader: React.FC = () => {
                     prevRunId: response.data.PrevRunId
                 }))
             }).catch(ex => {
-                console.log(ex);
+                setError(ex);
             });
         } else {
             getLastRun(projectIdentifier, appId as number, testId as string).then(response => {
@@ -45,7 +47,7 @@ const TestRunPageLoader: React.FC = () => {
                     prevRunId: response.data.PrevRunId
                 }))
             }).catch(ex => {
-                console.log(ex);
+                setError(ex);
             });
         }
     }, [projectIdentifier, testId, appId, runId]);

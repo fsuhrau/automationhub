@@ -37,7 +37,7 @@ func New(logger *logrus.Logger, db *gorm.DB, rpcNode *node.RPCNode, dm manager.D
 	}
 }
 
-func (s *Service) RegisterRoutes(r *gin.Engine) error {
+func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	// register self as rpc server
 	return rpc.Register(s.rpcNode)
 }
