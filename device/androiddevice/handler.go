@@ -27,6 +27,7 @@ type Handler struct {
 	init           bool
 	masterURL      string
 	nodeIdentifier string
+	authToken      *string
 }
 
 func NewHandler(ds storage.Device) *Handler {
@@ -40,7 +41,8 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
+	m.authToken = authToken
 	m.init = true
 	m.masterURL = masterUrl
 	m.nodeIdentifier = nodeIdentifier
@@ -58,8 +60,8 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 			installedApps: make(map[string]string),
 		}
 		dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.devices[deviceId] = dev
 
 		// connect all remote devs
@@ -229,8 +231,8 @@ func (m *Handler) RefreshDevices(force bool) error {
 				},
 			}
 
-			m.devices[deviceID].SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, deviceID))
-			m.devices[deviceID].AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, deviceID))
+			m.devices[deviceID].SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
+			m.devices[deviceID].AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
 
 			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.deviceStorage.Update(m.Name(), m.devices[deviceID])

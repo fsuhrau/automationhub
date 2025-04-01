@@ -1,10 +1,13 @@
 package api
 
 import (
+	"errors"
+	"fmt"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
+	"gorm.io/gorm"
 	"net/http"
 	"time"
 )
@@ -34,7 +37,16 @@ func (s *Service) createAccessToken(c *gin.Context) {
 		return
 	}
 
+	projectId := c.Param("project_id")
+	var project models.Project
+	if err := s.db.First(&project, "identifier = ?", projectId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		s.error(c, http.StatusNotFound, fmt.Errorf("project "+projectId+" not found"))
+		return
+	}
+
 	newToken := models.AccessToken{
+		ProjectID: &project.ID,
+		NodeID:    nil,
 		Token:     id.String(),
 		ExpiresAt: req.ExpiresAt,
 		Name:      req.Name,
@@ -49,8 +61,16 @@ func (s *Service) createAccessToken(c *gin.Context) {
 }
 
 func (s *Service) getAccessTokens(c *gin.Context) {
+
+	projectId := c.Param("project_id")
+	var project models.Project
+	if err := s.db.First(&project, "identifier = ?", projectId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		s.error(c, http.StatusNotFound, fmt.Errorf("project "+projectId+" not found"))
+		return
+	}
+
 	var accessTokens []models.AccessToken
-	if err := s.db.Find(&accessTokens).Error; err != nil {
+	if err := s.db.Find(&accessTokens, "project_id = ?", project.ID).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -94,6 +114,25 @@ func (s *Service) createNode(c *gin.Context) {
 	}
 
 	if err := s.db.Create(&newNode).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	token, err := uuid.NewV4()
+	if err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	newToken := models.AccessToken{
+		NodeID:    &newNode.ID,
+		ProjectID: nil,
+		Token:     token.String(),
+		ExpiresAt: nil,
+		Name:      req.Name,
+	}
+
+	if err := s.db.Create(&newToken).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

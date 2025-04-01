@@ -45,7 +45,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
 		return err
@@ -55,8 +55,8 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
 		dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.devices[deviceId] = dev
 	}
 	return nil

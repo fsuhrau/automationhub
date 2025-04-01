@@ -4,6 +4,7 @@ import (
 	"github.com/fsuhrau/automationhub/authentication/github"
 	"github.com/fsuhrau/automationhub/authentication/oauth2"
 	"github.com/fsuhrau/automationhub/authentication/password"
+	"github.com/fsuhrau/automationhub/authentication/token"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -83,7 +84,6 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 			authRoutes = password.Routes
 		}
 	} else {
-
 		router.GET("/auth/session", func(context *gin.Context) {
 			context.JSON(200, gin.H{"status": "ok"})
 		})
@@ -99,7 +99,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 
 	authRouter = router.Group("/")
 	if sessionHandler != nil {
-		authRouter.Use(sessionHandler)
+		authRouter.Use(token.SessionHandler(db, sessionHandler))
 	}
 
 	return &Service{logger: logger, deviceManager: devices, publicRouter: router, authenticatedRouter: authRouter, cfg: cfg, sd: sd, db: db}

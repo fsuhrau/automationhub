@@ -34,14 +34,20 @@ type DeviceManager struct {
 	upgrader       websocket.Upgrader
 	masterUrl      string
 	nodeIdentifier string
+	authToken      *string
 }
 
 func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceManager {
+	var authToken *string
+	if service.Auth.Token != nil {
+		authToken = &service.Auth.Token.AuthToken
+	}
 	return &DeviceManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
 		masterUrl:      service.MasterURL,
 		nodeIdentifier: service.Identifier,
+		authToken:      authToken,
 		deviceHandlers: make(map[string]device.Handler),
 		deviceCache:    make(map[string]*models.Device),
 		upgrader: websocket.Upgrader{
@@ -169,7 +175,7 @@ func (dm *DeviceManager) Run(ctx context.Context, runSocketListener bool) error 
 	dm.log.Debug("Starting device manager")
 
 	for _, v := range dm.deviceHandlers {
-		v.Init(dm.masterUrl, dm.nodeIdentifier)
+		v.Init(dm.masterUrl, dm.nodeIdentifier, dm.authToken)
 		v.Start()
 	}
 

@@ -7,7 +7,8 @@ import (
 
 type AccessToken struct {
 	gorm.Model
-	ProjectID uint
+	ProjectID *uint
+	NodeID    *uint
 	Name      string
 	Token     string
 	ExpiresAt *time.Time

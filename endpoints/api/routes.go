@@ -4,14 +4,11 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
-	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"net/http"
 	"sync"
-	"time"
 )
 
 type Service struct {
@@ -39,34 +36,6 @@ func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices,
 		sseBroker:       sse.NewBroker(),
 		cfg:             config,
 		runners:         make(map[string]tester.Interface),
-	}
-}
-
-func (s *Service) handleSessionAccess(fallbackFunc gin.HandlerFunc) gin.HandlerFunc {
-	return func(context *gin.Context) {
-		token := context.GetHeader("X-Auth-Token")
-		if len(token) == 0 && fallbackFunc != nil {
-			fallbackFunc(context)
-			return
-		}
-
-		// TODO: handle token authentication via web interface
-		if s.cfg.Auth.Token != nil {
-			var accessToken models.AccessToken
-			if err := s.db.First(&accessToken, "token = ?", token).Error; err != nil {
-				context.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
-			if accessToken.Token != token {
-				context.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
-
-			if accessToken.ExpiresAt != nil && accessToken.ExpiresAt.Before(time.Now()) {
-				context.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
-		}
 	}
 }
 

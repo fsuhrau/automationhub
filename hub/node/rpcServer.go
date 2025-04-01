@@ -204,7 +204,18 @@ func (s *RPCNode) UploadApp(req *UploadAppRequest, resp *BoolResponse) error {
 }
 
 func (s *RPCNode) downloadFile(progress *UploadProgress) {
-	resp, err := http.Get(progress.Request.URL)
+	req, err := http.NewRequest("GET", progress.Request.URL, nil)
+	if err != nil {
+		logrus.Error("Failed to create request: ", err)
+		return
+	}
+
+	if s.config.Auth.Token != nil {
+		req.Header.Set("X-Auth-Token", s.config.Auth.Token.AuthToken)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		logrus.Error("Failed to download file: ", err)
 		return

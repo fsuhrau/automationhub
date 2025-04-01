@@ -2,7 +2,7 @@ package device
 
 type Handler interface {
 	Name() string
-	Init(masterUrl string, nodeIdentifier string) error
+	Init(masterUrl string, nodeIdentifier string, authToken *string) error
 	Start() error
 	Stop() error
 	StartDevice(string) error

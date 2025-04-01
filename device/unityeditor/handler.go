@@ -46,7 +46,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	m.init = true
 	defer func() {
 		m.init = false
@@ -66,8 +66,8 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 			deviceID:        devs[i].DeviceIdentifier,
 		}
 		dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID))
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.mu.Lock()
 		m.devices[deviceId] = dev
 		m.mu.Unlock()

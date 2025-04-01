@@ -30,7 +30,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 
 	m.init = true
 
@@ -49,8 +49,8 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string) error {
 
 		dev.UpdateDeviceInfos()
 		//dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.DeviceID()))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.DeviceID()))
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.DeviceID(), authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.DeviceID(), authToken))
 		dev.SetDeviceState("StateBooted")
 		m.devices[dev.DeviceID()] = dev
 		m.deviceStorage.Update(m.Name(), dev)

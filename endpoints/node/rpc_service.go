@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
 	"github.com/matishsiao/goInfo"
+	"net/http"
 	"net/rpc"
 	"net/url"
 	"os"
@@ -20,6 +21,11 @@ func (s *Service) ConnectAndServe() {
 
 	// proxyURL, _ := url.Parse("http://10.35.111.236:8888")
 
+	headers := http.Header{}
+	if s.cfg.Auth.Token != nil {
+		headers.Set("X-Auth-Token", s.cfg.Auth.Token.AuthToken)
+	}
+
 	dialer := websocket.Dialer{
 		// Proxy:             http.ProxyURL(proxyURL),
 		HandshakeTimeout:  45 * time.Second,
@@ -27,7 +33,7 @@ func (s *Service) ConnectAndServe() {
 		WriteBufferSize:   protocol.SocketFrameSize,
 		EnableCompression: true,
 	}
-	c, _, err := dialer.Dial(serverURL.String(), nil)
+	c, _, err := dialer.Dial(serverURL.String(), headers)
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		return

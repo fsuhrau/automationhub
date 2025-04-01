@@ -14,6 +14,7 @@ type RemoteLogWriter struct {
 	node      string
 	deviceId  string
 	passed    bool
+	authToken *string
 }
 
 func (w *RemoteLogWriter) HasPassed() bool {
@@ -53,8 +54,8 @@ type request struct {
 	Other       string  `json:"other"`
 }
 
-func NewRemoteLogWriter(masterURL, nodeIdentifier, deviceId string) *RemoteLogWriter {
-	return &RemoteLogWriter{masterURL: masterURL, node: nodeIdentifier, deviceId: deviceId}
+func NewRemoteLogWriter(masterURL, nodeIdentifier, deviceId string, authToken *string) *RemoteLogWriter {
+	return &RemoteLogWriter{masterURL: masterURL, node: nodeIdentifier, deviceId: deviceId, authToken: authToken}
 }
 
 func (w *RemoteLogWriter) sendLog(log *request) error {
@@ -71,6 +72,9 @@ func (w *RemoteLogWriter) sendLog(log *request) error {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if w.authToken != nil {
+		req.Header.Set("X-Auth-Token", *w.authToken)
+	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)

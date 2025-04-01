@@ -66,7 +66,7 @@ func (h *Handler) Handle(payload events.NodeConnectedPayload) {
 	_ = h.RefreshDevices(true)
 }
 
-func (h *Handler) Init(masterUrl, nodeIdentifier string) error {
+func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	h.init = true
 	defer func() {
 		h.init = false

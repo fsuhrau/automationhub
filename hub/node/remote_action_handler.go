@@ -13,6 +13,7 @@ type RemoteActionHandler struct {
 	masterURL string
 	node      string
 	deviceId  string
+	authToken *string
 }
 
 type request struct {
@@ -21,8 +22,8 @@ type request struct {
 	Response *action.Response `json:"response"`
 }
 
-func NewRemoteActionHandler(masterURL, nodeIdentifier, deviceId string) *RemoteActionHandler {
-	return &RemoteActionHandler{masterURL: masterURL, node: nodeIdentifier, deviceId: deviceId}
+func NewRemoteActionHandler(masterURL, nodeIdentifier, deviceId string, authToken *string) *RemoteActionHandler {
+	return &RemoteActionHandler{masterURL: masterURL, node: nodeIdentifier, deviceId: deviceId, authToken: authToken}
 }
 
 func (w *RemoteActionHandler) OnActionResponse(d interface{}, response *action.Response) {
@@ -40,6 +41,9 @@ func (w *RemoteActionHandler) OnActionResponse(d interface{}, response *action.R
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if w.authToken != nil {
+		req.Header.Set("X-Auth-Token", *w.authToken)
+	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)

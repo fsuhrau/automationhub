@@ -28,6 +28,7 @@ type Hook struct {
 }
 
 type Token struct {
+	AuthToken string `yaml:"auth_token,omitempty" mapstructure:"auth_token"`
 }
 
 type Password struct {
@@ -42,7 +43,7 @@ type Auth struct {
 }
 
 func (a *Auth) AuthenticationRequired() bool {
-	return a.OAuth2 != nil || a.Github != nil || a.Token != nil || a.Password != nil
+	return a.OAuth2 != nil || a.Github != nil || a.Password != nil
 }
 
 type OAuth2 struct {
