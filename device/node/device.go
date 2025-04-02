@@ -3,8 +3,11 @@ package node
 import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"net"
 	"os/exec"
 	"time"
@@ -19,14 +22,25 @@ type NodeDevice struct {
 	deviceOSVersion  string
 	deviceName       string
 	deviceID         string
+	deviceType       int
 	targetVersion    string
+	platformType     models.PlatformType
 	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
 	lastUpdateAt     time.Time
 
-	nodeId      manager.NodeIdentifier
-	nodeManager manager.Nodes
+	nodeId          manager.NodeIdentifier
+	nodeManager     manager.Nodes
+	deviceParameter []models.DeviceParameter
+}
+
+func (d *NodeDevice) DeviceParameter() map[string]string {
+	parameter := make(map[string]string)
+	for _, p := range d.deviceParameter {
+		parameter[p.Key] = p.Value
+	}
+	return parameter
 }
 
 func (d *NodeDevice) GetNodeID() manager.NodeIdentifier {
@@ -37,6 +51,18 @@ func (d *NodeDevice) DeviceModel() string {
 	return d.deviceModel
 }
 
+func (d *NodeDevice) DeviceType() int {
+	return d.deviceType
+}
+
+func (d *NodeDevice) PlatformType() int {
+	return int(d.platformType)
+}
+
+func (d *NodeDevice) Parameter() string {
+	return ""
+}
+
 func (d *NodeDevice) DeviceOSName() string {
 	return d.deviceOSName
 }
@@ -44,6 +70,7 @@ func (d *NodeDevice) DeviceOSName() string {
 func (d *NodeDevice) DeviceOSVersion() string {
 	return d.deviceOSVersion
 }
+
 func (d *NodeDevice) TargetVersion() string {
 	return d.targetVersion
 }
@@ -72,6 +99,15 @@ func (d *NodeDevice) SetDeviceState(state string) {
 		d.deviceState = device.StateShutdown
 	default:
 		d.deviceState = device.StateUnknown
+	}
+}
+
+func (d *NodeDevice) UpdateDeviceInfosFromParameter(parameter string) {
+	switch d.platformType {
+	case models.PlatformTypeAndroid:
+		d.deviceParameter = androiddevice.UnpackDeviceParameter(parameter)
+	case models.PlatformTypeMac:
+		d.deviceParameter = macos.UnpackDeviceParameter(parameter)
 	}
 }
 

@@ -75,7 +75,7 @@ func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
 	deviceID := c.Param("device_id")
 	_ = deviceID
 	var device models.Device
-	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").Find(&device, "id = ?", deviceID).Error; err != nil {
+	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -97,7 +97,7 @@ func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 	_ = deviceID
 	var device models.Device
 
-	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").Find(&device, "id = ?", deviceID).Error; err != nil {
+	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -140,27 +140,27 @@ func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
 	}
 
 	var device models.Device
-	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").First(&device, deviceID).Error; err != nil {
+	if err := s.db.Preload("ConnectionParameter").Preload("CustomParameter").First(&device, deviceID).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	var ids []uint
-	for i := range device.Parameter {
+	for i := range device.CustomParameter {
 		exists := false
-		for d := range dev.Parameter {
-			if device.Parameter[i].Key == dev.Parameter[d].Key {
+		for d := range dev.CustomParameter {
+			if device.CustomParameter[i].Key == dev.CustomParameter[d].Key {
 				exists = true
 				break
 			}
 		}
 		if !exists {
-			ids = append(ids, device.Parameter[i].ID)
+			ids = append(ids, device.CustomParameter[i].ID)
 		}
 	}
 
 	if len(ids) > 0 {
-		if err := s.db.Delete(&models.DeviceParameter{}, "id in (?)", ids).Error; err != nil {
+		if err := s.db.Delete(&models.CustomParameter{}, "id in (?)", ids).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}

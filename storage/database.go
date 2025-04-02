@@ -57,6 +57,7 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 		migrations.AddGameMetricsToPerformance,
 		migrations.AddTargetVersionToDevice,
 		migrations.AddStartURLToTestRun,
+		migrations.RemoveParameterFromDevice,
 	})
 	m.InitSchema(migrations.InitSchema)
 

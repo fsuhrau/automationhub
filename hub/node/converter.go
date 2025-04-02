@@ -47,7 +47,10 @@ func toDeviceResponse(manager string, dev device2.Device) *DeviceResponse {
 		DeviceOSVersion: dev.DeviceOSVersion(),
 		ProjectDir:      "",
 		// DeviceIP:        dev.DeviceIP().String(),
-		DeviceModel: dev.DeviceModel(),
-		State:       fromDeviceState(dev.DeviceState()),
+		DeviceModel:     dev.DeviceModel(),
+		State:           fromDeviceState(dev.DeviceState()),
+		DeviceType:      int32(dev.DeviceType()),
+		DeviceParameter: dev.Parameter(),
+		PlatformType:    int32(dev.PlatformType()),
 	}
 }

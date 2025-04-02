@@ -325,15 +325,12 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 			OSVersion:        data.DeviceOSVersion,
 			OSInfos:          data.DeviceOSInfos,
 			TargetVersion:    data.TargetVersion,
-			SOC:              data.SOC,
-			RAM:              data.RAM,
-			GPU:              data.GPU,
 			HardwareModel:    data.DeviceModel,
 			ConnectionParameter: &models.ConnectionParameter{
 				ConnectionType: models.ConnectionTypeRemote,
 			},
-			Parameter: []models.DeviceParameter{
-				models.DeviceParameter{
+			CustomParameter: []models.CustomParameter{
+				models.CustomParameter{
 					Key:   "projectDir",
 					Value: data.ProjectDir,
 				},

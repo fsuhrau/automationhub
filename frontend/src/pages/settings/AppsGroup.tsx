@@ -1,18 +1,7 @@
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
-import {
-    Avatar,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    Divider,
-    List,
-    ListItem, ListItemAvatar, ListItemText,
-    ListSubheader,
-    TextField,
-    Typography
-} from "@mui/material";
+import {Avatar, Divider, List, ListItem, ListItemAvatar, ListItemText, ListSubheader, Typography} from "@mui/material";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
 import {PlatformType} from "../../types/platform.type.enum";
 import NewAppDialog from "../apps/newapp.dialog";
@@ -25,8 +14,6 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 import {IAppData} from "../../types/app";
 import {createApp, getAllApps, updateApp} from "../../services/app.service";
 import {HubStateActions} from "../../application/HubState";
-import {updateProject} from "../../project/project.service";
-import IProject from "../../project/project";
 import EditAttributePopup, {EditAttribute} from "./EditAttributePopup";
 import {useError} from "../../ErrorProvider";
 
@@ -123,7 +110,8 @@ const AppsGroup: React.FC = () => {
 
 
     return (<TitleCard title={"Apps"}>
-        <EditAttributePopup attribute={changeAttributeDialogState.attribute} value={changeAttributeDialogState.value} onSubmit={onEditAttributeSubmit} onClose={onEditAttributeClose} />
+        <EditAttributePopup attribute={changeAttributeDialogState.attribute} value={changeAttributeDialogState.value}
+                            onSubmit={onEditAttributeSubmit} onClose={onEditAttributeClose}/>
         <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
             <Grid container={true} spacing={1} padding={1}>
                 <Grid size={{xs: 12, md: 12}} container={true} justifyContent={"flex-end"}>
@@ -151,52 +139,56 @@ const AppsGroup: React.FC = () => {
                 <Grid size={{xs: 12, md: 1}}>
                     <Divider orientation={"vertical"}/>
                 </Grid>
-                <Grid container={true} size={{xs: 12, md: 8}} sx={{padding: 2}}>
+                <Grid container={true} size={{xs: 12, md: 8}} sx={{padding: 2}} alignContent={'flex-start'}>
                     {
-                        selectedApp === null ? (<Typography variant={"body1"} color={"dimgray"}>No
-                            Apps</Typography>) : (<>
-                            <Grid size={{xs: 12, md: 2}}>
-                                <Typography variant={"caption"}>App ID</Typography>
-                            </Grid>
-                            <Grid size={{xs: 12, md: 10}} container={true} spacing={2}>
-                                {selectedApp?.ID}
-                            </Grid>
-                            <Grid size={{xs: 12, md: 2}}>
-                                <Typography variant={"caption"}>App Name</Typography>
-                            </Grid>
-                            <Grid size={{xs: 12, md: 10}} container={true} spacing={2}>
-                                {selectedApp?.Name}<IconButton aria-label="edit" size={'small'}
-                                                               onClick={() => setChangeAttributeDialogState(prevState => ({
-                                                                   ...prevState,
-                                                                   attribute: 'Name',
-                                                                   value: selectedApp!.Name,
-                                                               }))}><Edit/></IconButton>
-                            </Grid>
-                            <Grid size={{xs: 12, md: 2}}>
-                                <Typography variant={"caption"}>Bundle Identifier</Typography>
-                            </Grid>
-                            <Grid size={{xs: 12, md: 10}} container={true} spacing={2}>
-                                {selectedApp?.Identifier}{selectedApp?.Identifier === "default_app" &&
-                                <IconButton aria-label="edit" size={'small'}
-                                            onClick={() => setChangeAttributeDialogState(prevState => ({
-                                                ...prevState,
-                                                attribute: 'Identifier',
-                                                value: selectedApp!.Identifier,
-                                            }))}><Edit/></IconButton>}
-                            </Grid>
-                            <Grid size={{xs: 12, md: 2}}>
-                                <Typography variant={"caption"}>Default Parameter</Typography>
-                            </Grid>
-                            <Grid size={{xs: 12, md: 10}} container={true} spacing={2}>
-                                {selectedApp?.DefaultParameter}<IconButton aria-label="edit"
-                                                                           size={'small'}
-                                                                           onClick={() => setChangeAttributeDialogState(prevState => ({
-                                                                               ...prevState,
-                                                                               attribute: 'DefaultParameter',
-                                                                               value: selectedApp!.DefaultParameter,
-                                                                           }))}><Edit/></IconButton>
-                            </Grid>
-                        </>)
+                        selectedApp === null || selectedApp === undefined
+                            ? (<Typography variant={"body1"} color={"dimgray"}>{'No App selected'}</Typography>)
+                            : (<>
+                                <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
+                                    <Typography variant={"caption"}>App ID</Typography>
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
+                                    {selectedApp?.ID}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
+                                    <Typography variant={"caption"}>Bundle Identifier</Typography>
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
+                                    <Typography variant={'body1'}>{selectedApp?.Identifier}</Typography>
+                                    {selectedApp?.Identifier === "default_app" &&
+                                        <IconButton aria-label="edit" size={'small'}
+                                                    onClick={() => setChangeAttributeDialogState(prevState => ({
+                                                        ...prevState,
+                                                        attribute: 'Identifier',
+                                                        value: selectedApp!.Identifier,
+                                                    }))}><Edit/></IconButton>}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
+                                    <Typography variant={"caption"}>App Name</Typography>
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
+                                    <Typography variant={'body1'}>{selectedApp?.Name}</Typography>
+                                    <IconButton aria-label="edit" size={'small'}
+                                                onClick={() => setChangeAttributeDialogState(prevState => ({
+                                                    ...prevState,
+                                                    attribute: 'Name',
+                                                    value: selectedApp!.Name,
+                                                }))}><Edit/></IconButton>
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
+                                    <Typography variant={"caption"}>Default Parameter</Typography>
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
+                                    <Typography variant={'body1'}>{selectedApp?.DefaultParameter}</Typography>
+                                    <IconButton aria-label="edit"
+                                                size={'small'}
+                                                onClick={() => setChangeAttributeDialogState(prevState => ({
+                                                    ...prevState,
+                                                    attribute: 'DefaultParameter',
+                                                    value: selectedApp!.DefaultParameter,
+                                                }))}><Edit/></IconButton>
+                                </Grid>
+                            </>)
                     }
                 </Grid>
             </Grid>

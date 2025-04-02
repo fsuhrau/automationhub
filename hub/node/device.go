@@ -16,6 +16,14 @@ type RPCDevice struct {
 	connection *device.Connection
 }
 
+func (d *RPCDevice) PlatformType() int {
+	return int(d.Dev.PlatformType)
+}
+
+func (d *RPCDevice) DeviceParameter() map[string]string {
+	return nil
+}
+
 func (d *RPCDevice) DeviceID() string {
 	return d.Dev.DeviceID
 }
@@ -46,6 +54,14 @@ func (d *RPCDevice) DeviceName() string {
 
 func (d *RPCDevice) DeviceModel() string {
 	return d.Dev.DeviceModel
+}
+
+func (d *RPCDevice) DeviceType() int {
+	return int(d.Dev.DeviceType)
+}
+
+func (d *RPCDevice) Parameter() string {
+	return d.Dev.DeviceParameter
 }
 
 func (d *RPCDevice) IsAppInstalled(*app.Parameter) (bool, error) {

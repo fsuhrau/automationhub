@@ -23,9 +23,9 @@ func NewMemoryDeviceStore(cfg map[string]config.Manager) *deviceStore {
 		var devs models.Devices
 
 		for i := range v.Devices {
-			var params []models.DeviceParameter
+			var customParams []models.CustomParameter
 			for k, v := range v.Devices[i].Parameter {
-				params = append(params, models.DeviceParameter{
+				customParams = append(customParams, models.CustomParameter{
 					Key:   k,
 					Value: v,
 				})
@@ -33,7 +33,7 @@ func NewMemoryDeviceStore(cfg map[string]config.Manager) *deviceStore {
 			devs = append(devs, &models.Device{
 				Manager:          k,
 				DeviceIdentifier: v.Devices[i].Identifier,
-				Parameter:        params,
+				CustomParameter:  customParams,
 			})
 		}
 		devices[k] = devs

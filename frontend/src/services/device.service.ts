@@ -19,7 +19,7 @@ export const createDevice = (projectId: string, data: IDeviceData): Promise<Axio
     return http.post(`/${projectId}/device`, data);
 };
 
-export const postUnlockDevice = (projectId: string, id: string): Promise<AxiosResponse<IDeviceData | undefined>> => {
+export const postUnlockDevice = (projectId: string, id: number): Promise<AxiosResponse<IDeviceData | undefined>> => {
     return http.post(`/${projectId}/device/${id}/unlock`);
 };
 

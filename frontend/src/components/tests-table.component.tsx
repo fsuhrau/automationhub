@@ -84,16 +84,15 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     }
 
     const renderActions = (id: number) => {
-        return <ButtonGroup color="primary" aria-label="text button group">
-            <Button variant="text" size="small"
+        return <ButtonGroup variant={"text"} aria-label="text button group">
+            <Button size="small"
                     onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}`)}>Show</Button>
-            <Button variant="text" size="small"
+            <Button size="small"
                     onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}/runs/last`)}>Protocol</Button>
-            <Button variant="text" size="small" endIcon={<PlayArrow/>}
-                    onClick={() => {
-                        setState(prevState => ({...prevState, testId: id}))
-                        handleRunClickOpen();
-                    }}>Run</Button>
+            <Button size="small" endIcon={<PlayArrow/>} onClick={() => {
+                setState(prevState => ({...prevState, testId: id}))
+                handleRunClickOpen();
+            }}>Run</Button>
         </ButtonGroup>;
     }
 
@@ -252,7 +251,11 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                 </Typography>
                             </Grid>
                             <Grid size={12}>
-                                <TextField required={true} fullWidth={true} value={state.startURL} onChange={(e) => setState(prevState => ({...prevState, startURL: e.target.value}))}/>
+                                <TextField required={true} fullWidth={true} value={state.startURL}
+                                           onChange={(e) => setState(prevState => ({
+                                               ...prevState,
+                                               startURL: e.target.value
+                                           }))}/>
                             </Grid>
                         </Grid>}
                         <Grid size={12}>

@@ -26,6 +26,7 @@ import {DeviceType} from '../../types/device.type.enum';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useError} from "../../ErrorProvider";
+import IParameter from "../../types/device.parameter";
 
 const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
 
@@ -52,14 +53,14 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
 
     const [state, setState] = useState<{
         alias: string,
-        parameter: IDeviceParameter[],
+        customParameter: IParameter[],
         acknowledged: boolean,
         connectionType: DeviceConnectionType,
         ipAddress: string,
         port: number
     }>({
         alias: device.Alias,
-        parameter: device.Parameter,
+        customParameter: device.CustomParameter,
         acknowledged: device.IsAcknowledged,
         connectionType: device.ConnectionParameter ? device.ConnectionParameter.ConnectionType : DeviceConnectionType.USB,
         ipAddress: device.ConnectionParameter ? device.ConnectionParameter.IP : "",
@@ -69,23 +70,23 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
     const updateParameterKey = (index: number, value: string) => {
         setState(prevState => ({
             ...prevState,
-            parameter: prevState.parameter.map((value1, index1) => index1 == index ? {...value1, Key: value} : value1)
+            customParameter: prevState.customParameter.map((value1, index1) => index1 == index ? {...value1, Key: value} : value1)
         }))
     };
     const updateParameterValue = (index: number, value: string) => {
         setState(prevState => ({
             ...prevState,
-            parameter: prevState.parameter.map((value1, index1) => index1 == index ? {...value1, Value: value} : value1)
+            customParameter: prevState.customParameter.map((value1, index1) => index1 == index ? {...value1, Value: value} : value1)
         }))
     };
 
     const addParameter = (): void => {
-        setState(prevState => ({...prevState, parameter: [...prevState.parameter, {Key: '', Value: ''}]}))
+        setState(prevState => ({...prevState, customParameter: [...prevState.customParameter, {Key: '', Value: ''}]}))
     };
 
     const removeParameter = (param: string) => {
         setState(prevState => ({
-            ...prevState, parameter: [...prevState.parameter.filter(value => value.Key !== param)]
+            ...prevState, customParameter: [...prevState.customParameter.filter(value => value.Key !== param)]
         }))
     };
 
@@ -98,7 +99,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
     };
 
     const saveChanges = () => {
-        device.Parameter = state.parameter;
+        device.CustomParameter = state.customParameter;
         device.IsAcknowledged = state.acknowledged;
         device.Alias = state.alias;
         device.ConnectionParameter = {
@@ -265,7 +266,7 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                 </TitleCard>
                 <TitleCard title={'Parameter'}>
                     <Grid container={true} spacing={1}>
-                        {state.parameter.map((value, index) => (
+                        {state.customParameter.map((value, index) => (
                                 <Grid size={{xs: 12, md: 12}} container={true} spacing={1}>
                                     <Grid size={{xs: 12, md: 2}}>
                                         <TextField id={`update_parameter_key_${index}`} value={value.Key}
@@ -297,54 +298,18 @@ const DeviceEditContent: React.FC<DeviceEditProps> = props => {
                         </Grid>
                     </Grid>
                 </TitleCard>
-                <TitleCard title={'Hardware'}>
+                <TitleCard title={'Device Parameter'}>
                     <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 2}}>
-                            RAM:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.RAM}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            SOC:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.SOC}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            GPU:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.GPU}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            ABI:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.ABI}
-                        </Grid>
-                    </Grid>
-                </TitleCard>
-                <TitleCard title={'Graphic'}>
-                    <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Display:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.DisplaySize}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            DPI:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.DPI}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            OpenGL Es Version
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.OpenGLESVersion}
-                        </Grid>
+                        {device.DeviceParameter.map(d => (
+                            <Grid container={true} spacing={1}>
+                                <Grid size={{xs: 12, md: 4}}>
+                                    {d.Key}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 8}}>
+                                    {d.Value}
+                                </Grid>
+                            </Grid>
+                        ))}
                     </Grid>
                 </TitleCard>
                 <Grid size={{xs: 12, md: 12}} container={true} justifyContent="flex-end">

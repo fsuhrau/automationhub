@@ -35,12 +35,10 @@ const TestsIndexPage: React.FC = () => {
                 <Grid container={true}>
                     <Grid size={{xs: 6}} container={true} sx={{
                         padding: 2,
-                        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
                     </Grid>
                     <Grid size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
                         padding: 1,
-                        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
                         <Button variant={"contained"} size={'small'} onClick={newTestClick}>Add new Test</Button>
                     </Grid>

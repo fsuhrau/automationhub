@@ -3,4 +3,5 @@ export enum DeviceType {
     Tablet,
     Desktop,
     UnityEditor,
+    Browser,
 }

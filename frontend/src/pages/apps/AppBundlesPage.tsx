@@ -22,6 +22,7 @@ import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid2";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
 import {useError} from "../../ErrorProvider";
+import AppBundlesTable from "./AppBundlesTable";
 
 const AppBundlesPage: React.FC = () => {
 
@@ -37,91 +38,26 @@ const AppBundlesPage: React.FC = () => {
 
     const app = project.Apps.find(a => a.ID === appId);
 
-    const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
-
-    useEffect(() => {
-        if (projectIdentifier !== null && appId != null) {
-            getAppBundles(projectIdentifier, appId as number).then(response => {
-                setBundles(response.data);
-            }).catch(ex => {
-                setError(ex);
-            });
-        }
-    }, [projectIdentifier, appId]);
-
-    const handleDeleteApp = (bundleId: number): void => {
-        deleteAppBundle(projectIdentifier, app?.ID as number, bundleId).then(value => {
-            setBundles(prevState => {
-                const newState = [...prevState];
-                const index = newState.findIndex(value1 => value1.ID == bundleId);
-                if (index > -1) {
-                    newState.splice(index, 1);
-                }
-                return newState;
-            });
-        }).catch(ex => setError(ex));
-    };
-
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
             <TitleCard title={'App Bundles'}>
-                <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
-                    <Grid container={true}>
-                        <Grid size={{xs: 12, md: 12}} container={true} spacing={1} sx={{
-                            padding: 1,
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                        }}>
-                            <Grid>
-                                <PlatformTypeIcon platformType={app?.Platform as PlatformType}/>
-                            </Grid>
-                            <Grid>
-                                <Typography variant={"body1"}>{app?.Name}{' / '}{app?.Identifier}</Typography>
-                            </Grid>
-                            <Grid container={true} justifyContent={"flex-end"}>
-                            </Grid>
+                <Grid container={true}>
+                    <Grid size={12} container={true} spacing={1} sx={{
+                        padding: 1,
+                    }}>
+                        <Grid>
+                            <PlatformTypeIcon platformType={app?.Platform as PlatformType}/>
                         </Grid>
-                        <Grid container={true} size={{xs: 12, md: 12}}>
-                            <TableContainer component={Paper}>
-                                <Table size="small" aria-label="a dense table">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>ID</TableCell>
-                                            <TableCell>Created</TableCell>
-                                            <TableCell>Version</TableCell>
-                                            <TableCell align="right">Size</TableCell>
-                                            <TableCell>Tags</TableCell>
-                                            <TableCell align="right">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {bundles.map((bundle) => <TableRow key={bundle.ID}>
-                                            <TableCell component="th" scope="row">
-                                                {bundle.ID}
-                                            </TableCell>
-                                            <TableCell><Moment
-                                                format="YYYY/MM/DD HH:mm:ss">{bundle.CreatedAt}</Moment></TableCell>
-                                            <TableCell>{bundle.Version}</TableCell>
-                                            <TableCell align="right">{prettySize(bundle.Size)}</TableCell>
-                                            <TableCell>{bundle.Tags}</TableCell>
-                                            <TableCell align="right"><ButtonGroup>
-                                                <IconButton color="primary" size="small"
-                                                            href={`/upload/${bundle.AppPath}`}>
-                                                    <DownloadIcon/>
-                                                </IconButton>
-                                                <IconButton color="secondary" size="small" onClick={() => {
-                                                    handleDeleteApp(bundle.ID as number);
-                                                }}>
-                                                    <DeleteForeverIcon/>
-                                                </IconButton>
-                                            </ButtonGroup>
-                                            </TableCell>
-                                        </TableRow>)}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                        <Grid>
+                            <Typography variant={"body1"}>{app?.Name}{' / '}{app?.Identifier}</Typography>
+                        </Grid>
+                        <Grid container={true} justifyContent={"flex-end"}>
                         </Grid>
                     </Grid>
-                </Paper>
+                    <Grid container={true} size={{xs: 12, md: 12}}>
+                        <AppBundlesTable appId={appId}></AppBundlesTable>
+                    </Grid>
+                </Grid>
             </TitleCard>
         </Box>
     );

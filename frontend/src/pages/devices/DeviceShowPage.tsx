@@ -1,5 +1,4 @@
 import React from 'react';
-import Paper from '@mui/material/Paper';
 import {
     Box,
     ButtonGroup,
@@ -8,11 +7,8 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Divider,
     Typography
 } from '@mui/material';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
 import Grid from "@mui/material/Grid2";
 import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
@@ -23,6 +19,8 @@ import {DeviceConnectionType} from '../../types/device.connection.type.enum';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useError} from "../../ErrorProvider";
+import PlatformTypeIcon from "../../components/PlatformTypeIcon";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 interface DeviceShowPageProps {
     device: IDeviceData
@@ -31,6 +29,8 @@ interface DeviceShowPageProps {
 const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProps) => {
 
     const {projectIdentifier} = useProjectContext();
+
+    const {state} = useHubState()
 
     const navigate = useNavigate();
     const {setError} = useError()
@@ -59,8 +59,10 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
         handleClose()
     };
 
+    const node = state.nodes?.find(n => n.ID === device.NodeID);
+
     return (
-        <Paper sx={{maxWidth: 1200, margin: 'auto', overflow: 'hidden'}}>
+        <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
             <Dialog
                 open={open}
                 onClose={handleClose}
@@ -82,180 +84,161 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                     </Button>
                 </DialogActions>
             </Dialog>
-            <AppBar
-                position="static"
-                color="default"
-                elevation={0}
-                sx={{borderBottom: '1px solid rgba(0, 0, 0, 0.12)'}}
-            >
-                <Toolbar>
-                    <Grid container={true} spacing={2} alignItems="center">
-                        <Grid>
-                            <Typography variant={'h6'}>
-                                Device: {device.Name} ({device.DeviceIdentifier})
-                            </Typography>
-                        </Grid>
-                        <Grid>
-                        </Grid>
-                        <Grid>
-                            <ButtonGroup variant="text" aria-label="text button group">
-                                <Button onClick={() => navigate('edit')}>Edit</Button>
-                                <Button color="secondary" onClick={handleClickOpen}> Delete</Button>
-                            </ButtonGroup>
-                        </Grid>
-                    </Grid>
-                </Toolbar>
-            </AppBar>
-            <Box sx={{p: 2, m: 2}}>
-                <TitleCard title={'Device Infos'}>
-                    <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 2}}>
-                            ID:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.ID}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Name:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.Name}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Alias:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.Alias}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Model:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.HardwareModel}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Identifier:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.DeviceIdentifier}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Type:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {DeviceType[device.DeviceType]}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Operation System:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.OS}<br/>
-                            {device.OSVersion}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Acknowledged:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.IsAcknowledged ? 'Yes' : 'No'}
-                        </Grid>
-                    </Grid>
-                </TitleCard>
-                <TitleCard title={'Connection'}>
-                    <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 2}}>
-                            Type
-                        </Grid>
-                        <Grid size={{xs: 12, md: 10}}>
-                            {device.ConnectionParameter && DeviceConnectionType[device.ConnectionParameter.ConnectionType]}
-                        </Grid>
-                        {
-                            device.ConnectionParameter && device.ConnectionParameter.ConnectionType == DeviceConnectionType.Remote && device.ConnectionParameter.IP.length > 0 && device.ConnectionParameter.Port > 0 && (
-                                <Grid size={{xs: 12, md: 12}} container={true}>
-                                    <Grid size={{xs: 12, md: 2}}>
-                                        IP:
-                                    </Grid>
-                                    <Grid size={{xs: 12, md: 10}}>
-                                        {device.ConnectionParameter.IP}
-                                    </Grid>
-                                    <Grid size={{xs: 12, md: 2}}>
-                                        Port:
-                                    </Grid>
-                                    <Grid size={{xs: 12, md: 10}}>
-                                        {device.ConnectionParameter.Port}
-                                    </Grid>
+
+            <TitleCard titleElement={
+                <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
+                    <Typography component="h2" variant="h6">
+                        <PlatformTypeIcon
+                            platformType={device.PlatformType}/> {`Device: ${device.Name} (${device.DeviceIdentifier})`}
+                    </Typography>
+                    <ButtonGroup variant="contained" aria-label="text button group">
+                        <Button variant="contained" size={'small'} onClick={() => navigate('edit')}>Edit</Button>
+                        <Button variant="contained" color="error" size={'small'}
+                                onClick={handleClickOpen}> Delete</Button>
+                    </ButtonGroup>
+                </Box>}>
+                <Grid container={true} spacing={2}>
+                    <Grid size={12}>
+                        <TitleCard title={'Device Infos'}>
+                            <Grid container={true} spacing={1}>
+                                <Grid size={{xs: 12, md: 2}}>
+                                    ID:
                                 </Grid>
-                            )
-                        }
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.ID}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}}>
+                                    Name:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.Name}
+                                </Grid>
+                                {device.Alias.length > 0 && <>
+                                    <Grid size={{xs: 12, md: 2}}>
+                                        Alias:
+                                    </Grid>
+                                    <Grid size={{xs: 12, md: 10}}>
+                                        {device.Alias}
+                                    </Grid>
+                                </>}
+                                <Grid size={{xs: 12, md: 2}}>
+                                    Operation System:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.OS} {device.OSVersion}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}}>
+                                    Model:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.HardwareModel}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}}>
+                                    Identifier:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.DeviceIdentifier}
+                                </Grid>
+                                <Grid size={{xs: 12, md: 2}}>
+                                    Type:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {DeviceType[device.DeviceType]}
+                                </Grid>
+                                {
+                                    /*
+                                    <Grid size={{xs: 12, md: 2}}>
+                                    Acknowledged:
+                                </Grid>
+                                <Grid size={{xs: 12, md: 10}}>
+                                    {device.IsAcknowledged ? 'Yes' : 'No'}
+                                </Grid>
+                                     */
+                                }
+
+                            </Grid>
+                        </TitleCard>
                     </Grid>
-                </TitleCard>
-                <TitleCard title={'Parameter'}>
-                    <Grid container={true} spacing={1}>
-                        {device.Parameter.map(value => (
+                    <Grid size={12}>
+                        {
+                            device.ConnectionParameter && <TitleCard title={'Connection'}>
                                 <Grid container={true} spacing={1}>
                                     <Grid size={{xs: 12, md: 2}}>
-                                        {value.Key}
+                                        Type
                                     </Grid>
                                     <Grid size={{xs: 12, md: 10}}>
-                                        {value.Value}
+                                        {DeviceConnectionType[device.ConnectionParameter.ConnectionType]}
                                     </Grid>
+                                    {
+                                        device.ConnectionParameter.ConnectionType == DeviceConnectionType.HubNode && <>
+                                            <Grid size={{xs: 12, md: 2}}>
+                                                Node
+                                            </Grid>
+                                            <Grid size={{xs: 12, md: 10}}>
+                                                {node?.Name}
+                                            </Grid>
+                                        </>
+                                    }
+                                    {
+                                        device.ConnectionParameter && device.ConnectionParameter.ConnectionType == DeviceConnectionType.Remote && device.ConnectionParameter.IP.length > 0 && device.ConnectionParameter.Port > 0 && (
+                                            <Grid size={{xs: 12, md: 12}} container={true}>
+                                                <Grid size={{xs: 12, md: 2}}>
+                                                    IP:
+                                                </Grid>
+                                                <Grid size={{xs: 12, md: 10}}>
+                                                    {device.ConnectionParameter.IP}
+                                                </Grid>
+                                                <Grid size={{xs: 12, md: 2}}>
+                                                    Port:
+                                                </Grid>
+                                                <Grid size={{xs: 12, md: 10}}>
+                                                    {device.ConnectionParameter.Port}
+                                                </Grid>
+                                            </Grid>
+                                        )
+                                    }
                                 </Grid>
-                            ),
-                        )}
+                            </TitleCard>
+                        }
                     </Grid>
-                </TitleCard>
-                <TitleCard title={'Hardware'}>
-                    <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 4}}>
-                            RAM:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.RAM}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 4}}>
-                            SOC:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.SOC}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 4}}>
-                            GPU:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.GPU}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 4}}>
-                            ABI:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.ABI}
-                        </Grid>
+                    <Grid size={12}>
+                        <TitleCard title={'Device Parameter'}>
+                            <Grid container={true} spacing={1}>
+                                {device.DeviceParameter.map(d => (
+                                    <>
+                                        <Grid size={{xs: 12, md: 2}}>
+                                            {d.Key}
+                                        </Grid>
+                                        <Grid size={{xs: 12, md: 10}}>
+                                            {d.Value}
+                                        </Grid>
+                                    </>
+                                ))}
+                            </Grid>
+                        </TitleCard>
                     </Grid>
-                </TitleCard>
-                <TitleCard title={'Graphic'}>
-                    <Grid container={true} spacing={1}>
-                        <Grid size={{xs: 12, md: 4}}>
-                            Display:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.DisplaySize}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 4}}>
-                            DPI:
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.DPI}
-                        </Grid>
-                        <Grid size={{xs: 12, md: 4}}>
-                            OpenGL Es Version
-                        </Grid>
-                        <Grid size={{xs: 12, md: 8}}>
-                            {device.OpenGLESVersion}
-                        </Grid>
+                    <Grid size={12}>
+                        {device.CustomParameter.length > 0 && <TitleCard title={'Custom User Parameter'}>
+                            <Grid container={true} spacing={1}>
+                                {device.CustomParameter.map(value => (
+                                        <>
+                                            <Grid size={{xs: 12, md: 2}}>
+                                                {value.Key}
+                                            </Grid>
+                                            <Grid size={{xs: 12, md: 10}}>
+                                                {value.Value}
+                                            </Grid>
+                                        </>
+                                    ),
+                                )}
+                            </Grid>
+                        </TitleCard>}
                     </Grid>
-                </TitleCard>
-            </Box>
-        </Paper>
-    );
+                </Grid>
+            </TitleCard>
+        </Box>
+    )
+        ;
 };
 
 export default DeviceShowPage;

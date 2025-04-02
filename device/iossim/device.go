@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"image"
 	"image/png"
@@ -30,7 +31,22 @@ type Device struct {
 	lastUpdateAt     time.Time
 }
 
+func (d *Device) DeviceParameter() map[string]string {
+	return nil
+}
+
 func (d *Device) DeviceModel() string {
+	return ""
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypePhone)
+}
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeiOSSimulator)
+}
+
+func (d *Device) Parameter() string {
 	return ""
 }
 

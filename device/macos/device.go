@@ -1,8 +1,10 @@
 package macos
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"os"
@@ -43,10 +45,42 @@ type Device struct {
 	deviceModel        string
 	deviceSerialNumber string
 	runningExecutable  string
+	parameter          string
+	deviceParameter    map[string]string
+}
+
+func (d *Device) DeviceParameter() map[string]string {
+	return d.deviceParameter
 }
 
 func (d *Device) DeviceModel() string {
 	return d.deviceModel
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypeDesktop)
+}
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeMac)
+}
+
+func (d *Device) Parameter() string {
+	data, _ := json.Marshal(d.deviceParameter)
+	return string(data)
+}
+
+func UnpackDeviceParameter(params string) []models.DeviceParameter {
+	var parameters []models.DeviceParameter
+	androidParams := make(map[string]string)
+	if err := json.Unmarshal([]byte(params), &androidParams); err == nil {
+		for k, v := range androidParams {
+			parameters = append(parameters, models.DeviceParameter{
+				Key:   k,
+				Value: v,
+			})
+		}
+	}
+	return parameters
 }
 
 func (d *Device) DeviceOSName() string {
@@ -114,6 +148,9 @@ func (d *Device) UpdateDeviceInfos() error {
 	if d.deviceSerialNumber, err = GetSerialNumber(); err != nil {
 		return err
 	}
+
+	d.deviceParameter = make(map[string]string)
+	d.deviceParameter["serial_number"] = d.deviceSerialNumber
 
 	return nil
 }

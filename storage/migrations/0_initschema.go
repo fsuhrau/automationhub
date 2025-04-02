@@ -39,6 +39,9 @@ func InitSchema(tx *gorm.DB) error {
 	if err := tx.AutoMigrate(&models.DeviceParameter{}); err != nil {
 		return err
 	}
+	if err := tx.AutoMigrate(&models.CustomParameter{}); err != nil {
+		return err
+	}
 	if err := tx.AutoMigrate(&models.DeviceLog{}); err != nil {
 		return err
 	}

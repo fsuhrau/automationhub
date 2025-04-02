@@ -12,6 +12,7 @@ const (
 	DeviceTypeTablet
 	DeviceTypeDesktop
 	DeviceTypeUnityEditor
+	DeviceTypeBrowser
 )
 
 type ConnectionType int
@@ -48,18 +49,11 @@ type Device struct {
 	Name                string
 	Manager             string
 	HardwareModel       string
-	RAM                 float32
-	SOC                 string
-	DisplaySize         string
-	DPI                 float32
 	OS                  string
 	OSVersion           string
 	OSInfos             string
-	GPU                 string
-	ABI                 string
 	TargetVersion       string
-	OpenGLESVersion     float32
-	Parameter           []DeviceParameter
+	DeviceParameter     []DeviceParameter
 	StatusLog           []DeviceLog
 	ConnectionParameter *ConnectionParameter
 	IsAcknowledged      bool
@@ -67,6 +61,7 @@ type Device struct {
 	Dev                 interface{}  `gorm:"-"`
 	Connection          interface{}  `gorm:"-"`
 	PlatformType        PlatformType
+	CustomParameter     []CustomParameter
 }
 
 type ConnectionParameter struct {
@@ -84,10 +79,17 @@ type DeviceParameter struct {
 	Value    string
 }
 
+type CustomParameter struct {
+	gorm.Model
+	DeviceID uint
+	Key      string
+	Value    string
+}
+
 func (d *Device) GetAttribute(key string) string {
-	for i := range d.Parameter {
-		if d.Parameter[i].Key == key {
-			return d.Parameter[i].Value
+	for i := range d.CustomParameter {
+		if d.CustomParameter[i].Key == key {
+			return d.CustomParameter[i].Value
 		}
 	}
 	return ""

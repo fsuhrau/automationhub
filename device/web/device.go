@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"net"
 	"os"
@@ -48,8 +49,24 @@ type Device struct {
 	applicationProcess *exec.Cmd
 }
 
+func (d *Device) DeviceParameter() map[string]string {
+	return nil
+}
+
 func (d *Device) DeviceModel() string {
 	return d.deviceModel
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypeBrowser)
+}
+
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeWeb)
+}
+
+func (d *Device) Parameter() string {
+	return ""
 }
 
 func (d *Device) DeviceOSName() string {

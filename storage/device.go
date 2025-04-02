@@ -35,7 +35,7 @@ func (d *deviceStore) GetDevices(manager string) (models.Devices, error) {
 	}
 
 	var devices models.Devices
-	if err := d.db.Where("manager = ?", manager).Preload("Parameter").Preload("ConnectionParameter").Find(&devices).Error; err != nil {
+	if err := d.db.Where("manager = ?", manager).Preload("DeviceParameter").Preload("CustomParameter").Preload("ConnectionParameter").Find(&devices).Error; err != nil {
 		return nil, err
 	}
 
@@ -108,6 +108,27 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 	if deviceData.HardwareModel != dev.DeviceModel() {
 		deviceData.HardwareModel = dev.DeviceModel()
 		needsUpdate = true
+	}
+
+	parameter := dev.DeviceParameter()
+	if parameter != nil {
+		for key, value := range parameter {
+			found := false
+			for i, param := range deviceData.DeviceParameter {
+				if param.Key == key {
+					if param.Value != value {
+						deviceData.DeviceParameter[i].Value = value
+						needsUpdate = true
+					}
+					found = true
+					break
+				}
+			}
+			if !found {
+				deviceData.DeviceParameter = append(deviceData.DeviceParameter, models.DeviceParameter{Key: key, Value: value})
+				needsUpdate = true
+			}
+		}
 	}
 
 	if deviceData.Manager != manager {

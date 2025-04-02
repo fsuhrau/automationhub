@@ -39,6 +39,9 @@ message DeviceResponse {
   string DeviceModel = 9;
   DeviceState State = 10;
   string TargetVersion = 11;
+  int32 DeviceType = 12;
+  string DeviceParameter = 13;
+  int32 PlatformType = 14;
 }
 
 message DeviceRequest {

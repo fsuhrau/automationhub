@@ -92,6 +92,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 			targetVersion:   devs[i].TargetVersion,
 			deviceName:      devs[i].Name,
 			deviceID:        devs[i].DeviceIdentifier,
+			platformType:    devs[i].PlatformType,
 			deviceState:     device.StateRemoteDisconnected,
 		}
 		dev.SetConfig(devs[i])
@@ -176,15 +177,15 @@ func (h *Handler) RefreshDevices(force bool) error {
 				if _, ok := h.devices[deviceID]; ok {
 					dev := h.devices[deviceID]
 					dev.deviceModel = d.DeviceModel()
+					dev.deviceType = d.DeviceType()
 					dev.deviceOSName = d.DeviceOSName()
 					dev.deviceOSVersion = d.DeviceOSVersion()
 					dev.deviceName = d.DeviceName()
 					dev.deviceID = deviceID
 					dev.lastUpdateAt = lastUpdate
 					dev.deviceState = d.DeviceState()
-					if h.init {
-						dev.UpdateDeviceInfos()
-					}
+					dev.platformType = models.PlatformType(d.PlatformType())
+					dev.UpdateDeviceInfosFromParameter(d.Parameter())
 					h.devices[deviceID] = dev
 					h.deviceStorage.Update(h.Name(), dev)
 
@@ -196,19 +197,20 @@ func (h *Handler) RefreshDevices(force bool) error {
 						deviceID:     deviceID,
 						deviceModel:  d.DeviceModel(),
 						deviceOSName: d.DeviceOSName(),
+						platformType: models.PlatformType(d.PlatformType()),
 						lastUpdateAt: lastUpdate,
 					}
-					nd.UpdateDeviceInfos()
+					nd.UpdateDeviceInfosFromParameter(d.Parameter())
 					nd.deviceState = d.DeviceState()
 					dev := models.Device{
 						NodeID:           no.ID,
 						DeviceIdentifier: deviceID,
-						DeviceType:       models.DeviceTypePhone,
+						DeviceType:       models.DeviceType(d.DeviceType()),
 						Name:             d.DeviceName(),
 						Manager:          Manager,
 						HardwareModel:    d.DeviceModel(),
 						OS:               mnger,
-						PlatformType:     managerToPlatformType(mnger),
+						PlatformType:     models.PlatformType(d.PlatformType()),
 						OSVersion:        d.DeviceOSVersion(),
 						ConnectionParameter: &models.ConnectionParameter{
 							ConnectionType: models.ConnectionTypeNode,

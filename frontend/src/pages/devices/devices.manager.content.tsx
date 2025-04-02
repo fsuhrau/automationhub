@@ -4,7 +4,7 @@ import {Button, IconButton, Typography} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Grid from '@mui/material/Grid';
-import IDeviceData from '../../types/device';
+import IDeviceData, {deviceState} from '../../types/device';
 import {getAllDevices, postUnlockDevice} from '../../services/device.service';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -14,7 +14,6 @@ import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import { useNavigate } from 'react-router-dom';
-import {deviceState} from "../../components/device-table.component";
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useError} from "../../ErrorProvider";
 
@@ -39,9 +38,9 @@ const DevicesManagerContent: React.FC = () => {
         });
     }, [projectIdentifier]);
 
-    const unlockDevice = (deviceId: string) => {
+    const unlockDevice = (deviceId: number) => {
         postUnlockDevice(projectIdentifier, deviceId).then(response => {
-            setDevices(devices.map(d => d.DeviceIdentifier === deviceId ? response.data : d) as IDeviceData[]);
+            setDevices(devices.map(d => d.ID === deviceId ? response.data : d) as IDeviceData[]);
         }).catch(ex => setError(ex));
     }
 
@@ -96,14 +95,12 @@ const DevicesManagerContent: React.FC = () => {
                                 { device.HardwareModel }
                             </TableCell>
                             <TableCell>
-                                { device.RAM }
                             </TableCell>
                             <TableCell>
-                                { device.SOC }
                             </TableCell>
                             <TableCell>
                                 { deviceState(device.Status) }
-                                { device.Status === 5 && <Button onClick={() => unlockDevice(device.DeviceIdentifier)}>Unlock</Button>}
+                                { device.Status === 5 && <Button onClick={() => unlockDevice(device.ID)}>Unlock</Button>}
                             </TableCell>
                             <TableCell align="right">
                                 <IconButton color="primary" size={ 'small' }

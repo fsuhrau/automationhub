@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/modules/webdriver"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"image"
 	"image/color"
 	"image/png"
@@ -41,8 +42,23 @@ type Device struct {
 	webDriver               *webdriver.Client
 }
 
+func (d *Device) DeviceParameter() map[string]string {
+	return nil
+}
+
 func (d *Device) DeviceModel() string {
 	return d.deviceModel
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypePhone)
+}
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeiOS)
+}
+
+func (d *Device) Parameter() string {
+	return ""
 }
 
 func (d *Device) DeviceOSName() string {

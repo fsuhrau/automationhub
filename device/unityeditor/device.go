@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gorilla/websocket"
 	"io"
 	"net"
@@ -44,10 +45,42 @@ type Device struct {
 	cancel          context.CancelFunc
 	process         *exec.Cmd
 	instanceLogFile string
+	deviceParameter map[string]string
 }
 
 func (d *Device) DeviceModel() string {
 	return ""
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypeUnityEditor)
+}
+
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeEditor)
+}
+
+func (d *Device) DeviceParameter() map[string]string {
+	return d.deviceParameter
+}
+
+func (d *Device) Parameter() string {
+	data, _ := json.Marshal(d.deviceParameter)
+	return string(data)
+}
+
+func UnpackDeviceParameter(params string) []models.DeviceParameter {
+	var parameters []models.DeviceParameter
+	unityParameter := make(map[string]string)
+	if err := json.Unmarshal([]byte(params), &unityParameter); err == nil {
+		for k, v := range unityParameter {
+			parameters = append(parameters, models.DeviceParameter{
+				Key:   k,
+				Value: v,
+			})
+		}
+	}
+	return parameters
 }
 
 func (d *Device) DeviceOSName() string {

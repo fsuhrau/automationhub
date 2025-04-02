@@ -14,6 +14,10 @@ type Device interface {
 	DeviceOSVersion() string
 	DeviceName() string
 	DeviceModel() string
+	DeviceParameter() map[string]string
+	DeviceType() int
+	PlatformType() int
+	Parameter() string
 
 	TargetVersion() string
 
