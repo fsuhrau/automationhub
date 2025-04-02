@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -30,24 +31,32 @@ func getSysctlValue(name string) (string, error) {
 }
 
 // getSystemProfilerValue runs a system_profiler command and returns the output as a string
-func getSystemProfilerValue(dataType, key string) (string, error) {
+func getSystemProfilerValue(dataType string, keys []string) ([]string, error) {
 	cmd := exec.Command("system_profiler", dataType)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
-		return "", err
+		return nil, err
 	}
 	output := out.String()
 	lines := strings.Split(output, "\n")
+	var result []string
 	for _, line := range lines {
-		if strings.Contains(line, key) {
+		containsKey := false
+		for _, key := range keys {
+			if strings.Contains(line, key) {
+				containsKey = true
+				break
+			}
+		}
+		if containsKey {
 			parts := strings.Split(line, ":")
 			if len(parts) > 1 {
-				return strings.TrimSpace(parts[1]), nil
+				result = append(result, strings.TrimSpace(parts[1]))
 			}
 		}
 	}
-	return "", nil
+	return result, nil
 }
 
 // GetDeviceName returns the device name
@@ -87,10 +96,61 @@ func GetHardwareUUID() (string, error) {
 
 // GetSerialNumber returns the serial number of the Mac
 func GetSerialNumber() (string, error) {
-	return getSystemProfilerValue("SPHardwareDataType", "Serial Number (system)")
+	values, err := getSystemProfilerValue("SPHardwareDataType", []string{"Serial Number (system)"})
+	if err != nil {
+		return "", err
+	}
+
+	if len(values) > 0 {
+		return values[0], nil
+	}
+	return "", fmt.Errorf("serial number not found")
 }
 
 // GetModelNumber returns the model number of the Mac
 func GetModelNumber() (string, error) {
-	return getSystemProfilerValue("SPHardwareDataType", "Model Identifier")
+	values, err := getSystemProfilerValue("SPHardwareDataType", []string{"Model Identifier"})
+	if err != nil {
+		return "", err
+	}
+
+	if len(values) > 0 {
+		return values[0], nil
+	}
+	return "", fmt.Errorf("model not found")
+}
+
+func GetCPUInfo() (string, error) {
+	return getSysctlValue("machdep.cpu.brand_string")
+}
+
+func GetGPUInfo() (string, error) {
+	values, err := getSystemProfilerValue("SPDisplaysDataType", []string{"Chipset Model"})
+	if err != nil {
+		return "", err
+	}
+
+	if len(values) > 0 {
+		return values[0], nil
+	}
+
+	return "", fmt.Errorf("chipset not found")
+}
+
+func GetRAMInfo() (string, error) {
+	value, err := getSysctlValue("hw.memsize")
+	if err != nil {
+		return "", err
+	}
+
+	ramBytes, err := strconv.ParseUint(strings.TrimSpace(value), 10, 64)
+	if err != nil {
+		return "", err
+	}
+	ramGB := ramBytes / (1024 * 1024 * 1024)
+	return fmt.Sprintf("%d GB", ramGB), nil
+}
+
+func GetSupportedGraphicsEngines() ([]string, error) {
+	return getSystemProfilerValue("SPDisplaysDataType", []string{"Metal:", "OpenGL:"})
 }

@@ -71,9 +71,9 @@ func (d *Device) Parameter() string {
 
 func UnpackDeviceParameter(params string) []models.DeviceParameter {
 	var parameters []models.DeviceParameter
-	androidParams := make(map[string]string)
-	if err := json.Unmarshal([]byte(params), &androidParams); err == nil {
-		for k, v := range androidParams {
+	deviceParams := make(map[string]string)
+	if err := json.Unmarshal([]byte(params), &deviceParams); err == nil {
+		for k, v := range deviceParams {
 			parameters = append(parameters, models.DeviceParameter{
 				Key:   k,
 				Value: v,
@@ -150,7 +150,22 @@ func (d *Device) UpdateDeviceInfos() error {
 	}
 
 	d.deviceParameter = make(map[string]string)
-	d.deviceParameter["serial_number"] = d.deviceSerialNumber
+	d.deviceParameter["SerialNumber"] = d.deviceSerialNumber
+	if cpuInfo, err := GetCPUInfo(); err == nil {
+		d.deviceParameter["CPU"] = cpuInfo
+	}
+
+	if gpuInfo, err := GetGPUInfo(); err == nil {
+		d.deviceParameter["GPU"] = gpuInfo
+	}
+
+	if ramInfo, err := GetRAMInfo(); err == nil {
+		d.deviceParameter["RAM"] = ramInfo
+	}
+
+	if supporedEngins, err := GetSupportedGraphicsEngines(); err == nil {
+		d.deviceParameter["Driver"] = strings.Join(supporedEngins, ",")
+	}
 
 	return nil
 }
