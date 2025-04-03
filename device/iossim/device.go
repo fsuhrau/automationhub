@@ -35,19 +35,11 @@ func (d *Device) DeviceParameter() map[string]string {
 	return nil
 }
 
-func (d *Device) DeviceModel() string {
-	return ""
-}
-
 func (d *Device) DeviceType() int {
 	return int(models.DeviceTypePhone)
 }
 func (d *Device) PlatformType() int {
 	return int(models.PlatformTypeiOSSimulator)
-}
-
-func (d *Device) Parameter() string {
-	return ""
 }
 
 func (d *Device) DeviceOSName() string {
@@ -83,10 +75,6 @@ func (d *Device) SetDeviceState(state string) {
 	default:
 		d.deviceState = device.StateUnknown
 	}
-}
-
-func (d *Device) UpdateDeviceInfos() error {
-	return nil
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {

@@ -130,23 +130,17 @@ func (m *Handler) RefreshDevices(force bool) error {
 			return err
 		}
 		if _, ok := m.devices[identifier]; ok {
-			m.devices[identifier].deviceModel = allValues.Value.ProductType
-			m.devices[identifier].deviceName = allValues.Value.DeviceName
 			m.devices[identifier].deviceID = identifier
-			m.devices[identifier].deviceOSName = allValues.Value.ProductName
-			m.devices[identifier].deviceOSVersion = allValues.Value.ProductVersion
 			m.devices[identifier].lastUpdateAt = lastUpdate
 			m.devices[identifier].SetDeviceState("StateBooted")
+			m.devices[identifier].UpdateDeviceInfos(allValues)
 			m.deviceStorage.Update(m.Name(), m.devices[identifier])
 		} else {
 			m.devices[identifier] = &Device{
-				deviceModel:     allValues.Value.ProductType,
-				deviceName:      allValues.Value.DeviceName,
-				deviceID:        identifier,
-				deviceOSName:    allValues.Value.ProductName,
-				deviceOSVersion: allValues.Value.ProductVersion,
-				lastUpdateAt:    lastUpdate,
+				deviceID:     identifier,
+				lastUpdateAt: lastUpdate,
 			}
+			m.devices[identifier].UpdateDeviceInfos(allValues)
 			dev := models.Device{
 				DeviceIdentifier: identifier,
 				DeviceType:       models.DeviceTypePhone,

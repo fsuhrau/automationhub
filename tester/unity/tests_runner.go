@@ -138,6 +138,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 
 func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList []models.UnityTestFunction) {
 	ctx, cancelFunc := context.WithCancel(tr.ctx)
+	defer cancelFunc()
 	group := sync.NewExtendedWaitGroup(ctx)
 
 	switch tr.Config.ExecutionType {
@@ -162,10 +163,8 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 				workers[i] <- a
 			}
 		}
-		group.Wait()
 
-		// exit worker
-		cancelFunc()
+		_ = group.Wait()
 
 		// close worker channel
 		for i := range workers {
@@ -187,15 +186,11 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 			group.Add(1)
 			parallelWorker <- a
 		}
-		group.Wait()
 
-		// exit worker
-		cancelFunc()
+		_ = group.Wait()
 
 		// close worker channel
 		close(parallelWorker)
-	default:
-		cancelFunc()
 	}
 }
 
@@ -265,7 +260,11 @@ func (tr *testsRunner) workerFunction(ctx context.Context, channel workerChannel
 				method = methodParts[1]
 			}
 			tr.runTest(ctx, dev, task, method)
-			group.Done()
+			if !group.IsCanceled() {
+				group.Done()
+			} else {
+				return
+			}
 		case <-ctx.Done():
 			return
 		}

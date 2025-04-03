@@ -1,9 +1,10 @@
 import React from 'react';
 import {Button, ButtonGroup,} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
-import IDeviceData, { deviceState } from '../types/device';
+import IDeviceData from '../types/device';
 import Grid from '@mui/system/Grid';
 import {ArrowForward, PlayArrow, LockOpen} from "@mui/icons-material";
+import {deviceState} from "../types/deviceStateType";
 
 interface DevicesTableProps {
     devices: IDeviceData[]

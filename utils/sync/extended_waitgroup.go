@@ -17,13 +17,19 @@ type ExtendedWaitGroup interface {
 	WaitWithTimeout(duration time.Duration) error
 	WaitUntil(waitUntil time.Time) error
 	UpdateUntil(waitUntil time.Time)
-	Wait()
+	Wait() error
+	IsCanceled() bool
 }
 
 type extendedWaitGroup struct {
-	group sync.WaitGroup
-	until time.Time
-	ctx   context.Context
+	group    sync.WaitGroup
+	until    time.Time
+	ctx      context.Context
+	canceled bool
+}
+
+func (wg *extendedWaitGroup) IsCanceled() bool {
+	return wg.canceled
 }
 
 func (wg *extendedWaitGroup) Done() {
@@ -59,6 +65,7 @@ func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	case <-wait:
 		return nil
 	case <-wg.ctx.Done():
+		wg.canceled = true
 		return wg.ctx.Err()
 	}
 }
@@ -91,11 +98,12 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	case <-wait:
 		return nil
 	case <-wg.ctx.Done():
+		wg.canceled = true
 		return wg.ctx.Err()
 	}
 }
 
-func (wg *extendedWaitGroup) Wait() {
+func (wg *extendedWaitGroup) Wait() error {
 	wait := make(chan bool, 1)
 	//defer close(wait)
 
@@ -106,9 +114,10 @@ func (wg *extendedWaitGroup) Wait() {
 
 	select {
 	case <-wait:
-		return
+		return nil
 	case <-wg.ctx.Done():
-		return
+		wg.canceled = true
+		return wg.ctx.Err()
 	}
 }
 

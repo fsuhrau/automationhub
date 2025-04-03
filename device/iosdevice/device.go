@@ -34,20 +34,16 @@ type Device struct {
 	deviceOSVersion         string
 	deviceName              string
 	deviceID                string
-	deviceModel             string
 	deviceState             device.State
 	deviceIP                net.IP
 	recordingSessionProcess *exec.Cmd
 	lastUpdateAt            time.Time
 	webDriver               *webdriver.Client
+	deviceParameter         map[string]string
 }
 
 func (d *Device) DeviceParameter() map[string]string {
-	return nil
-}
-
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
+	return d.deviceParameter
 }
 
 func (d *Device) DeviceType() int {
@@ -55,10 +51,6 @@ func (d *Device) DeviceType() int {
 }
 func (d *Device) PlatformType() int {
 	return int(models.PlatformTypeiOS)
-}
-
-func (d *Device) Parameter() string {
-	return ""
 }
 
 func (d *Device) DeviceOSName() string {
@@ -104,8 +96,13 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	return nil
+func (d *Device) UpdateDeviceInfos(response ios.GetAllValuesResponse) {
+	d.deviceName = response.Value.DeviceName
+	d.deviceOSName = response.Value.ProductName
+	d.deviceOSVersion = response.Value.ProductVersion
+
+	d.deviceParameter = make(map[string]string)
+	d.deviceParameter["Device Model"] = response.Value.ProductType
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {

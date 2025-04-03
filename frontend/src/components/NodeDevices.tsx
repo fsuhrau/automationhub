@@ -96,6 +96,11 @@ const NodeDevices: React.FC = () => {
         return device.Node ? `${device.Node.Name} (${state.nodes?.find(n => n.ID === device.NodeID)?.Status === 1 ? 'Connected' : 'Disconnected'})`: "Master";
     });
 
+    const sortedGroups = _.orderBy(Object.entries(groups), [
+        ([group]) => group.includes('Connected') ? 0 : 1, // Status: Connected first
+        ([group]) => group.replace(/ \(.*\)$/, '') // Name: Ascending
+    ], ['asc', 'asc']);
+
     const onDeviceSelected = (deviceId: number | null) => {
         setSelectedDeviceID(deviceId as number)
         handleClickOpen()
@@ -152,7 +157,7 @@ const NodeDevices: React.FC = () => {
                 </DialogActions>
             </Dialog>
             {
-                _.map(groups, (items, group) => {
+                sortedGroups.map(([group, items]) => {
                     return (
                         <TitleCard key={`device_table_group_${group}`}
                                    title={`Node: ${group === "null" ? "Master" : group}`}>

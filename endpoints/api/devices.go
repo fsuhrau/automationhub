@@ -55,7 +55,7 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 		dev, _ := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 		devices[i].Dev = dev
 		if devices[i].NodeID > 0 {
-			devices[i].Status = device2.StateRemoteDisconnected
+			devices[i].Status = device2.StateNodeDisconnected
 		} else {
 			devices[i].Status = device2.StateUnknown
 		}

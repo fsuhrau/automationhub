@@ -105,11 +105,6 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 		needsUpdate = true
 	}
 
-	if deviceData.HardwareModel != dev.DeviceModel() {
-		deviceData.HardwareModel = dev.DeviceModel()
-		needsUpdate = true
-	}
-
 	parameter := dev.DeviceParameter()
 	if parameter != nil {
 		for key, value := range parameter {

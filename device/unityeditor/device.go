@@ -48,10 +48,6 @@ type Device struct {
 	deviceParameter map[string]string
 }
 
-func (d *Device) DeviceModel() string {
-	return ""
-}
-
 func (d *Device) DeviceType() int {
 	return int(models.DeviceTypeUnityEditor)
 }
@@ -62,25 +58,6 @@ func (d *Device) PlatformType() int {
 
 func (d *Device) DeviceParameter() map[string]string {
 	return d.deviceParameter
-}
-
-func (d *Device) Parameter() string {
-	data, _ := json.Marshal(d.deviceParameter)
-	return string(data)
-}
-
-func UnpackDeviceParameter(params string) []models.DeviceParameter {
-	var parameters []models.DeviceParameter
-	unityParameter := make(map[string]string)
-	if err := json.Unmarshal([]byte(params), &unityParameter); err == nil {
-		for k, v := range unityParameter {
-			parameters = append(parameters, models.DeviceParameter{
-				Key:   k,
-				Value: v,
-			})
-		}
-	}
-	return parameters
 }
 
 func (d *Device) DeviceOSName() string {
@@ -122,10 +99,6 @@ func (d *Device) SetDeviceState(state string) {
 	default:
 		d.deviceState = device.StateShutdown
 	}
-}
-
-func (d *Device) UpdateDeviceInfos() error {
-	return nil
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {

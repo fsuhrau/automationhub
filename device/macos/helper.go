@@ -8,38 +8,75 @@ import (
 	"strings"
 )
 
+const (
+	SW_VERS         = "sw_vers"
+	SYSCTL          = "sysctl"
+	SYSTEM_PROFILER = "system_profiler"
+)
+
+var cache map[string]string
+
+func init() {
+	cache = make(map[string]string)
+}
+
+func cacheKey(cmd, param string) string {
+	return fmt.Sprintf("%s_%s", cmd, param)
+}
+
 // getSwVersValue runs a sw_vers command and returns the output as a string
 func getSwVersValue(key string) (string, error) {
-	cmd := exec.Command("sw_vers", "-"+key)
+	ck := cacheKey(SW_VERS, key)
+	if cacheValue, ok := cache[ck]; ok {
+		return cacheValue, nil
+	}
+
+	cmd := exec.Command(SW_VERS, "-"+key)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(out.String()), nil
+	result := strings.TrimSpace(out.String())
+	cache[ck] = result
+	return result, nil
 }
 
 // getSysctlValue runs a sysctl command and returns the output as a string
 func getSysctlValue(name string) (string, error) {
-	cmd := exec.Command("sysctl", "-n", name)
+	ck := cacheKey(SYSCTL, name)
+	if cacheValue, ok := cache[ck]; ok {
+		return cacheValue, nil
+	}
+
+	cmd := exec.Command(SYSCTL, "-n", name)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(out.String()), nil
+
+	result := strings.TrimSpace(out.String())
+	cache[ck] = result
+	return result, nil
 }
 
 // getSystemProfilerValue runs a system_profiler command and returns the output as a string
 func getSystemProfilerValue(dataType string, keys []string) ([]string, error) {
-	cmd := exec.Command("system_profiler", dataType)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	if err := cmd.Run(); err != nil {
-		return nil, err
+	ck := cacheKey(SYSTEM_PROFILER, dataType)
+	cacheValue, ok := cache[ck]
+	if !ok {
+		cmd := exec.Command("system_profiler", dataType)
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
+		cacheValue = out.String()
+		cache[ck] = cacheValue
 	}
-	output := out.String()
-	lines := strings.Split(output, "\n")
+
+	lines := strings.Split(cacheValue, "\n")
 	var result []string
 	for _, line := range lines {
 		containsKey := false
@@ -152,5 +189,5 @@ func GetRAMInfo() (string, error) {
 }
 
 func GetSupportedGraphicsEngines() ([]string, error) {
-	return getSystemProfilerValue("SPDisplaysDataType", []string{"Metal:", "OpenGL:"})
+	return getSystemProfilerValue("SPDisplaysDataType", []string{"Metal", "OpenGL"})
 }

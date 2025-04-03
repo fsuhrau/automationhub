@@ -1,7 +1,6 @@
 package macos
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -34,27 +33,21 @@ const ConnectionTimeout = 10 * time.Second
 
 type Device struct {
 	generic.Device
-	deviceOSName       string
-	deviceOSVersion    string
-	deviceName         string
-	deviceID           string
-	deviceIP           net.IP
-	deviceState        device.State
-	recordingSession   *exec.Cmd
-	lastUpdateAt       time.Time
-	deviceModel        string
-	deviceSerialNumber string
-	runningExecutable  string
-	parameter          string
-	deviceParameter    map[string]string
+	deviceOSName    string
+	deviceOSVersion string
+	deviceName      string
+	deviceID        string
+	deviceIP        net.IP
+	deviceState     device.State
+	lastUpdateAt    time.Time
+	deviceParameter map[string]string
+
+	runningExecutable string
+	recordingSession  *exec.Cmd
 }
 
 func (d *Device) DeviceParameter() map[string]string {
 	return d.deviceParameter
-}
-
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
 }
 
 func (d *Device) DeviceType() int {
@@ -62,25 +55,6 @@ func (d *Device) DeviceType() int {
 }
 func (d *Device) PlatformType() int {
 	return int(models.PlatformTypeMac)
-}
-
-func (d *Device) Parameter() string {
-	data, _ := json.Marshal(d.deviceParameter)
-	return string(data)
-}
-
-func UnpackDeviceParameter(params string) []models.DeviceParameter {
-	var parameters []models.DeviceParameter
-	deviceParams := make(map[string]string)
-	if err := json.Unmarshal([]byte(params), &deviceParams); err == nil {
-		for k, v := range deviceParams {
-			parameters = append(parameters, models.DeviceParameter{
-				Key:   k,
-				Value: v,
-			})
-		}
-	}
-	return parameters
 }
 
 func (d *Device) DeviceOSName() string {
@@ -122,35 +96,21 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	var err error
-
-	if d.deviceOSName, err = GetOSName(); err != nil {
-		return err
-	}
-
-	if d.deviceName, err = GetDeviceName(); err != nil {
-		return err
-	}
-
-	if d.deviceOSVersion, err = GetOSVersion(); err != nil {
-		return err
-	}
-
-	if d.deviceID, err = GetHardwareUUID(); err != nil {
-		return err
-	}
-
-	if d.deviceModel, err = GetModelNumber(); err != nil {
-		return err
-	}
-
-	if d.deviceSerialNumber, err = GetSerialNumber(); err != nil {
-		return err
-	}
+func (d *Device) UpdateDeviceInfos() {
+	d.deviceID, _ = GetHardwareUUID()
+	d.deviceOSName, _ = GetOSName()
+	d.deviceName, _ = GetDeviceName()
+	d.deviceOSVersion, _ = GetOSVersion()
 
 	d.deviceParameter = make(map[string]string)
-	d.deviceParameter["SerialNumber"] = d.deviceSerialNumber
+	if modelNumber, err := GetModelNumber(); err == nil {
+		d.deviceParameter["Device Model"] = modelNumber
+	}
+
+	if serialNumber, err := GetSerialNumber(); err == nil {
+		d.deviceParameter["Serial Number"] = serialNumber
+	}
+
 	if cpuInfo, err := GetCPUInfo(); err == nil {
 		d.deviceParameter["CPU"] = cpuInfo
 	}
@@ -166,8 +126,6 @@ func (d *Device) UpdateDeviceInfos() error {
 	if supporedEngins, err := GetSupportedGraphicsEngines(); err == nil {
 		d.deviceParameter["Driver"] = strings.Join(supporedEngins, ",")
 	}
-
-	return nil
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {

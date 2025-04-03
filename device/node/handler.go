@@ -93,7 +93,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 			deviceName:      devs[i].Name,
 			deviceID:        devs[i].DeviceIdentifier,
 			platformType:    devs[i].PlatformType,
-			deviceState:     device.StateRemoteDisconnected,
+			deviceState:     device.StateUnknown,
 		}
 		dev.SetConfig(devs[i])
 
@@ -163,6 +163,11 @@ func (h *Handler) RefreshDevices(force bool) error {
 			return err
 		}
 
+		nodeStatus, _ := h.nodeManager.GetStatus(nodeIdentifier)
+		if nodeStatus == 0 {
+			continue
+		}
+
 		managers, err := h.nodeManager.GetManagers(nodeIdentifier)
 		if err != nil {
 			//h.log.Errorf("unable to get manager: %v", err)
@@ -170,13 +175,13 @@ func (h *Handler) RefreshDevices(force bool) error {
 		}
 
 		for mnger, devs := range managers {
+
 			for _, d := range devs {
 
 				deviceID := d.DeviceID()
 
 				if _, ok := h.devices[deviceID]; ok {
 					dev := h.devices[deviceID]
-					dev.deviceModel = d.DeviceModel()
 					dev.deviceType = d.DeviceType()
 					dev.deviceOSName = d.DeviceOSName()
 					dev.deviceOSVersion = d.DeviceOSVersion()
@@ -185,7 +190,7 @@ func (h *Handler) RefreshDevices(force bool) error {
 					dev.lastUpdateAt = lastUpdate
 					dev.deviceState = d.DeviceState()
 					dev.platformType = models.PlatformType(d.PlatformType())
-					dev.UpdateDeviceInfosFromParameter(d.Parameter())
+					dev.UpdateDeviceInfos(d.DeviceParameter())
 					h.devices[deviceID] = dev
 					h.deviceStorage.Update(h.Name(), dev)
 
@@ -195,12 +200,11 @@ func (h *Handler) RefreshDevices(force bool) error {
 						nodeManager:  h.nodeManager,
 						deviceName:   d.DeviceName(),
 						deviceID:     deviceID,
-						deviceModel:  d.DeviceModel(),
 						deviceOSName: d.DeviceOSName(),
 						platformType: models.PlatformType(d.PlatformType()),
 						lastUpdateAt: lastUpdate,
 					}
-					nd.UpdateDeviceInfosFromParameter(d.Parameter())
+					nd.UpdateDeviceInfos(d.DeviceParameter())
 					nd.deviceState = d.DeviceState()
 					dev := models.Device{
 						NodeID:           no.ID,
@@ -208,13 +212,10 @@ func (h *Handler) RefreshDevices(force bool) error {
 						DeviceType:       models.DeviceType(d.DeviceType()),
 						Name:             d.DeviceName(),
 						Manager:          Manager,
-						HardwareModel:    d.DeviceModel(),
 						OS:               mnger,
 						PlatformType:     models.PlatformType(d.PlatformType()),
 						OSVersion:        d.DeviceOSVersion(),
-						ConnectionParameter: &models.ConnectionParameter{
-							ConnectionType: models.ConnectionTypeNode,
-						},
+						ConnectionType:   models.ConnectionTypeNode,
 					}
 					nd.SetConfig(&dev)
 					h.devices[deviceID] = nd
@@ -228,13 +229,8 @@ func (h *Handler) RefreshDevices(force bool) error {
 
 	for i := range h.devices {
 		if h.devices[i].lastUpdateAt != lastUpdate {
-			if h.devices[i].GetConfig() != nil && h.devices[i].GetConfig().ConnectionParameter.ConnectionType == models.ConnectionTypeRemote {
-				h.devices[i].SetDeviceState("StateRemoteDisconnected")
-				h.deviceStorage.Update(h.Name(), h.devices[i])
-			} else {
-				h.devices[i].SetDeviceState("StateRemoteDisconnected")
-				h.deviceStorage.Update(h.Name(), h.devices[i])
-			}
+			h.devices[i].SetDeviceState("StateNodeDisconnected")
+			h.deviceStorage.Update(h.Name(), h.devices[i])
 		}
 	}
 

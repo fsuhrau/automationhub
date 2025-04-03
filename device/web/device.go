@@ -31,30 +31,25 @@ const ConnectionTimeout = 10 * time.Second
 
 type Device struct {
 	generic.Device
-	browser            string
-	browserPath        string
-	browserVersion     string
-	deviceOSName       string
-	deviceOSVersion    string
-	deviceName         string
-	deviceID           string
-	deviceIP           net.IP
-	deviceState        device.State
-	recordingSession   *exec.Cmd
-	lastUpdateAt       time.Time
-	deviceModel        string
-	deviceSerialNumber string
-	runningExecutable  string
+	browser         string
+	browserPath     string
+	browserVersion  string
+	deviceOSName    string
+	deviceOSVersion string
+	deviceName      string
+	deviceID        string
+	deviceIP        net.IP
+	deviceState     device.State
+	lastUpdateAt    time.Time
+	deviceParameter map[string]string
 
+	runningExecutable  string
+	recordingSession   *exec.Cmd
 	applicationProcess *exec.Cmd
 }
 
 func (d *Device) DeviceParameter() map[string]string {
-	return nil
-}
-
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
+	return d.deviceParameter
 }
 
 func (d *Device) DeviceType() int {
@@ -63,10 +58,6 @@ func (d *Device) DeviceType() int {
 
 func (d *Device) PlatformType() int {
 	return int(models.PlatformTypeWeb)
-}
-
-func (d *Device) Parameter() string {
-	return ""
 }
 
 func (d *Device) DeviceOSName() string {
@@ -108,34 +99,19 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	var err error
-
-	if d.deviceOSName, err = GetOSName(); err != nil {
-		return err
+func (d *Device) UpdateDeviceInfos() {
+	d.deviceOSName, _ = GetOSName()
+	d.deviceName, _ = GetDeviceName()
+	d.deviceOSVersion, _ = GetOSVersion()
+	d.deviceID, _ = GetHardwareUUID()
+	d.deviceParameter = make(map[string]string)
+	if modelNumber, err := GetModelNumber(); err == nil {
+		d.deviceParameter["Device Model"] = modelNumber
 	}
 
-	if d.deviceName, err = GetDeviceName(); err != nil {
-		return err
+	if serialNumber, err := GetSerialNumber(); err == nil {
+		d.deviceParameter["Serial Number"] = serialNumber
 	}
-
-	if d.deviceOSVersion, err = GetOSVersion(); err != nil {
-		return err
-	}
-
-	if d.deviceID, err = GetHardwareUUID(); err != nil {
-		return err
-	}
-
-	if d.deviceModel, err = GetModelNumber(); err != nil {
-		return err
-	}
-
-	if d.deviceSerialNumber, err = GetSerialNumber(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {

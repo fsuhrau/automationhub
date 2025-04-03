@@ -181,48 +181,28 @@ func (m *Handler) RefreshDevices(force bool) error {
 		if len(matches[0]) < 7 {
 			continue
 		}
-
 		deviceID := matches[0][1]
-		deviceUSB := matches[0][2]
-		product := matches[0][3]
-		model := matches[0][4]
-		name := matches[0][5]
-		transportID := matches[0][6]
-
 		if _, ok := m.devices[deviceID]; ok {
 			dev := m.devices[deviceID]
-			dev.deviceName = name
 			dev.deviceID = deviceID
-			dev.product = product
-			dev.deviceUSB = deviceUSB
-			dev.deviceModel = model
-			dev.transportID = transportID
 			dev.lastUpdateAt = lastUpdate
 			dev.SetDeviceState("StateBooted")
-			if m.init {
-				m.devices[deviceID].UpdateDeviceInfos()
-			}
+			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.deviceStorage.Update(m.Name(), dev)
 		} else {
 			m.devices[deviceID] = &Device{
-				deviceName:    name,
 				deviceID:      deviceID,
-				product:       product,
-				deviceUSB:     deviceUSB,
-				deviceModel:   model,
-				transportID:   transportID,
 				deviceOSName:  "android",
 				lastUpdateAt:  lastUpdate,
 				installedApps: make(map[string]string),
 			}
-			m.devices[deviceID].UpdateDeviceInfos()
+			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.devices[deviceID].SetDeviceState("StateBooted")
 			dev := models.Device{
 				DeviceIdentifier: deviceID,
 				DeviceType:       models.DeviceTypePhone,
-				Name:             name,
+				Name:             m.devices[deviceID].deviceName,
 				Manager:          Manager,
-				HardwareModel:    model,
 				OS:               "android",
 				PlatformType:     models.PlatformTypeAndroid,
 				OSVersion:        m.devices[deviceID].deviceOSVersion,

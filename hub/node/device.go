@@ -1,6 +1,7 @@
 package node
 
 import (
+	"encoding/json"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/generic"
@@ -21,7 +22,9 @@ func (d *RPCDevice) PlatformType() int {
 }
 
 func (d *RPCDevice) DeviceParameter() map[string]string {
-	return nil
+	deviceParams := make(map[string]string)
+	_ = json.Unmarshal([]byte(d.Dev.DeviceParameter), &deviceParams)
+	return deviceParams
 }
 
 func (d *RPCDevice) DeviceID() string {
@@ -52,16 +55,8 @@ func (d *RPCDevice) DeviceName() string {
 	return d.Dev.Name
 }
 
-func (d *RPCDevice) DeviceModel() string {
-	return d.Dev.DeviceModel
-}
-
 func (d *RPCDevice) DeviceType() int {
 	return int(d.Dev.DeviceType)
-}
-
-func (d *RPCDevice) Parameter() string {
-	return d.Dev.DeviceParameter
 }
 
 func (d *RPCDevice) IsAppInstalled(*app.Parameter) (bool, error) {
@@ -74,11 +69,6 @@ func (d *RPCDevice) InstallApp(*app.Parameter) error {
 
 func (d *RPCDevice) UninstallApp(*app.Parameter) error {
 	return nil
-}
-
-func (d *RPCDevice) UpdateDeviceInfos() error {
-	return nil
-
 }
 
 func (d *RPCDevice) ConnectionTimeout() time.Duration {

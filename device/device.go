@@ -13,11 +13,9 @@ type Device interface {
 	DeviceOSName() string
 	DeviceOSVersion() string
 	DeviceName() string
-	DeviceModel() string
 	DeviceParameter() map[string]string
 	DeviceType() int
 	PlatformType() int
-	Parameter() string
 
 	TargetVersion() string
 
@@ -25,7 +23,6 @@ type Device interface {
 	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error
 	UninstallApp(*app.Parameter) error
-	UpdateDeviceInfos() error
 
 	NewContext() context.Context
 	Cancel()

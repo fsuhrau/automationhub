@@ -2,7 +2,6 @@ package androiddevice
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fsuhrau/automationhub/device/generic"
@@ -15,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
@@ -34,31 +32,24 @@ const ConnectionTimeout = 2 * time.Minute
 
 type Device struct {
 	generic.Device
-	deviceOSName        string
-	deviceOSVersion     string
-	deviceName          string
-	deviceID            string
-	deviceState         device.State
-	deviceUSB           string
-	product             string
-	deviceModel         string
-	transportID         string
-	deviceIP            net.IP
-	deviceSupportedABIS []string
-	deviceAPILevel      int64
-	testRecordingPath   string
-	recordingSession    *exec.Cmd
-	lastUpdateAt        time.Time
-	installedApps       map[string]string
-	deviceParameter     map[string]string
+	deviceOSName      string
+	deviceOSVersion   string
+	deviceName        string
+	deviceID          string
+	deviceState       device.State
+	deviceUSB         string
+	product           string
+	deviceIP          net.IP
+	deviceAPILevel    int64
+	testRecordingPath string
+	recordingSession  *exec.Cmd
+	lastUpdateAt      time.Time
+	installedApps     map[string]string
+	deviceParameter   map[string]string
 }
 
 func (d *Device) DeviceOSName() string {
 	return d.deviceOSName
-}
-
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
 }
 
 func (d *Device) DeviceType() int {
@@ -71,25 +62,6 @@ func (d *Device) PlatformType() int {
 
 func (d *Device) DeviceParameter() map[string]string {
 	return d.deviceParameter
-}
-
-func (d *Device) Parameter() string {
-	data, _ := json.Marshal(d.deviceParameter)
-	return string(data)
-}
-
-func UnpackDeviceParameter(params string) []models.DeviceParameter {
-	var parameters []models.DeviceParameter
-	androidParams := make(map[string]string)
-	if err := json.Unmarshal([]byte(params), &androidParams); err == nil {
-		for k, v := range androidParams {
-			parameters = append(parameters, models.DeviceParameter{
-				Key:   k,
-				Value: v,
-			})
-		}
-	}
-	return parameters
 }
 
 func (d *Device) DeviceOSVersion() string {
@@ -146,17 +118,34 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	return installed && isAppInstalled, err
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	d.deviceAPILevel = android.GetParameterInt(d.deviceID, "ro.build.version.sdk")
-	d.deviceOSVersion = android.GetParameterString(d.deviceID, "ro.build.version.release")
-	d.deviceSupportedABIS = strings.Split(android.GetParameterString(d.deviceID, "ro.product.cpu.abilist"), ",")
-	var err error
-	d.deviceIP, err = android.GetDeviceIP(d.deviceID)
-	d.deviceParameter = make(map[string]string)
-	d.deviceParameter["ip"] = d.deviceIP.String()
-	d.deviceParameter["abis"] = strings.Join(d.deviceSupportedABIS, ",")
-	d.deviceParameter["apilevel"] = fmt.Sprintf("%d", d.deviceAPILevel)
-	return err
+func (d *Device) UpdateDeviceInfos(infos []string) {
+	init := false
+	if d.deviceParameter == nil {
+		d.deviceParameter = make(map[string]string)
+		init = true
+	}
+	// deviceID := infos[1]
+	deviceUSB := infos[2]
+	product := infos[3]
+	model := infos[4]
+	name := infos[5]
+	transportID := infos[6]
+
+	d.deviceName = name
+	d.product = product
+
+	d.deviceParameter["Device Model"] = model
+	d.deviceParameter["Transport ID"] = transportID
+	d.deviceParameter["Device USB"] = deviceUSB
+
+	if init {
+		d.deviceAPILevel = android.GetParameterInt(d.deviceID, "ro.build.version.sdk")
+		d.deviceOSVersion = android.GetParameterString(d.deviceID, "ro.build.version.release")
+		d.deviceIP, _ = android.GetDeviceIP(d.deviceID)
+		d.deviceParameter["IP"] = d.deviceIP.String()
+		d.deviceParameter["ABIs"] = android.GetParameterString(d.deviceID, "ro.product.cpu.abilist")
+		d.deviceParameter["API Level"] = fmt.Sprintf("%d", d.deviceAPILevel)
+	}
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {

@@ -3,12 +3,9 @@ package node
 import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/device/androiddevice"
 	"github.com/fsuhrau/automationhub/device/generic"
-	"github.com/fsuhrau/automationhub/device/macos"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"net"
 	"os/exec"
 	"time"
 )
@@ -25,7 +22,6 @@ type NodeDevice struct {
 	deviceType       int
 	targetVersion    string
 	platformType     models.PlatformType
-	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
 	lastUpdateAt     time.Time
@@ -47,20 +43,12 @@ func (d *NodeDevice) GetNodeID() manager.NodeIdentifier {
 	return d.nodeId
 }
 
-func (d *NodeDevice) DeviceModel() string {
-	return d.deviceModel
-}
-
 func (d *NodeDevice) DeviceType() int {
 	return d.deviceType
 }
 
 func (d *NodeDevice) PlatformType() int {
 	return int(d.platformType)
-}
-
-func (d *NodeDevice) Parameter() string {
-	return ""
 }
 
 func (d *NodeDevice) DeviceOSName() string {
@@ -83,10 +71,6 @@ func (d *NodeDevice) DeviceID() string {
 	return d.deviceID
 }
 
-func (d *NodeDevice) DeviceIP() net.IP {
-	return d.deviceIP
-}
-
 func (d *NodeDevice) DeviceState() device.State {
 	return d.deviceState
 }
@@ -102,17 +86,14 @@ func (d *NodeDevice) SetDeviceState(state string) {
 	}
 }
 
-func (d *NodeDevice) UpdateDeviceInfosFromParameter(parameter string) {
-	switch d.platformType {
-	case models.PlatformTypeAndroid:
-		d.deviceParameter = androiddevice.UnpackDeviceParameter(parameter)
-	case models.PlatformTypeMac:
-		d.deviceParameter = macos.UnpackDeviceParameter(parameter)
+func (d *NodeDevice) UpdateDeviceInfos(parameter map[string]string) {
+	d.deviceParameter = []models.DeviceParameter{}
+	for k, v := range parameter {
+		d.deviceParameter = append(d.deviceParameter, models.DeviceParameter{
+			Key:   k,
+			Value: v,
+		})
 	}
-}
-
-func (d *NodeDevice) UpdateDeviceInfos() error {
-	return nil
 }
 
 func (d *NodeDevice) IsAppInstalled(params *app.Parameter) (bool, error) {

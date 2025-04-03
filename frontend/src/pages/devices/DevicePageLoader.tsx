@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import IDeviceData from '../../types/device';
-import DeviceEditContent from './device.edit.content';
+import DeviceEditPage from './DeviceEditPage';
 import { getDevice } from '../../services/device.service';
 import DeviceShowPage from './DeviceShowPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
@@ -33,7 +33,7 @@ const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
     return (
         <div>
             { device
-                ? (edit ? <DeviceEditContent device={ device } /> : <DeviceShowPage device={ device } />)
+                ? (edit ? <DeviceEditPage device={ device } /> : <DeviceShowPage device={ device } />)
                 : <Typography variant={ 'h1' }>Loading</Typography>
             }
         </div>

@@ -48,13 +48,13 @@ type Device struct {
 	DeviceType          DeviceType
 	Name                string
 	Manager             string
-	HardwareModel       string
 	OS                  string
 	OSVersion           string
 	OSInfos             string
 	TargetVersion       string
 	DeviceParameter     []DeviceParameter
 	StatusLog           []DeviceLog
+	ConnectionType      ConnectionType
 	ConnectionParameter *ConnectionParameter
 	IsAcknowledged      bool
 	Status              device.State `gorm:"-"`

@@ -1,6 +1,9 @@
 package node
 
-import device2 "github.com/fsuhrau/automationhub/device"
+import (
+	"encoding/json"
+	device2 "github.com/fsuhrau/automationhub/device"
+)
 
 func fromDeviceState(state device2.State) DeviceState {
 	switch state {
@@ -39,6 +42,7 @@ func toDeviceState(state DeviceState) device2.State {
 }
 
 func toDeviceResponse(manager string, dev device2.Device) *DeviceResponse {
+	data, _ := json.Marshal(dev.DeviceParameter())
 	return &DeviceResponse{
 		Manager:         manager,
 		DeviceID:        dev.DeviceID(),
@@ -46,11 +50,9 @@ func toDeviceResponse(manager string, dev device2.Device) *DeviceResponse {
 		DeviceOS:        dev.DeviceOSName(),
 		DeviceOSVersion: dev.DeviceOSVersion(),
 		ProjectDir:      "",
-		// DeviceIP:        dev.DeviceIP().String(),
-		DeviceModel:     dev.DeviceModel(),
 		State:           fromDeviceState(dev.DeviceState()),
 		DeviceType:      int32(dev.DeviceType()),
-		DeviceParameter: dev.Parameter(),
+		DeviceParameter: string(data),
 		PlatformType:    int32(dev.PlatformType()),
 	}
 }
