@@ -69,7 +69,10 @@ func (d *Device) DeviceOSVersion() string {
 }
 
 func (d *Device) DeviceName() string {
-	return d.browser + " @ " + d.deviceName
+	if len(d.browserVersion) > 1 {
+		return fmt.Sprintf("%s (%s) @ %s", d.browser, d.browserVersion, d.deviceName)
+	}
+	return fmt.Sprintf("%s @ %s", d.browser, d.deviceName)
 }
 
 func (d *Device) DeviceID() string {
@@ -111,6 +114,33 @@ func (d *Device) UpdateDeviceInfos() {
 
 	if serialNumber, err := GetSerialNumber(); err == nil {
 		d.deviceParameter["Serial Number"] = serialNumber
+	}
+
+	var versionCommand *exec.Cmd
+	if strings.Contains(runtime.GOOS, "windows") {
+		versionCommand = exec2.NewCommand(d.browserPath, "--version")
+	} else if strings.Contains(runtime.GOOS, "darwin") {
+		if d.browser == "safari" {
+			versionCommand = exec.Command("defaults", "read", d.browserPath+"/Contents/Info", "CFBundleShortVersionString")
+		} else {
+			versionCommand = exec2.NewCommand(d.browserPath, "--version")
+		}
+	} else if strings.Contains(runtime.GOOS, "linux") {
+		versionCommand = exec2.NewCommand(d.browserPath, "--version")
+	}
+	data, err := versionCommand.Output()
+	if err != nil {
+		fmt.Println("Failed to get version for ", d.browser)
+	} else {
+		versionString := string(data)
+		versionString = strings.TrimSpace(versionString)
+		index := strings.LastIndex(versionString, " ")
+		if index != -1 {
+			d.browserVersion = versionString[index+1:]
+		} else {
+			d.browserVersion = versionString
+		}
+		d.deviceParameter["Browser Version"] = d.browserVersion
 	}
 }
 

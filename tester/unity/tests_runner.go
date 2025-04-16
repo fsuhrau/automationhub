@@ -146,6 +146,15 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 	case models.SimultaneouslyExecutionType:
 
 		var workers []workerChannel
+		// close worker channel
+		defer func() {
+			for i := range workers {
+				close(workers[i])
+				for range workers[i] {
+				}
+			}
+		}()
+
 		for _, d := range connectedDevices {
 			channel := make(workerChannel, len(testList))
 			workers = append(workers, channel)
@@ -167,14 +176,16 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 
 		_ = group.Wait()
 
-		// close worker channel
-		for i := range workers {
-			close(workers[i])
-		}
 		return
 
 	case models.ConcurrentExecutionType:
 		parallelWorker := make(workerChannel, len(testList))
+		defer func() {
+			// close worker channel
+			close(parallelWorker)
+			for range parallelWorker {
+			}
+		}()
 		for _, d := range connectedDevices {
 			go tr.workerFunction(ctx, parallelWorker, d, group)
 		}
@@ -191,8 +202,6 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 
 		_ = group.Wait()
 
-		// close worker channel
-		close(parallelWorker)
 		return
 	}
 }

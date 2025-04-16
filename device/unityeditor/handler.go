@@ -295,7 +295,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 		d.deviceOSVersion = data.DeviceOSVersion
 		d.unityVersion = data.TargetVersion
 		d.deviceOSInfos = data.DeviceOSInfos
-		d.deviceName = fmt.Sprintf("Unity on %s", data.Name)
+		d.deviceName = fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name)
 		d.deviceIP = data.DeviceIP
 		d.lastUpdateAt = lastUpdate
 		d.managerConnection = data.Conn
@@ -305,7 +305,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 
 	} else {
 		d = &Device{
-			deviceName:        fmt.Sprintf("Unity on %s", data.Name),
+			deviceName:        fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name),
 			deviceID:          data.DeviceID,
 			deviceOSName:      data.DeviceOS,
 			deviceOSVersion:   data.DeviceOSVersion,
@@ -319,7 +319,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 		dev := models.Device{
 			DeviceIdentifier: data.DeviceID,
 			DeviceType:       models.DeviceTypeUnityEditor,
-			Name:             fmt.Sprintf("Unity on %s", data.Name),
+			Name:             fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name),
 			Manager:          Manager,
 			OS:               data.DeviceOS,
 			OSVersion:        data.DeviceOSVersion,
