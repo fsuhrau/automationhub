@@ -62,6 +62,7 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 
 		if dev != nil {
 			devices[i].Status = dev.DeviceState()
+			devices[i].IsLocked = dev.IsLocked()
 			if dev.Connection() != nil {
 				devices[i].Connection = dev.Connection().ConnectionParameter
 			}

@@ -58,6 +58,7 @@ type Device struct {
 	ConnectionParameter *ConnectionParameter
 	IsAcknowledged      bool
 	Status              device.State `gorm:"-"`
+	IsLocked            bool         `gorm:"-"`
 	Dev                 interface{}  `gorm:"-"`
 	Connection          interface{}  `gorm:"-"`
 	PlatformType        PlatformType

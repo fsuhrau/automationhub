@@ -70,6 +70,9 @@ func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 
 	go func() {
 		wg.group.Wait()
+		if wg.canceled {
+			return
+		}
 		wait <- true
 	}()
 

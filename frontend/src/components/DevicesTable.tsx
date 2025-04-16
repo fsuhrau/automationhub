@@ -19,11 +19,10 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
 
     const renderActions = (device: any) => {
         return <ButtonGroup variant={"text"} aria-label="text button group">
-            {device.Status === 5 && (
+            {device.IsLocked && (
                 <Button color="primary" size="small" variant="outlined"
                         endIcon={<LockOpen/>}
                         onClick={(e) => onUnlockDevice(device.ID)}>
-                    Run
                 </Button>)
             }
             {device.Connection && (

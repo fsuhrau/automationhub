@@ -21,6 +21,7 @@ export default interface IDeviceData {
     OS: string,
     OSVersion: string,
     Status: DeviceStateType,
+    IsLocked: boolean,
     Manager: string,
     Dev?: IRealDeviceData | null,
     IsAcknowledged: boolean,
