@@ -272,7 +272,10 @@ func (d *Device) StartXCUITestRunner() error {
 		fmt.Println(err)
 	}()
 
-	address := <-webdriver.WDAHook.Connected
+	address, ok := <-webdriver.WDAHook.Connected
+	if !ok {
+		return fmt.Errorf("webdriver wdahook not connected")
+	}
 	d.webDriver = webdriver.New(address)
 	d.webDriver.CreateSession()
 	return nil

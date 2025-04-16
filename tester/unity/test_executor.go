@@ -47,12 +47,13 @@ func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test acti
 	e.wg.Add(1)
 	go func(wg sync.ExtendedWaitGroup) {
 		select {
-		case finished := <-e.fin:
-			{
-				if finished {
-					wg.Done()
-					break
-				}
+		case finished, ok := <-e.fin:
+			if !ok {
+				return
+			}
+			if finished {
+				wg.Done()
+				break
 			}
 		}
 	}(e.wg)

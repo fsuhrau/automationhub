@@ -138,8 +138,9 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 
 func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList []models.UnityTestFunction) {
 	ctx, cancelFunc := context.WithCancel(tr.ctx)
-	defer cancelFunc()
 	group := sync.NewExtendedWaitGroup(ctx)
+
+	defer cancelFunc()
 
 	switch tr.Config.ExecutionType {
 	case models.SimultaneouslyExecutionType:
@@ -170,6 +171,7 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 		for i := range workers {
 			close(workers[i])
 		}
+		return
 
 	case models.ConcurrentExecutionType:
 		parallelWorker := make(workerChannel, len(testList))
@@ -191,6 +193,7 @@ func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList
 
 		// close worker channel
 		close(parallelWorker)
+		return
 	}
 }
 
@@ -253,7 +256,10 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, start
 func (tr *testsRunner) workerFunction(ctx context.Context, channel workerChannel, dev base.DeviceMap, group sync.ExtendedWaitGroup) {
 	for {
 		select {
-		case task := <-channel:
+		case task, ok := <-channel:
+			if !ok {
+				return
+			}
 			method := task.Method
 			methodParts := strings.Split(method, " ")
 			if len(methodParts) > 1 {

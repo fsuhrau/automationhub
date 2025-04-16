@@ -2,9 +2,13 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -26,67 +30,92 @@ type extendedWaitGroup struct {
 	until    time.Time
 	ctx      context.Context
 	canceled bool
+	id       string
+}
+
+func (wg *extendedWaitGroup) logAction(action string) {
+	if false { // for debugging purposes
+		log.Printf("ExtendedWaitGroup [%s]: %s", wg.id, action)
+	}
 }
 
 func (wg *extendedWaitGroup) IsCanceled() bool {
+	wg.logAction("Checked if canceled")
 	return wg.canceled
 }
 
 func (wg *extendedWaitGroup) Done() {
+	wg.logAction("Done called")
 	wg.group.Done()
 }
 
 func (wg *extendedWaitGroup) Add(delta int) {
+	wg.logAction(fmt.Sprintf("Add called with delta: %d", delta))
 	wg.group.Add(delta)
 }
 
 func (wg *extendedWaitGroup) UpdateUntil(waitUntil time.Time) {
+	wg.logAction(fmt.Sprintf("UpdateUntil called with time: %s", waitUntil))
 	wg.until = waitUntil
 }
 
 func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
-	timeout := make(chan bool, 1)
-	//defer close(timeout)
-	go func() {
-		time.Sleep(duration)
-		timeout <- true
-	}()
+	wg.logAction(fmt.Sprintf("WaitWithTimeout called with duration: %s", duration))
+
+	ctx, cancel := context.WithTimeout(wg.ctx, duration)
+	defer cancel() // Ensure the context is canceled to release resources
 
 	wait := make(chan bool, 1)
-	//defer close(wait)
+	defer close(wait)
+
 	go func() {
 		wg.group.Wait()
 		wait <- true
 	}()
 
 	select {
-	case <-timeout:
-		return TimeoutError
+	case <-ctx.Done():
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			wg.canceled = true
+			wg.logAction("WaitWithTimeout timed out")
+			return TimeoutError
+		}
+		wg.logAction("WaitWithTimeout canceled by context")
+		return ctx.Err()
 	case <-wait:
+		wg.logAction("WaitWithTimeout completed")
 		return nil
-	case <-wg.ctx.Done():
-		wg.canceled = true
-		return wg.ctx.Err()
 	}
 }
 
 func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
+	wg.logAction(fmt.Sprintf("WaitUntil called with time: %s", waitUntil))
 	wg.until = waitUntil
 
 	timeout := make(chan bool, 1)
-	//defer close(timeout)
+	done := make(chan struct{})
+	defer close(timeout)
+	defer close(done)
+
+	ticker := time.NewTicker(50 * time.Minute)
+	defer ticker.Stop()
+
 	go func() {
 		for {
-			time.Sleep(50 * time.Millisecond)
-			if time.Now().After(wg.until) {
-				timeout <- true
-				return
+			select {
+			case _, ok := <-ticker.C:
+				if !ok {
+					return
+				}
+				if time.Now().After(wg.until) {
+					timeout <- true
+					return
+				}
 			}
 		}
 	}()
 
 	wait := make(chan bool, 1)
-	//defer close(wait)
 	go func() {
 		wg.group.Wait()
 		wait <- true
@@ -94,19 +123,23 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 
 	select {
 	case <-timeout:
+		wg.canceled = true
+		wg.logAction("WaitUntil timed out")
 		return TimeoutError
 	case <-wait:
+		wg.logAction("WaitUntil completed")
 		return nil
 	case <-wg.ctx.Done():
 		wg.canceled = true
+		wg.logAction("WaitUntil canceled by context")
 		return wg.ctx.Err()
 	}
 }
 
 func (wg *extendedWaitGroup) Wait() error {
+	wg.logAction("Wait called")
 	wait := make(chan bool, 1)
-	//defer close(wait)
-
+	defer close(wait)
 	go func() {
 		wg.group.Wait()
 		wait <- true
@@ -114,15 +147,20 @@ func (wg *extendedWaitGroup) Wait() error {
 
 	select {
 	case <-wait:
+		wg.logAction("Wait completed")
 		return nil
 	case <-wg.ctx.Done():
 		wg.canceled = true
+		wg.logAction("Wait canceled by context")
 		return wg.ctx.Err()
 	}
 }
 
 func NewExtendedWaitGroup(ctx context.Context) *extendedWaitGroup {
+	id := uuid.New().String()
+	log.Printf("ExtendedWaitGroup [%s]: Created", id)
 	return &extendedWaitGroup{
 		ctx: ctx,
+		id:  id,
 	}
 }

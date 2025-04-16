@@ -33,12 +33,13 @@ func (e *actionExecutor) Execute(ctx context.Context, dev device.Device, a actio
 	finishWaitingGroup.Add(1)
 	go func(wg sync.ExtendedWaitGroup) {
 		select {
-		case finished := <-e.fin:
-			{
-				if finished {
-					wg.Done()
-					break
-				}
+		case finished, ok := <-e.fin:
+			if !ok {
+				return
+			}
+			if finished {
+				wg.Done()
+				break
 			}
 		}
 	}(finishWaitingGroup)

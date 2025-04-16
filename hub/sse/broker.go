@@ -41,18 +41,30 @@ func (stream *Broker) listen() {
 	for {
 		select {
 		// Add new available client
-		case client := <-stream.NewClients:
+		case client, ok := <-stream.NewClients:
+			if !ok {
+				log.Printf("NewClients channel closed")
+				return
+			}
 			stream.TotalClients[client] = true
 			log.Printf("Client added. %d registered clients", len(stream.TotalClients))
 
 		// Remove closed client
-		case client := <-stream.ClosedClients:
+		case client, ok := <-stream.ClosedClients:
+			if !ok {
+				log.Printf("ClosedClients channel closed")
+				return
+			}
 			delete(stream.TotalClients, client)
 			close(client)
 			log.Printf("Removed client. %d registered clients", len(stream.TotalClients))
 
 		// Broadcast message to client
-		case eventMsg := <-stream.Events:
+		case eventMsg, ok := <-stream.Events:
+			if !ok {
+				log.Printf("Events channel closed")
+				return
+			}
 			// log.Printf("Send Event to %d clients", len(stream.TotalClients))
 			for clientMessageChan := range stream.TotalClients {
 				clientMessageChan <- eventMsg

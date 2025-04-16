@@ -141,15 +141,21 @@ var runCmd = &cobra.Command{
 func waitForResult(wg sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan *sse.Event) {
 	for {
 		select {
-		case event := <-eventsChannel:
-			if event != nil {
-				var finishedEvent events.TestRunFinishedPayload
-				json.Unmarshal(event.Data, &finishedEvent)
-				success = finishedEvent.Success
-				wg.Done()
+		case event, ok := <-eventsChannel:
+			if !ok {
 				return
 			}
-		case log := <-runLogChannel:
+
+			var finishedEvent events.TestRunFinishedPayload
+			json.Unmarshal(event.Data, &finishedEvent)
+			success = finishedEvent.Success
+			wg.Done()
+			return
+		case log, ok := <-runLogChannel:
+			if !ok {
+				return
+			}
+			
 			var ev events.NewTestLogEntryPayload
 			json.Unmarshal(log.Data, &ev)
 			logrus.Infof("log: %v", ev)

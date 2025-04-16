@@ -190,7 +190,10 @@ func (d *Device) HandleManagerConnection() {
 	go func(d *Device) {
 		for {
 			select {
-			case message := <-d.sendChannel:
+			case message, ok := <-d.sendChannel:
+				if !ok {
+					return
+				}
 				err := d.managerConnection.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					return

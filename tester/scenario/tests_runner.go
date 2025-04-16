@@ -197,7 +197,10 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, start
 func (tr *testsRunner) workerFunction(channel workerChannel, dev base.DeviceMap, group sync.ExtendedWaitGroup) {
 	for {
 		select {
-		case task := <-channel:
+		case task, ok := <-channel:
+			if !ok {
+				return
+			}
 			method := task.Method
 			methodParts := strings.Split(method, " ")
 			if len(methodParts) > 1 {

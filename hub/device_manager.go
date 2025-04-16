@@ -357,7 +357,11 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 
 	for {
 		select {
-		case data := <-d.Connection().ResponseChannel:
+		case data, ok := <-d.Connection().ResponseChannel:
+			if !ok {
+				dm.log.Info("channel closed")
+				return
+			}
 			if data.Err == nil {
 				resp := action.Response{}
 				if err := json.Unmarshal(data.Data, &resp); err != nil {
