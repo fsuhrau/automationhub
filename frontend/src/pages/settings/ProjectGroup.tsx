@@ -1,6 +1,6 @@
 import Paper from "@mui/material/Paper";
 import {Box, Typography} from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import {Edit} from "@mui/icons-material";
 import {TitleCard} from "../../components/title.card.component";

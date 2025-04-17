@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {Box, Divider, Tab, Tabs,} from '@mui/material';
 import {TitleCard} from "../../components/title.card.component";
 import AccessTokenTab from "./AccessTokenTab";

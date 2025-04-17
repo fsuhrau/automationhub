@@ -2,7 +2,7 @@ import React, {useEffect} from 'react';
 import DeviceTableComponent from '../../components/NodeDevices';
 import {useNavigate} from 'react-router-dom';
 import {Box} from "@mui/system";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {TitleCard} from "../../components/title.card.component";
 import {getNodes} from "../../services/settings.service";
 import {HubStateActions} from "../../application/HubState";

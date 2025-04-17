@@ -5,7 +5,7 @@ import {getTestTypeName, TestType} from '../../types/test.type.enum';
 import ITestData from '../../types/test';
 import {TitleCard} from "../../components/title.card.component";
 import {useNavigate} from "react-router-dom";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {getUnityTestCategoryName, UnityTestCategory} from "../../types/unity.test.category.type.enum";
 
 type KeyValue = { id: number, name: string };

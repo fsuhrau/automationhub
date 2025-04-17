@@ -1,5 +1,5 @@
 import Paper from "@mui/material/Paper";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import {Avatar, Divider, List, ListItem, ListItemAvatar, ListItemText, ListSubheader, Typography} from "@mui/material";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import {Box} from '@mui/system';
 import {getHubStats} from '../../services/hub.stats.service';
 import {prettySize} from '../../types/app';

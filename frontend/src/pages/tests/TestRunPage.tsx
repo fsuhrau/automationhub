@@ -36,7 +36,7 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis} from 'recharts';
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import TestStatusIconComponent from "../../components/test-status-icon.component";
 import Collapse from "@mui/material/Collapse";
 import Link from "@mui/material/Link";

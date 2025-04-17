@@ -13,7 +13,7 @@ import {HubStateActions} from "../application/HubState";
 import {Box} from "@mui/system";
 import PlatformTypeIcon from "../components/PlatformTypeIcon";
 import {useHubState} from "../hooks/HubStateProvider";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 
 const Card = styled(MuiCard)(({theme}) => ({
     display: 'flex',

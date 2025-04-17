@@ -5,7 +5,7 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 
 const TestsIndexPage: React.FC = () => {

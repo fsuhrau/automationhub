@@ -16,7 +16,7 @@ import IProtocolPerformanceEntryData from '../../types/protocol.performance.entr
 import {CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {TitleCard} from "../../components/title.card.component";
 import {Box} from "@mui/system";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {useLocation} from "react-router-dom";
 
 interface TabPanelProps {

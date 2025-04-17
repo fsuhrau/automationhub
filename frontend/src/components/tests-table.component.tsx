@@ -21,11 +21,11 @@ import {useProjectContext} from "../hooks/ProjectProvider";
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
 import {UnityTestCategory} from "../types/unity.test.category.type.enum";
-import Grid from "@mui/material/Grid2";
-import {TextareaAutosize as BaseTextareaAutosize} from '@mui/base/TextareaAutosize';
+import Grid from "@mui/material/Grid";
 import {getTestTypeName} from "../types/test.type.enum";
 import {getTestExecutionName} from "../types/test.execution.type.enum";
 import {useError} from "../ErrorProvider";
+import TextareaAutosize from '@mui/material/TextareaAutosize';
 
 interface TestTableProps {
     appId: number | null
@@ -272,7 +272,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                             </Typography>
                         </Grid>
                         <Grid size={12}>
-                            <BaseTextareaAutosize
+                            <TextareaAutosize
                                 style={{width: '100%', height: '100px'}}
                                 placeholder={"Parameter"}
                                 defaultValue={state.envParams}

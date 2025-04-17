@@ -9,7 +9,7 @@ import IDeviceData from '../types/device';
 import {Avatar, ListItemAvatar, ListItemButton, Typography} from '@mui/material';
 import AndroidRoundedIcon from '@mui/icons-material/AndroidRounded';
 import AppleIcon from '@mui/icons-material/Apple';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 
 interface DeviceSelectionProps {
     devices: IDeviceData[],

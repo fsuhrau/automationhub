@@ -15,7 +15,7 @@ import {IAppBinaryData} from "../types/app";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {useDropzone} from "react-dropzone";
 import {useApplicationContext} from "../hooks/ApplicationProvider";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {useError} from "../ErrorProvider";
 
 function LinearProgressWithLabel(props: LinearProgressProps & { value: number }): ReactElement {

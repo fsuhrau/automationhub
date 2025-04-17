@@ -21,7 +21,7 @@ import {
     GridToolbarExport
 } from '@mui/x-data-grid';
 import CellExpand from './cell.expand.component';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import SearchIcon from '@mui/icons-material/Search';
 import {ClearIcon} from "@mui/x-date-pickers";
 import Paper from "@mui/material/Paper";

@@ -43,7 +43,6 @@ const HubMainLayout: React.FC = () => {
                     component="main"
                     sx={(theme) => ({
                         flexGrow: 1,
-                        backgroundColor: alpha(theme.palette.background.default, 1),
                         overflow: 'auto',
                     })}
                 >

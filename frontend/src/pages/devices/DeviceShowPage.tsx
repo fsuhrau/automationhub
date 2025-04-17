@@ -9,7 +9,7 @@ import {
     DialogTitle,
     Typography
 } from '@mui/material';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import Button from '@mui/material/Button';
 import IDeviceData from '../../types/device';
 import {deleteDevice} from '../../services/device.service';

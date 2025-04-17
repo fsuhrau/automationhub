@@ -33,7 +33,7 @@ import {useProjectContext} from "../../hooks/ProjectProvider";
 import {isEqual} from "lodash";
 import {UnityTestCategory} from "../../types/unity.test.category.type.enum";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {TitleCard} from "../../components/title.card.component";
 import {useError} from "../../ErrorProvider";
 

@@ -9,7 +9,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import CopyToClipboard from "../../components/copy.clipboard.component";
 import IconButton from "@mui/material/IconButton";
 import {ContentCopy} from "@mui/icons-material";

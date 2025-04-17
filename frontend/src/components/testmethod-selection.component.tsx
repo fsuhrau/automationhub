@@ -9,7 +9,7 @@ import Paper from '@mui/material/Paper';
 import IAppFunctionData from '../types/app.function';
 import {Alert, CircularProgress, Divider, TextField, Typography} from '@mui/material';
 import {getTestFunctions} from '../services/unity.service';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import {useError} from "../ErrorProvider";
 import {Box} from "@mui/system";
 
@@ -139,7 +139,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                           onChange={onChangeFilter}/>}
             </Box>
             <Divider/>
-            <Paper sx={{minWidth: 400, minHeight: 600, maxHeight: 600, margin: 'auto', overflow: 'auto'}}>
+            <Paper sx={{minWidth: 400, minHeight: 500, maxHeight: 500, margin: 'auto', overflow: 'auto'}}>
                 <List dense={true} component="div" role="list">
                     {items.map((value) => {
                         const labelId = `transfer-list-item-${value.Class}-${value.Method}-label`;

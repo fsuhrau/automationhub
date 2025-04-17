@@ -14,7 +14,7 @@ import {
     Stepper,
     Typography,
 } from '@mui/material';
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import TextField from '@mui/material/TextField';
 import {getExecutionTypes, TestExecutionType} from '../../types/test.execution.type.enum';
 import {getTestTypes, TestType} from '../../types/test.type.enum';

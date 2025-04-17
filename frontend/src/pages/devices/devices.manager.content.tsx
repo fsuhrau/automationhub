@@ -28,7 +28,7 @@ const DevicesManagerContent: React.FC = () => {
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     function openDetails(id: number): void {
-        navigate(`/device/${ id }`);
+        navigate(`/device/${id}`);
     }
 
     useEffect(() => {
@@ -47,27 +47,27 @@ const DevicesManagerContent: React.FC = () => {
 
 
     return (
-        <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
+        <Paper sx={{maxWidth: 1200, margin: 'auto', overflow: 'hidden'}}>
             <AppBar
                 position="static"
                 color="default"
                 elevation={0}
-                sx={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}
+                sx={{borderBottom: '1px solid rgba(0, 0, 0, 0.12)'}}
             >
                 <Toolbar>
-                    <Grid container={ true } spacing={ 2 } alignItems="center">
-                        <Grid item={ true }>
-                            <Typography variant={ 'h6' }>
+                    <Grid container={true} spacing={2} alignItems="center">
+                        <Grid>
+                            <Typography variant={'h6'}>
                                 Device Manager
                             </Typography>
                         </Grid>
-                        <Grid item={ true } xs={ true }>
+                        <Grid>
                         </Grid>
-                        <Grid item={ true }>
-                            <IconButton color="primary" size={ 'small' }
-                                onClick={ (e) => {
+                        <Grid>
+                            <IconButton color="primary" size={'small'}
+                                        onClick={(e) => {
 
-                                } }>
+                                        }}>
                                 <Add/>
                             </IconButton>
 
@@ -75,8 +75,9 @@ const DevicesManagerContent: React.FC = () => {
                     </Grid>
                 </Toolbar>
             </AppBar>
-            <TableContainer component={ Paper }>
-                <Table sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }} size="small" aria-label="a dense table">
+            <TableContainer component={Paper}>
+                <Table sx={{maxWidth: 1200, margin: 'auto', overflow: 'hidden'}} size="small"
+                       aria-label="a dense table">
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
@@ -88,9 +89,9 @@ const DevicesManagerContent: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { devices.map((device) => <TableRow key={ `device_table_row_${device.ID}` }>
+                        {devices.map((device) => <TableRow key={`device_table_row_${device.ID}`}>
                             <TableCell component="th" scope="row">
-                                { device.Alias.length > 0 ? device.Alias : device.Name }
+                                {device.Alias.length > 0 ? device.Alias : device.Name}
                             </TableCell>
                             <TableCell>
                             </TableCell>
@@ -99,18 +100,19 @@ const DevicesManagerContent: React.FC = () => {
                             <TableCell>
                             </TableCell>
                             <TableCell>
-                                { deviceState(device.Status) }
-                                { device.Status === DeviceStateType.Locked && <Button onClick={() => unlockDevice(device.ID)}>Unlock</Button>}
+                                {deviceState(device.Status)}
+                                {device.Status === DeviceStateType.Locked &&
+                                    <Button onClick={() => unlockDevice(device.ID)}>Unlock</Button>}
                             </TableCell>
                             <TableCell align="right">
-                                <IconButton color="primary" size={ 'small' }
-                                    onClick={ (e) => {
-                                        openDetails(device.ID);
-                                    } }>
+                                <IconButton color="primary" size={'small'}
+                                            onClick={(e) => {
+                                                openDetails(device.ID);
+                                            }}>
                                     <ArrowForward/>
                                 </IconButton>
                             </TableCell>
-                        </TableRow>) }
+                        </TableRow>)}
                     </TableBody>
                 </Table>
             </TableContainer>
