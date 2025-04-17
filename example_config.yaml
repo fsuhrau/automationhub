@@ -1,7 +1,6 @@
 restart: true        # perform a restart for every test
 autodetect_ip: false # try to find the correct ip automatically
 host_ip: 192.168.0.1 # the ip for connecting devices to the hub
-port: 8002           # port to listen on
 auth:
   token:
     # only one additional provide can be active next to token

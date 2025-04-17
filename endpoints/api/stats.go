@@ -55,7 +55,7 @@ func (s *Service) getDeviceStats() (int, int) {
 	count := len(devices)
 	booted := 0
 	for i := range devices {
-		dev := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
+		dev, _ := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 		if dev != nil && dev.DeviceState() >= device.StateBooted {
 			booted++
 		}

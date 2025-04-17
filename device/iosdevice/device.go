@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/modules/webdriver"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"image"
 	"image/color"
 	"image/png"
@@ -33,16 +34,23 @@ type Device struct {
 	deviceOSVersion         string
 	deviceName              string
 	deviceID                string
-	deviceModel             string
 	deviceState             device.State
 	deviceIP                net.IP
 	recordingSessionProcess *exec.Cmd
 	lastUpdateAt            time.Time
 	webDriver               *webdriver.Client
+	deviceParameter         map[string]string
 }
 
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
+func (d *Device) DeviceParameter() map[string]string {
+	return d.deviceParameter
+}
+
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypePhone)
+}
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeiOS)
 }
 
 func (d *Device) DeviceOSName() string {
@@ -51,6 +59,10 @@ func (d *Device) DeviceOSName() string {
 
 func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
+}
+
+func (d *Device) TargetVersion() string {
+	return ""
 }
 
 func (d *Device) DeviceName() string {
@@ -84,8 +96,13 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	return nil
+func (d *Device) UpdateDeviceInfos(response ios.GetAllValuesResponse) {
+	d.deviceName = response.Value.DeviceName
+	d.deviceOSName = response.Value.ProductName
+	d.deviceOSVersion = response.Value.ProductVersion
+
+	d.deviceParameter = make(map[string]string)
+	d.deviceParameter["Device Model"] = response.Value.ProductType
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
@@ -141,11 +158,11 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	*/
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	if d.webDriver == nil {
 		return fmt.Errorf("webdriver not connected")
 	}
-	return d.webDriver.Launch(params.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "HOST", hostIP.String()})
+	return d.webDriver.Launch(params.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "NODE_URL", nodeUrl})
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
@@ -255,7 +272,10 @@ func (d *Device) StartXCUITestRunner() error {
 		fmt.Println(err)
 	}()
 
-	address := <-webdriver.WDAHook.Connected
+	address, ok := <-webdriver.WDAHook.Connected
+	if !ok {
+		return fmt.Errorf("webdriver wdahook not connected")
+	}
 	d.webDriver = webdriver.New(address)
 	d.webDriver.CreateSession()
 	return nil

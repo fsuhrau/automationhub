@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
@@ -33,34 +32,44 @@ const ConnectionTimeout = 2 * time.Minute
 
 type Device struct {
 	generic.Device
-	deviceOSName        string
-	deviceOSVersion     string
-	deviceName          string
-	deviceID            string
-	deviceState         device.State
-	deviceUSB           string
-	product             string
-	deviceModel         string
-	transportID         string
-	deviceIP            net.IP
-	deviceSupportedABIS []string
-	deviceAPILevel      int64
-	testRecordingPath   string
-	recordingSession    *exec.Cmd
-	lastUpdateAt        time.Time
-	installedApps       map[string]string
+	deviceOSName      string
+	deviceOSVersion   string
+	deviceName        string
+	deviceID          string
+	deviceState       device.State
+	deviceUSB         string
+	product           string
+	deviceIP          net.IP
+	deviceAPILevel    int64
+	testRecordingPath string
+	recordingSession  *exec.Cmd
+	lastUpdateAt      time.Time
+	installedApps     map[string]string
+	deviceParameter   map[string]string
 }
 
 func (d *Device) DeviceOSName() string {
 	return d.deviceOSName
 }
 
-func (d *Device) DeviceModel() string {
-	return d.deviceModel
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypePhone)
+}
+
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeAndroid)
+}
+
+func (d *Device) DeviceParameter() map[string]string {
+	return d.deviceParameter
 }
 
 func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
+}
+
+func (d *Device) TargetVersion() string {
+	return ""
 }
 
 func (d *Device) DeviceName() string {
@@ -102,27 +111,48 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	isAppInstalled := false
 	hash, ok := d.installedApps[params.Identifier]
 	if ok {
-		isAppInstalled = hash == params.Hash
+		isAppInstalled = hash == params.App.Hash
 	}
 	installed, err := android.IsAppInstalled(d.deviceID, params)
 	d.Log("device", "App '%s' is installed: %t", params.Identifier, installed)
 	return installed && isAppInstalled, err
 }
 
-func (d *Device) UpdateDeviceInfos() error {
-	d.deviceAPILevel = android.GetParameterInt(d.deviceID, "ro.build.version.sdk")
-	d.deviceOSVersion = android.GetParameterString(d.deviceID, "ro.build.version.release")
-	d.deviceSupportedABIS = strings.Split(android.GetParameterString(d.deviceID, "ro.product.cpu.abilist"), ",")
-	var err error
-	d.deviceIP, err = android.GetDeviceIP(d.deviceID)
-	return err
+func (d *Device) UpdateDeviceInfos(infos []string) {
+	init := false
+	if d.deviceParameter == nil {
+		d.deviceParameter = make(map[string]string)
+		init = true
+	}
+	// deviceID := infos[1]
+	deviceUSB := infos[2]
+	product := infos[3]
+	model := infos[4]
+	name := infos[5]
+	transportID := infos[6]
+
+	d.deviceName = name
+	d.product = product
+
+	d.deviceParameter["Device Model"] = model
+	d.deviceParameter["Transport ID"] = transportID
+	d.deviceParameter["Device USB"] = deviceUSB
+
+	if init {
+		d.deviceAPILevel = android.GetParameterInt(d.deviceID, "ro.build.version.sdk")
+		d.deviceOSVersion = android.GetParameterString(d.deviceID, "ro.build.version.release")
+		d.deviceIP, _ = android.GetDeviceIP(d.deviceID)
+		d.deviceParameter["IP"] = d.deviceIP.String()
+		d.deviceParameter["ABIs"] = android.GetParameterString(d.deviceID, "ro.product.cpu.abilist")
+		d.deviceParameter["API Level"] = fmt.Sprintf("%d", d.deviceAPILevel)
+	}
 }
 
 func (d *Device) InstallApp(params *app.Parameter) error {
 
 	d.Log("device", "Install App '%s'", params.Identifier)
 
-	isApkDebuggable := isDebuggablePackage(params.AppPath)
+	isApkDebuggable := isDebuggablePackage(params.App.AppPath)
 
 	var debug string
 
@@ -131,11 +161,11 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 	}
 	parameter := []string{"-s", d.DeviceID(), "install", "-t"}
 	if d.deviceAPILevel < 24 {
-		parameter = append(parameter, []string{"-rg" + debug, params.AppPath}...)
+		parameter = append(parameter, []string{"-rg" + debug, params.App.AppPath}...)
 		//} else if isApkDebuggable {
 		//	parameter = append(parameter, []string{"-r", "-g", "-d", params.AppPath}...)
 	} else {
-		parameter = append(parameter, []string{"-r", "-g", params.AppPath}...)
+		parameter = append(parameter, []string{"-r", "-g", params.App.AppPath}...)
 	}
 
 	cmd := exec2.NewCommand("adb", parameter...)
@@ -148,7 +178,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 		return fmt.Errorf("installation failed: \"%s\" %v", errb.String(), err)
 	}
 
-	d.installedApps[params.Identifier] = params.Hash
+	d.installedApps[params.Identifier] = params.App.Hash
 
 	return nil
 }
@@ -193,13 +223,13 @@ func (d *Device) unlockScreen() error {
 	return nil
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 	d.Log("device", "Start App '%s' with Session: '%s'", params.Identifier, sessionId)
 
 	if err := d.unlockScreen(); err != nil {
 		return err
 	}
-	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "HOST", hostIP.String(), "-e", "DEVICE_ID", d.deviceID)
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.App.Android.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "NODE_URL", nodeUrl, "-e", "DEVICE_ID", d.deviceID)
 	return cmd.Run()
 }
 

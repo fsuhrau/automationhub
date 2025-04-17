@@ -1,6 +1,7 @@
 package device
 
 type State uint8
+
 const (
 	StateNone State = iota
 	StateUnknown
@@ -8,6 +9,7 @@ const (
 	StateRemoteDisconnected
 	StateBooted
 	StateLocked
+	StateNodeDisconnected
 )
 
 func StateToString(state State) string {
@@ -22,13 +24,15 @@ func StateToString(state State) string {
 		return "remote disconnected"
 	case StateLocked:
 		return "locked"
+	case StateNodeDisconnected:
+		return "node disconnected"
 	}
 	return ""
 }
 
 type ConnectionState uint8
+
 const (
 	Disconnected ConnectionState = iota
 	Connected
 )
-

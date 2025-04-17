@@ -87,8 +87,7 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 
 				// If the connection is dead, we can't write a status to it.
 				if brokenPipe {
-					c.Error(err.(error)) // nolint: errcheck
-					c.Abort()
+					_ = c.AbortWithError(http.StatusInternalServerError, err.(error))
 				} else {
 					c.AbortWithStatus(http.StatusInternalServerError)
 				}
@@ -96,7 +95,10 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 				sentry.CaptureException(err.(error))
 			}
 		}()
-		c.Next()
+
+		if !c.IsAborted() {
+			c.Next()
+		}
 	}
 }
 

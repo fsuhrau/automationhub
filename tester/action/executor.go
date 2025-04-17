@@ -1,6 +1,7 @@
 package action
 
 import (
+	"context"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -10,8 +11,8 @@ import (
 
 type actionExecutor struct {
 	devicesManager manager.Devices
-	fin     chan bool
-	request action.Interface
+	fin            chan bool
+	request        action.Interface
 }
 
 func NewExecutor(devices manager.Devices) *actionExecutor {
@@ -21,26 +22,27 @@ func NewExecutor(devices manager.Devices) *actionExecutor {
 	}
 }
 
-func (e *actionExecutor) Execute(dev device.Device, a action.Interface, timeout time.Duration) error {
+func (e *actionExecutor) Execute(ctx context.Context, dev device.Device, a action.Interface, timeout time.Duration) error {
 	e.request = a
 	dev.AddActionHandler(e)
 	defer func() {
 		dev.RemoveActionHandler(e)
 	}()
 
-	finishWaitingGroup := sync.ExtendedWaitGroup{}
+	finishWaitingGroup := sync.NewExtendedWaitGroup(ctx)
 	finishWaitingGroup.Add(1)
-	go func(wg *sync.ExtendedWaitGroup) {
+	go func(wg sync.ExtendedWaitGroup) {
 		select {
-		case finished := <-e.fin:
-			{
-				if finished {
-					wg.Done()
-					break
-				}
+		case finished, ok := <-e.fin:
+			if !ok {
+				return
+			}
+			if finished {
+				wg.Done()
+				break
 			}
 		}
-	}(&finishWaitingGroup)
+	}(finishWaitingGroup)
 	if err := e.devicesManager.SendAction(dev, a); err != nil {
 		return err
 	}

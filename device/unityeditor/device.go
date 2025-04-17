@@ -1,11 +1,16 @@
 package unityeditor
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gorilla/websocket"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 
@@ -21,22 +26,38 @@ type Device struct {
 	deviceOSName     string
 	deviceOSVersion  string
 	deviceOSInfos    string
+	unityVersion     string
 	deviceName       string
 	deviceID         string
 	deviceIP         net.IP
 	deviceState      device.State
 	recordingSession *exec.Cmd
 	lastUpdateAt     time.Time
+	startedAt        time.Time
 	updated          bool
 
 	// Create client
-	client      *http.Client
-	conn        *websocket.Conn
-	sendChannel chan []byte
+	client            *http.Client
+	managerConnection *websocket.Conn
+	sendChannel       chan []byte
+
+	ctx             context.Context
+	cancel          context.CancelFunc
+	process         *exec.Cmd
+	instanceLogFile string
+	deviceParameter map[string]string
 }
 
-func (d *Device) DeviceModel() string {
-	return ""
+func (d *Device) DeviceType() int {
+	return int(models.DeviceTypeUnityEditor)
+}
+
+func (d *Device) PlatformType() int {
+	return int(models.PlatformTypeEditor)
+}
+
+func (d *Device) DeviceParameter() map[string]string {
+	return d.deviceParameter
 }
 
 func (d *Device) DeviceOSName() string {
@@ -45,6 +66,10 @@ func (d *Device) DeviceOSName() string {
 
 func (d *Device) DeviceOSVersion() string {
 	return d.deviceOSVersion
+}
+
+func (d *Device) TargetVersion() string {
+	return d.unityVersion
 }
 
 func (d *Device) DeviceName() string {
@@ -72,12 +97,8 @@ func (d *Device) SetDeviceState(state string) {
 	case "StateRemoteDisconnected":
 		d.deviceState = device.StateRemoteDisconnected
 	default:
-		d.deviceState = device.StateUnknown
+		d.deviceState = device.StateShutdown
 	}
-}
-
-func (d *Device) UpdateDeviceInfos() error {
-	return nil
 }
 
 func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
@@ -99,7 +120,7 @@ func (d *Device) getHTTPClient() *http.Client {
 	return d.client
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP) error {
+func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
 
 	type request struct {
 		Action    string
@@ -109,7 +130,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, hostIP net.IP
 	req := request{
 		Action:    "start",
 		SessionID: sessionId,
-		HostUrl:   hostIP.String(),
+		HostUrl:   nodeUrl,
 	}
 	buffer, _ := json.Marshal(req)
 	d.sendChannel <- buffer
@@ -161,7 +182,7 @@ func (d *Device) RunNativeScript(script []byte) {
 
 }
 
-func (d *Device) HandleSocketFunction() {
+func (d *Device) HandleManagerConnection() {
 	d.deviceState = device.StateBooted
 	d.updated = true
 	d.sendChannel = make(chan []byte, 10)
@@ -169,8 +190,11 @@ func (d *Device) HandleSocketFunction() {
 	go func(d *Device) {
 		for {
 			select {
-			case message := <-d.sendChannel:
-				err := d.conn.WriteMessage(websocket.TextMessage, message)
+			case message, ok := <-d.sendChannel:
+				if !ok {
+					return
+				}
+				err := d.managerConnection.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					return
 				}
@@ -179,7 +203,7 @@ func (d *Device) HandleSocketFunction() {
 	}(d)
 
 	for {
-		_, msg, err := d.conn.ReadMessage()
+		_, msg, err := d.managerConnection.ReadMessage()
 		if err != nil {
 			break
 		}
@@ -187,6 +211,46 @@ func (d *Device) HandleSocketFunction() {
 		_ = msg
 	}
 
-	d.deviceState = device.StateUnknown
+	d.deviceState = device.StateShutdown
 	d.updated = true
+}
+
+func (d *Device) UnityLogStartListening() {
+	d.ctx, d.cancel = context.WithCancel(context.Background())
+	go d.processUnityLog()
+}
+
+func (d *Device) processUnityLog() {
+	time.Sleep(1 * time.Second)
+
+	file, err := os.Open(d.instanceLogFile)
+	if err != nil {
+		return
+	}
+	defer func() {
+		file.Close()
+	}()
+
+	reader := bufio.NewReader(file)
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		default:
+			line, err := reader.ReadString('\n')
+			if err != nil && err != io.EOF {
+				return
+			}
+			if len(line) == 0 {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+		}
+	}
+}
+
+func (d *Device) UnityLogStopListening() {
+	if d.cancel != nil {
+		d.cancel()
+	}
 }

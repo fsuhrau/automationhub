@@ -4,23 +4,25 @@ import (
 	"context"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"net"
 	"time"
 )
 
 type Device interface {
 	DeviceID() string
-	DeviceIP() net.IP
 	DeviceState() State
 	DeviceOSName() string
 	DeviceOSVersion() string
 	DeviceName() string
-	DeviceModel() string
+	DeviceParameter() map[string]string
+	DeviceType() int
+	PlatformType() int
 
+	TargetVersion() string
+
+	// IsAppBundleAvailable(*app.Parameter) (bool, error)
 	IsAppInstalled(*app.Parameter) (bool, error)
 	InstallApp(*app.Parameter) error
 	UninstallApp(*app.Parameter) error
-	UpdateDeviceInfos() error
 
 	NewContext() context.Context
 	Cancel()
@@ -29,8 +31,9 @@ type Device interface {
 	Connection() *Connection
 	IsAppConnected() bool
 
-	StartApp(*app.Parameter, string, net.IP) error
+	StartApp(*app.Parameter, string, string) error
 	StopApp(*app.Parameter) error
+	Send([]byte) error
 
 	StartRecording(string) error
 	StopRecording() error
@@ -44,8 +47,9 @@ type Device interface {
 	IsLocked() bool
 
 	SetLogWriter(LogWriter)
+	GetLogWriter() LogWriter
 	Data(string, string)
-	LogPerformance(checkpoint string, cpu, fps, mem float32, other string)
+	LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})
 	Exception(string, string, ...interface{})
@@ -53,4 +57,5 @@ type Device interface {
 	RemoveActionHandler(action.ActionHandler)
 	ActionHandlers() []action.ActionHandler
 	RunNativeScript(data []byte)
+	Passed(result bool)
 }

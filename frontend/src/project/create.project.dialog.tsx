@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import {
     Button,
     Dialog,
@@ -53,15 +53,15 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = (props: CreatePr
             TransitionComponent={ Transition }
         >
             <Grid container={ true } sx={ {padding: 5} }>
-                <Grid item={ true } xs={12}>
+                <Grid size={12}>
                     <Typography variant={ "h5" }><IconButton onClick={ onClose }><Close/></IconButton>Create a new
                         Project</Typography>
                 </Grid>
-                <Grid item={ true } xs={2} container={ true } sx={ {padding: 3} } spacing={ 2 }>
-                    <Grid item={ true } xs={ 12 }>
+                <Grid size={2} container={ true } sx={ {padding: 3} } spacing={ 2 }>
+                    <Grid size={ 12 }>
                         <Typography variant={ "caption" }>Project Name</Typography>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <TextField
                             hiddenLabel
                             id="project_name"
@@ -72,7 +72,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = (props: CreatePr
                             onChange={ event => setState(prevState => ({...state, Name: event.target.value})) }
                         />
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <Button variant={"outlined"} onClick={submit}>Create</Button>
                     </Grid>
                 </Grid>

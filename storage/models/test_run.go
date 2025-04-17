@@ -8,6 +8,7 @@ type TestRun struct {
 	Test         *Test
 	AppBinaryID  uint
 	AppBinary    *AppBinary
+	StartURL     string
 	SessionID    string
 	Parameter    string
 	Protocols    []TestProtocol

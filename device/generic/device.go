@@ -62,6 +62,13 @@ func (d *Device) Connection() *device.Connection {
 	return d.con
 }
 
+func (d *Device) Send(data []byte) error {
+	if err := d.con.Send(data); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *Device) Lock() error {
 	if d.locked {
 		return DeviceLockedError
@@ -87,9 +94,24 @@ func (d *Device) SetLogWriter(writer device.LogWriter) {
 	d.writer = writer
 }
 
-func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+func (d *Device) GetLogWriter() device.LogWriter {
+	return d.writer
+}
+
+func (d *Device) SetTestResult(success models.TestResultState) {
+
+}
+
+func (d *Device) TestProtocolId() *uint {
 	if d.writer != nil {
-		d.writer.LogPerformance(checkpoint, cpu, fps, mem, other)
+		return d.writer.TestProtocolId()
+	}
+	return nil
+}
+
+func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
+	if d.writer != nil {
+		d.writer.LogPerformance(checkpoint, cpu, fps, mem, vertexCount, triangles, other)
 	}
 }
 
@@ -104,6 +126,14 @@ func (d *Device) Log(source, format string, params ...interface{}) {
 		d.writer.Log(source, format, params...)
 	} else {
 		logrus.Infof(format, params...)
+	}
+}
+
+func (d *Device) Passed(result bool) {
+	if d.writer != nil {
+		d.writer.Passed(result)
+	} else {
+		logrus.Infof("Test: %s", result)
 	}
 }
 

@@ -1,12 +1,17 @@
 package github
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/fsuhrau/automationhub/authentication"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
 
@@ -15,6 +20,11 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	oauth2gh "golang.org/x/oauth2/github"
+)
+
+const (
+	ProviderName = "github"
+	CodeKey      = "code"
 )
 
 type Credentials struct {
@@ -26,6 +36,7 @@ var (
 	conf  *oauth2.Config
 	state string
 	store sessions.CookieStore
+	db    *gorm.DB
 )
 
 func randToken() string {
@@ -36,8 +47,9 @@ func randToken() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func Setup(redirectURL, credFile string, scopes []string, secret []byte) {
+func Setup(gormDb *gorm.DB, redirectURL, credFile string, scopes []string, secret []byte) {
 	store = sessions.NewCookieStore(secret)
+	db = gormDb
 	var c Credentials
 	file, err := ioutil.ReadFile(credFile)
 	if err != nil {
@@ -63,8 +75,10 @@ func Session(name string) gin.HandlerFunc {
 func loginRedirect(ctx *gin.Context) {
 	state = randToken()
 	session := sessions.Default(ctx)
-	session.Set("state", state)
-	session.Save()
+	session.Set(authentication.StateKey, state)
+	if err := session.Save(); err != nil {
+		fmt.Println(err.Error())
+	}
 	ctx.Redirect(http.StatusTemporaryRedirect, GetLoginURL(state))
 }
 
@@ -72,67 +86,132 @@ func GetLoginURL(state string) string {
 	return conf.AuthCodeURL(state)
 }
 
-type AuthUser struct {
-	Login   string `json:"login"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Company string `json:"company"`
-	URL     string `json:"url"`
-}
-
 func init() {
-	gob.Register(AuthUser{})
+	gob.Register(authentication.User{})
 }
 
-func Auth() gin.HandlerFunc {
+func Routes(r *gin.Engine) {
+	r.GET("/auth/session", validateSessionRoute)
+	r.POST("/auth/logout", logoutRoute)
+	r.Any("/auth/oauth2", oauthRoute)
+}
+
+func SessionHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+
 		var (
 			ok       bool
-			authUser AuthUser
-			user     *github.User
+			authUser authentication.User
 		)
 
 		// Handle the exchange code to initiate a transport.
 		session := sessions.Default(ctx)
-		mysession := session.Get("ginoauthgh")
-		if authUser, ok = mysession.(AuthUser); ok {
-			ctx.Set("user", authUser)
+		mysession := session.Get(authentication.SessionKey)
+		if authUser, ok = mysession.(authentication.User); ok {
+			ctx.Set(authentication.UserKey, authUser)
 			ctx.Next()
 			return
 		}
 
-		retrievedState := session.Get("state")
-		if retrievedState != ctx.Query("state") {
-			loginRedirect(ctx)
-			ctx.Abort()
-			return
-		}
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized", "url": "/auth/oauth2"})
+	}
+}
 
-		// TODO: oauth2.NoContext -> context.Context from stdlib
-		tok, err := conf.Exchange(oauth2.NoContext, ctx.Query("code"))
-		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to do exchange: %v", err))
-			return
-		}
-		client := github.NewClient(conf.Client(oauth2.NoContext, tok))
-		user, _, err = client.Users.Get(oauth2.NoContext, "")
-		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to get user: %v", err))
-			return
-		}
+func validateSessionRoute(ctx *gin.Context) {
+	session := sessions.Default(ctx)
 
-		// save userinfo, which could be used in Handlers
-		authUser = AuthUser{
-			Login: *user.Login,
-			Name:  *user.Name,
-			URL:   *user.URL,
-		}
-		ctx.Set("user", authUser)
+	mysession := session.Get(authentication.SessionKey)
+	if authUser, ok := mysession.(authentication.User); ok {
+		ctx.Set(authentication.UserKey, authUser)
+		ctx.JSON(http.StatusOK, gin.H{"user": authUser})
+		return
+	}
 
-		// populate cookie
-		session.Set("ginoauthgh", authUser)
+	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+}
+
+func logoutRoute(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+
+	mysession := session.Get(authentication.SessionKey)
+	if _, ok := mysession.(authentication.User); ok {
+		session.Delete(authentication.SessionKey)
 		if err := session.Save(); err != nil {
-			logrus.Errorf("[Github-OAuth2]Failed to save session: %v", err)
+			logrus.Errorf("Failed to save session: %v", err)
 		}
 	}
+
+	ctx.JSON(http.StatusOK, nil)
+	return
+}
+
+func oauthRoute(ctx *gin.Context) {
+	var (
+		ok       bool
+		authUser authentication.User
+		user     *github.User
+		context  = context.Background()
+	)
+
+	// Handle the exchange code to initiate a transport.
+	session := sessions.Default(ctx)
+	mysession := session.Get(authentication.SessionKey)
+	if authUser, ok = mysession.(authentication.User); ok {
+		ctx.Set(authentication.UserKey, authUser)
+		ctx.Next()
+		return
+	}
+
+	sessionState := session.Get(authentication.StateKey)
+	retrievedState := ctx.Query(authentication.StateKey)
+	if retrievedState != sessionState {
+		loginRedirect(ctx)
+		return
+	}
+
+	tok, err := conf.Exchange(context, ctx.Query(CodeKey))
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to do exchange: %v", err))
+		return
+	}
+	client := github.NewClient(conf.Client(context, tok))
+	user, _, err = client.Users.Get(context, "")
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("Failed to get user: %v", err))
+		return
+	}
+
+	auth := models.UserAuth{
+		ProviderUserID: fmt.Sprintf("%d", user.GetID()),
+		Email:          user.GetEmail(),
+		Provider:       ProviderName,
+	}
+
+	if err := db.Debug().First(&auth, "provider = ? and provider_user_id = ?", ProviderName, auth.ProviderUserID).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		u := models.User{
+			Name: user.GetName(),
+			Role: "",
+			Auth: []models.UserAuth{auth},
+		}
+		if err := db.Create(&u).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "detail": err.Error()})
+			return
+		}
+	}
+
+	// save userinfo, which could be used in Handlers
+	authUser = authentication.User{
+		Login: user.GetLogin(),
+		Name:  user.GetName(),
+		URL:   user.GetURL(),
+	}
+	ctx.Set(authentication.UserKey, authUser)
+
+	// populate cookie
+	session.Set(authentication.SessionKey, authUser)
+	if err := session.Save(); err != nil {
+		logrus.Errorf("[Github-OAuth2]Failed to save session: %v", err)
+	}
+
+	ctx.Redirect(http.StatusTemporaryRedirect, "/")
 }

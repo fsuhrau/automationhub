@@ -1,14 +1,32 @@
 package app
 
-type Parameter struct {
-	AppBinaryID    uint
-	Platform       string
-	Name           string
-	AppPath        string
-	Identifier     string
-	Version        string
+type AndroidParams struct {
 	LaunchActivity string
-	Additional     string
-	Hash           string
-	Size           int
+}
+
+type ExecutableParams struct {
+	Executable string
+}
+
+type AppParams struct {
+	AppBinaryID uint
+	AppPath     string
+	Additional  string
+	Hash        string
+	Size        int
+	Android     *AndroidParams
+	Executable  *ExecutableParams
+}
+
+type WebParams struct {
+	StartURL string
+}
+
+type Parameter struct {
+	Platform   string
+	Identifier string
+	Name       string
+	Version    string
+	App        *AppParams
+	Web        *WebParams
 }

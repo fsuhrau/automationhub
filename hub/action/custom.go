@@ -1,13 +1,13 @@
 package action
 
 import (
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 )
 
 type Custom struct {
 	RequestData string
-	Content []byte
-	Success bool
+	Content     []byte
+	Success     bool
 }
 
 func (a *Custom) GetActionType() ActionType {
@@ -15,15 +15,16 @@ func (a *Custom) GetActionType() ActionType {
 }
 
 func (a *Custom) Serialize() ([]byte, error) {
+	data := []byte(a.RequestData)
 	req := &Request{
 		ActionType: ActionType_Custom,
-		Payload: &Request_Data{Data: a.RequestData},
+		Payload:    RequestData{Data: &data},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *Custom) ProcessResponse(response *Response) error {
-	a.Content = response.GetData()
+	a.Content = *response.Payload.Data
 	a.Success = response.Success
 	return nil
 }

@@ -4,10 +4,19 @@ type WebDriver struct {
 	BundleID string `yaml:"bundleId,omitempty" mapstructure:"bundleId"`
 }
 
+type Device struct {
+	Identifier string            `yaml:"identifier,omitempty" mapstructure:"identifier"`
+	Parameter  map[string]string `yaml:"parameter,omitempty" mapstructure:"parameter"`
+}
+
 type Manager struct {
-	Enabled         bool       `yaml:"enabled,omitempty" mapstructure:"enabled"`
-	UseOSScreenshot bool       `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
-	WebDriver       *WebDriver `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
+	Enabled          bool              `yaml:"enabled,omitempty" mapstructure:"enabled"`
+	UseOSScreenshot  bool              `yaml:"use_os_screenshot,omitempty" mapstructure:"use_os_screenshot"`
+	WebDriver        *WebDriver        `yaml:"webdriver,omitempty" mapstructure:"webdriver"`
+	UnityPath        string            `yaml:"unity_path,omitempty" mapstructure:"unity_path"`
+	UnityBuildTarget string            `yaml:"unity_build_target,omitempty" mapstructure:"unity_build_target"`
+	Devices          []Device          `yaml:"devices,omitempty" mapstructure:"devices"`
+	Browser          map[string]string `yaml:"browser,omitempty" mapstructure:"browser"`
 }
 
 type Hook struct {
@@ -19,16 +28,22 @@ type Hook struct {
 }
 
 type Token struct {
+	AuthToken string `yaml:"auth_token,omitempty" mapstructure:"auth_token"`
+}
+
+type Password struct {
+	Secret string `yaml:"secret,omitempty" mapstructure:"secret"`
 }
 
 type Auth struct {
-	Token  *Token  `yaml:"token,omitempty" mapstructure:"token"`
-	OAuth2 *OAuth2 `yaml:"oauth2,omitempty" mapstructure:"oauth2"`
-	Github *Github `yaml:"github,omitempty" mapstrucutre:"github"`
+	Token    *Token    `yaml:"token,omitempty" mapstructure:"token"`
+	Password *Password `yaml:"token,omitempty" mapstructure:"password"`
+	OAuth2   *OAuth2   `yaml:"oauth2,omitempty" mapstructure:"oauth2"`
+	Github   *Github   `yaml:"github,omitempty" mapstrucutre:"github"`
 }
 
 func (a *Auth) AuthenticationRequired() bool {
-	return a.OAuth2 != nil || a.Github != nil || a.Token != nil
+	return a.OAuth2 != nil || a.Github != nil || a.Password != nil
 }
 
 type OAuth2 struct {
@@ -48,16 +63,32 @@ type Github struct {
 	Secret      string   `yaml:"secret,omitempty" mapstructure:"secret"`
 }
 
+type SQLite struct {
+	Path string `yaml:"path,omitempty" mapstructure:"path"`
+}
+
+type Postgres struct {
+	Host     string `yaml:"host,omitempty" mapstructure:"host"`
+	Port     string `yaml:"port,omitempty" mapstructure:"port"`
+	User     string `yaml:"user,omitempty" mapstructure:"user"`
+	Password string `yaml:"password,omitempty" mapstructure:"password"`
+	Database string `yaml:"database,omitempty" mapstructure:"database"`
+}
+
 type Database struct {
-	SQLiteDBPath string `yaml:"sqlite_db_path,omitempty" mapstructure:"sqlite_db_path"`
+	SQLite   *SQLite   `yaml:"sqlite,omitempty" mapstructure:"sqlite"`
+	Postgres *Postgres `yaml:"postgres,omitempty" mapstructure:"postgres"`
 }
 
 type Service struct {
-	Port          uint16             `yaml:"port,omitempty" mapstructure:"port"`
+	Identifier    string             `yaml:"identifier,omitempty" mapstructure:"identifier"`
+	Port          int32              `yaml:"port,omitempty" mapstructure:"port"`
 	Autodetect    bool               `yaml:"autodetect_ip,omitempty" mapstructure:"autodetect_ip"`
 	AutoDiscovery bool               `yaml:"auto_discovery,omitempty" mapstructure:"auto_discovery"`
 	HostIP        string             `yaml:"host_ip,omitempty" mapstructure:"host_ip"`
-	ServerURL     string             `yaml:"server_url,omitempty" mapstructure:"server_url"`
+	NodeUrl       string             `yaml:"node_url,omitempty" mapstructure:"node_url"`
+	MasterURL     string             `yaml:"master_url,omitempty" mapstructure:"master_url"`
+	Cors          []string           `yaml:"cors,omitempty" mapstructure:"cors"`
 	DeviceManager map[string]Manager `yaml:"managers,omitempty" mapstructure:"managers"`
 	Hooks         []Hook             `yaml:"hooks,omitempty" mapstructure:"hooks"`
 	Auth          Auth               `yaml:"auth,omitempty" mapstructure:"auth"`

@@ -1,12 +1,10 @@
 package action
 
-import (
-	"google.golang.org/protobuf/proto"
-)
+import "encoding/json"
 
 type LongTouchElement struct {
 	ElementID string
-	Success bool
+	Success   bool
 }
 
 func (a *LongTouchElement) GetActionType() ActionType {
@@ -16,9 +14,9 @@ func (a *LongTouchElement) GetActionType() ActionType {
 func (a *LongTouchElement) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_LongTouch,
-		Payload: &Request_Id{Id: a.ElementID},
+		Payload:    RequestData{Id: &a.ElementID},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *LongTouchElement) ProcessResponse(response *Response) error {

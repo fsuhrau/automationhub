@@ -2,15 +2,15 @@ package action
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"github.com/fsuhrau/automationhub/hub/networking"
-	"google.golang.org/protobuf/proto"
 )
 
 type GetSceenGraph struct {
-	content []byte
+	content     []byte
 	contentType ContentType
 }
 
@@ -28,7 +28,6 @@ type Node struct {
 	LabelText  string   `xml:"LabelText,attr"`
 	Children   []Node   `xml:""`
 }
-
 
 func nodeIteratorFunc(flatNode *networking.Node) Node {
 	node := Node{
@@ -75,13 +74,13 @@ func (a *GetSceenGraph) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_GetSceneGraph,
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *GetSceenGraph) ProcessResponse(response *Response) error {
-	if response.GetScreenshot() != nil {
-		a.content = response.GetScreenshot().Sceengraph
-		a.contentType = response.GetScreenshot().ContentType
+	if response.Payload.Screenshot != nil {
+		a.content = response.Payload.Screenshot.Sceengraph
+		a.contentType = response.Payload.Screenshot.ContentType
 	}
 	return nil
 }

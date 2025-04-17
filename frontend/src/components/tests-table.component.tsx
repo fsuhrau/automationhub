@@ -1,48 +1,58 @@
-import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import React, {ChangeEvent, useEffect, useState} from 'react';
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import ITestData from '../types/test';
-import { executeTest, getAllTests } from '../services/test.service';
+import {executeTest, getAllTests} from '../services/test.service';
 import {
     Button,
     ButtonGroup,
     Dialog,
     DialogActions,
     DialogContent,
-    DialogContentText,
     DialogTitle,
     TextField,
     Typography,
 } from '@mui/material';
-import { Edit, PlayArrow } from '@mui/icons-material';
+import {PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
-import { useNavigate, useParams } from 'react-router-dom';
-import { PlatformType } from '../types/platform.type.enum';
-import { IAppBinaryData } from "../types/app";
-import { ApplicationProps } from "../application/application.props";
+import {useNavigate} from 'react-router-dom';
+import {PlatformType} from '../types/platform.type.enum';
+import {IAppBinaryData} from "../types/app";
+import {useProjectContext} from "../hooks/ProjectProvider";
+import {DataGrid, GridColDef} from "@mui/x-data-grid";
+import Chip from "@mui/material/Chip";
+import {UnityTestCategory} from "../types/unity.test.category.type.enum";
+import Grid from "@mui/material/Grid2";
+import {TextareaAutosize as BaseTextareaAutosize} from '@mui/base/TextareaAutosize';
+import {getTestTypeName} from "../types/test.type.enum";
+import {getTestExecutionName} from "../types/test.execution.type.enum";
+import {useError} from "../ErrorProvider";
 
-interface TestTableProps extends ApplicationProps {
+interface TestTableProps {
     appId: number | null
 }
 
 const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
-    const { appId, appState } = props;
-
-    let params = useParams();
+    const {appId} = props;
+    const {project, projectIdentifier} = useProjectContext();
+    const {setError} = useError()
 
     const navigate = useNavigate();
 
-    const app = appState.project?.Apps.find(a => a.ID === appId);
+    const app = project.Apps.find(a => a.ID === appId);
 
     // dialog
     const [open, setOpen] = useState(false);
+    const [gridData, setGridData] = useState<{
+        id: number,
+        name: string,
+        type: string,
+        execution: string,
+        devices: string,
+        tests: string,
+        actions: number
+    }[]>([]);
+
     const handleRunClickOpen = (): void => {
         setOpen(true);
     };
@@ -51,61 +61,119 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     };
 
     type RunTestState = {
-        disableStart: boolean,
         testId: number | null,
-        binaryId: number,
+        binaryId: number | null,
         envParams: string,
+        startURL: string | null,
     }
 
     const [state, setState] = useState<RunTestState>({
-        disableStart: true,
         testId: null,
-        binaryId: 0,
-        envParams: app === undefined ? '' : app?.DefaultParameter.replace(';', "\n"),
+        binaryId: null,
+        startURL: null,
+        envParams: app === undefined ? '' : app?.DefaultParameter.replaceAll(';', '\n'),
     });
 
-    const [tests, setTests] = useState<ITestData[]>([]);
+
+    const renderChip = (type: string) => {
+        return <Chip label={type} color={'default'} size="small"/>;
+    }
+
+    const navigateAction = (route: string) => {
+        navigate(route)
+    }
+
+    const renderActions = (id: number) => {
+        return <ButtonGroup variant={"text"} aria-label="text button group">
+            <Button size="small"
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}`)}>Show</Button>
+            <Button size="small"
+                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}/runs/last`)}>Protocol</Button>
+            <Button size="small" endIcon={<PlayArrow/>} onClick={() => {
+                setState(prevState => ({...prevState, testId: id}))
+                handleRunClickOpen();
+            }}>Run</Button>
+        </ButtonGroup>;
+    }
+
+    const columns: GridColDef[] = [
+        {
+            field: 'name',
+            headerName: 'Name',
+            flex: 1.5,
+            minWidth: 300
+        },
+        {
+            field: 'type',
+            headerName: 'Type',
+            flex: 0.5,
+            minWidth: 90,
+            renderCell: (params) => renderChip(params.value as any),
+        },
+        {
+            field: 'execution',
+            headerName: 'Execution',
+            flex: 0.5,
+            minWidth: 90,
+            renderCell: (params) => renderChip(params.value as any),
+        },
+        {
+            field: 'devices',
+            headerName: 'Devices',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 1,
+            minWidth: 100,
+        },
+        {
+            field: 'tests',
+            headerName: 'Tests',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 0.5,
+            minWidth: 90,
+        },
+        {
+            field: 'actions',
+            headerName: '',
+            headerAlign: 'right',
+            align: 'right',
+            flex: 1,
+            minWidth: 100,
+            renderCell: (params) => renderActions(params.value as any),
+        },
+    ];
 
     useEffect(() => {
         if (appId !== null) {
-            getAllTests(params.project_id as string, appId).then(response => {
-                setTests(response.data);
+            getAllTests(projectIdentifier, appId).then(response => {
+                setGridData(response.data.map(d => {
+                    return {
+                        id: d.ID,
+                        name: d.Name,
+                        type: getTestTypeName(d.TestConfig.Type),
+                        execution: getTestExecutionName(d.TestConfig.ExecutionType),
+                        devices: getDevices(d),
+                        tests: getTests(d),
+                        actions: d.ID,
+                    }
+                }));
             }).catch(e => {
-                console.log(e);
+                setError(e);
             });
         }
-    }, [params.project_id, appId]);
-
-    const typeString = (type: number): string => {
-        switch (type) {
-            case 0:
-                return 'Unity';
-            case 1:
-                return 'Cocos';
-            case 2:
-                return 'Serenity';
-            case 3:
-                return 'Scenario';
-        }
-        return '';
-    };
-
-    const executionString = (type: number): string => {
-        switch (type) {
-            case 0:
-                return 'Concurrent';
-            case 1:
-                return 'Simultaneously';
-        }
-        return '';
-    };
+    }, [projectIdentifier, appId]);
 
     const onRunTest = (): void => {
         if (appId !== null) {
-            executeTest(params.project_id as string, appId, state.testId, state.binaryId, state.envParams).then(response => {
-                navigate(`/project/${params.project_id}/app/${appId}/test/${ state.testId }/run/${ response.data.ID }`);
+            executeTest(projectIdentifier, appId, state.testId, {
+                AppBinaryID: state.binaryId!,
+                Params: state.envParams,
+                StartURL: state.startURL,
+            }).then(response => {
+                navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
             }).catch(error => {
-                console.log(error);
+                setError(error);
             });
         }
     };
@@ -122,7 +190,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const getTests = (test: ITestData): string => {
         if (test.TestConfig.Unity !== undefined && test.TestConfig.Unity !== null) {
-            if (test.TestConfig.Unity?.RunAllTests) {
+            if (test.TestConfig.Unity?.UnityTestCategoryType == UnityTestCategory.RunAllTests) {
                 return 'all';
             }
             if (test.TestConfig.Unity.UnityTestFunctions !== null) {
@@ -133,106 +201,140 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         return 'n/a';
     };
 
-    const requiresApp = app?.Platform !== PlatformType.Editor
+    const requiresApp = app?.Platform !== PlatformType.Editor && app?.Platform !== PlatformType.Web;
+    const requiresURL = app?.Platform === PlatformType.Web;
 
-    const onBinarySelectionChanged = (app: IAppBinaryData): void => {
-        setState(prevState => ({...prevState, binaryId: app.ID, disableStart: requiresApp && app.ID === 0}));
+    const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
+        setState(prevState => ({...prevState, binaryId: binary ? binary.ID : null}));
     };
 
-    const onEnvParamsChanged = (event: ChangeEvent<HTMLInputElement>): void => {
+    const onEnvParamsChanged = (event: ChangeEvent<HTMLTextAreaElement>): void => {
         setState(prevState => ({...prevState, envParams: event.target.value}));
     };
 
 
     useEffect(() => {
         if (app !== null && app !== undefined) {
-            setState(prevState => ({...prevState, disableStart: requiresApp && app.ID === 0, envParams: app.DefaultParameter.replace(";", "\n")}));
+            setState(prevState => ({
+                ...prevState,
+                envParams: app.DefaultParameter.replaceAll(";", "\n")
+            }));
         }
     }, [app]);
 
     return (
-        <div>
-            <Dialog open={ open } onClose={ handleRunClose } aria-labelledby="form-dialog-title">
+        <div style={{display: 'flex', flexDirection: 'column'}}>
+            <Dialog fullWidth={true}
+                    maxWidth={"sm"}
+                    open={open} onClose={handleRunClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
-                    { requiresApp && (
-                        <>
-                            <DialogContentText>
-                                Select an existing App to execute the tests.<br/>
-                                Or Upload a new one.<br/>
-                                <br/>
-                            </DialogContentText>
-                            <BinarySelection binaryId={state.binaryId} upload={ true } onSelectionChanged={ onBinarySelectionChanged }/>
-                        </>
-                    )}
-                    You can change parameters of your app by providing key value pairs in an environment like format:<br/>
-                    <br/>
-                    <Typography variant={ 'subtitle2' }>
-                        server=http://localhost:8080<br/>
-                        user=autohub
-                    </Typography>
-                    <br/>
-                    <TextField
-                        label="Parameter"
-                        fullWidth={ true }
-                        multiline={ true }
-                        rows={ 4 }
-                        defaultValue={state.envParams}
-                        value={state.envParams}
-                        variant="outlined"
-                        onChange={ onEnvParamsChanged }
-                    />
+                    <Grid container={true} spacing={2}>
+                        {requiresApp && (
+                            <Grid container={true} size={12} spacing={2}>
+                                <Grid size={12}>
+                                    <Typography variant={"body1"}>
+                                        Select an existing App to execute the tests.<br/>
+                                        Or Upload a new one.<br/>
+                                    </Typography>
+                                </Grid>
+                                <Grid size={12}>
+                                    <BinarySelection binaryId={state.binaryId} upload={true}
+                                                     onSelectionChanged={onBinarySelectionChanged}/>
+                                </Grid>
+                            </Grid>
+                        )}
+                        {requiresURL && <Grid size={12}>
+                            <Grid size={12} container={true} spacing={2}>
+                                <Typography variant={"body1"}>
+                                    Set the Startup URL for your test<br/>
+                                </Typography>
+                            </Grid>
+                            <Grid size={12}>
+                                <TextField required={true} fullWidth={true} value={state.startURL}
+                                           onChange={(e) => setState(prevState => ({
+                                               ...prevState,
+                                               startURL: e.target.value
+                                           }))}/>
+                            </Grid>
+                        </Grid>}
+                        <Grid size={12}>
+                            <Typography variant={"body1"}>
+                                You can change parameters of your app by providing key value pairs in an environment
+                                like
+                                format:
+                            </Typography>
+                        </Grid>
+                        <Grid size={12}>
+                            <Typography variant={'subtitle2'}>
+                                server=http://localhost:8080<br/>
+                                user=autohub
+                            </Typography>
+                        </Grid>
+                        <Grid size={12}>
+                            <BaseTextareaAutosize
+                                style={{width: '100%', height: '100px'}}
+                                placeholder={"Parameter"}
+                                defaultValue={state.envParams}
+                                value={state.envParams}
+                                onChange={onEnvParamsChanged}
+                            />
+
+                        </Grid>
+                    </Grid>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={ handleRunClose } color="primary">
+                    <Button onClick={handleRunClose} color="primary">
                         Cancel
                     </Button>
-                    <Button onClick={ () => {
+                    <Button onClick={() => {
                         onRunTest();
                         handleRunClose();
-                    } } color="primary" variant={ 'contained' } disabled={ state.disableStart }>
+                    }} color="primary" variant={'contained'} disabled={requiresApp && state.binaryId === null}>
                         Start
                     </Button>
                 </DialogActions>
             </Dialog>
-            <TableContainer component={ Paper }>
-                <Table size="small" aria-label="a dense table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell align="right">Typ</TableCell>
-                            <TableCell align="right">Execution</TableCell>
-                            <TableCell align="right">Devices</TableCell>
-                            <TableCell align="right">Tests</TableCell>
-                            <TableCell align="right"/>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        { tests.map((test) => <TableRow key={ test.Name }>
-                            <TableCell component="th" scope="row">{ test.Name }</TableCell>
-                            <TableCell align="right">{ typeString(test.TestConfig.Type) }</TableCell>
-                            <TableCell align="right">{ executionString(test.TestConfig.ExecutionType) }</TableCell>
-                            <TableCell align="right">{ getDevices(test) }</TableCell>
-                            <TableCell align="right">{ getTests(test) }</TableCell>
-                            <TableCell align="right">
-                                <ButtonGroup color="primary" aria-label="text button group">
-                                    <Button variant="text" size="small"
-                                        href={ `test/${ test.ID }` }>Show</Button>
-                                    <Button variant="text" size="small"
-                                        href={ `test/${ test.ID }/runs/last` }>Protocol</Button>
-                                    <Button variant="text" size="small" endIcon={ <PlayArrow/> }
-                                        onClick={ () => {
-                                            setState(prevState => ({...prevState, testId: test.ID}))
-                                            handleRunClickOpen();
-                                        } }>Run</Button>
-                                </ButtonGroup>
-
-
-                            </TableCell>
-                        </TableRow>) }
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <DataGrid
+                disableRowSelectionOnClick
+                rows={gridData}
+                columns={columns}
+                getRowClassName={(params) =>
+                    params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
+                }
+                initialState={{
+                    pagination: {paginationModel: {pageSize: 20}},
+                }}
+                pageSizeOptions={[10, 20, 50]}
+                disableColumnResize
+                density="compact"
+                slotProps={{
+                    filterPanel: {
+                        filterFormProps: {
+                            logicOperatorInputProps: {
+                                variant: 'outlined',
+                                size: 'small',
+                            },
+                            columnInputProps: {
+                                variant: 'outlined',
+                                size: 'small',
+                                sx: {mt: 'auto'},
+                            },
+                            operatorInputProps: {
+                                variant: 'outlined',
+                                size: 'small',
+                                sx: {mt: 'auto'},
+                            },
+                            valueInputProps: {
+                                InputComponentProps: {
+                                    variant: 'outlined',
+                                    size: 'small',
+                                },
+                            },
+                        },
+                    },
+                }}
+            />
         </div>
     );
 };

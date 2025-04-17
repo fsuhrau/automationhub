@@ -2,17 +2,21 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
+	"math"
 	"time"
 )
 
 type PerformanceMetric struct {
-	Count int
-	CPU   float32
-	FPS   float32
-	MEM   float32
+	Count       int
+	CPU         float64
+	FPS         float64
+	MEM         float64
+	VertexCount float64
+	Triangles   float64
 }
 
 type LogWriter struct {
@@ -21,26 +25,60 @@ type LogWriter struct {
 	errs               []error
 	startTime          time.Time
 	performanceMetrics PerformanceMetric
+	dev                *models.Device
+	parent             device.LogWriter
+	passed             bool
 }
 
-func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem float32) {
-	cpu = w.performanceMetrics.CPU / float32(w.performanceMetrics.Count)
-	fps = w.performanceMetrics.FPS / float32(w.performanceMetrics.Count)
-	mem = w.performanceMetrics.MEM / float32(w.performanceMetrics.Count)
+func (l *LogWriter) HasPassed() bool {
+	return l.passed
+}
+
+func (w *LogWriter) TestProtocolId() *uint {
+	return &w.protocolId
+}
+
+func (w *LogWriter) Device() interface{} {
+	return w.dev
+}
+
+func (w *LogWriter) Parent() device.LogWriter {
+	return w.parent
+}
+
+func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem, vertexCount, triangles float64) {
+	cpu = w.performanceMetrics.CPU / float64(w.performanceMetrics.Count)
+	fps = w.performanceMetrics.FPS / float64(w.performanceMetrics.Count)
+	mem = w.performanceMetrics.MEM / float64(w.performanceMetrics.Count)
+	vertexCount = w.performanceMetrics.VertexCount / float64(w.performanceMetrics.Count)
+	triangles = w.performanceMetrics.Triangles / float64(w.performanceMetrics.Count)
 	return
 }
 
-func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem float32, other string) {
+func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	w.performanceMetrics.Count++
+	if math.IsNaN(cpu) {
+		cpu = 0
+	}
+	if math.IsNaN(fps) {
+		fps = 0
+	}
+	if math.IsNaN(mem) {
+		mem = 0
+	}
 	w.performanceMetrics.CPU += cpu
 	w.performanceMetrics.FPS += fps
 	w.performanceMetrics.MEM += mem
+	w.performanceMetrics.VertexCount += vertexCount
+	w.performanceMetrics.Triangles += triangles
 	entry := models.ProtocolPerformanceEntry{
 		TestProtocolID: w.protocolId,
 		Checkpoint:     checkpoint,
 		CPU:            cpu,
 		FPS:            fps,
 		MEM:            mem,
+		VertexCount:    vertexCount,
+		Triangles:      triangles,
 		Other:          other,
 		Runtime:        w.getRuntime(),
 	}
@@ -83,10 +121,16 @@ func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	w.write(source, "error", msg, "")
 }
 
-func NewLogWriter(db *gorm.DB, protocolId uint) *LogWriter {
+func (w *LogWriter) Passed(passed bool) {
+	w.passed = passed
+}
+
+func NewLogWriter(db *gorm.DB, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {
 	return &LogWriter{
 		db:         db,
 		protocolId: protocolId,
 		startTime:  time.Now().UTC(),
+		dev:        dev,
+		parent:     parent,
 	}
 }

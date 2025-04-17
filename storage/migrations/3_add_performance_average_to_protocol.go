@@ -22,9 +22,9 @@ func init() {
 
 			type TestProtocol struct {
 				gorm.Model
-				AvgFPS float32 `sql:"type:decimal(10,2);"`
-				AvgMEM float32 `sql:"type:decimal(10,2);"`
-				AvgCPU float32 `sql:"type:decimal(10,2);"`
+				AvgFPS float64 `sql:"type:decimal(10,2);"`
+				AvgMEM float64 `sql:"type:decimal(10,2);"`
+				AvgCPU float64 `sql:"type:decimal(10,2);"`
 			}
 
 			if err := tx.Migrator().AddColumn(&TestProtocol{}, "AvgFPS"); err != nil {
@@ -42,18 +42,18 @@ func init() {
 			}
 
 			for _, protocol := range protocols {
-				var sumFPS float32
-				var sumMEM float32
-				var sumCPU float32
+				var sumFPS float64
+				var sumMEM float64
+				var sumCPU float64
 				for _, pe := range protocol.Performance {
 					sumFPS += pe.FPS
 					sumMEM += pe.MEM
 					sumCPU += pe.CPU
 				}
 				numEntries := len(protocol.Performance)
-				protocol.AvgFPS = sumFPS / float32(numEntries)
-				protocol.AvgMEM = sumMEM / float32(numEntries)
-				protocol.AvgCPU = sumCPU / float32(numEntries)
+				protocol.AvgFPS = sumFPS / float64(numEntries)
+				protocol.AvgMEM = sumMEM / float64(numEntries)
+				protocol.AvgCPU = sumCPU / float64(numEntries)
 				if err := tx.Save(&protocol).Error; err != nil {
 					return err
 				}

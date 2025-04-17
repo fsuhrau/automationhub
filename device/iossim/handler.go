@@ -3,10 +3,11 @@ package iossim
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
-	"net"
 	"regexp"
 	"strings"
 	"time"
@@ -33,19 +34,18 @@ type SimulatorDescriptions struct {
 
 type Handler struct {
 	devices       map[string]*Device
-	hostIP        net.IP
 	deviceStorage storage.Device
 }
 
-func NewHandler(ds storage.Device, ip net.IP) *Handler {
-	return &Handler{devices: make(map[string]*Device), hostIP: ip, deviceStorage: ds}
+func NewHandler(ds storage.Device) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceStorage: ds}
 }
 
 func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
 		return err
@@ -55,6 +55,8 @@ func (m *Handler) Init() error {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
 		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.devices[deviceId] = dev
 	}
 	return nil
@@ -112,7 +114,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("xcrun", "simctl", "list", "devices", "--json")
 	output, err := cmd.Output()
@@ -138,7 +140,6 @@ func (m *Handler) RefreshDevices() error {
 				m.devices[device.UDID].deviceID = device.UDID
 				m.devices[device.UDID].deviceOSName = deviceOSName
 				m.devices[device.UDID].deviceOSVersion = osVersion
-				m.devices[device.UDID].deviceIP = m.hostIP
 				m.devices[device.UDID].lastUpdateAt = lastUpdate
 				m.devices[device.UDID].SetDeviceState(device.State)
 				m.deviceStorage.Update(m.Name(), m.devices[device.UDID])
@@ -148,7 +149,6 @@ func (m *Handler) RefreshDevices() error {
 					deviceID:        device.UDID,
 					deviceOSName:    deviceOSName,
 					deviceOSVersion: osVersion,
-					deviceIP:        m.hostIP,
 					lastUpdateAt:    lastUpdate,
 				}
 				m.devices[device.UDID].SetDeviceState(device.State)
@@ -157,6 +157,7 @@ func (m *Handler) RefreshDevices() error {
 					DeviceType:       models.DeviceTypePhone,
 					Name:             device.Name,
 					Manager:          Manager,
+					PlatformType:     models.PlatformTypeiOSSimulator,
 					OS:               deviceOSName,
 					OSVersion:        osVersion,
 					ConnectionParameter: &models.ConnectionParameter{

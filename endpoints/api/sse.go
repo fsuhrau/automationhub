@@ -20,15 +20,23 @@ func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterEventTestRunFinishedListener(s)
 
 	sseApi := api.Group("/sse")
-	sseApi.Use(sse.HeadersMiddleware())
-	sseApi.Use(s.sseBroker.ServeHTTP())
-	sseApi.GET("/", func(c *gin.Context) {
-		cha, _ := c.Get("SSE")
-		clientChannel, _ := cha.(sse.ClientChan)
+	sseApi.GET("/", sse.HeadersMiddleware(), s.sseBroker.ServeHTTP(), func(c *gin.Context) {
+		cha, ok := c.Get("SSE")
+		if !ok {
+			return
+		}
+
+		clientChannel, ok := cha.(sse.ClientChan)
+		if !ok {
+			return
+		}
+
 		c.Stream(func(w io.Writer) bool {
-			msg := <-clientChannel
-			c.SSEvent(msg.Channel, msg.Content)
-			return true
+			if msg, ok := <-clientChannel; ok {
+				c.SSEvent(msg.Channel, msg.Content)
+				return true
+			}
+			return false
 		})
 	})
 }

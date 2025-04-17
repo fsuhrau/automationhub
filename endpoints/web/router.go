@@ -4,6 +4,7 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -16,11 +17,13 @@ type wf struct {
 	cfg         config.Service
 	filesystem  http.FileSystem
 	indexBuffer []byte
+	db          *gorm.DB
 }
 
-func New(config config.Service) *wf {
+func New(db *gorm.DB, config config.Service) *wf {
 	return &wf{
 		cfg: config,
+		db:  db,
 	}
 }
 
@@ -39,39 +42,13 @@ func (s *wf) StaticRoute(context *gin.Context) {
 	context.FileFromFS(file, s.filesystem)
 }
 
-func (s *wf) RegisterRoutes(r *gin.Engine) error {
+func (s *wf) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	s.filesystem = http.FS(Content)
-	/*
-		if s.cfg.Auth.AuthenticationRequired() {
-			if s.cfg.Auth.OAuth2 != nil {
-				oauth2.Setup(s.cfg.Auth.OAuth2.RedirectUrl, s.cfg.Auth.OAuth2.AuthUrl, s.cfg.Auth.OAuth2.TokenUrl, s.cfg.Auth.OAuth2.UserUrl, s.cfg.Auth.OAuth2.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-				r.Use(oauth2.Session("session"))
-			} else if s.cfg.Auth.Github != nil {
-				github.Setup(s.cfg.Auth.Github.RedirectUrl, s.cfg.Auth.Github.Credentials, s.cfg.Auth.Github.Scopes, []byte(s.cfg.Auth.Github.Secret))
-				r.Use(github.Session("session"))
-			}
-		}
-	*/
-	uploads := r.Group("/upload")
-	{
-		/*
-			authorized := r.Group("/")
-			if s.cfg.Auth.AuthenticationRequired() {
-				if s.cfg.Auth.OAuth2 != nil {
-					authorized.Use(oauth2.Auth())
-					uploads.Use(oauth2.Auth())
-				} else if s.cfg.Auth.Github != nil {
-					authorized.Use(github.Auth())
-					uploads.Use(github.Auth())
-				}
-			}
-		*/
-		uploads.Static("/", apps.AppStoragePath)
-	}
-	data := r.Group("/data")
-	{
-		data.Static("/", apps.TestDataPath)
-	}
+
+	uploads := auth.Group("/upload")
+	uploads.Static("/", apps.AppStoragePath)
+	data := auth.Group("/data")
+	data.Static("/", apps.TestDataPath)
 
 	r.GET("/static/*filepath", s.StaticRoute)
 	r.GET("/asset-manifest.json", s.StaticRoute)

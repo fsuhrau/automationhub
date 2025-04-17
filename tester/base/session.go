@@ -12,12 +12,13 @@ func (tr *TestRunner) NewSessionID() string {
 	return fmt.Sprintf("%s", u)
 }
 
-func (tr *TestRunner) InitNewTestSession(appBinaryId uint, params string) error {
+func (tr *TestRunner) InitNewTestSession(appBinaryId uint, startURL, params string) error {
 	sessionID := tr.NewSessionID()
 	tr.TestRun = models.TestRun{
 		TestID:      tr.Test.ID,
 		AppBinaryID: appBinaryId,
 		SessionID:   sessionID,
+		StartURL:    startURL,
 		Parameter:   params,
 	}
 	if err := tr.DB.Create(&tr.TestRun).Error; err != nil {

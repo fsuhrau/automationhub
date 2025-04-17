@@ -5,5 +5,5 @@ import (
 )
 
 type ServiceEndpoint interface {
-	RegisterRoutes(*gin.Engine) error
+	RegisterRoutes(*gin.Engine, *gin.RouterGroup) error
 }

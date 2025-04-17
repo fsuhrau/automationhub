@@ -12,6 +12,7 @@ export default interface ITestRunData {
     SessionID: string,
     AppBinaryID: number,
     AppBinary: IAppBinaryData | null,
+    StartURL: string,
     Parameter: string,
     TestResult: TestResultState,
     Protocols: Array<ITestProtocolData>,

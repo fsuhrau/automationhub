@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import Grid from '@mui/material/Grid';
-import { useNavigate } from 'react-router-dom';
+import Grid from '@mui/material/Grid2';
 import { IAppData } from '../../types/app';
 import {
     Button,
     Dialog,
-    FormControl,
     IconButton,
-    InputLabel,
     MenuItem,
     Select,
     Slide,
     TextField,
     Typography
 } from '@mui/material';
-import { useProjectAppContext } from "../../project/app.context";
 import { getPlatformTypes, PlatformType } from "../../types/platform.type.enum";
 import { TransitionProps } from "@mui/material/transitions";
 import { Close } from "@mui/icons-material";
@@ -36,11 +32,8 @@ export interface ApplicationProps {
 
 const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
-    const {projectId, appId} = useProjectAppContext();
-
     const {open, onClose, onSubmit} = props;
 
-    const navigate = useNavigate();
     const platformTypes = getPlatformTypes();
 
     const [state, setState] = useState<IAppData>({
@@ -67,18 +60,19 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
             TransitionComponent={ Transition }
         >
             <Grid container={ true } sx={ {padding: 5} }>
-                <Grid item={ true } xs={12}>
+                <Grid size={12}>
                     <Typography variant={ "h5" }><IconButton onClick={ onClose }><Close/></IconButton>Create a new
                         App</Typography>
                 </Grid>
-                <Grid item={ true } xs={2} container={ true } sx={ {padding: 3} } spacing={ 2 }>
-                    <Grid item={ true } xs={ 12 }>
+                <Grid size={2} container={ true } sx={ {padding: 3} } spacing={ 2 }>
+                    <Grid size={ 12 }>
                         <Typography variant={ "caption" }>App Name</Typography>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <TextField
                             hiddenLabel
                             id="appname"
+                            placeholder="Name"
                             variant="filled"
                             value={ state.Name }
                             size="small"
@@ -86,54 +80,52 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                             onChange={ event => setState(prevState => ({...state, Name: event.target.value})) }
                         />
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <Typography variant={ "caption" }>Platform</Typography>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
-                        <FormControl
+                    <Grid size={ 12 }>
+                        <Select
                             fullWidth={true}
+                            defaultValue={ state.Platform }
+                            labelId="platform-type-selection"
+                            id="platform-type"
+                            label="Platform"
+                            onChange={ event => setState(prevState => ({
+                                ...prevState,
+                                Platform: +event.target.value as PlatformType
+                            })) }
                         >
-                            <InputLabel id="platform-type-selection">Platform</InputLabel>
-                            <Select
-                                defaultValue={ state.Platform }
-                                labelId="platform-type-selection"
-                                id="platform-type"
-                                label="Platform"
-                                onChange={ event => setState(prevState => ({
-                                    ...prevState,
-                                    Platform: +event.target.value as PlatformType
-                                })) }
-                            >
-                                { platformTypes.map((value) => (
-                                    <MenuItem key={ 'tt_' + value.id }
-                                              value={ value.id }>{ value.name }</MenuItem>
-                                )) }
-                            </Select>
-                        </FormControl>
+                            { platformTypes.map((value) => (
+                                <MenuItem key={ 'tt_' + value.id }
+                                          value={ value.id }>{ value.name }</MenuItem>
+                            )) }
+                        </Select>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <Typography variant={ "caption" }>Bundle Identifier</Typography>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <TextField
                             fullWidth={true}
                             hiddenLabel
                             id="appidentifier"
+                            placeholder="com.example.app"
                             variant="filled"
                             value={ state.Identifier }
                             size="small"
                             onChange={ event => setState(prevState => ({...state, Identifier: event.target.value})) }
                         />
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <Typography variant={ "caption" }>Default Parameter</Typography>
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <TextField
                             fullWidth={true}
                             hiddenLabel
                             id="appdefaultparameter"
                             variant="filled"
+                            placeholder={"Proxy=http://localhost:8888"}
                             value={ state.DefaultParameter }
                             size="small"
                             onChange={ event => setState(prevState => ({
@@ -142,7 +134,7 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                             })) }
                         />
                     </Grid>
-                    <Grid item={ true } xs={ 12 }>
+                    <Grid size={ 12 }>
                         <Button variant={"outlined"} onClick={submit}>Create</Button>
                     </Grid>
                 </Grid>

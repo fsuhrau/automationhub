@@ -1,26 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import Paper from '@mui/material/Paper';
-import { IconButton, Typography } from '@mui/material';
+import {Button, IconButton, Typography} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Grid from '@mui/material/Grid';
 import IDeviceData from '../../types/device';
-import { getAllDevices } from '../../services/device.service';
+import {getAllDevices, postUnlockDevice} from '../../services/device.service';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
-import { Add, ArrowForward } from '@mui/icons-material';
+import {Add, ArrowForward} from '@mui/icons-material';
 import TableContainer from '@mui/material/TableContainer';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
-import { useNavigate } from 'react-router-dom';
-import { useProjectContext } from "../../project/project.context";
+import {useNavigate} from 'react-router-dom';
+import {useProjectContext} from "../../hooks/ProjectProvider";
+import {useError} from "../../ErrorProvider";
+import {deviceState, DeviceStateType} from "../../types/deviceStateType";
 
 const DevicesManagerContent: React.FC = () => {
 
-    const {projectId} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
 
     const navigate = useNavigate();
+    const {setError} = useError()
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
@@ -29,12 +32,19 @@ const DevicesManagerContent: React.FC = () => {
     }
 
     useEffect(() => {
-        getAllDevices(projectId as string).then(response => {
+        getAllDevices(projectIdentifier).then(response => {
             setDevices(response.data);
         }).catch(e => {
-            console.log(e);
+            setError(e);
         });
-    }, [projectId]);
+    }, [projectIdentifier]);
+
+    const unlockDevice = (deviceId: number) => {
+        postUnlockDevice(projectIdentifier, deviceId).then(response => {
+            setDevices(devices.map(d => d.ID === deviceId ? response.data : d) as IDeviceData[]);
+        }).catch(ex => setError(ex));
+    }
+
 
     return (
         <Paper sx={{ maxWidth: 1200, margin: 'auto', overflow: 'hidden' }}>
@@ -78,21 +88,19 @@ const DevicesManagerContent: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        { devices.map((device) => <TableRow key={ device.ID }>
+                        { devices.map((device) => <TableRow key={ `device_table_row_${device.ID}` }>
                             <TableCell component="th" scope="row">
-                                { device.Name }
+                                { device.Alias.length > 0 ? device.Alias : device.Name }
                             </TableCell>
                             <TableCell>
-                                { device.HardwareModel }
                             </TableCell>
                             <TableCell>
-                                { device.RAM }
                             </TableCell>
                             <TableCell>
-                                { device.SOC }
                             </TableCell>
                             <TableCell>
-                                { device.Status }
+                                { deviceState(device.Status) }
+                                { device.Status === DeviceStateType.Locked && <Button onClick={() => unlockDevice(device.ID)}>Unlock</Button>}
                             </TableCell>
                             <TableCell align="right">
                                 <IconButton color="primary" size={ 'small' }

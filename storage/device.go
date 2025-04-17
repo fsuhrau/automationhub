@@ -35,7 +35,7 @@ func (d *deviceStore) GetDevices(manager string) (models.Devices, error) {
 	}
 
 	var devices models.Devices
-	if err := d.db.Where("manager = ?", manager).Preload("Parameter").Preload("ConnectionParameter").Find(&devices).Error; err != nil {
+	if err := d.db.Where("manager = ?", manager).Preload("DeviceParameter").Preload("CustomParameter").Preload("ConnectionParameter").Find(&devices).Error; err != nil {
 		return nil, err
 	}
 
@@ -58,24 +58,34 @@ func (d *deviceStore) GetDevice(manager, deviceId string) (*models.Device, error
 }
 
 func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
+	tx := d.db.Begin()
+
 	_, err := d.GetDevice(manager, dev.DeviceIdentifier)
 	if err == nil {
+		tx.Rollback()
 		return fmt.Errorf("device with the same id exists already")
 	}
 
 	if err := d.db.Create(&dev).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err := d.db.Create(&dev.ConnectionParameter).Error; err != nil {
-		return err
+	if dev.ConnectionParameter != nil {
+		dev.ConnectionParameter.DeviceID = dev.ID
+		if err := d.db.FirstOrCreate(&dev.ConnectionParameter).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	d.devices[manager] = append(d.devices[manager], &dev)
+	tx.Commit()
 	return nil
 }
 
 func (d *deviceStore) Update(manager string, dev device.Device) error {
+	tx := db.Begin()
 	deviceData, err := d.GetDevice(manager, dev.DeviceID())
 	if err != nil {
 		return err
@@ -95,9 +105,25 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 		needsUpdate = true
 	}
 
-	if deviceData.HardwareModel != dev.DeviceModel() {
-		deviceData.HardwareModel = dev.DeviceModel()
-		needsUpdate = true
+	parameter := dev.DeviceParameter()
+	if parameter != nil {
+		for key, value := range parameter {
+			found := false
+			for i, param := range deviceData.DeviceParameter {
+				if param.Key == key {
+					if param.Value != value {
+						deviceData.DeviceParameter[i].Value = value
+						needsUpdate = true
+					}
+					found = true
+					break
+				}
+			}
+			if !found {
+				deviceData.DeviceParameter = append(deviceData.DeviceParameter, models.DeviceParameter{Key: key, Value: value})
+				needsUpdate = true
+			}
+		}
 	}
 
 	if deviceData.Manager != manager {
@@ -127,5 +153,6 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 			DeviceState: uint(dev.DeviceState()),
 		})
 	}
+	tx.Commit()
 	return nil
 }

@@ -55,7 +55,9 @@ export const uploadNewApp = (file: File,
             'Content-Type': 'multipart/form-data',
         },
         onUploadProgress: progressEvent => {
-            uploadProgress((progressEvent.loaded / progressEvent.total) * 100);
+            if (progressEvent.total) {
+                uploadProgress((progressEvent.loaded / progressEvent.total) * 100);
+            } else return ''
         },
     }).then(data => {
         console.log(data);

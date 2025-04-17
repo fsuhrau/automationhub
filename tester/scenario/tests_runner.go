@@ -1,19 +1,17 @@
 package scenario
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
-	"net"
-	"path/filepath"
 	"strings"
 )
 
@@ -22,19 +20,23 @@ type cancelChannel chan bool
 
 type testsRunner struct {
 	base.TestRunner
-	fin       chan bool
 	publisher sse.Publisher
 	env       map[string]string
 
 	appParams app.Parameter
+
+	ctx        context.Context
+	cancelFunc context.CancelFunc
 }
 
-func New(db *gorm.DB, ip net.IP, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
+func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	testRunner := &testsRunner{
-		fin:       make(chan bool, 1),
-		publisher: publisher,
+		publisher:  publisher,
+		ctx:        ctx,
+		cancelFunc: cancelFunc,
 	}
-	testRunner.Init(deviceManager, ip, db, projectId, appId)
+	testRunner.Init(deviceManager, nodeUrl, db, projectId, appId)
 	return testRunner
 }
 
@@ -48,54 +50,51 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
-func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
+func (tr *testsRunner) Cancel(runId string) error {
+	tr.cancelFunc()
+	return nil
+}
+
+func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
 	defer tr.TestSessionFinished()
 
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
-		tr.LogError("no lockable devices available")
+		tr.LogError("No lockable devices available")
 		return
 	}
 	defer tr.UnlockDevices(devices)
 
 	tr.LogInfo("Starting devices")
-	if err := tr.StartDevices(devices); err != nil {
-		tr.LogError("unable to start devices")
+	if err := tr.StartDevices(tr.ctx, devices); err != nil {
+		tr.LogError("Unable to start devices")
 		return
 	}
 
-	tr.appParams = app.Parameter{
-		AppBinaryID:    appData.ID,
-		Identifier:     appData.App.Identifier,
-		AppPath:        filepath.Join(apps.AppStoragePath, appData.AppPath),
-		LaunchActivity: appData.LaunchActivity,
-		Name:           appData.Name,
-		Version:        appData.Version,
-		Hash:           appData.Hash,
-	}
+	tr.appParams = base.GetParams(appData, startupUrl)
 
 	// stop app
-	tr.LogInfo("stop apps if running")
-	tr.StopApp(tr.appParams, devices)
+	tr.LogInfo("Stop apps if running")
+	tr.StopApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("install app on devices")
-	tr.InstallApp(tr.appParams, devices)
+	tr.LogInfo("Install app on devices")
+	tr.InstallApp(tr.ctx, tr.appParams, devices)
 
-	tr.LogInfo("start app on devices and wait for connection")
-	connectedDevices, err := tr.StartApp(tr.appParams, devices, func(d device.Device) {
+	tr.LogInfo("Start app on devices and wait for connection")
+	connectedDevices, err := tr.StartApp(tr.ctx, tr.appParams, devices, func(d device.Device) {
 		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
 	}, nil)
 	if err == sync.TimeoutError {
-		tr.LogError("one or more apps didn't connect")
+		tr.LogError("Timeout while stating app")
 	}
 
 	var testList []models.UnityTestFunction
-	if tr.Config.Unity.RunAllTests {
-		tr.LogInfo("RunAllTests active requesting PlayMode tests")
+	if tr.Config.Unity.UnityTestCategoryType == models.AllTest {
+		tr.LogInfo("UnityTestCategoryType active requesting PlayMode tests")
 		a := &action.TestsGet{}
 		if err := tr.DeviceManager.SendAction(connectedDevices[0].Device, a); err != nil {
-			tr.LogError("send action to select all tests failed: %v", err)
+			tr.LogError("Send action to select all tests failed: %v", err)
 			return
 		}
 		for _, t := range a.Tests {
@@ -111,17 +110,18 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 
 	tr.LogInfo("Execute Tests")
 
+	group := sync.NewExtendedWaitGroup(tr.ctx)
+
 	switch tr.Config.ExecutionType {
 	case models.SimultaneouslyExecutionType:
 		// each device gets its own input pool which needs to be processed
 		cancel := make(cancelChannel, len(connectedDevices))
-		group := sync.ExtendedWaitGroup{}
 
 		var workers []workerChannel
 		for _, d := range connectedDevices {
 			channel := make(workerChannel, len(testList))
 			workers = append(workers, channel)
-			go tr.WorkerFunction(channel, d, cancel, &group)
+			go tr.workerFunction(channel, d, group)
 		}
 
 		for _, t := range testList {
@@ -145,13 +145,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 		}
 
 	case models.ConcurrentExecutionType:
-		// have one input pool where each device can select a job
-		cancel := make(cancelChannel, len(connectedDevices))
-		group := sync.ExtendedWaitGroup{}
 
 		parallelWorker := make(workerChannel, len(testList))
 		for _, d := range connectedDevices {
-			go tr.WorkerFunction(parallelWorker, d, cancel, &group)
+			go tr.workerFunction(parallelWorker, d, group)
 		}
 		for _, t := range testList {
 			a := action.TestStart{
@@ -164,17 +161,13 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary) {
 			parallelWorker <- a
 		}
 		group.Wait()
-		for i := 0; i < len(connectedDevices); i++ {
-			cancel <- true
-		}
-		close(cancel)
 		close(parallelWorker)
 	}
 
-	tr.LogInfo("stop apps")
+	tr.LogInfo("Stop apps")
 	for _, d := range connectedDevices {
 		if err := d.Device.StopApp(&tr.appParams); err != nil {
-			tr.LogError("unable to start app: %v", err)
+			tr.LogError("Unable to start app: %v", err)
 		}
 	}
 }
@@ -183,7 +176,7 @@ func (tr *testsRunner) OnDeviceConnected(d device.Device) {
 
 }
 
-func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*models.TestRun, error) {
+func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary, startURL string) (*models.TestRun, error) {
 	var params []string
 	for k, v := range tr.env {
 		params = append(params, fmt.Sprintf("%s=%s", k, v))
@@ -192,19 +185,22 @@ func (tr *testsRunner) Run(devs []models.Device, binary *models.AppBinary) (*mod
 	if binary != nil {
 		binaryID = binary.ID
 	}
-	if err := tr.InitNewTestSession(binaryID, strings.Join(params, "\n")); err != nil {
+	if err := tr.InitNewTestSession(binaryID, startURL, strings.Join(params, "\n")); err != nil {
 		return nil, err
 	}
 
-	go tr.exec(devs, binary)
+	go tr.exec(devs, binary, startURL)
 
 	return &tr.TestRun, nil
 }
 
-func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap, cancel cancelChannel, group *sync.ExtendedWaitGroup) {
+func (tr *testsRunner) workerFunction(channel workerChannel, dev base.DeviceMap, group sync.ExtendedWaitGroup) {
 	for {
 		select {
-		case task := <-channel:
+		case task, ok := <-channel:
+			if !ok {
+				return
+			}
 			method := task.Method
 			methodParts := strings.Split(method, " ")
 			if len(methodParts) > 1 {
@@ -212,7 +208,8 @@ func (tr *testsRunner) WorkerFunction(channel workerChannel, dev base.DeviceMap,
 			}
 			tr.runTest(dev, task, method)
 			group.Done()
-		case <-cancel:
+		case <-tr.ctx.Done():
+			tr.LogInfo("Test run cancelled by context")
 			return
 		}
 	}

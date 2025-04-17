@@ -1,33 +1,36 @@
 import IRealDeviceData from './real.device';
 import IRealDeviceConnectionData from './real.device.connection';
-import IDeviceParameter from './device.parameter';
 import IConnectionParameter from './device.connection.parameter';
-import { DeviceType } from './device.type.enum';
+import {DeviceType} from './device.type.enum';
+import {INodeData} from "./node";
+import {PlatformType} from "./platform.type.enum";
+import IParameter from './device.parameter';
+import {DeviceConnectionType} from "./device.connection.type.enum";
+import {DeviceStateType} from "./deviceStateType";
 
 export default interface IDeviceData {
     ID: number,
+    NodeID: number,
+    Node?: INodeData,
     CompanyID: number,
     DeviceIdentifier: string,
     DeviceType: DeviceType,
+    PlatformType: PlatformType,
     Name: string,
-    HardwareModel: string,
-    RAM: number,
-    SOC: string,
-    DisplaySize: string,
-    DPI: number,
+    Alias: string,
     OS: string,
     OSVersion: string,
-    GPU: string,
-    ABI: string,
-    OpenGLESVersion: number,
-    Status: number,
+    Status: DeviceStateType,
+    IsLocked: boolean,
     Manager: string,
     Dev?: IRealDeviceData | null,
     IsAcknowledged: boolean,
     Connection?: IRealDeviceConnectionData | null,
+    ConnectionType: DeviceConnectionType,
     ConnectionParameter: IConnectionParameter,
-    Parameter: IDeviceParameter[],
     CreatedAt?: Date,
     UpdatedAt?: Date,
     DeletedAt?: Date,
+    CustomParameter: IParameter[],
+    DeviceParameter: IParameter[];
 }

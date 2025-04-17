@@ -1,7 +1,7 @@
 package action
 
 import (
-	"google.golang.org/protobuf/proto"
+	"encoding/json"
 )
 
 type GetValue struct {
@@ -18,13 +18,13 @@ func (a *GetValue) GetActionType() ActionType {
 func (a *GetValue) Serialize() ([]byte, error) {
 	req := &Request{
 		ActionType: ActionType_ElementGetValue,
-		Payload:    &Request_GetAttr{&GetAttr{Id: a.ElementID, Attr: a.Attr}},
+		Payload:    RequestData{GetAttr: &GetAttr{Id: a.ElementID, Attr: a.Attr}},
 	}
-	return proto.Marshal(req)
+	return json.Marshal(req)
 }
 
 func (a *GetValue) ProcessResponse(response *Response) error {
-	a.Value = response.GetValue()
+	a.Value = *response.Payload.Value
 	a.Success = response.Success
 	return nil
 }

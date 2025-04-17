@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
@@ -20,9 +22,12 @@ const (
 )
 
 type Handler struct {
-	devices       map[string]*Device
-	deviceStorage storage.Device
-	init          bool
+	devices        map[string]*Device
+	deviceStorage  storage.Device
+	init           bool
+	masterURL      string
+	nodeIdentifier string
+	authToken      *string
 }
 
 func NewHandler(ds storage.Device) *Handler {
@@ -36,8 +41,11 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
+	m.authToken = authToken
 	m.init = true
+	m.masterURL = masterUrl
+	m.nodeIdentifier = nodeIdentifier
 	defer func() {
 		m.init = false
 	}()
@@ -52,6 +60,8 @@ func (m *Handler) Init() error {
 			installedApps: make(map[string]string),
 		}
 		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.devices[deviceId] = dev
 
 		// connect all remote devs
@@ -65,7 +75,7 @@ func (m *Handler) Init() error {
 		}
 	}
 
-	if err := m.RefreshDevices(); err != nil {
+	if err := m.RefreshDevices(true); err != nil {
 		return err
 	}
 
@@ -154,7 +164,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("adb", "devices", "-l")
 	output, err := cmd.Output()
@@ -171,54 +181,39 @@ func (m *Handler) RefreshDevices() error {
 		if len(matches[0]) < 7 {
 			continue
 		}
-
 		deviceID := matches[0][1]
-		deviceUSB := matches[0][2]
-		product := matches[0][3]
-		model := matches[0][4]
-		name := matches[0][5]
-		transportID := matches[0][6]
-
 		if _, ok := m.devices[deviceID]; ok {
 			dev := m.devices[deviceID]
-			dev.deviceName = name
 			dev.deviceID = deviceID
-			dev.product = product
-			dev.deviceUSB = deviceUSB
-			dev.deviceModel = model
-			dev.transportID = transportID
 			dev.lastUpdateAt = lastUpdate
 			dev.SetDeviceState("StateBooted")
-			if m.init {
-				m.devices[deviceID].UpdateDeviceInfos()
-			}
+			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.deviceStorage.Update(m.Name(), dev)
 		} else {
 			m.devices[deviceID] = &Device{
-				deviceName:    name,
 				deviceID:      deviceID,
-				product:       product,
-				deviceUSB:     deviceUSB,
-				deviceModel:   model,
-				transportID:   transportID,
 				deviceOSName:  "android",
 				lastUpdateAt:  lastUpdate,
 				installedApps: make(map[string]string),
 			}
-			m.devices[deviceID].UpdateDeviceInfos()
+			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.devices[deviceID].SetDeviceState("StateBooted")
 			dev := models.Device{
 				DeviceIdentifier: deviceID,
 				DeviceType:       models.DeviceTypePhone,
-				Name:             name,
+				Name:             m.devices[deviceID].deviceName,
 				Manager:          Manager,
-				HardwareModel:    model,
 				OS:               "android",
+				PlatformType:     models.PlatformTypeAndroid,
 				OSVersion:        m.devices[deviceID].deviceOSVersion,
 				ConnectionParameter: &models.ConnectionParameter{
 					ConnectionType: models.ConnectionTypeUSB,
 				},
 			}
+
+			m.devices[deviceID].SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
+			m.devices[deviceID].AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
+
 			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
 			m.devices[deviceID].Config = &dev

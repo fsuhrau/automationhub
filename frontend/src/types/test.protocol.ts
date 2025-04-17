@@ -9,6 +9,7 @@ export default interface ITestProtocolData {
     ID?: number | null,
     TestRun: ITestRunData,
     TestRunID: number,
+    ParentTestProtocolID: number | null,
     DeviceID?: number | null,
     Device?: IDeviceData | null,
     TestName: string,
@@ -20,13 +21,19 @@ export default interface ITestProtocolData {
     AvgFPS: number,
     AvgMEM: number,
     AvgCPU: number,
+    AvgVertexCount: number,
+    AvgTriangles: number,
     HistAvgFPS: number,
     HistAvgMEM: number,
     HistAvgCPU: number,
+    HistAvgVertexCount: number,
+    HistAvgTriangles: number,
     TestProtocolHistory: ITestProtocolData[],
     CreatedAt: Date,
     UpdatedAt: Date,
     DeletedAt: Date,
+
+    ChildProtocols: ITestProtocolData[],
 }
 
 export const duration = (startedAt: Date, endedAt: Date | undefined | null): string => {

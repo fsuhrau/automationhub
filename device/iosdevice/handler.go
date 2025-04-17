@@ -2,6 +2,8 @@ package iosdevice
 
 import (
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"time"
@@ -49,7 +51,7 @@ func (m *Handler) Name() string {
 	return Manager
 }
 
-func (m *Handler) Init() error {
+func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
 		return err
@@ -59,6 +61,8 @@ func (m *Handler) Init() error {
 		deviceId := devs[i].DeviceIdentifier
 		dev := &Device{}
 		dev.SetConfig(devs[i])
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
+		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		m.devices[deviceId] = dev
 	}
 	return nil
@@ -112,7 +116,7 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
-func (m *Handler) RefreshDevices() error {
+func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	_ = lastUpdate
 	deviceList, err := ios.ListDevices()
@@ -126,28 +130,23 @@ func (m *Handler) RefreshDevices() error {
 			return err
 		}
 		if _, ok := m.devices[identifier]; ok {
-			m.devices[identifier].deviceModel = allValues.Value.ProductType
-			m.devices[identifier].deviceName = allValues.Value.DeviceName
 			m.devices[identifier].deviceID = identifier
-			m.devices[identifier].deviceOSName = allValues.Value.ProductName
-			m.devices[identifier].deviceOSVersion = allValues.Value.ProductVersion
 			m.devices[identifier].lastUpdateAt = lastUpdate
 			m.devices[identifier].SetDeviceState("StateBooted")
+			m.devices[identifier].UpdateDeviceInfos(allValues)
 			m.deviceStorage.Update(m.Name(), m.devices[identifier])
 		} else {
 			m.devices[identifier] = &Device{
-				deviceModel:     allValues.Value.ProductType,
-				deviceName:      allValues.Value.DeviceName,
-				deviceID:        identifier,
-				deviceOSName:    allValues.Value.ProductName,
-				deviceOSVersion: allValues.Value.ProductVersion,
-				lastUpdateAt:    lastUpdate,
+				deviceID:     identifier,
+				lastUpdateAt: lastUpdate,
 			}
+			m.devices[identifier].UpdateDeviceInfos(allValues)
 			dev := models.Device{
 				DeviceIdentifier: identifier,
 				DeviceType:       models.DeviceTypePhone,
 				Name:             allValues.Value.DeviceName,
 				Manager:          Manager,
+				PlatformType:     models.PlatformTypeiOS,
 				OS:               allValues.Value.ProductName,
 				OSVersion:        m.devices[identifier].deviceOSVersion,
 				ConnectionParameter: &models.ConnectionParameter{

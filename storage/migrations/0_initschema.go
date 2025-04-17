@@ -27,6 +27,9 @@ func InitSchema(tx *gorm.DB) error {
 	if err := tx.AutoMigrate(&models.AppBinary{}); err != nil {
 		return err
 	}
+	if err := tx.AutoMigrate(&models.Node{}); err != nil {
+		return err
+	}
 	if err := tx.AutoMigrate(&models.Device{}); err != nil {
 		return err
 	}
@@ -34,6 +37,9 @@ func InitSchema(tx *gorm.DB) error {
 		return err
 	}
 	if err := tx.AutoMigrate(&models.DeviceParameter{}); err != nil {
+		return err
+	}
+	if err := tx.AutoMigrate(&models.CustomParameter{}); err != nil {
 		return err
 	}
 	if err := tx.AutoMigrate(&models.DeviceLog{}); err != nil {
@@ -78,6 +84,5 @@ func InitSchema(tx *gorm.DB) error {
 	if err := tx.AutoMigrate(&models.TestRunDeviceStatus{}); err != nil {
 		return err
 	}
-
 	return nil
 }

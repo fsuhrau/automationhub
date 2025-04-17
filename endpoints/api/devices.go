@@ -1,16 +1,14 @@
 package api
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	device2 "github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,6 +31,8 @@ func managerForPlatform(t models.PlatformType) string {
 		return "web"
 	case models.PlatformTypeEditor:
 		return "unity_editor"
+	case models.PlatformTypeiOSSimulator:
+		return "iossim"
 	}
 	return ""
 }
@@ -44,19 +44,25 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 	query := s.db
 	if p != "" {
 		platform, _ := strconv.ParseInt(p, 10, 64)
-		query = query.Where("manager = ?", managerForPlatform(models.PlatformType(platform)))
+		query = query.Where("platform_type = ?", models.PlatformType(platform))
 	}
-	if err := query.Find(&devices).Error; err != nil {
+	if err := query.Preload("Node").Find(&devices).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
 
 	for i := range devices {
-		dev := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
+		dev, _ := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 		devices[i].Dev = dev
-		devices[i].Status = device2.StateUnknown
+		if devices[i].NodeID > 0 {
+			devices[i].Status = device2.StateNodeDisconnected
+		} else {
+			devices[i].Status = device2.StateUnknown
+		}
+
 		if dev != nil {
 			devices[i].Status = dev.DeviceState()
+			devices[i].IsLocked = dev.IsLocked()
 			if dev.Connection() != nil {
 				devices[i].Connection = dev.Connection().ConnectionParameter
 			}
@@ -66,34 +72,24 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 	c.JSON(http.StatusOK, devices)
 }
 
-func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
-
-	type Request struct {
-		Type     string
-		DeviceID string
-		IP       string
-		Version  string
-		OS       string
-		Name     string
+func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
+	deviceID := c.Param("device_id")
+	_ = deviceID
+	var device models.Device
+	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
+		s.error(c, http.StatusNotFound, err)
+		return
 	}
 
-	clientIp := net.ParseIP(c.ClientIP())
-
-	var req Request
-
-	json.Unmarshal(msg, &req)
-
-	register := device2.RegisterData{
-		DeviceOSVersion: req.Version,
-		Name:            req.Name,
-		DeviceOS:        req.OS,
-		DeviceID:        req.DeviceID,
-		ManagerType:     req.Type,
-		DeviceIP:        clientIp,
-		Conn:            conn,
+	dev, _ := s.devicesManager.GetDevice(device.DeviceIdentifier)
+	if dev.IsLocked() {
+		err := dev.Unlock()
+		if err != nil {
+			s.error(c, http.StatusConflict, err)
+			return
+		}
 	}
-
-	s.devicesManager.RegisterDevice(register)
+	c.JSON(http.StatusOK, device)
 }
 
 func (s *Service) getDevice(c *gin.Context, project *models.Project) {
@@ -102,12 +98,12 @@ func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 	_ = deviceID
 	var device models.Device
 
-	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").Find(&device, "id = ?", deviceID).Error; err != nil {
+	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
 
-	dev := s.devicesManager.GetDevice(device.DeviceIdentifier)
+	dev, _ := s.devicesManager.GetDevice(device.DeviceIdentifier)
 	device.Dev = dev
 	device.Status = device2.StateUnknown
 	if dev != nil {
@@ -140,30 +136,32 @@ func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
 	deviceID := c.Param("device_id")
 
 	var dev models.Device
-	c.Bind(&dev)
+	if err := c.Bind(&dev); err != nil {
+		return
+	}
 
 	var device models.Device
-	if err := s.db.Preload("ConnectionParameter").Preload("Parameter").First(&device, deviceID).Error; err != nil {
+	if err := s.db.Preload("ConnectionParameter").Preload("CustomParameter").First(&device, deviceID).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	var ids []uint
-	for i := range device.Parameter {
+	for i := range device.CustomParameter {
 		exists := false
-		for d := range dev.Parameter {
-			if device.Parameter[i].Key == dev.Parameter[d].Key {
+		for d := range dev.CustomParameter {
+			if device.CustomParameter[i].Key == dev.CustomParameter[d].Key {
 				exists = true
 				break
 			}
 		}
 		if !exists {
-			ids = append(ids, device.Parameter[i].ID)
+			ids = append(ids, device.CustomParameter[i].ID)
 		}
 	}
 
 	if len(ids) > 0 {
-		if err := s.db.Delete(&models.DeviceParameter{}, "id in (?)", ids).Error; err != nil {
+		if err := s.db.Delete(&models.CustomParameter{}, "id in (?)", ids).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}
@@ -201,7 +199,7 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 		return
 	}
 
-	dev := s.devicesManager.GetDevice(device.DeviceIdentifier)
+	dev, _ := s.devicesManager.GetDevice(device.DeviceIdentifier)
 	if dev == nil {
 		s.error(c, http.StatusNotFound, fmt.Errorf("real device not found"))
 		return
@@ -246,8 +244,9 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 		Env:    envParams,
 	}
 
-	executor := unity.NewExecutor(s.devicesManager)
-	if err := executor.Execute(dev, runTestAction, 5*time.Minute); err != nil {
+	executor := unity.NewExecutor(s.devicesManager, nil)
+
+	if err := executor.Execute(context.Background(), dev, runTestAction, 5*time.Minute); err != nil {
 		logrus.Errorf("Execute failed: %v", err)
 		s.error(c, http.StatusInternalServerError, err)
 		return
