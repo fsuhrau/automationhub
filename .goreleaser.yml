@@ -1,3 +1,5 @@
+version: 2
+
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
 before:
@@ -12,6 +14,11 @@ builds:
       - -X github.com/fsuhrau/automationhub/hub.version={{.Version}}
     goos:
       - darwin
+      - windows
+      - linux
+    goarch:
+      - amd64
+      - arm64
 
   - main: ./cli
     id: hubcli
@@ -20,20 +27,25 @@ builds:
       - -X github.com/fsuhrau/automationhub/hub.version={{.Version}}
     goos:
       - darwin
+      - windows
+      - linux
+    goarch:
+      - amd64
+      - arm64
 
 brews:
-  - tap:
+  - name: automationhub
+    directory: Formula
+    repository:
       owner: fsuhrau
       name: homebrew-tap
       branch: master
-    name: automationhub
-    folder: Formula
     caveats: "hub configure # to get started"
     homepage: "https://github.com/fsuhrau/automationhub"
     description: "Automation Environment to run Unity3D PlayMode tests on real devices
-    for android support install adb and aapt:
-    brew install --cask android-sdk
-    brew install --cask android-platform-tools"
+      for android support install adb and aapt:
+      brew install --cask android-sdk
+      brew install --cask android-platform-tools"
 #    dependencies:
 #      - name: android-sdk
 #      - name: android-platform-tools

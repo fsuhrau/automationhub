@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/migrations"
+	"github.com/glebarez/sqlite"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
