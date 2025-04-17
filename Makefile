@@ -24,9 +24,19 @@ frontend:
 	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../
 
 # run build for frontend and backend
-.PHONY: build
-build:
-	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/cli
+.PHONY: buildMac
+buildMac:
+	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/macos/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/macos/cli
+
+# run build for frontend and backend for Windows
+.PHONY: buildWindows
+buildWindows:
+	GOOS=windows GOARCH=amd64 cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/windows/automationhub.exe && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/windows/cli.exe
+
+# run build for frontend and backend for linux
+.PHONY: buildLinux
+buildLinux:
+	GOOS=linux GOARCH=amd64 cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/linux/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/linux/cli
 
 .PHONY: server
 server:

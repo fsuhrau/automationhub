@@ -7,10 +7,11 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import IAppFunctionData from '../types/app.function';
-import {Alert, CircularProgress, TextField, Typography} from '@mui/material';
+import {Alert, CircularProgress, Divider, TextField, Typography} from '@mui/material';
 import {getTestFunctions} from '../services/unity.service';
 import Grid from "@mui/material/Grid2";
 import {useError} from "../ErrorProvider";
+import {Box} from "@mui/system";
 
 interface TestMethodSelectionProps {
     selectedTestFunctions?: IAppFunctionData[]
@@ -29,68 +30,28 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
     const {onSelectionChanged, selectedTestFunctions} = props;
     const {setError} = useError()
 
-    const [loading, setLoading] = React.useState<boolean>(true);
+    const [state, setState] = React.useState<{
+        loading: boolean,
+        checked: IAppFunctionData[],
+        testsJson: string,
+        filterText: string
+        left: IAppFunctionData[],
+        right: IAppFunctionData[],
+    }>({
+        loading: true,
+        checked: [],
+        testsJson: '',
+        filterText: '',
+        left: [],
+        right: selectedTestFunctions ? selectedTestFunctions : [],
+    })
 
-    const [checked, setChecked] = React.useState<IAppFunctionData[]>([]);
-
-    const [testJson, setTestJson] = React.useState<string>('');
-
-    const [filterText, setFilterText] = React.useState<string>('');
-    const [left, setLeft] = React.useState<IAppFunctionData[]>([]);
-    const [right, setRight] = React.useState<IAppFunctionData[]>(selectedTestFunctions ? selectedTestFunctions : []);
-
-    const leftChecked = intersection(checked, left);
-    const rightChecked = intersection(checked, right);
-
-    const handleToggle = (value: IAppFunctionData) => () => {
-        const currentIndex = checked.indexOf(value);
-        const newChecked = [...checked];
-
-        if (currentIndex === -1) {
-            newChecked.push(value);
-        } else {
-            newChecked.splice(currentIndex, 1);
-        }
-
-        setChecked(newChecked);
-    };
-
-    const handleAllRight = (): void => {
-        setRight(right.concat(left));
-        setLeft([]);
-    };
-
-    const handleCheckedRight = (): void => {
-        setRight(right.concat(leftChecked));
-        setLeft(not(left, leftChecked));
-        setChecked(not(checked, leftChecked));
-    };
-
-    const handleCheckedLeft = (): void => {
-        setLeft(left.concat(rightChecked));
-        setRight(not(right, rightChecked));
-        setChecked(not(checked, rightChecked));
-    };
-
-    const handleAllLeft = (): void => {
-        setLeft(left.concat(right));
-        setRight([]);
-    };
-
-    useEffect(() => {
-        if (testJson !== '') {
-            const testFunctions: IAppFunctionData[] = JSON.parse(testJson);
-            setLeft(not(testFunctions, right));
-        }
-    }, [testJson]);
-
-    useEffect(() => {
-        onSelectionChanged(right);
-    }, [right, onSelectionChanged]);
+    const leftChecked = intersection(state.checked, state.left);
+    const rightChecked = intersection(state.checked, state.right);
 
     const changeJsonFunction = (event: ChangeEvent<HTMLTextAreaElement>): void => {
         if (event.target.value !== null && event.target.value !== '') {
-            setTestJson(event.target.value);
+            setState(prevState => ({...prevState, testsJson: event.target.value}));
         }
     };
 
@@ -104,54 +65,133 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
         return elements[elements.length - 1];
     }
 
-    const customList = (items: IAppFunctionData[]): ReactElement => (
-        <Paper sx={{minWidth: 400, minHeight: 600, maxHeight: 600, margin: 'auto', overflow: 'auto'}}>
-            <List dense={true} component="div" role="list">
-                {items.map((value) => {
-                    const labelId = `transfer-list-item-${value.Class}-${value.Method}-label`;
+    const applyFilter = (apps: IAppFunctionData[], filter: string): IAppFunctionData[] => {
+        filter = filter.toLowerCase()
+        return apps.filter(a => a.Method.toLowerCase().indexOf(filter) >= 0 || a.Class.toLowerCase().indexOf(filter) >= 0 || a.Assembly.toLowerCase().indexOf(filter) >= 0)
+    }
+    const leftFiltered = applyFilter(state.left, state.filterText);
 
-                    return (
-                        <ListItem key={value.Class + value.Method} role="listitem" onClick={handleToggle(value)}>
-                            <ListItemIcon>
-                                <Checkbox
-                                    checked={checked.indexOf(value) !== -1}
-                                    tabIndex={-1}
-                                    disableRipple={true}
-                                    inputProps={{'aria-labelledby': labelId}}
-                                />
-                            </ListItemIcon>
-                            <ListItemText id={labelId}
-                                          primary={`${trimMethod(value.Method)}`} secondary={trimClass(value.Class)}/>
-                        </ListItem>
-                    );
-                })}
-                <ListItem/>
-            </List>
-        </Paper>
+    const handleToggle = (value: IAppFunctionData) => () => {
+        const currentIndex = state.checked.indexOf(value);
+        const newChecked = [...state.checked];
+
+        if (currentIndex === -1) {
+            newChecked.push(value);
+        } else {
+            newChecked.splice(currentIndex, 1);
+        }
+
+        setState(prevState => ({...prevState, checked: newChecked}));
+    };
+
+    const handleAllRight = (): void => {
+        if (state.filterText.length > 0) {
+            const filtered = applyFilter(state.left, state.filterText);
+            setState(prevState => ({
+                ...prevState,
+                left: not(prevState.left, filtered),
+                right: prevState.right.concat(filtered)
+            }));
+        } else {
+            setState(prevState => ({...prevState, left: [], right: prevState.right.concat(prevState.left)}));
+        }
+    };
+
+    const handleCheckedRight = (): void => {
+        setState(prevState => ({
+            ...prevState,
+            left: not(prevState.left, leftChecked),
+            right: prevState.right.concat(leftChecked),
+            checked: not(prevState.checked, leftChecked)
+        }));
+    };
+
+    const handleCheckedLeft = (): void => {
+        setState(prevState => ({
+            ...prevState,
+            left: prevState.left.concat(rightChecked),
+            right: not(prevState.right, rightChecked),
+            checked: not(prevState.checked, rightChecked)
+        }));
+    };
+
+    const handleAllLeft = (): void => {
+        setState(prevState => ({...prevState, left: prevState.left.concat(prevState.right), right: []}));
+    };
+
+    useEffect(() => {
+        if (state.testsJson !== '') {
+            const testFunctions: IAppFunctionData[] = JSON.parse(state.testsJson);
+            setState(prevState => ({...prevState, left: not(testFunctions, prevState.right)}));
+        }
+    }, [state.testsJson]);
+
+    useEffect(() => {
+        onSelectionChanged(state.right);
+    }, [state.right, onSelectionChanged]);
+
+
+    const customList = (items: IAppFunctionData[], showfilter: boolean): ReactElement => (
+        <>
+            <Box sx={{height: 56}}>
+                {showfilter && <TextField sx={{padding: 1}} placeholder={'Filter Functions'} value={state.filterText}
+                                          fullWidth={true} size={"small"}
+                                          onChange={onChangeFilter}/>}
+            </Box>
+            <Divider/>
+            <Paper sx={{minWidth: 400, minHeight: 600, maxHeight: 600, margin: 'auto', overflow: 'auto'}}>
+                <List dense={true} component="div" role="list">
+                    {items.map((value) => {
+                        const labelId = `transfer-list-item-${value.Class}-${value.Method}-label`;
+
+                        return (
+                            <ListItem key={value.Class + value.Method} role="listitem" onClick={handleToggle(value)}>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        checked={state.checked.indexOf(value) !== -1}
+                                        tabIndex={-1}
+                                        disableRipple={true}
+                                        inputProps={{'aria-labelledby': labelId}}
+                                    />
+                                </ListItemIcon>
+                                <ListItemText id={labelId}
+                                              primary={`${trimMethod(value.Method)}`}
+                                              secondary={trimClass(value.Class)}/>
+                            </ListItem>
+                        );
+                    })}
+                    <ListItem/>
+                </List>
+            </Paper>
+        </>
     );
 
     useEffect(() => {
-        setLoading(true);
+        setState(prevState => ({...prevState, loading: true}));
         getTestFunctions().then(response => {
-            setLeft(not(response.data, right));
-        }).catch(ex=> setError(ex)).finally(() => {
-            setLoading(false);
+            setState(prevState => ({
+                ...prevState,
+                left: response.data.filter(d => prevState.right.findIndex(d1 => d.Assembly === d.Assembly && d.Class === d1.Class && d.Method === d1.Method) < 0)
+            }));
+        }).catch(ex => setError(ex)).finally(() => {
+            setState(prevState => ({...prevState, loading: false}));
         });
     }, []);
 
     const onChangeFilter = (event: ChangeEvent<HTMLTextAreaElement>) => {
-        setFilterText(event.target.value)
+        setState(prevState => ({...prevState, filterText: event.target.value}));
     }
 
     return (
-        loading ? (<><Typography variant={'h6'}>Try to connect to your local Unity Editor to fetch Tests...</Typography><CircularProgress
+        state.loading ? (<><Typography variant={'h6'}>Try to connect to your local Unity Editor to fetch
+            Tests...</Typography><CircularProgress
             color="inherit"/></>) : (
             <Grid container={true}
                   spacing={2}
                   justifyContent={'center'}
                   alignItems={'center'}
                   direction={'column'}>
-                {(left.length == 0 && right.length == 0 && (
+                {(state.left.length == 0 && state.right.length == 0 && (
                     <Grid container={true}>
                         <Grid size={12}>
                             <Alert severity="info">Unable to Connect to your local Unity Editor or no tests found please
@@ -166,7 +206,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                 multiline={true}
                                 fullWidth={true}
                                 rows={6}
-                                defaultValue={testJson}
+                                defaultValue={state.testsJson}
                                 variant="outlined"
                                 onChange={changeJsonFunction}
                             />
@@ -189,7 +229,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                             fullWidth={true}/> */}
                             </Grid>
                             <Grid size={12}>
-                                {customList(left)}
+                                {customList(applyFilter(leftFiltered, state.filterText), true)}
                             </Grid>
                         </Grid>
                         <Grid spacing={2} container={true} size={1}>
@@ -198,7 +238,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                     variant="outlined"
                                     size="small"
                                     onClick={handleAllRight}
-                                    disabled={left.length === 0}
+                                    disabled={leftFiltered.length === 0}
                                     aria-label="move all right"
                                 >
                                     ≫
@@ -225,7 +265,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                     variant="outlined"
                                     size="small"
                                     onClick={handleAllLeft}
-                                    disabled={right.length === 0}
+                                    disabled={state.right.length === 0}
                                     aria-label="move all left"
                                 >
                                     ≪
@@ -239,7 +279,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                             <Grid size={12}>
                             </Grid>
                             <Grid size={12}>
-                                {customList(right)}
+                                {customList(state.right, false)}
                             </Grid>
                         </Grid>
                     </Grid>
