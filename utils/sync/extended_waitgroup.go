@@ -73,7 +73,9 @@ func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 		if wg.canceled {
 			return
 		}
-		wait <- true
+		if wait != nil {
+			wait <- true
+		}
 	}()
 
 	select {

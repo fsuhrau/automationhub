@@ -101,15 +101,15 @@ func (d *Device) SetDeviceState(state string) {
 	}
 }
 
-func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
+func (d *Device) IsAppInstalled(_ *app.Parameter) (bool, error) {
 	return true, nil
 }
 
-func (d *Device) InstallApp(params *app.Parameter) error {
+func (d *Device) InstallApp(_ *app.Parameter) error {
 	return nil
 }
 
-func (d *Device) UninstallApp(params *app.Parameter) error {
+func (d *Device) UninstallApp(_ *app.Parameter) error {
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (d *Device) getHTTPClient() *http.Client {
 	return d.client
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
+func (d *Device) StartApp(_ *app.Parameter, sessionId string, nodeUrl string) error {
 
 	type request struct {
 		Action    string
@@ -137,7 +137,7 @@ func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl strin
 	return nil
 }
 
-func (d *Device) StopApp(params *app.Parameter) error {
+func (d *Device) StopApp(_ *app.Parameter) error {
 	type request struct {
 		Action string
 	}
@@ -186,6 +186,12 @@ func (d *Device) HandleManagerConnection() {
 	d.deviceState = device.StateBooted
 	d.updated = true
 	d.sendChannel = make(chan []byte, 10)
+
+	defer func() {
+		close(d.sendChannel)
+		for range d.sendChannel {
+		}
+	}()
 
 	go func(d *Device) {
 		for {

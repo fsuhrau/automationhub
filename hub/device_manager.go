@@ -55,7 +55,6 @@ func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceMana
 			WriteBufferSize: protocol.SocketFrameSize,
 			CheckOrigin: func(r *http.Request) bool {
 				origin := r.Header.Get("Origin")
-				fmt.Println(origin)
 				// mobile has no origin find a better check
 				if origin == "" {
 					return true
@@ -347,9 +346,6 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 	defer func() {
 		dm.log.Info("handleActions finished")
 		if d.Connection() != nil {
-			if d.Connection().ResponseChannel != nil {
-				close(d.Connection().ResponseChannel)
-			}
 			d.Connection().Close()
 		}
 		d.SetConnection(nil)

@@ -26,12 +26,11 @@ type ResponseData struct {
 }
 
 type Connection struct {
-	Logger                 *logrus.Entry
-	Connection             *websocket.Conn
-	ResponseChannel        chan ResponseData
-	ConnectionStateChannel chan ConnectionState
-	ActionChannel          chan action.Response
-	ConnectionParameter    *action.Connect
+	Logger              *logrus.Entry
+	Connection          *websocket.Conn
+	ResponseChannel     chan ResponseData
+	ActionChannel       chan action.Response
+	ConnectionParameter *action.Connect
 }
 
 func (c *Connection) HandleMessages(ctx context.Context) {
@@ -58,9 +57,7 @@ func (c *Connection) HandleMessages(ctx context.Context) {
 			return
 		}
 
-		var responseData ResponseData
-		responseData.Data = data
-		c.ResponseChannel <- responseData
+		c.ResponseChannel <- ResponseData{Data: data, Err: nil}
 	}
 }
 
@@ -70,12 +67,9 @@ func (c *Connection) handleReadError(err error) {
 	} else {
 		c.Logger.Info("Device disconnected")
 	}
-	var responseData ResponseData
-	responseData.Err = DeviceDisconnectedError
 	if c.ResponseChannel != nil {
-		c.ResponseChannel <- responseData
+		c.ResponseChannel <- ResponseData{Data: nil, Err: DeviceDisconnectedError}
 	}
-	c.Close()
 }
 
 func (c *Connection) Close() {
@@ -89,6 +83,13 @@ func (c *Connection) Close() {
 		_ = c.Connection.Close()
 	}
 	c.Connection = nil
+
+	close(c.ResponseChannel)
+	for range c.ResponseChannel {
+	}
+	close(c.ActionChannel)
+	for range c.ActionChannel {
+	}
 }
 
 func (c *Connection) Send(content []byte) error {

@@ -286,7 +286,7 @@ func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	fmt.Printf("Register device: %v\n", data)
+	// fmt.Printf("Register device: %v\n", data)
 
 	lastUpdate := time.Now().UTC()
 

@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+type DeviceFunc = func(d device.Device)
+
 func (tr *TestRunner) InstallApp(ctx context.Context, params app.Parameter, devices []DeviceMap) {
 
 	wg := sync.NewExtendedWaitGroup(ctx)
@@ -69,56 +71,65 @@ func (tr *TestRunner) StopApp(ctx context.Context, params app.Parameter, devices
 	wg.Wait()
 }
 
-func (tr *TestRunner) StartApp(ctx context.Context, params app.Parameter, devices []DeviceMap, appStartedFunc func(d device.Device), connectedFunc func(d device.Device)) ([]DeviceMap, error) {
+func (tr *TestRunner) StartApp(ctx context.Context, params app.Parameter, devices []DeviceMap, appStartedFunc DeviceFunc, connectedFunc DeviceFunc) ([]DeviceMap, error) {
 
 	cancelContext, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	wg := sync.NewExtendedWaitGroup(cancelContext)
+	connectedChan := make(chan DeviceMap, len(devices)) // Buffered channel to collect connected devices
 
-	var connectedDevices []DeviceMap
 	for _, d := range devices {
 		wg.Add(1)
-
-		go func(dm manager.Devices, appp app.Parameter, d DeviceMap, sessionId string, group sync.ExtendedWaitGroup) {
-			waitTime := 500 * time.Millisecond
-			waitTrigger := time.NewTimer(waitTime)
-			defer group.Done()
-			startTime := time.Now()
-			defer waitTrigger.Stop()
-
-			tr.LogInfo("Start App '%s' on Device '%s' with Session '%s'", appp.Identifier, d.Device.DeviceID(), tr.ProtocolWriter.SessionID())
-			if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
-				tr.LogError("unable to start app: %v", err)
-				return
-			}
-
-			if appStartedFunc != nil {
-				appStartedFunc(d.Device)
-			}
-
-			for {
-				select {
-				case <-cancelContext.Done():
-					tr.LogInfo("Context cancelled, stopping app start process")
-					break
-				case <-waitTrigger.C:
-					if d.Device.IsAppConnected() {
-						break
-					}
-					waitTrigger.Reset(waitTime)
-					continue
-				}
-				break
-			}
-			tr.ProtocolWriter.TrackStartupTime(d.Model.ID, time.Now().Sub(startTime).Milliseconds())
-			if connectedFunc != nil {
-				connectedFunc(d.Device)
-			}
-			connectedDevices = append(connectedDevices, d)
-		}(tr.DeviceManager, params, d, tr.ProtocolWriter.SessionID(), wg)
-
+		go tr.startApp(cancelContext, wg, connectedChan, params, d, tr.ProtocolWriter.SessionID(), appStartedFunc, connectedFunc)
 	}
 	err := wg.WaitWithTimeout(1 * time.Minute)
+
+	close(connectedChan)
+	var connectedDevices []DeviceMap
+	for d := range connectedChan {
+		connectedDevices = append(connectedDevices, d)
+	}
+
 	return connectedDevices, err
+}
+
+func (tr *TestRunner) startApp(context context.Context, group sync.ExtendedWaitGroup, deviceChan chan DeviceMap, appp app.Parameter, d DeviceMap, sessionId string, appStartedFunc DeviceFunc, connectedFunc DeviceFunc) {
+	waitTime := 500 * time.Millisecond
+	waitTrigger := time.NewTimer(waitTime)
+	defer group.Done()
+	startTime := time.Now()
+	defer waitTrigger.Stop()
+
+	tr.LogInfo("Start App '%s' on Device '%s' with Session '%s'", appp.Identifier, d.Device.DeviceID(), tr.ProtocolWriter.SessionID())
+	if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
+		tr.LogError("unable to start app: %v", err)
+		return
+	}
+
+	if appStartedFunc != nil {
+		appStartedFunc(d.Device)
+	}
+
+	for {
+		select {
+		case <-context.Done():
+			_ = d.Device.StopApp(&appp)
+			tr.LogInfo("Context cancelled, stopping app start process")
+			return
+		case <-waitTrigger.C:
+			if d.Device.IsAppConnected() {
+				break
+			}
+			waitTrigger.Reset(waitTime)
+			continue
+		}
+		break
+	}
+	tr.ProtocolWriter.TrackStartupTime(d.Model.ID, time.Now().Sub(startTime).Milliseconds())
+	if connectedFunc != nil {
+		connectedFunc(d.Device)
+	}
+
+	deviceChan <- d
 }
