@@ -26,18 +26,33 @@ const ListItemAvatar = styled(MuiListItemAvatar)({
 });
 
 export default function ApplicationSelection() {
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const {project} = useProjectContext();
     const regex = /app:\d+/g;
 
-    const {appId: urlAppId} = useParams<{ appId: string }>();
-    const navigate = useNavigate();
-    const [appId, setAppId] = React.useState<string>(() => {
-        if (urlAppId) {
-            return urlAppId.replace("app:", "")
+    const {appId} = useParams<{ appId: string }>();
+
+    const extractAppId = (): string => {
+        if (appId) {
+            return appId.replace("app:", "")
         }
-        return localStorage.getItem('appId') || (project.Apps.length > 0 ? project.Apps[0].ID.toString() : "");
-    });
-    const location = useLocation();
+        let id = localStorage.getItem('appId');
+        if (id !== null) {
+            return id.replace("app:", "")
+        }
+        if (project.Apps.length > 0) {
+            return project.Apps[0].ID.toString();
+        }
+        return "";
+    }
+
+    const [state, setState] = React.useState<{ appId: string }>({
+        appId: extractAppId(),
+    })
+
 
     const handleChange = (event: SelectChangeEvent) => {
         const newAppId = event.target.value;
@@ -45,7 +60,7 @@ export default function ApplicationSelection() {
             navigate(`/project/${project.Identifier}/settings`);
             return;
         }
-        setAppId(newAppId);
+        setState(prevState => ({...prevState, appId: newAppId}));
         localStorage.setItem('appId', newAppId);
         if (location.pathname.indexOf("app:") >= 0) {
             const newPath = location.pathname.replace(regex, `app:${newAppId}`);
@@ -56,32 +71,32 @@ export default function ApplicationSelection() {
     };
 
     React.useEffect(() => {
-        if (urlAppId) {
-            const cleanId = urlAppId.replace("app:", "")
-            if (cleanId !== appId) {
-                setAppId(urlAppId);
-                localStorage.setItem('appId', urlAppId);
+        if (appId) {
+            const cleanId = appId.replace("app:", "")
+            if (cleanId !== state.appId) {
+                setState(prevState => ({...prevState, appId: cleanId}));
+                localStorage.setItem('appId', cleanId);
             }
-        } else if (!urlAppId && appId) {
+        } else if (!appId && state.appId) {
 
             if (location.pathname.indexOf("app:") >= 0) {
-                const newPath = location.pathname.replace(regex, `app:${appId}`);
+                const newPath = location.pathname.replace(regex, `app:${state.appId}`);
                 navigate(newPath);
             } else if (location.pathname.indexOf("/settings") == -1
                 && location.pathname.indexOf("/users") == -1
                 && location.pathname.indexOf("/devices") == -1
                 && location.pathname.indexOf("/device") == -1
             ) {
-                navigate(`/project/${project.Identifier}/app:${appId}/home`);
+                navigate(`/project/${project.Identifier}/app:${state.appId}/home`);
             }
         }
-    }, [urlAppId, appId, project.Identifier, navigate]);
+    }, [appId, state.appId, project.Identifier, navigate]);
 
     return (
         <Select
             labelId="Application-select"
             id="Application-simple-select"
-            value={appId}
+            value={state.appId}
             onChange={handleChange}
             displayEmpty
             inputProps={{'aria-label': 'Select Application'}}
