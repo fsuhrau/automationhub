@@ -32,8 +32,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = (props: CreatePr
     const {open, onClose, onSubmit} = props;
 
     const [state, setState] = useState<IProject>({
-        Name: '',
-        Identifier: '',
+        name: '',
+        identifier: '',
     } as IProject)
 
     const handleClose = () => {
@@ -66,10 +66,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = (props: CreatePr
                             hiddenLabel
                             id="project_name"
                             variant="filled"
-                            value={ state.Name }
+                            value={ state.name }
                             size="small"
                             fullWidth={true}
-                            onChange={ event => setState(prevState => ({...state, Name: event.target.value})) }
+                            onChange={ event => setState(prevState => ({...state, name: event.target.value})) }
                         />
                     </Grid>
                     <Grid size={ 12 }>

@@ -1,6 +1,17 @@
 export interface IUserData {
-    ID: number,
-    Name: string,
-    Email: string,
-    Role: string,
+    id: number,
+    name: string,
+    email: string,
+    role: string,
+}
+
+export interface IUser {
+    id: number,
+    name: string,
+    email: string,
+    login: string,
+    company: string,
+    role: string,
+    url: string,
+    avatar: string
 }

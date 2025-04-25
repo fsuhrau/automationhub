@@ -1,11 +1,9 @@
 package models
 
-import "gorm.io/gorm"
-
 type UnityTestFunction struct {
-	gorm.Model
-	TestConfigUnityID uint
-	Assembly          string
-	Class             string
-	Method            string
+	Model
+	TestConfigUnityID uint   `json:"testConfigUnityId"`
+	Assembly          string `json:"assembly"`
+	Class             string `json:"class"`
+	Method            string `json:"method"`
 }

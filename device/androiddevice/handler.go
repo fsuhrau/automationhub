@@ -15,7 +15,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9]+)\s+transport_id:([0-9]+)`)
+var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9_]+)\s+transport_id:([0-9]+)`)
 
 const (
 	Manager = "android_device"
@@ -171,6 +171,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 	if err != nil {
 		return err
 	}
+	devs, err := m.deviceStorage.GetDevices(Manager)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -184,6 +185,13 @@ func (m *Handler) RefreshDevices(force bool) error {
 		deviceID := matches[0][1]
 		if _, ok := m.devices[deviceID]; ok {
 			dev := m.devices[deviceID]
+			if dev.GetConfig() == nil {
+				for _, d := range devs {
+					if d.DeviceIdentifier == dev.deviceID {
+						dev.SetConfig(d)
+					}
+				}
+			}
 			dev.deviceID = deviceID
 			dev.lastUpdateAt = lastUpdate
 			dev.SetDeviceState("StateBooted")
@@ -216,7 +224,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 
 			m.deviceStorage.NewDevice(m.Name(), dev)
 			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
-			m.devices[deviceID].Config = &dev
+			m.devices[deviceID].SetConfig(&dev)
 		}
 	}
 

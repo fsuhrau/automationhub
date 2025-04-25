@@ -1,7 +1,5 @@
 package models
 
-import "gorm.io/gorm"
-
 type TestType uint
 
 const (
@@ -27,16 +25,17 @@ const (
 )
 
 type TestConfig struct {
-	gorm.Model
-	TestID        uint
-	ExecutionType ExecutionType
-	Type          TestType
-	AllDevices    bool
-	Devices       []TestConfigDevice
-	Unity         *TestConfigUnity
+	Model
+	TestID        uint               `json:"testId"`
+	Test          *Test              `json:"test"`
+	ExecutionType ExecutionType      `json:"executionType"`
+	Type          TestType           `json:"type"`
+	AllDevices    bool               `json:"allDevices"`
+	Devices       []TestConfigDevice `json:"devices"`
+	Unity         *TestConfigUnity   `json:"unity"`
 	// Cocos 	*CocosTestConfig
 	// Serenity *SerenityTestConfig
-	Scenario *TestConfigScenario
+	Scenario *TestConfigScenario `json:"scenario"`
 }
 
 func (t *TestConfig) GetDeviceIds() []uint {

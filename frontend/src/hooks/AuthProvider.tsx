@@ -1,16 +1,7 @@
-import React, {useContext, createContext, useState, useEffect, ReactNode, Dispatch} from "react";
-import { useNavigate } from "react-router-dom";
+import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {IUser} from "../types/user"
 
-export interface IUser {
-    id: number,
-    name: string,
-    email: string,
-    login: string,
-    company: string,
-    role: string,
-    url: string,
-    avatar: string
-}
 
 export interface RegisterData {
     name: string,
@@ -37,14 +28,17 @@ interface AuthProviderProps {
 
 const AuthContext = createContext<AuthContextProps>({
     user: null,
-    loginAction: async () => {},
-    registerAction: async () => {},
-    logOut: async () => {},
+    loginAction: async () => {
+    },
+    registerAction: async () => {
+    },
+    logOut: async () => {
+    },
 });
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
-    const [user, setUser] = useState<IUser|null>(null);
+    const [user, setUser] = useState<IUser | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -125,12 +119,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user: user, loginAction: loginAction, registerAction: registerAction, logOut: logOut }}>
+        <AuthContext.Provider
+            value={{user: user, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () : AuthContextProps => {
+export const useAuth = (): AuthContextProps => {
     return useContext(AuthContext);
 };

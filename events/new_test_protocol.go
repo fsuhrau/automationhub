@@ -3,8 +3,8 @@ package events
 var NewTestProtocol newTestProtocol
 
 type NewTestProtocolPayload struct {
-	TestRunID uint
-	Protocol  interface{}
+	TestRunID uint        `json:"testRunId"`
+	Protocol  interface{} `json:"protocol"`
 }
 
 type newTestProtocol struct {

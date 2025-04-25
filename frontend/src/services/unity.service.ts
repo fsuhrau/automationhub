@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import IAppFunctionData from '../types/app.function';
 
 const unityService = axios.create({
@@ -8,6 +8,6 @@ const unityService = axios.create({
     },
 });
 
-export const getTestFunctions = (): Promise<AxiosResponse<IAppFunctionData[]>> => {
-    return unityService.get('/tests');
+export const getTestFunctions = (): Promise<IAppFunctionData[]> => {
+    return unityService.get('/tests').then(resp => resp.data)
 };

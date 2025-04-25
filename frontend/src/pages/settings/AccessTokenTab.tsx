@@ -35,8 +35,8 @@ const AccessTokenTab: React.FC = () => {
     const {setError} = useError()
 
     const [newToken, setNewToken] = useState<NewAccessTokenRequest>({
-        Name: '',
-        ExpiresAt: null,
+        name: '',
+        expiresAt: null,
     });
 
     const handleDeleteAccessToken = (accessTokenID: number): void => {
@@ -51,15 +51,15 @@ const AccessTokenTab: React.FC = () => {
     };
 
     const createNewAccessToken = (): void => {
-        createAccessToken(projectIdentifier, newToken).then(response => {
+        createAccessToken(projectIdentifier, newToken).then(accessToken => {
             setNewToken({
-                Name: '',
-                ExpiresAt: null,
+                name: '',
+                expiresAt: null,
             })
 
             dispatch({
                 type: HubStateActions.AccessTokenAdd,
-                payload: response.data
+                payload: accessToken
             })
         }).catch(ex => {
             setError(ex)
@@ -67,10 +67,10 @@ const AccessTokenTab: React.FC = () => {
     };
 
     useEffect(() => {
-        getAccessTokens(projectIdentifier).then(response => {
+        getAccessTokens(projectIdentifier).then(accessTokens => {
             dispatch({
                 type: HubStateActions.AccessTokensUpdate,
-                payload: response.data
+                payload: accessTokens
             })
         }).catch(ex => {
             setError(ex)
@@ -92,13 +92,13 @@ const AccessTokenTab: React.FC = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {state.accessTokens?.map((accessToken) => <TableRow key={accessToken.ID}>
-                                    <TableCell>{accessToken.Name}</TableCell>
+                                {state.accessTokens?.map((accessToken) => <TableRow key={accessToken.id}>
+                                    <TableCell>{accessToken.name}</TableCell>
                                     <TableCell>
                                         <Grid container={true} direction={"row"} spacing={1} justifyContent={"right"}
                                               alignItems={"center"}>
                                             <Grid>
-                                                {accessToken.Token}
+                                                {accessToken.token}
                                             </Grid>
                                             <Grid>
                                                 <CopyToClipboard>
@@ -106,7 +106,7 @@ const AccessTokenTab: React.FC = () => {
                                                         <IconButton
                                                             color={'primary'}
                                                             size={'small'}
-                                                            onClick={() => copy(accessToken.Token)}
+                                                            onClick={() => copy(accessToken.token)}
                                                         >
                                                             <ContentCopy/>
                                                         </IconButton>
@@ -116,12 +116,12 @@ const AccessTokenTab: React.FC = () => {
                                             </Grid>
                                         </Grid>
                                     </TableCell>
-                                    <TableCell align="right">{accessToken.ExpiresAt !== null ? (
+                                    <TableCell align="right">{accessToken.expiresAt !== null ? (
                                         <Moment
-                                            format="YYYY/MM/DD HH:mm:ss">{accessToken.ExpiresAt}</Moment>) : ('Unlimited')}</TableCell>
+                                            format="YYYY/MM/DD HH:mm:ss">{accessToken.expiresAt}</Moment>) : ('Unlimited')}</TableCell>
                                     <TableCell>
                                         <IconButton color="secondary" size="small" onClick={() => {
-                                            handleDeleteAccessToken(accessToken.ID as number);
+                                            handleDeleteAccessToken(accessToken.id as number);
                                         }}>
                                             <DeleteForeverIcon/>
                                         </IconButton>
@@ -133,21 +133,21 @@ const AccessTokenTab: React.FC = () => {
                                         <TextField id="new_name" placeholder="Name"
                                                    variant="outlined"
                                                    fullWidth={true}
-                                                   value={newToken.Name} size="small"
+                                                   value={newToken.name} size="small"
                                                    onChange={event => setNewToken(prevState => ({
                                                        ...prevState,
-                                                       Name: event.target.value
+                                                       name: event.target.value
                                                    }))}/>
                                     </TableCell>
                                     <TableCell></TableCell>
                                     <TableCell align="right">
                                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                                             <MobileDatePicker
-                                                value={newToken.ExpiresAt}
+                                                value={newToken.expiresAt}
                                                 onChange={(newValue: Dayjs | null) => {
                                                     setNewToken(prevState => ({
                                                         ...prevState,
-                                                        ExpiresAt: newValue
+                                                        expiresAt: newValue
                                                     }))
                                                 }}
                                             />

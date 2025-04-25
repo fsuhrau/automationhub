@@ -1,7 +1,7 @@
 export default interface IParameter {
-    Key: string,
-    Value: string,
-    CreatedAt?: Date,
-    UpdatedAt?: Date,
-    DeletedAt?: Date,
+    key: string,
+    value: string,
+    createdAt?: Date,
+    updatedAt?: Date,
+    deletedAt?: Date,
 }

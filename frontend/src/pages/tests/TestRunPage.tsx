@@ -49,8 +49,8 @@ interface TestRunPageProps {
 }
 
 interface NewTestRunPayload {
-    TestRunID: number,
-    Entry: ITesRunLogEntryData,
+    testRunId: number,
+    entry: ITesRunLogEntryData,
 }
 
 const useStyles = makeStyles(theme => ({
@@ -110,24 +110,24 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         runsFailed: number,
         runsSuccess: number
     }>({
-        currentRunID: testRun.ID as number,
+        currentRunID: testRun.id as number,
         log: [],
-        protocols: testRun.Protocols === undefined ? [] : testRun.Protocols,
+        protocols: testRun.protocols === undefined ? [] : testRun.protocols,
         runsOpen: 0,
         runsSuccess: 0,
         runsFailed: 0
     })
 
     const patchProtocols = (protocols: ITestProtocolData[], protocol: ITestProtocolData): ITestProtocolData[] => {
-        if (protocols.findIndex(p => p.ID === protocol.ID) >= 0)
-            return protocols.map(p => p.ID === protocol.ID ? protocol : p);
+        if (protocols.findIndex(p => p.id === protocol.id) >= 0)
+            return protocols.map(p => p.id === protocol.id ? protocol : p);
         return [...protocols, protocol]
     }
 
     const testProtocolEntry = useSSE<ITestProtocolData | null>(`test_run_${state.currentRunID}_protocol`, null)
     useEffect(() => {
         if (testProtocolEntry === null) return;
-        console.log("Received new protocol entry: " + testProtocolEntry.ID)
+        console.log("Received new protocol entry: " + testProtocolEntry.id)
         setState(prevState => ({
             ...prevState,
             protocols: patchProtocols(prevState.protocols, testProtocolEntry),
@@ -135,16 +135,16 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     }, [testProtocolEntry]);
 
     useEffect(() => {
-        console.log("TestRun changed to: " + testRun.ID)
-        setState(prevState => ({...prevState, currentRunID: testRun.ID as number}));
-    }, [testRun.ID]);
+        console.log("testRun changed to: " + testRun.id)
+        setState(prevState => ({...prevState, currentRunID: testRun.id as number}));
+    }, [testRun.id]);
 
-    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${testRun.ID}_log`, null);
+    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${testRun.id}_log`, null);
     useEffect(() => {
-        if (testRunEntry === null)
+        if (testRunEntry === null || testRunEntry.entry == null)
             return;
-        console.log("Received Test Run Log:  " + testRunEntry.Entry.ID)
-        setState(prevState => ({...prevState, log: [...prevState.log, testRunEntry.Entry]}))
+        console.log("Received test Run log:  " + testRunEntry.entry.id)
+        setState(prevState => ({...prevState, log: [...prevState.log, testRunEntry.entry]}))
     }, [testRunEntry]);
 
     type FilterType = {
@@ -167,8 +167,8 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         rf = 0;
         rs = 0;
 
-        run.Protocols.forEach(value => {
-            switch (value.TestResult) {
+        run.protocols.forEach(value => {
+            switch (value.testResult) {
                 case TestResultState.TestResultOpen:
                     ro++;
                     break;
@@ -187,60 +187,61 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         let {ro, rf, rs} = rebuildStatistics(testRun);
         setState(prevState => ({
             ...prevState,
-            log: testRun.Log,
+            log: testRun.log,
             runsOpen: ro,
             runsFailed: rf,
             runsSuccess: rs,
-            protocols: testRun.Protocols
+            protocols: testRun.protocols
         }))
     }, [testRun]);
 
     const onTestRerun = (): void => {
-        executeTest(projectIdentifier, appId, testRun.TestID, {
-            AppBinaryID: testRun.AppBinaryID,
-            Params: testRun.Parameter,
-            StartURL: testRun.StartURL,
-        }).then(response => {
-            navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${response.data.ID}`);
+        executeTest(projectIdentifier, appId, testRun.testId, {
+            appBinaryId: testRun.appBinaryId,
+            params: testRun.parameter,
+            startUrl: testRun.startUrl,
+        }).then(test => {
+            //navigate(          `/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${test.id}`);
+            window.location.href = `/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${test.id}`;
         }).catch(error => {
             setError(error);
         });
     };
 
     const onCancelTestRun = (): void => {
-        cancelTestRun(projectIdentifier, appId, testRun.TestID, testRun.ID!).then(response => {
-            console.log("Test run cancelled", response);
+        cancelTestRun(projectIdentifier, appId, testRun.testId, testRun.id!).then(response => {
+            console.log("test run cancelled", response);
         }).catch(error => {
             setError(error);
         });
     };
 
-    const startupTimes = testRun.DeviceStatus.map(item => {
+    const startupTimes = testRun.deviceStatus.map(item => {
             return {
-                Name: item.Device && (item.Device.Alias.length > 0 ? item.Device.Alias : item.Device.Name),
-                StartupTime: item.StartupTime
+                Name: item.device && (item.device.alias.length > 0 ? item.device.alias : item.device.name),
+                StartupTime: item.startupTime
             }
         }
     )
 
-    const environmentParameters = testRun?.Parameter.split("\n");
+    const environmentParameters = testRun?.parameter.split("\n");
 
     const applyProtocolFilter = (value: ITestProtocolData): boolean => {
-        return (filter.Success && value.TestResult === TestResultState.TestResultSuccess)
-            || (filter.Failed && value.TestResult === TestResultState.TestResultFailed)
-            || (filter.Pending && value.TestResult === TestResultState.TestResultOpen);
+        return (filter.Success && value.testResult === TestResultState.TestResultSuccess)
+            || (filter.Failed && value.testResult === TestResultState.TestResultFailed)
+            || (filter.Pending && value.testResult === TestResultState.TestResultOpen);
     }
 
     const groupProtocols = (protocols: ITestProtocolData[]): ITestProtocolData[] => {
         const protocolMap: { [key: number]: ITestProtocolData } = {};
 
         protocols.forEach(protocol => {
-            if (protocol.ParentTestProtocolID === null || protocol.ParentTestProtocolID === undefined || protocol.ParentTestProtocolID === 0) {
-                protocolMap[protocol.ID!] = {...protocol, ChildProtocols: []};
+            if (protocol.parentTestProtocolId === null || protocol.parentTestProtocolId === undefined || protocol.parentTestProtocolId === 0) {
+                protocolMap[protocol.id!] = {...protocol, childProtocols: []};
             } else {
-                const parent = protocolMap[protocol.ParentTestProtocolID];
+                const parent = protocolMap[protocol.parentTestProtocolId];
                 if (parent) {
-                    parent.ChildProtocols.push(protocol);
+                    parent.childProtocols.push(protocol);
                 }
             }
         });
@@ -250,7 +251,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     function TestProtocolRow(props: { row: ITestProtocolData }) {
         const {row} = props;
         const [open, setOpen] = React.useState(false);
-        const testName = row.TestName.split("/");
+        const testName = row.testName.split("/");
 
         return (
             <React.Fragment>
@@ -266,7 +267,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     </TableCell>
                     <TableCell component="th" scope="row">
                         <Link
-                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${testRun.ID}/${row.ID}`)}
+                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${testRun.id}/${row.id}`)}
                             underline="none">
                             {testName}
                         </Link>
@@ -274,14 +275,14 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     <TableCell>
                         <Grid container={true}>
                             <Grid size={{xs: 12, md: 12}}>
-                                {row.Device && (row.Device.Alias.length > 0 ? row.Device.Alias : row.Device.Name)}
+                                {row.device && (row.device.alias.length > 0 ? row.device.alias : row.device.name)}
                             </Grid>
                             <Grid size={{xs: 12, md: 12}}>
-                                {row.Device?.OS} {row.Device?.OSVersion}
+                                {row.device?.os} {row.device?.osVersion}
                             </Grid>
                         </Grid>
                     </TableCell>
-                    <TableCell align="right"><TestStatusIconComponent status={row.TestResult}/></TableCell>
+                    <TableCell align="right"><TestStatusIconComponent status={row.testResult}/></TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell style={{padding: 0}} colSpan={6}>
@@ -297,16 +298,16 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {row.ChildProtocols.map((historyRow) => {
-                                            const historyTestName = historyRow.TestName.split("/");
+                                        {row.childProtocols.map((historyRow) => {
+                                            const historyTestName = historyRow.testName.split("/");
 
                                             return (
-                                                <TableRow key={historyRow.ID}>
+                                                <TableRow key={historyRow.id}>
                                                     <TableCell component="th" scope="row">
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link
-                                                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${testRun.ID}/${historyRow.ID}`)}
+                                                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${testRun.id}/${historyRow.id}`)}
                                                             underline="none">
                                                             {historyTestName.length > 1 ? historyTestName[1] : historyTestName[0]}
                                                         </Link>
@@ -314,15 +315,15 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                     <TableCell>
                                                         <Grid container={true}>
                                                             <Grid size={{xs: 12, md: 12}}>
-                                                                {historyRow.Device && (historyRow.Device.Alias.length > 0 ? historyRow.Device.Alias : historyRow.Device.Name)}
+                                                                {historyRow.device && (historyRow.device.alias.length > 0 ? historyRow.device.alias : historyRow.device.name)}
                                                             </Grid>
                                                             <Grid size={{xs: 12, md: 12}}>
-                                                                {historyRow.Device?.OS} {historyRow.Device?.OSVersion}
+                                                                {historyRow.device?.os} {historyRow.device?.osVersion}
                                                             </Grid>
                                                         </Grid>
                                                     </TableCell>
                                                     <TableCell align="right"><TestStatusIconComponent
-                                                        status={historyRow.TestResult}/></TableCell>
+                                                        status={historyRow.testResult}/></TableCell>
                                                 </TableRow>
                                             )
                                         })}
@@ -338,8 +339,8 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={`Test: ${testRun.Test.Name} Run: ${testRun.ID}`}>
-                { /*Test Previous and Next Navigation*/}
+            <TitleCard title={`Test: ${testRun.test.name} Run: ${testRun.id}`}>
+                { /*test Previous and Next Navigation*/}
                 <Grid container={true} spacing={2}>
                     <Grid size={{xs: 6}} container={true} sx={{
                         padding: 2,
@@ -347,7 +348,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     }}>
                         {prevRunId !== null && prevRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${prevRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${prevRunId}`)}>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                         }
@@ -358,7 +359,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     }}>
                         {nextRunId !== null && nextRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.TestID}/run/${nextRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${nextRunId}`)}>
                                 Next <KeyboardArrowRight/>
                             </Button>
                         }
@@ -368,7 +369,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
             <TitleCard title={'Environment'}>
                 <Grid container={true}>
                     {environmentParameters.map((e, i) => (
-                        <Grid size={{xs: 12, md: 12}}>
+                        <Grid size={{xs: 12, md: 12}} key={`env_param_${i}`}>
                             <Typography key={`env_${i}`} variant={"body1"}>
                                 {e}
                             </Typography>
@@ -378,7 +379,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                 <Grid sx={{flexGrow: 1}}></Grid>
             </TitleCard>
             {
-                testRun?.AppBinary &&
+                testRun?.appBinary &&
                 <TitleCard title={"App Bundle"}>
                     <Box sx={{p: 1, m: 1}}>
                         <Grid container={true}>
@@ -386,34 +387,34 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                 Name:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Name}
+                                {testRun?.appBinary?.name}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Identifier:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Identifier}
+                                {testRun?.appBinary?.identifier}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Platform:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Platform}
+                                {testRun?.appBinary?.platform}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Version:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Version}
+                                {testRun?.appBinary?.version}
                             </Grid>
                             <Grid size={{xs: 12, md: 2}}>
                                 Hash:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Hash}
+                                {testRun?.appBinary?.hash}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
@@ -421,14 +422,14 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
                                 <Moment
-                                    format="YYYY/MM/DD HH:mm:ss">{testRun?.AppBinary?.CreatedAt}</Moment>
+                                    format="YYYY/MM/DD HH:mm:ss">{testRun?.appBinary?.createdAt}</Moment>
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Addons:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.AppBinary?.Additional}
+                                {testRun?.appBinary?.additional}
                             </Grid>
                         </Grid>
                     </Box>
@@ -546,7 +547,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     </ResponsiveContainer>
                 </Paper>
             </TitleCard>
-            <TitleCard title={"Execution Log"}>
+            <TitleCard title={"Execution log"}>
                 <TableContainer component={Paper}>
                     <Table size="small" aria-label="a dense table">
                         <TableHead>
@@ -557,12 +558,12 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {state.log.map((entry) => <TableRow key={entry.ID}>
+                            {state.log.map((entry) => <TableRow key={entry.id}>
                                 <TableCell component="th" scope="row" style={{whiteSpace: 'nowrap'}}>
-                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.CreatedAt}</Moment>
+                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.createdAt}</Moment>
                                 </TableCell>
-                                <TableCell>{entry.Level}</TableCell>
-                                <TableCell>{entry.Log}</TableCell>
+                                <TableCell>{entry.level}</TableCell>
+                                <TableCell>{entry.log}</TableCell>
                             </TableRow>)}
                         </TableBody>
                     </Table>

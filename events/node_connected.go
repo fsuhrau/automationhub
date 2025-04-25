@@ -5,8 +5,8 @@ import "github.com/fsuhrau/automationhub/hub/manager"
 var NodeConnected nodeConnected
 
 type NodeConnectedPayload struct {
-	NodeIdentifier manager.NodeIdentifier
-	Hostname       string
+	NodeIdentifier manager.NodeIdentifier `json:"nodeIdentifier"`
+	Hostname       string                 `json:"hostname"`
 }
 
 type nodeConnected struct {

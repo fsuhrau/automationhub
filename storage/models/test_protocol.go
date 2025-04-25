@@ -1,31 +1,32 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
 type TestProtocol struct {
-	gorm.Model
-	TestRunID            uint  `json:",omitempty"`
-	ParentTestProtocolID *uint `sql:"default:NULL" json:",omitempty"`
-	TestRun              *TestRun
-	DeviceID             *uint `json:",omitempty"`
-	Device               *Device
-	TestName             string
-	StartedAt            time.Time
-	EndedAt              *time.Time
-	Entries              []ProtocolEntry
-	TestResult           TestResultState
-	Performance          []ProtocolPerformanceEntry
-	AvgFPS               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
-	AvgMEM               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
-	AvgCPU               float64 `sql:"type:decimal(10,2);" json:",omitempty"`
-	AvgVertexCount       float64 `sql:"type:decimal(10,2);" json:",omitempty"`
-	AvgTriangles         float64 `sql:"type:decimal(10,2);" json:",omitempty"`
+	Model
+	TestRunID            uint                       `json:"testRunId,omitempty"`
+	ParentTestProtocolID *uint                      `sql:"default:NULL" json:"parentTestProtocolId,omitempty"`
+	TestRun              *TestRun                   `json:"testRun,omitempty"`
+	DeviceID             *uint                      `json:"deviceId,omitempty"`
+	Device               *Device                    `json:"device,omitempty"`
+	TestName             string                     `json:"testName"`
+	StartedAt            time.Time                  `json:"startedAt,omitempty"`
+	EndedAt              *time.Time                 `json:"endedAt,omitempty"`
+	Entries              []ProtocolEntry            `json:"entries,omitempty"`
+	TestResult           TestResultState            `json:"testResult,omitempty"`
+	Performance          []ProtocolPerformanceEntry `json:"performance,omitempty"`
+	AvgFPS               float64                    `sql:"type:decimal(10,2);" json:"avgFps,omitempty"`
+	AvgMEM               float64                    `sql:"type:decimal(10,2);" json:"avgMem,omitempty"`
+	AvgCPU               float64                    `sql:"type:decimal(10,2);" json:"avgCpu,omitempty"`
+	AvgVertexCount       float64                    `sql:"type:decimal(10,2);" json:"avgVertexCount,omitempty"`
+	AvgTriangles         float64                    `sql:"type:decimal(10,2);" json:"avgTriangles,omitempty"`
 	// calculated fields
-	HistAvgFPS          float64        `db:"-" gorm:"-:all" json:",omitempty"`
-	HistAvgMEM          float64        `db:"-" gorm:"-:all" json:",omitempty"`
-	HistAvgCPU          float64        `db:"-" gorm:"-:all" json:",omitempty"`
-	TestProtocolHistory []TestProtocol `db:"-" gorm:"-:all" json:",omitempty"`
+	HistAvgFPS          float64        `db:"-" gorm:"-:all" json:"histAvgFps,omitempty"`
+	HistAvgMEM          float64        `db:"-" gorm:"-:all" json:"histAvgMem,omitempty"`
+	HistAvgCPU          float64        `db:"-" gorm:"-:all" json:"histAvgCpu,omitempty"`
+	HistAvgVertexCount  float64        `db:"-" gorm:"-:all" json:"histAvgVertexCount,omitempty"`
+	HistAvgTriangles    float64        `db:"-" gorm:"-:all" json:"histAvgTriangles,omitempty"`
+	TestProtocolHistory []TestProtocol `db:"-" gorm:"-:all" json:"testProtocolHistory,omitempty"`
 }

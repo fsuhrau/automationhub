@@ -38,7 +38,7 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
     const {state} = useHubState()
     const {setError} = useError()
 
-    const node = state.nodes?.find(n => n.ID === device.NodeID);
+    const node = state.nodes?.find(n => n.id === device.nodeId);
 
     const [uiState, setUiState] = React.useState<{
         alias: string,
@@ -47,42 +47,45 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
         connectionType: DeviceConnectionType,
         ipAddress: string,
         port: number
+        currentKey: string
+        currentValue: string
     }>({
-        alias: device.Alias,
-        customParameter: device.CustomParameter,
-        acknowledged: device.IsAcknowledged,
-        connectionType: device.ConnectionParameter ? device.ConnectionParameter.ConnectionType : DeviceConnectionType.USB,
-        ipAddress: device.ConnectionParameter ? device.ConnectionParameter.IP : "",
-        port: device.ConnectionParameter ? device.ConnectionParameter.Port : 0
+        alias: device.alias,
+        customParameter: device.customParameter,
+        acknowledged: device.isAcknowledged,
+        connectionType: device.connectionParameter ? device.connectionParameter.connectionType : DeviceConnectionType.USB,
+        ipAddress: device.connectionParameter ? device.connectionParameter.ip : "",
+        port: device.connectionParameter ? device.connectionParameter.port : 0,
+        currentKey: '',
+        currentValue: '',
     })
-
 
     const updateParameterKey = (index: number, value: string) => {
         setUiState(prevState => ({
             ...prevState,
-            customParameter: prevState.customParameter.map((value1, index1) => index1 == index ? {
+            customParameter: [...prevState.customParameter.map((value1, index1) => index1 == index ? {
                 ...value1,
-                Key: value
-            } : value1)
+                key: value
+            } : value1)]
         }))
     };
     const updateParameterValue = (index: number, value: string) => {
         setUiState(prevState => ({
             ...prevState,
-            customParameter: prevState.customParameter.map((value1, index1) => index1 == index ? {
+            customParameter: [...prevState.customParameter.map((value1, index1) => index1 == index ? {
                 ...value1,
-                Value: value
-            } : value1)
+                value: value
+            } : value1)]
         }))
     };
 
     const addParameter = (): void => {
-        setUiState(prevState => ({...prevState, customParameter: [...prevState.customParameter, {Key: '', Value: ''}]}))
+        setUiState(prevState => ({...prevState, customParameter: [...prevState.customParameter, {key: '', value: ''}]}))
     };
 
     const removeParameter = (param: string) => {
         setUiState(prevState => ({
-            ...prevState, customParameter: [...prevState.customParameter.filter(value => value.Key !== param)]
+            ...prevState, customParameter: [...prevState.customParameter.filter(value => value.key !== param)]
         }))
     };
 
@@ -95,21 +98,22 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
     };
 
     const onSaveClick = () => {
-        device.CustomParameter = uiState.customParameter;
-        device.IsAcknowledged = uiState.acknowledged;
-        device.Alias = uiState.alias;
-        device.ConnectionParameter = {
-            ConnectionType: uiState.connectionType,
-            IP: uiState.ipAddress,
-            Port: uiState.port,
+        debugger;
+        device.customParameter = uiState.customParameter;
+        device.isAcknowledged = uiState.acknowledged;
+        device.alias = uiState.alias;
+        device.connectionParameter = {
+            connectionType: uiState.connectionType,
+            ip: uiState.ipAddress,
+            port: uiState.port,
         };
-        updateDevice(projectIdentifier, device, device.ID).then(response => {
+        updateDevice(projectIdentifier, device, device.id).then(response => {
             navigateBack()
         }).catch(ex => setError(ex));
     };
 
     const navigateBack = () => {
-        navigate(`/project/${projectIdentifier}/device/${device.ID}`);
+        navigate(`/project/${projectIdentifier}/device/${device.id}`);
     }
 
     return (
@@ -118,7 +122,7 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                 <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
                     <Typography component="h2" variant="h6">
                         <PlatformTypeIcon
-                            platformType={device.PlatformType}/> {`Device: ${device.Name} (${device.DeviceIdentifier})`}
+                            platformType={device.platformType}/> {`Device: ${device.name} (${device.deviceIdentifier})`}
                     </Typography>
                     <ButtonGroup variant="contained" aria-label="text button group">
                         <Button variant="contained" size={'small'} onClick={navigateBack}>Cancel</Button>
@@ -133,13 +137,13 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                                     ID:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.ID}
+                                    {device.id}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Name:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.Name}
+                                    {device.name}
                                 </Grid>
 
                                 <Grid size={{xs: 12, md: 2}}>
@@ -157,19 +161,19 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                                     Operation System:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.OS} {device.OSVersion}
+                                    {device.os} {device.osVersion}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Identifier:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.DeviceIdentifier}
+                                    {device.deviceIdentifier}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Type:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {DeviceType[device.DeviceType]}
+                                    {DeviceType[device.deviceType]}
                                 </Grid>
                                 {
                                     /*
@@ -177,7 +181,7 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                                     Acknowledged:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.IsAcknowledged ? 'Yes' : 'No'}
+                                    {device.isAcknowledged ? 'Yes' : 'No'}
                                 </Grid>
                                      */
                                 }
@@ -187,38 +191,38 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                     </Grid>
                     <Grid size={12}>
                         {
-                            device.ConnectionParameter && <TitleCard title={'Connection'}>
+                            device.connectionParameter && <TitleCard title={'Connection'}>
                                 <Grid container={true} spacing={1}>
                                     <Grid size={{xs: 12, md: 2}}>
                                         Type
                                     </Grid>
                                     <Grid size={{xs: 12, md: 10}}>
-                                        {DeviceConnectionType[device.ConnectionParameter.ConnectionType]}
+                                        {DeviceConnectionType[device.connectionParameter.connectionType]}
                                     </Grid>
                                     {
-                                        device.ConnectionParameter.ConnectionType == DeviceConnectionType.HubNode && <>
+                                        device.connectionParameter.connectionType == DeviceConnectionType.HubNode && <>
                                             <Grid size={{xs: 12, md: 2}}>
                                                 Node
                                             </Grid>
                                             <Grid size={{xs: 12, md: 10}}>
-                                                {node?.Name}
+                                                {node?.name}
                                             </Grid>
                                         </>
                                     }
                                     {
-                                        device.ConnectionParameter && device.ConnectionParameter.ConnectionType == DeviceConnectionType.Remote && device.ConnectionParameter.IP.length > 0 && device.ConnectionParameter.Port > 0 && (
+                                        device.connectionParameter && device.connectionParameter.connectionType == DeviceConnectionType.Remote && device.connectionParameter.ip.length > 0 && device.connectionParameter.port > 0 && (
                                             <Grid size={{xs: 12, md: 12}} container={true}>
                                                 <Grid size={{xs: 12, md: 2}}>
                                                     IP:
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 10}}>
-                                                    {device.ConnectionParameter.IP}
+                                                    {device.connectionParameter.ip}
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 2}}>
                                                     Port:
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 10}}>
-                                                    {device.ConnectionParameter.Port}
+                                                    {device.connectionParameter.port}
                                                 </Grid>
                                             </Grid>
                                         )
@@ -228,15 +232,15 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                         }
                     </Grid>
                     <Grid size={12}>
-                        <TitleCard title={'Device Parameter'}>
+                        <TitleCard title={'Device parameter'}>
                             <Grid container={true} spacing={1}>
-                                {device.DeviceParameter.map(d => (
+                                {device.deviceParameter.map(d => (
                                     <>
                                         <Grid size={{xs: 12, md: 2}}>
-                                            {d.Key}
+                                            {d.key}
                                         </Grid>
                                         <Grid size={{xs: 12, md: 10}}>
-                                            {d.Value}
+                                            {d.value}
                                         </Grid>
                                     </>
                                 ))}
@@ -244,24 +248,24 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                         </TitleCard>
                     </Grid>
                     <Grid size={12}>
-                        <TitleCard title={'Custom User Parameter'}>
+                        <TitleCard title={'Custom User parameter'}>
                             <Grid container={true} spacing={1}>
                                 {uiState.customParameter.map((value, index) => (
                                         <Grid size={{xs: 12, md: 12}} container={true} spacing={1}>
                                             <Grid size={{xs: 12, md: 2}}>
-                                                <TextField id={`update_parameter_key_${index}`} value={value.Key}
+                                                <TextField id={`update_parameter_key_${index}`} value={value.key}
                                                            placeholder={"Key"} variant={"outlined"} size={'small'} fullWidth={true}
                                                            onChange={event => updateParameterKey(index, event.target.value)}/>
                                             </Grid>
                                             <Grid size={{xs: 12, md: 2}}>
-                                                <TextField id={`update_parameter_value_${index}`} value={value.Value} fullWidth={true}
+                                                <TextField id={`update_parameter_value_${index}`} value={value.value} fullWidth={true}
                                                            placeholder={"Value"} variant={"outlined"} size={'small'}
                                                            onChange={event => updateParameterValue(index, event.target.value)}/>
                                             </Grid>
                                             <Grid size={{xs: 12, md: 8}}>
                                                 <IconButton color={"error"} aria-label={"remove"} component={"span"}
                                                             size={"small"}
-                                                            onClick={() => removeParameter(value.Key)}>
+                                                            onClick={() => removeParameter(value.key)}>
                                                     <Remove/>
                                                 </IconButton>
                                             </Grid>

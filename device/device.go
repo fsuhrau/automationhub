@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+type DeviceConfig struct {
+	Connection      int
+	IP              string
+	Port            int
+	DeviceParameter map[string]string
+}
+
+func GetAttribute(config *DeviceConfig, attribute string) string {
+	if v, ok := config.DeviceParameter[attribute]; ok {
+		return v
+	}
+	return ""
+}
+
 type Device interface {
 	DeviceID() string
 	DeviceState() State
@@ -31,7 +45,7 @@ type Device interface {
 	Connection() *Connection
 	IsAppConnected() bool
 
-	StartApp(*app.Parameter, string, string) error
+	StartApp(deviceConfig *DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(*app.Parameter) error
 	Send([]byte) error
 

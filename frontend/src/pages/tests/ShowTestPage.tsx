@@ -15,7 +15,7 @@ function getUnityTestsConfig(): Array<KeyValue> {
 }
 
 function getDeviceOption(): Array<KeyValue> {
-    return [{id: 0, name: 'All Devices'}, {id: 1, name: 'Selected Devices Only'}];
+    return [{id: 0, name: 'All devices'}, {id: 1, name: 'Selected devices Only'}];
 }
 
 interface TestContentProps {
@@ -42,7 +42,7 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
             <TitleCard titleElement={
                 <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
                     <Typography component="h2" variant="h6">
-                        {test.Name}
+                        {test.name}
                     </Typography>
                     <Button variant="contained" color="primary" size="small"
                             onClick={() => navigate(`edit`)}>Edit</Button>
@@ -54,14 +54,14 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                             Type:
                         </Grid>
                         <Grid size={{xs: 12, md: 10}}>
-                            {getTestTypeName(test.TestConfig.Type)}
+                            {getTestTypeName(test.testConfig.type)}
                         </Grid>
                         <Grid size={{xs: 12, md: 2}}>
                             Execution:
                         </Grid>
                         <Grid container={true} size={{xs: 12, md: 10}} spacing={2}>
                             <Grid size={{xs: 12, md: 12}}>
-                                {getTestExecutionName(test.TestConfig.ExecutionType)}
+                                {getTestExecutionName(test.testConfig.executionType)}
                             </Grid>
                             <Grid size={{xs: 12, md: 12}}>
                                 <Alert severity="info">
@@ -75,49 +75,49 @@ const ShowTestPage: React.FC<TestContentProps> = (props) => {
                             Devices:
                         </Grid>
                         <Grid size={{xs: 12, md: 10}}>
-                            {getDeviceConfigName(test.TestConfig.AllDevices)}
+                            {getDeviceConfigName(test.testConfig.allDevices)}
                         </Grid>
-                        {!test.TestConfig.AllDevices && (<>
+                        {!test.testConfig.allDevices && (<>
                             <Grid size={{xs: 12, md: 2}}>
                             </Grid>
                             <Grid container={true} size={{xs: 12, md: 10}}>
-                                {test.TestConfig.Devices.map((a, index) =>
+                                {test.testConfig.devices.map((a, index) =>
                                     <Grid size={{xs: 12, md: 12}}
-                                          key={`device_${a.ID}_${index}`}>- {a.Device?.DeviceIdentifier}({a.Device && (a.Device.Alias.length > 0 ? a.Device.Alias : a.Device.Name)})</Grid>,
+                                          key={`device_${a.id}_${index}`}>- {a.device?.deviceIdentifier}({a.device && (a.device.alias.length > 0 ? a.device.alias : a.device.name)})</Grid>,
                                 )}
                             </Grid>
                         </>)}
                     </Grid>
                 </TitleCard>
                 <TitleCard title={'Config'}>
-                    {test.TestConfig.Type === TestType.Unity && (
+                    {test.testConfig.type === TestType.Unity && (
                         <Grid container={true} spacing={2}>
                             <Grid size={{xs: 12, md: 2}}>
                                 Run:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {getUnityTestCategoryName(test.TestConfig.Unity?.UnityTestCategoryType as UnityTestCategory)}
+                                {getUnityTestCategoryName(test.testConfig.unity?.testCategoryType as UnityTestCategory)}
                             </Grid>
 
-                            {test.TestConfig.Unity?.Categories !== "" && <>
+                            {test.testConfig.unity?.categories !== "" && <>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Categories
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {test.TestConfig.Unity?.Categories}
+                                    {test.testConfig.unity?.categories}
                                 </Grid>
                             </>
                             }
-                            {test.TestConfig.Unity?.UnityTestCategoryType === UnityTestCategory.RunSelectedTestsOnly && test.TestConfig.Unity.UnityTestFunctions.length > 0 && (
+                            {test.testConfig.unity?.testCategoryType === UnityTestCategory.RunSelectedTestsOnly && test.testConfig.unity.testFunctions.length > 0 && (
                                 <>
                                     <Grid size={{xs: 12, md: 2}}>
                                         Functions:
                                     </Grid>
                                     <Grid size={{xs: 12, md: 10}}>
                                         Functions:<br/>
-                                        {test.TestConfig.Unity.UnityTestFunctions.map((a, index) =>
+                                        {test.testConfig.unity.testFunctions.map((a, index) =>
                                             <div
-                                                key={`test_function_${a.ID}_${index}`}>- {a.Class}/{a.Method}<br/>
+                                                key={`test_function_${a.id}_${index}`}>- {a.class}/{a.method}<br/>
                                             </div>,
                                         )}
                                     </Grid>

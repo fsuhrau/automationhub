@@ -156,8 +156,8 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return nil
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
-	applicationURL := fmt.Sprintf("%s?sessionId=%s&nodeURL=%s&deviceId=%s", params.Web.StartURL, sessionId, nodeUrl, d.DeviceID())
+func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
+	applicationURL := fmt.Sprintf("%s?sessionId=%s&nodeURL=%s&deviceId=%s", appParams.Web.StartURL, sessionId, nodeUrl, d.DeviceID())
 	if strings.Contains(runtime.GOOS, "windows") {
 		d.applicationProcess = exec2.NewCommand(d.browserPath, applicationURL)
 	} else if strings.Contains(runtime.GOOS, "darwin") {

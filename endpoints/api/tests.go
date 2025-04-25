@@ -30,20 +30,20 @@ func (s *Service) getTests(c *gin.Context, project *models.Project, application 
 func (s *Service) newTest(c *gin.Context, project *models.Project, application *models.App) {
 
 	type TestFunc struct {
-		Assembly string
-		Class    string
-		Method   string
+		Assembly string `json:"assembly"`
+		Class    string `json:"class"`
+		Method   string `json:"method"`
 	}
 	type Request struct {
-		Name                  string
-		TestType              models.TestType
-		ExecutionType         models.ExecutionType
-		PlatformType          models.PlatformType
-		UnityTestCategoryType models.UnityTestCategoryType
-		UnitySelectedTests    []TestFunc
-		AllDevices            bool
-		SelectedDevices       []uint
-		Categories            []string
+		Name                  string                       `json:"name"`
+		TestType              models.TestType              `json:"type"`
+		ExecutionType         models.ExecutionType         `json:"executionType"`
+		PlatformType          models.PlatformType          `json:"platformType"`
+		UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
+		UnitySelectedTests    []TestFunc                   `json:"unitySelectedTests"`
+		AllDevices            bool                         `json:"allDevices"`
+		SelectedDevices       []uint                       `json:"selectedDevices"`
+		Categories            []string                     `json:"categories"`
 	}
 
 	var request Request
@@ -161,13 +161,13 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 	testId := c.Param("test_id")
 
 	type request struct {
-		Name                  string
-		ExecutionType         models.ExecutionType
-		AllDevices            bool
-		Devices               []uint
-		UnityTestCategoryType models.UnityTestCategoryType
-		Categories            string
-		TestFunctions         []models.UnityTestFunction
+		Name                  string                       `json:"name"`
+		ExecutionType         models.ExecutionType         `json:"executionType"`
+		AllDevices            bool                         `json:"allDevices"`
+		Devices               []uint                       `json:"devices"`
+		UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
+		Categories            string                       `json:"categories"`
+		TestFunctions         []models.UnityTestFunction   `json:"testFunctions"`
 	}
 
 	var req request
@@ -309,9 +309,9 @@ func extractParams(param string) map[string]string {
 }
 
 type RunTestRequest struct {
-	AppBinaryID int
-	StartURL    string
-	Params      string
+	AppBinaryID int    `json:"appBinaryId"`
+	StartURL    string `json:"startUrl"`
+	Params      string `json:"params"`
 }
 
 func (s *Service) runTest(c *gin.Context, project *models.Project, application *models.App) {
@@ -432,12 +432,13 @@ func (s *Service) getTestRuns(c *gin.Context, project *models.Project, applicati
 	c.JSON(http.StatusOK, testRuns)
 }
 
+type Response struct {
+	TestRun   models.TestRun `json:"testRun"`
+	PrevRunId uint           `json:"prevRunId"`
+	NextRunId uint           `json:"nextRunId"`
+}
+
 func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
-	type Response struct {
-		TestRun   models.TestRun
-		PrevRunId uint
-		NextRunId uint
-	}
 
 	testId := c.Param("test_id")
 
@@ -461,12 +462,6 @@ func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, applic
 }
 
 func (s *Service) getTestRun(c *gin.Context, project *models.Project, application *models.App) {
-	type Response struct {
-		TestRun   models.TestRun
-		PrevRunId uint
-		NextRunId uint
-	}
-
 	testId := c.Param("test_id")
 	runId := c.Param("run_id")
 
@@ -536,7 +531,7 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 	protocolId := c.Param("protocol_id")
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols", "ID = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols", "id = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -555,6 +550,8 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 			run.Protocols[0].HistAvgFPS += histProtocols[i].AvgFPS
 			run.Protocols[0].HistAvgMEM += histProtocols[i].AvgMEM
 			run.Protocols[0].HistAvgCPU += histProtocols[i].AvgCPU
+			run.Protocols[0].HistAvgVertexCount += histProtocols[i].AvgVertexCount
+			run.Protocols[0].HistAvgTriangles += histProtocols[i].AvgTriangles
 		}
 		historyEntries := 1
 
@@ -565,6 +562,8 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 		run.Protocols[0].HistAvgFPS = run.Protocols[0].HistAvgFPS / float64(historyEntries)
 		run.Protocols[0].HistAvgMEM = run.Protocols[0].HistAvgMEM / float64(historyEntries)
 		run.Protocols[0].HistAvgCPU = run.Protocols[0].HistAvgCPU / float64(historyEntries)
+		run.Protocols[0].HistAvgVertexCount = run.Protocols[0].HistAvgVertexCount / float64(historyEntries)
+		run.Protocols[0].HistAvgTriangles = run.Protocols[0].HistAvgTriangles / float64(historyEntries)
 		run.Protocols[0].TestProtocolHistory = histProtocols
 	}
 

@@ -93,9 +93,9 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return cmd.Run()
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
+func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
 	if restart {
-		cmd := exec2.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), params.Identifier, "SESSION_ID", sessionId, "NODE_URL", nodeUrl)
+		cmd := exec2.NewCommand("xcrun", "simctl", "launch", d.DeviceID(), appParams.Identifier, "SESSION_ID", sessionId, "NODE_URL", nodeUrl)
 		if err := cmd.Run(); err != nil {
 			return err
 		}

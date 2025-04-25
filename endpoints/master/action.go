@@ -9,7 +9,7 @@ import (
 func (s *nodeMaster) Action(c *gin.Context) {
 	type request struct {
 		Node     string           `json:"node"`
-		DeviceID string           `json:"device_id"`
+		DeviceID string           `json:"deviceId"`
 		Response *action.Response `json:"response"`
 	}
 

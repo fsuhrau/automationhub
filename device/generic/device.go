@@ -23,7 +23,7 @@ type Device struct {
 	writer        device.LogWriter
 	actionHandler []action.ActionHandler
 	locked        bool
-	Config        *models.Device
+	Config        *models.Device `json:"config"`
 	ctx           context.Context
 	cancel        context.CancelFunc
 }

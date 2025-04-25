@@ -108,13 +108,13 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
 
     const renderCellExpand = (params: GridRenderCellParams): React.ReactNode => {
         return (
-            <CellExpand id={params.row.ID} value={params.value} data={params.row.Data}/>
+            <CellExpand id={params.row.id} value={params.value} data={params.row.Data}/>
         );
     };
 
     const columns: GridColDef[] = [
         {
-            field: 'Runtime',
+            field: 'runtime',
             headerName: 'Time',
             width: 120,
             sortable: true,
@@ -125,8 +125,8 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
             },
         },
         {
-            field: 'Source',
-            headerName: 'Source',
+            field: 'source',
+            headerName: 'source',
             width: 110,
             sortable: false,
             filterable: false,
@@ -136,16 +136,16 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
             },
         },
         {
-            field: 'Level',
-            headerName: 'Level',
+            field: 'level',
+            headerName: 'level',
             width: 60,
             sortable: false,
             filterable: false,
             disableColumnMenu: true,
         },
         {
-            field: 'Message',
-            headerName: 'Message',
+            field: 'message',
+            headerName: 'message',
             flex: 1,
             sortable: false,
             filterable: false,
@@ -186,7 +186,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
                 value === 'screen');
     };
 
-    const filterEntries = entries.filter(value => (!source.Errors && isVisible(value.Source) || (value.Level == 'error')) && (source.Content.length < 2 || value.Message.indexOf(source.Content) !== -1));
+    const filterEntries = entries.filter(value => (!source.Errors && isVisible(value.source) || (value.level == 'error')) && (source.Content.length < 2 || value.message.indexOf(source.Content) !== -1));
 
     const anchorRef = useRef<HTMLButtonElement | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -299,7 +299,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
         <Grid container={true} size={12} className={classes.chip}>
             <DataGrid
                 density={"compact"}
-                getRowId={(row) => row.ID}
+                getRowId={(row) => row.id}
                 rows={filterEntries}
                 columns={columns}
                 checkboxSelection={false}

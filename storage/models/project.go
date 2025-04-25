@@ -1,14 +1,12 @@
 package models
 
-import "gorm.io/gorm"
-
 type Project struct {
-	gorm.Model
-	Identifier   string
-	Name         string
-	CompanyID    uint
-	Company      *Company
-	AccessTokens []*AccessToken
-	Users        []*User `gorm:"many2many:user_projects;"`
-	Apps         []*App
+	Model
+	Identifier   string         `json:"identifier"`
+	Name         string         `json:"name"`
+	CompanyID    uint           `json:"companyId"`
+	Company      *Company       `json:"-"`
+	AccessTokens []*AccessToken `json:"accessTokens"`
+	Users        []*User        `json:"users" gorm:"many2many:user_projects;"`
+	Apps         []*App         `json:"apps"`
 }

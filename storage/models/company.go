@@ -1,11 +1,9 @@
 package models
 
-import "gorm.io/gorm"
-
 type Company struct {
-	gorm.Model
-	Token    string
-	Name     string
-	Users    []*User `gorm:"many2many:user_companies;"`
-	Projects []Project
+	Model
+	Token    string    `json:"token" gorm:"unique"`
+	Name     string    `json:"name" gorm:"unique"`
+	Users    []*User   `json:"users" gorm:"many2many:user_companies;"`
+	Projects []Project `json:"projects" gorm:"many2many:project_companies;"`
 }

@@ -6,14 +6,14 @@ import { PlatformType } from './platform.type.enum';
 import { UnityTestCategory } from "./unity.test.category.type.enum";
 
 export default interface ITestConfigData {
-    ID?: number,
-    TestID: number,
-    ExecutionType: TestExecutionType,
-    Type: TestType,
-    AllDevices: boolean,
-    Devices: ITestConfigDeviceData[]
-    Unity?: ITestConfigUnityData | null,
-    CreatedAt: Date,
-    UpdatedAt: Date,
-    DeletedAt: Date,
+    id?: number,
+    testId: number,
+    executionType: TestExecutionType,
+    type: TestType,
+    allDevices: boolean,
+    devices: ITestConfigDeviceData[]
+    unity?: ITestConfigUnityData | null,
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt: Date,
 }

@@ -3,11 +3,12 @@ import {Button, ButtonGroup, Typography,} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useError} from "../../ErrorProvider";
-import {IAppBinaryData, prettySize} from "../../types/app";
+import {IAppBinaryData} from "../../types/app";
 import {deleteAppBundle, getAppBundles} from "../../services/app.service";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import Moment from "react-moment";
+import {byteFormat} from "../tests/value_formatter";
 
 interface AppBundlesTableProps {
     appId: number | null
@@ -19,33 +20,33 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
     const {project, projectIdentifier} = useProjectContext();
     const {setError} = useError()
 
-    const app = project.Apps.find(a => a.ID === appId);
+    const app = project.apps.find(a => a.id === appId);
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
 
     const renderActions = (bundle: any) => {
         return <ButtonGroup variant={"text"} aria-label="text button group">
             <Button size="small" startIcon={<DownloadIcon/>} href={`/upload/${bundle?.AppPath}`}></Button>
             <Button size="small" startIcon={<DeleteForeverIcon/>} onClick={() => {
-                handleDeleteApp(bundle?.ID as number);
+                handleDeleteApp(bundle?.id as number);
             }}></Button>
         </ButtonGroup>
     }
 
     const columns: GridColDef[] = [
         {
-            field: 'ID',
+            field: 'id',
             headerName: 'ID',
             flex: 0.5,
             minWidth: 1
         },
         {
-            field: 'Version',
+            field: 'version',
             headerName: 'Version',
             flex: 0.5,
             minWidth: 90,
         },
         {
-            field: 'CreatedAt',
+            field: 'createdAt',
             headerName: 'Created',
             flex: 1,
             minWidth: 90,
@@ -53,22 +54,22 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
                 format="YYYY/MM/DD HH:mm:ss">{params.value}</Moment>)
         },
         {
-            field: 'Name',
+            field: 'name',
             headerName: 'Name',
             flex: 0.5,
             minWidth: 90,
         },
         {
-            field: 'Size',
+            field: 'size',
             headerName: 'Size',
             headerAlign: 'right',
             align: 'right',
             flex: 1,
             minWidth: 100,
-            renderCell: (params) => (<Typography variant={'caption'}>{prettySize(params.value)}</Typography>)
+            renderCell: (params) => (<Typography variant={'caption'}>{byteFormat(params.value)}</Typography>)
         },
         {
-            field: 'Tags',
+            field: 'tags',
             headerName: 'Tags',
             headerAlign: 'right',
             align: 'right',
@@ -89,8 +90,8 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
     useEffect(() => {
         if (projectIdentifier !== null && appId != null) {
             if (bundles.length == 0) {
-                getAppBundles(projectIdentifier, appId as number).then(response => {
-                    setBundles(response.data);
+                getAppBundles(projectIdentifier, appId as number).then(appBundles => {
+                    setBundles(appBundles);
                 }).catch(ex => {
                     setError(ex);
                 });
@@ -99,10 +100,10 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
     }, [projectIdentifier, appId]);
 
     const handleDeleteApp = (bundleId: number): void => {
-        deleteAppBundle(projectIdentifier, app?.ID as number, bundleId).then(value => {
+        deleteAppBundle(projectIdentifier, app?.id as number, bundleId).then(value => {
             setBundles(prevState => {
                 const newState = [...prevState];
-                const index = newState.findIndex(value1 => value1.ID == bundleId);
+                const index = newState.findIndex(value1 => value1.id == bundleId);
                 if (index > -1) {
                     newState.splice(index, 1);
                 }
@@ -120,7 +121,7 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
             getRowClassName={(params) =>
                 params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
             }
-            getRowId={(row) => row.ID}
+            getRowId={(row) => row.id}
             initialState={{
                 pagination: {paginationModel: {pageSize: 20}},
             }}

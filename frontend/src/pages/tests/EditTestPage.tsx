@@ -54,7 +54,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
         testType: TestType,
         executionType: TestExecutionType,
         platformType: PlatformType,
-        unityTestCategoryType: UnityTestCategory,
+        testCategoryType: UnityTestCategory,
         deviceType: number,
         selectedDevices: number[],
         selectedTestFunctions: IAppFunctionData[],
@@ -64,7 +64,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const {test} = props;
 
-    const app = project.Apps.find(a => a.ID === appId);
+    const app = project.apps.find(a => a.id === appId);
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();
@@ -73,18 +73,18 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const [uiState, setUiState] = React.useState<NewTestState>({
             testType: TestType.Unity,
-            executionType: test.TestConfig.ExecutionType,
+            executionType: test.testConfig.executionType,
             platformType: PlatformType.iOS,
-            testName: test.Name,
-            unityTestCategoryType: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? UnityTestCategory.RunAllTests : test.TestConfig.Unity?.UnityTestCategoryType,
-            deviceType: test.TestConfig.AllDevices ? 0 : 1,
-            selectedDevices: test.TestConfig.Devices.map(value => value.DeviceID) as number[],
-            selectedTestFunctions: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null ? [] : test.TestConfig.Unity.UnityTestFunctions.map(value => ({
-                Assembly: value.Assembly,
-                Class: value.Class,
-                Method: value.Method
+            testName: test.name,
+            testCategoryType: test.testConfig.unity === undefined || test.testConfig.unity === null ? UnityTestCategory.RunAllTests : test.testConfig.unity?.testCategoryType,
+            deviceType: test.testConfig.allDevices ? 0 : 1,
+            selectedDevices: test.testConfig.devices.map(value => value.deviceId) as number[],
+            selectedTestFunctions: test.testConfig.unity === undefined || test.testConfig.unity === null ? [] : test.testConfig.unity.testFunctions.map(value => ({
+                assembly: value.assembly,
+                class: value.class,
+                method: value.method
             } as IAppFunctionData)),
-            testCategories: test.TestConfig.Unity === undefined || test.TestConfig.Unity === null || test.TestConfig.Unity.Categories === '' ? [] : test.TestConfig.Unity.Categories.split(','),
+            testCategories: test.testConfig.unity === undefined || test.testConfig.unity === null || test.testConfig.unity.categories === '' ? [] : test.testConfig.unity.categories.split(','),
             category: '',
         }
     )
@@ -106,14 +106,14 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
     };
 
     const updateTestData = (): void => {
-        updateTest(projectIdentifier, appId, test.ID as number, {
-            Name: uiState.testName,
-            Categories: uiState.testCategories.join(','),
-            AllDevices: uiState.deviceType === 0,
-            ExecutionType: uiState.executionType,
-            UnityTestCategoryType: uiState.unityTestCategoryType,
-            Devices: uiState.selectedDevices,
-            TestFunctions: uiState.selectedTestFunctions,
+        updateTest(projectIdentifier, appId, test.id as number, {
+            name: uiState.testName,
+            categories: uiState.testCategories.join(','),
+            allDevices: uiState.deviceType === 0,
+            executionType: uiState.executionType,
+            unityTestCategoryType: uiState.testCategoryType,
+            devices: uiState.selectedDevices,
+            testFunctions: uiState.selectedTestFunctions,
         } as UpdateTestData).then(response => {
             navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
@@ -129,10 +129,10 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
     const [devices, setDevices] = useState<IDeviceData[]>([]);
 
     useEffect(() => {
-        getAllDevices(projectIdentifier, app?.Platform).then(response => {
-            setDevices(response.data);
+        getAllDevices(projectIdentifier, app?.platform).then(devices => {
+            setDevices(devices);
         }).catch(ex => setError(ex))
-    }, [projectIdentifier, app?.Platform])
+    }, [projectIdentifier, app?.platform])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
         if (!isEqual(selectedDevices, uiState.selectedDevices)) {
@@ -180,7 +180,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                         Type:
                     </Grid>
                     <Grid size={{xs: 12, md: 10}}>
-                        {getTestTypeName(test.TestConfig.Type)}
+                        {getTestTypeName(test.testConfig.type)}
                     </Grid>
 
                     <Grid size={{xs: 12, md: 2}}>
@@ -252,7 +252,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                     </Grid>
                 </Grid>
             </TitleCard>
-            {test.TestConfig.Type === TestType.Unity && (
+            {test.testConfig.type === TestType.Unity && (
                 <TitleCard title={'Unity Test Config'}>
                     <Grid container={true}>
 
@@ -263,10 +263,10 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                             <RadioGroup
                                 name="unity-test-execution-selection"
                                 aria-label="spacing"
-                                value={(+uiState.unityTestCategoryType).toString()}
+                                value={(+uiState.testCategoryType).toString()}
                                 onChange={event => setUiState(prevState => ({
                                     ...prevState,
-                                    unityTestCategoryType: +event.target.value
+                                    testCategoryType: +event.target.value
                                 }))}
                                 row={true}
                             >
@@ -284,7 +284,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                         <Grid size={{xs: 12, md: 2}}>
                         </Grid>
 
-                        {uiState.unityTestCategoryType === UnityTestCategory.RunAllOfCategory && (
+                        {uiState.testCategoryType === UnityTestCategory.RunAllOfCategory && (
                             <Grid size={{xs: 12, md: 10}} container={true}>
                                 <Grid size={{xs: 12, md: 12}}>
                                     Categories
@@ -334,7 +334,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
                             </Grid>
                         )}
 
-                        {uiState.unityTestCategoryType === UnityTestCategory.RunSelectedTestsOnly && (
+                        {uiState.testCategoryType === UnityTestCategory.RunSelectedTestsOnly && (
                             <Grid size={{xs: 12, md: 10}} container={true}>
                                 <Grid size={{xs: 12, md: 12}}>
                                     Selected Tests:

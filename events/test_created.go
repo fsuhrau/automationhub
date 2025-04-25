@@ -3,8 +3,8 @@ package events
 var TestCreated testCreated
 
 type TestCreatedPayload struct {
-	TestID uint
-	Test   interface{}
+	TestID uint        `json:"testId"`
+	Test   interface{} `json:"test"`
 }
 
 type testCreated struct {

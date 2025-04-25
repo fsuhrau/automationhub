@@ -1,12 +1,8 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type TestConfigDevice struct {
-	gorm.Model
-	TestConfigID uint
-	DeviceID     uint
-	Device       Device
+	Model
+	TestConfigID uint   `json:"testConfigId"`
+	DeviceID     uint   `json:"deviceId"`
+	Device       Device `json:"device"`
 }

@@ -6,34 +6,34 @@ import moment from 'moment';
 import ITestRunData from "./test.run";
 
 export default interface ITestProtocolData {
-    ID?: number | null,
-    TestRun: ITestRunData,
-    TestRunID: number,
-    ParentTestProtocolID: number | null,
-    DeviceID?: number | null,
-    Device?: IDeviceData | null,
-    TestName: string,
-    StartedAt: Date,
-    EndedAt?: Date,
-    Entries: IProtocolEntryData[]
-    TestResult: TestResultState
-    Performance: IProtocolPerformanceEntryData[]
-    AvgFPS: number,
-    AvgMEM: number,
-    AvgCPU: number,
-    AvgVertexCount: number,
-    AvgTriangles: number,
-    HistAvgFPS: number,
-    HistAvgMEM: number,
-    HistAvgCPU: number,
-    HistAvgVertexCount: number,
-    HistAvgTriangles: number,
-    TestProtocolHistory: ITestProtocolData[],
-    CreatedAt: Date,
-    UpdatedAt: Date,
-    DeletedAt: Date,
+    id?: number | null,
+    testRun: ITestRunData,
+    testRunId: number,
+    parentTestProtocolId: number | null,
+    deviceId?: number | null,
+    device?: IDeviceData | null,
+    testName: string,
+    startedAt: Date,
+    endedAt?: Date,
+    entries: IProtocolEntryData[]
+    testResult: TestResultState
+    performance: IProtocolPerformanceEntryData[]
+    avgFps: number,
+    avgMem: number,
+    avgCpu: number,
+    avgVertexCount: number,
+    avgTriangles: number,
+    histAvgFps: number,
+    histAvgMem: number,
+    histAvgCpu: number,
+    histAvgVertexCount: number,
+    histAvgTriangles: number,
+    testProtocolHistory: ITestProtocolData[] | null,
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt: Date,
 
-    ChildProtocols: ITestProtocolData[],
+    childProtocols: ITestProtocolData[],
 }
 
 export const duration = (startedAt: Date, endedAt: Date | undefined | null): string => {

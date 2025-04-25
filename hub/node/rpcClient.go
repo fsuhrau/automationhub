@@ -228,14 +228,30 @@ func (rpc *RPCClient) UninstallApp(deviceId string, parameter *app.Parameter) er
 	return nil
 }
 
-func (rpc *RPCClient) StartApp(deviceId string, parameter *app.Parameter, sessionId string, nodeUrl string) error {
+func (rpc *RPCClient) StartApp(deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error {
 	logrus.Info("RPCNode.StartApp")
+
+	deviceConnectionParameter := &DeviceConnectionParams{
+		Type: DeviceConnectionType(config.Connection),
+		IP:   config.IP,
+		Port: int64(config.Port),
+	}
+
+	var deviceCustomParameter []*DeviceCustomParameter
+	for k, v := range config.DeviceParameter {
+		deviceCustomParameter = append(deviceCustomParameter, &DeviceCustomParameter{
+			Key:   k,
+			Value: v,
+		})
+	}
 
 	var resp BoolResponse
 	if err := rpc.safeCall("RPCNode.StartApp", &StartAppRequest{
-		App:       getAppParameterRequest(deviceId, parameter),
-		SessionID: sessionId,
-		HostIP:    nodeUrl,
+		App:              getAppParameterRequest(deviceId, parameter),
+		SessionID:        sessionId,
+		HostIP:           nodeUrl,
+		ConnectionParams: deviceConnectionParameter,
+		CustomParameter:  deviceCustomParameter,
 	}, &resp); err != nil {
 		return err
 	}

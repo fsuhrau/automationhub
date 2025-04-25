@@ -31,15 +31,15 @@ const AppNavigation: React.FC<AppNavigationProps> = (props: AppNavigationProps) 
     return (apps === undefined || apps.length === 0 ? null : (
             <List sx={{width: '100%'}} subheader={<ListSubheader>{title}</ListSubheader>}>
                 {apps.map(app => (
-                    <ListItem key={`app-liste-item-${app.ID}`} onClick={() => {
-                        onSelect(app.ID)
+                    <ListItem key={`app-liste-item-${app.id}`} onClick={() => {
+                        onSelect(app.id)
                     }}>
                         <ListItemAvatar>
                             <Avatar variant={"rounded"}>
                                 {icon}
                             </Avatar>
                         </ListItemAvatar>
-                        <ListItemText primary={app.Name} secondary={app.Identifier}/>
+                        <ListItemText primary={app.name} secondary={app.identifier}/>
                     </ListItem>
                 ))}
             </List>)
@@ -52,13 +52,13 @@ const AppsGroup: React.FC = () => {
     const {projectIdentifier} = useProjectContext();
     const {setError} = useError()
 
-    const [selectedAppID, setSelectedAppID] = useState<number | null>(state.apps === null ? null : state.apps.length === 0 ? null : state.apps[0].ID);
-    const selectedApp = state.apps?.find(a => a.ID === selectedAppID);
-    const iosApps = state.apps?.filter(a => a.Platform === PlatformType.iOS);
-    const androidApps = state.apps?.filter(a => a.Platform === PlatformType.Android);
-    const editorApps = state.apps?.filter(a => a.Platform === PlatformType.Editor);
-    const webApps = state.apps?.filter(a => a.Platform === PlatformType.Web);
-    const macApps = state.apps?.filter(a => a.Platform === PlatformType.Mac);
+    const [selectedAppID, setSelectedAppID] = useState<number | null>(state.apps === null ? null : state.apps.length === 0 ? null : state.apps[0].id);
+    const selectedApp = state.apps?.find(a => a.id === selectedAppID);
+    const iosApps = state.apps?.filter(a => a.platform === PlatformType.iOS);
+    const androidApps = state.apps?.filter(a => a.platform === PlatformType.Android);
+    const editorApps = state.apps?.filter(a => a.platform === PlatformType.Editor);
+    const webApps = state.apps?.filter(a => a.platform === PlatformType.Web);
+    const macApps = state.apps?.filter(a => a.platform === PlatformType.Mac);
 
     const selectApp = (id: number) => {
         setSelectedAppID(id);
@@ -66,16 +66,16 @@ const AppsGroup: React.FC = () => {
 
     const [showNewAppDialog, setShowNewAppDialog] = useState<boolean>(false);
     const submitNewApp = (data: IAppData) => {
-        createApp(projectIdentifier as string, data).then(response => {
-            dispatch({type: HubStateActions.AppAdd, payload: response.data})
+        createApp(projectIdentifier as string, data).then(app => {
+            dispatch({type: HubStateActions.AppAdd, payload: app})
         }).catch(ex => setError(ex));
     }
 
     useEffect(() => {
-        getAllApps(projectIdentifier as string).then(response => {
+        getAllApps(projectIdentifier as string).then(apps => {
             dispatch({
                 type: HubStateActions.AppsUpdate,
-                payload: response.data,
+                payload: apps,
             })
         }).catch(ex => {
             setError(ex)
@@ -92,14 +92,14 @@ const AppsGroup: React.FC = () => {
     };
 
     const onEditAttributeSubmit = (attribute: string, value: string) => {
-        updateApp(projectIdentifier as string, selectedApp?.ID as number, {
+        updateApp(projectIdentifier as string, selectedApp?.id as number, {
             ...selectedApp,
             [attribute]: value
-        } as IAppData).then(response => {
+        } as IAppData).then(app => {
             dispatch({
                 type: HubStateActions.AppAttributeUpdate,
                 payload: {
-                    appId: selectedApp?.ID,
+                    appId: selectedApp?.id,
                     attribute: attribute,
                     value: value
                 }
@@ -128,7 +128,7 @@ const AppsGroup: React.FC = () => {
                                    icon={<PlatformTypeIcon platformType={PlatformType.iOS}/>}/>
                     <AppNavigation title={"MacOS apps"} apps={macApps} onSelect={selectApp}
                                    icon={<PlatformTypeIcon platformType={PlatformType.Mac}/>}/>
-                    <AppNavigation title={"Unity Editor"} apps={editorApps}
+                    <AppNavigation title={"unity Editor"} apps={editorApps}
                                    onSelect={selectApp} icon={<PlatformTypeIcon
                         platformType={PlatformType.Editor}/>}/>
                     <AppNavigation title={"Web apps"} apps={webApps} onSelect={selectApp}
@@ -148,44 +148,44 @@ const AppsGroup: React.FC = () => {
                                     <Typography variant={"caption"}>App ID</Typography>
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
-                                    {selectedApp?.ID}
+                                    {selectedApp?.id}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
                                     <Typography variant={"caption"}>Bundle Identifier</Typography>
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
-                                    <Typography variant={'body1'}>{selectedApp?.Identifier}</Typography>
-                                    {selectedApp?.Identifier === "default_app" &&
+                                    <Typography variant={'body1'}>{selectedApp?.identifier}</Typography>
+                                    {selectedApp?.identifier === "default_app" &&
                                         <IconButton aria-label="edit" size={'small'}
                                                     onClick={() => setChangeAttributeDialogState(prevState => ({
                                                         ...prevState,
-                                                        attribute: 'Identifier',
-                                                        value: selectedApp!.Identifier,
+                                                        attribute: 'identifier',
+                                                        value: selectedApp!.identifier,
                                                     }))}><Edit/></IconButton>}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
                                     <Typography variant={"caption"}>App Name</Typography>
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
-                                    <Typography variant={'body1'}>{selectedApp?.Name}</Typography>
+                                    <Typography variant={'body1'}>{selectedApp?.name}</Typography>
                                     <IconButton aria-label="edit" size={'small'}
                                                 onClick={() => setChangeAttributeDialogState(prevState => ({
                                                     ...prevState,
-                                                    attribute: 'Name',
-                                                    value: selectedApp!.Name,
+                                                    attribute: 'name',
+                                                    value: selectedApp!.name,
                                                 }))}><Edit/></IconButton>
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
                                     <Typography variant={"caption"}>Default Parameter</Typography>
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
-                                    <Typography variant={'body1'}>{selectedApp?.DefaultParameter}</Typography>
+                                    <Typography variant={'body1'}>{selectedApp?.defaultParameter}</Typography>
                                     <IconButton aria-label="edit"
                                                 size={'small'}
                                                 onClick={() => setChangeAttributeDialogState(prevState => ({
                                                     ...prevState,
-                                                    attribute: 'DefaultParameter',
-                                                    value: selectedApp!.DefaultParameter,
+                                                    attribute: 'defaultParameter',
+                                                    value: selectedApp!.defaultParameter,
                                                 }))}><Edit/></IconButton>
                                 </Grid>
                             </>)

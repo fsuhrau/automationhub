@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/fsuhrau/automationhub/device"
-	"gorm.io/gorm"
 )
 
 type DeviceType int
@@ -39,52 +38,55 @@ const (
 type Devices []*Device
 
 type Device struct {
-	gorm.Model
-	CompanyID           uint
-	DeviceIdentifier    string
-	Alias               string
-	NodeID              uint
-	Node                *Node
-	DeviceType          DeviceType
-	Name                string
-	Manager             string
-	OS                  string
-	OSVersion           string
-	OSInfos             string
-	TargetVersion       string
-	DeviceParameter     []DeviceParameter
-	StatusLog           []DeviceLog
-	ConnectionType      ConnectionType
-	ConnectionParameter *ConnectionParameter
-	IsAcknowledged      bool
-	Status              device.State `gorm:"-"`
-	IsLocked            bool         `gorm:"-"`
-	Dev                 interface{}  `gorm:"-"`
-	Connection          interface{}  `gorm:"-"`
-	PlatformType        PlatformType
-	CustomParameter     []CustomParameter
+	Model
+	CompanyID           uint                 `json:"companyId"`
+	DeviceIdentifier    string               `json:"deviceIdentifier"`
+	Alias               string               `json:"alias"`
+	NodeID              uint                 `json:"nodeId"`
+	Node                *Node                `json:"node"`
+	DeviceType          DeviceType           `json:"deviceType"`
+	Name                string               `json:"name"`
+	Manager             string               `json:"manager"`
+	OS                  string               `json:"os"`
+	OSVersion           string               `json:"osVersion"`
+	OSInfos             string               `json:"osInfos"`
+	TargetVersion       string               `json:"targetVersion"`
+	DeviceParameter     []DeviceParameter    `json:"deviceParameter"`
+	StatusLog           []DeviceLog          `json:"statusLog"`
+	ConnectionType      ConnectionType       `json:"connectionType"`
+	ConnectionParameter *ConnectionParameter `json:"connectionParameter"`
+	IsAcknowledged      bool                 `json:"isAcknowledged"`
+	Status              device.State         `json:"status" gorm:"-"`
+	IsLocked            bool                 `json:"isLocked" gorm:"-"`
+	Dev                 interface{}          `json:"dev" gorm:"-"`
+	Connection          interface{}          `json:"connection" gorm:"-"`
+	PlatformType        PlatformType         `json:"platformType"`
+	CustomParameter     []CustomParameter    `json:"customParameter"`
 }
 
 type ConnectionParameter struct {
-	gorm.Model
-	DeviceID       uint
-	ConnectionType ConnectionType
-	IP             string
-	Port           int
+	Model
+	DeviceID       uint           `json:"deviceId"`
+	Device         *Device        `json:"device"`
+	ConnectionType ConnectionType `json:"connectionType"`
+	IP             string         `json:"ip"`
+	Port           int            `json:"port"`
 }
 
 type DeviceParameter struct {
-	gorm.Model
-	DeviceID uint
-	Key      string
-	Value    string
+	Model
+	DeviceID uint    `json:"deviceId"`
+	Device   *Device `json:"device"`
+	Key      string  `json:"key"`
+	Value    string  `json:"value"`
 }
 
 type CustomParameter struct {
-	gorm.Model
-	DeviceID uint
-	Key      string
-	Value    string
+	Model
+	DeviceID uint    `json:"deviceId"`
+	Device   *Device `json:"device"`
+	Key      string  `json:"key"`
+	Value    string  `json:"value"`
 }
 
 func (d *Device) GetAttribute(key string) string {

@@ -1,15 +1,11 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type App struct {
-	gorm.Model
-	ProjectID        uint
-	Project          *Project
-	Name             string
-	Identifier       string
-	Platform         PlatformType
-	DefaultParameter string
+	Model
+	ProjectID        uint         `json:"projectId"`
+	Project          *Project     `json:"project" gorm:"foreignKey:ProjectID"`
+	Name             string       `json:"name"`
+	Identifier       string       `json:"identifier"`
+	Platform         PlatformType `json:"platform"`
+	DefaultParameter string       `json:"defaultParameter"`
 }

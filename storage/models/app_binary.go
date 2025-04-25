@@ -13,18 +13,18 @@ type Executable struct {
 }
 
 type AppBinary struct {
-	gorm.Model
-	AppID      uint
-	App        *App
-	Name       string
-	Platform   string
-	Version    string
-	AppPath    string
-	Identifier string
-	Additional string
-	Hash       string
-	Size       int
-	Tags       string
+	Model
+	AppID      uint       `json:"appId"`
+	App        *App       `json:"app"`
+	Name       string     `json:"name"`
+	Platform   string     `json:"platform"`
+	Version    string     `json:"version"`
+	AppPath    string     `json:"appPath"`
+	Identifier string     `json:"identifier"`
+	Additional string     `json:"additional"`
+	Hash       string     `json:"hash"`
+	Size       int        `json:"size"`
+	Tags       string     `json:"tags"`
 	Android    Android    `json:"android" db:"android" gorm:"embedded"`
 	Executable Executable `json:"executable" db:"executable" gorm:"embedded"`
 }

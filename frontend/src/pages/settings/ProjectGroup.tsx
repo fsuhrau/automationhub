@@ -54,11 +54,11 @@ const ProjectGroup: React.FC = () => {
                                 name</Typography>
                         </Grid>
                         <Grid size={{xs: 12, md: 11}} container={true} spacing={2}>
-                            {project.Name}<IconButton aria-label="edit" size={'small'}
+                            {project.name}<IconButton aria-label="edit" size={'small'}
                                                       onClick={() => setEditAttributeState(prevState => ({
                                                           ...prevState,
-                                                          attribute: 'Name',
-                                                          value: project.Name,
+                                                          attribute: 'name',
+                                                          value: project.name,
                                                       }))}><Edit/></IconButton>
                         </Grid>
                         <Grid size={{xs: 12, md: 1}}>
@@ -69,7 +69,7 @@ const ProjectGroup: React.FC = () => {
                             <IconButton aria-label="edit" size={'small'}
                                         onClick={() => setEditAttributeState(prevState => ({
                                             ...prevState,
-                                            attribute: 'Identifier',
+                                            attribute: 'identifier',
                                             value: projectIdentifier,
                                         }))}><Edit/></IconButton>}
                         </Grid>

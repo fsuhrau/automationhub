@@ -152,6 +152,13 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 			DeviceID:    deviceData.ID,
 			DeviceState: uint(dev.DeviceState()),
 		})
+
+		for i := range d.devices[manager] {
+			if d.devices[manager][i].DeviceIdentifier == dev.DeviceID() {
+				d.devices[manager][i].Status = dev.DeviceState()
+				break
+			}
+		}
 	}
 	tx.Commit()
 	return nil

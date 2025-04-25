@@ -19,7 +19,7 @@ func Index(sessionManager manager.Sessions) func(*gin.Context) {
 
 func Show(sessionManager manager.Sessions) func(*gin.Context) {
 	return func(c *gin.Context) {
-		sessionID := c.Param("sessionID")
+		sessionID := c.Param("sessionId")
 		c.SetCookie("session_id", sessionID, 356, "/", "", true, false)
 		session := sessionManager.GetSessionDetails(sessionID)
 		c.HTML(http.StatusOK, "sessions/show", gin.H{

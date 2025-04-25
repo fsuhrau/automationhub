@@ -28,12 +28,12 @@ const TestProtocolPageLoader: React.FC = () => {
             return;
         }
 
-        getTestProtocol(projectIdentifier, appId as number, testId as string, runId as string, protocolId as string).then(response => {
-            const protocol = response.data.Protocols.find(p => p.ID === +protocolId)
+        getTestProtocol(projectIdentifier, appId as number, testId as string, runId as string, protocolId as string).then(run => {
+            const protocol = run.protocols.find(p => p.id === +protocolId)
             setState(prevState => ({
                 ...prevState,
                 loading: false,
-                run: response.data,
+                run: run,
                 protocol: protocol === undefined ? null : protocol,
             }));
         }).catch(ex => {

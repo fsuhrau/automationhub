@@ -3,15 +3,19 @@ package events
 var DeviceStatusChanged deviceStatusChanged
 
 type DeviceStatusChangedPayload struct {
-	DeviceID    uint
-	DeviceState uint
+	DeviceID    uint `json:"deviceId"`
+	DeviceState uint `json:"deviceState"`
 }
 
 type deviceStatusChanged struct {
-	handlers []interface {Handle(DeviceStatusChangedPayload)}
+	handlers []interface {
+		Handle(DeviceStatusChangedPayload)
+	}
 }
 
-func (u *deviceStatusChanged) Register(handler interface {Handle(DeviceStatusChangedPayload)}) {
+func (u *deviceStatusChanged) Register(handler interface {
+	Handle(DeviceStatusChangedPayload)
+}) {
 	u.handlers = append(u.handlers, handler)
 }
 

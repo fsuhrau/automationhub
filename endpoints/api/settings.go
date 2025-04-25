@@ -24,8 +24,8 @@ func (s *Service) getUsers(c *gin.Context) {
 
 func (s *Service) createAccessToken(c *gin.Context) {
 	type Request struct {
-		Name      string
-		ExpiresAt *time.Time
+		Name      string     `json:"name"`
+		ExpiresAt *time.Time `json:"expiresAt"`
 	}
 	var req Request
 

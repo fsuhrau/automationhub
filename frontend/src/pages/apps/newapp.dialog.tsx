@@ -37,10 +37,10 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
     const platformTypes = getPlatformTypes();
 
     const [state, setState] = useState<IAppData>({
-        Name: '',
-        Identifier: '',
-        Platform: PlatformType.Android,
-        DefaultParameter: ''
+        name: '',
+        identifier: '',
+        platform: PlatformType.Android,
+        defaultParameter: ''
     } as IAppData)
 
     const handleClose = () => {
@@ -74,10 +74,10 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                             id="appname"
                             placeholder="Name"
                             variant="filled"
-                            value={ state.Name }
+                            value={ state.name }
                             size="small"
                             fullWidth={true}
-                            onChange={ event => setState(prevState => ({...state, Name: event.target.value})) }
+                            onChange={ event => setState(prevState => ({...state, name: event.target.value})) }
                         />
                     </Grid>
                     <Grid size={ 12 }>
@@ -86,13 +86,13 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                     <Grid size={ 12 }>
                         <Select
                             fullWidth={true}
-                            defaultValue={ state.Platform }
+                            defaultValue={ state.platform }
                             labelId="platform-type-selection"
                             id="platform-type"
                             label="Platform"
                             onChange={ event => setState(prevState => ({
                                 ...prevState,
-                                Platform: +event.target.value as PlatformType
+                                platform: +event.target.value as PlatformType
                             })) }
                         >
                             { platformTypes.map((value) => (
@@ -111,9 +111,9 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                             id="appidentifier"
                             placeholder="com.example.app"
                             variant="filled"
-                            value={ state.Identifier }
+                            value={ state.identifier }
                             size="small"
-                            onChange={ event => setState(prevState => ({...state, Identifier: event.target.value})) }
+                            onChange={ event => setState(prevState => ({...state, identifier: event.target.value})) }
                         />
                     </Grid>
                     <Grid size={ 12 }>
@@ -126,11 +126,11 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
                             id="appdefaultparameter"
                             variant="filled"
                             placeholder={"Proxy=http://localhost:8888"}
-                            value={ state.DefaultParameter }
+                            value={ state.defaultParameter }
                             size="small"
                             onChange={ event => setState(prevState => ({
                                 ...state,
-                                DefaultParameter: event.target.value
+                                defaultParameter: event.target.value
                             })) }
                         />
                     </Grid>

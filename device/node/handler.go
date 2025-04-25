@@ -31,15 +31,15 @@ type Handler struct {
 	nodeManager   manager.Nodes
 	init          bool
 	db            *gorm.DB
-	devices       map[string]*NodeDevice
-	lastUpdate    time.Time
+	//devices       map[string]*NodeDevice
+	lastUpdate time.Time
 }
 
 func NewHandler(log *logrus.Logger, ds storage.Device, nm manager.Nodes, db *gorm.DB) *Handler {
 	return &Handler{
-		log:           log.WithField("Handler", "Node"),
-		nodes:         make(map[manager.NodeIdentifier]map[string][]device.Device),
-		devices:       make(map[string]*NodeDevice),
+		log:   log.WithField("Handler", "Node"),
+		nodes: make(map[manager.NodeIdentifier]map[string][]device.Device),
+		//devices:       make(map[string]*NodeDevice),
 		nodeManager:   nm,
 		deviceStorage: ds,
 		db:            db,
@@ -157,7 +157,7 @@ func (h *Handler) RefreshDevices(force bool) error {
 		}
 	}
 
-	for nodeIdentifier, _ := range h.nodes {
+	for nodeIdentifier, managers := range h.nodes {
 		var no models.Node
 		if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
 			return err
@@ -168,33 +168,31 @@ func (h *Handler) RefreshDevices(force bool) error {
 			continue
 		}
 
-		managers, err := h.nodeManager.GetManagers(nodeIdentifier)
+		nodeManagerManagers, err := h.nodeManager.GetManagers(nodeIdentifier)
 		if err != nil {
 			//h.log.Errorf("unable to get manager: %v", err)
 			continue
 		}
 
-		for mnger, devs := range managers {
+		var devices []device.Device
+		if d1, ok := managers[Manager]; ok {
+			devices = d1
+		}
+
+		for _, devs := range nodeManagerManagers {
 
 			for _, d := range devs {
 
 				deviceID := d.DeviceID()
 
-				if _, ok := h.devices[deviceID]; ok {
-					dev := h.devices[deviceID]
-					dev.deviceType = d.DeviceType()
-					dev.deviceOSName = d.DeviceOSName()
-					dev.deviceOSVersion = d.DeviceOSVersion()
-					dev.deviceName = d.DeviceName()
-					dev.deviceID = deviceID
-					dev.lastUpdateAt = lastUpdate
-					dev.deviceState = d.DeviceState()
-					dev.platformType = models.PlatformType(d.PlatformType())
-					dev.UpdateDeviceInfos(d.DeviceParameter())
-					h.devices[deviceID] = dev
-					h.deviceStorage.Update(h.Name(), dev)
-
-				} else {
+				index := -1
+				for i, d1 := range devices {
+					if d1.DeviceID() == deviceID {
+						index = i
+						break
+					}
+				}
+				if index < 0 {
 					nd := &NodeDevice{
 						nodeId:       nodeIdentifier,
 						nodeManager:  h.nodeManager,
@@ -212,25 +210,52 @@ func (h *Handler) RefreshDevices(force bool) error {
 						DeviceType:       models.DeviceType(d.DeviceType()),
 						Name:             d.DeviceName(),
 						Manager:          Manager,
-						OS:               mnger,
+						OS:               d.DeviceOSName(),
 						PlatformType:     models.PlatformType(d.PlatformType()),
 						OSVersion:        d.DeviceOSVersion(),
 						ConnectionType:   models.ConnectionTypeNode,
 					}
 					nd.SetConfig(&dev)
-					h.devices[deviceID] = nd
+					devices = append(devices, nd)
 					h.deviceStorage.NewDevice(h.Name(), dev)
-					h.deviceStorage.Update(h.Name(), h.devices[deviceID])
-					h.devices[deviceID].Config = &dev
+					h.deviceStorage.Update(h.Name(), nd)
+				} else {
+					nd := devices[index].(*NodeDevice)
+					nd.deviceType = d.DeviceType()
+					nd.deviceOSName = d.DeviceOSName()
+					nd.deviceOSVersion = d.DeviceOSVersion()
+					nd.deviceName = d.DeviceName()
+					nd.deviceID = deviceID
+					nd.lastUpdateAt = lastUpdate
+					nd.deviceState = d.DeviceState()
+					nd.platformType = models.PlatformType(d.PlatformType())
+					nd.UpdateDeviceInfos(d.DeviceParameter())
+					if nd.GetConfig() == nil {
+						config, _ := h.deviceStorage.GetDevice(Manager, deviceID)
+						nd.Config = config
+					}
+					devices[index] = nd
+					h.deviceStorage.Update(h.Name(), nd)
 				}
 			}
 		}
+		managers[Manager] = devices
+		h.nodes[nodeIdentifier] = managers
 	}
 
-	for i := range h.devices {
-		if h.devices[i].lastUpdateAt != lastUpdate {
-			h.devices[i].SetDeviceState("StateNodeDisconnected")
-			h.deviceStorage.Update(h.Name(), h.devices[i])
+	for n, managers := range h.nodes {
+		_ = n
+		for m, devices := range managers {
+			_ = m
+			for d, dev := range devices {
+				_ = d
+				nd, ok := dev.(*NodeDevice)
+				if ok && nd.lastUpdateAt != lastUpdate {
+					nd.SetDeviceState("StateNodeDisconnected")
+					h.deviceStorage.Update(h.Name(), nd)
+				}
+
+			}
 		}
 	}
 
@@ -280,9 +305,11 @@ func (h *Handler) StopDevice(deviceID string) error {
 }
 
 func (h *Handler) GetDevices() ([]device.Device, error) {
-	devices := make([]device.Device, 0, len(h.devices))
-	for _, d := range h.devices {
-		devices = append(devices, d)
+	var devices []device.Device
+	for _, mng := range h.nodes {
+		for _, devs := range mng {
+			devices = append(devices, devs...)
+		}
 	}
 	return devices, nil
 }

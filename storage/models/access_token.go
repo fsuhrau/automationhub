@@ -1,15 +1,16 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
 type AccessToken struct {
-	gorm.Model
-	ProjectID *uint
-	NodeID    *uint
-	Name      string
-	Token     string
-	ExpiresAt *time.Time
+	Model
+	ProjectID *uint      `json:"projectId" gorm:"default:NULL"`
+	Project   *Project   `json:"project"`
+	NodeID    *uint      `json:"nodeId" gorm:"default:NULL"`
+	Node      *Node      `json:"node"`
+	Name      string     `json:"name"`
+	Token     string     `json:"token" gorm:"unique"`
+	ExpiresAt *time.Time `json:"expiresAt"`
 }

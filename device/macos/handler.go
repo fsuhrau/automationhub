@@ -81,15 +81,15 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 func (m *Handler) RefreshDevices(force bool) error {
 	/*
 		if len(m.devices) == 0 {
-			m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &Device{
+			m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"] = &device{
 				deviceName:      "MacOS",
-				deviceID:        "54decb62-3993-4031-9c6a-18ce048cc63c",
+				deviceId:        "54decb62-3993-4031-9c6a-18ce048cc63c",
 				deviceOSName:    "MacOSX",
 				deviceOSVersion: "10-14",
 				lastUpdateAt:    time.Now().UTC(),
 			}
 			m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"].SetDeviceState("StateBooted")
-			m.deviceStorage.Update(m.Name(), m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
+			m.deviceStorage.Update(m.name(), m.devices["54decb62-3993-4031-9c6a-18ce048cc63c"])
 		}
 	*/
 	return nil

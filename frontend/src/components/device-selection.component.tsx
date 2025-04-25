@@ -34,7 +34,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
         checked: number[],
     }
 
-    const deviceIDs = devices.map(dev => dev.ID) as number[];
+    const deviceIDs = devices.map(dev => dev.id) as number[];
     const left = not(deviceIDs, selectedDevices);
 
     const [state, setState] = React.useState<SelectionState>({
@@ -96,7 +96,7 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
             <List dense={true} component="div" role="list">
                 {items.map((value) => {
                     const labelId = `transfer-list-item-${value}-label`;
-                    const device = devices.find(d => d.ID === value);
+                    const device = devices.find(d => d.id === value);
                     return (
                         <ListItem key={value}
                                   role="listitem"
@@ -111,13 +111,13 @@ const DeviceSelection: React.FC<DeviceSelectionProps> = (props) => {
                             <ListItemButton>
                                 <ListItemAvatar>
                                     <Avatar>
-                                        {device?.OS === "android" && <AndroidRoundedIcon/>}
-                                        {device?.OS === "iPhone OS" && <AppleIcon/>}
+                                        {device?.os === "android" && <AndroidRoundedIcon/>}
+                                        {device?.os === "iPhone OS" && <AppleIcon/>}
                                     </Avatar>
                                 </ListItemAvatar>
                                 <ListItemText id={labelId}
-                                              primary={`${device && (device.Alias.length > 0 ? device.Alias : device.Name)} (${device?.OSVersion})`}
-                                              secondary={device?.DeviceIdentifier}/>
+                                              primary={`${device && (device.alias.length > 0 ? device.alias : device.name)} (${device?.osVersion})`}
+                                              secondary={device?.deviceIdentifier}/>
                             </ListItemButton>
                         </ListItem>
                     );

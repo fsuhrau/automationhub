@@ -3,8 +3,8 @@ package events
 var AppCreated appCreated
 
 type AppCreatedPayload struct {
-	AppID uint
-	App   interface{}
+	AppID uint        `json:"appId"`
+	App   interface{} `json:"app"`
 }
 
 type appCreated struct {

@@ -67,7 +67,7 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
 
     const applyFilter = (apps: IAppFunctionData[], filter: string): IAppFunctionData[] => {
         filter = filter.toLowerCase()
-        return apps.filter(a => a.Method.toLowerCase().indexOf(filter) >= 0 || a.Class.toLowerCase().indexOf(filter) >= 0 || a.Assembly.toLowerCase().indexOf(filter) >= 0)
+        return apps.filter(a => a.method.toLowerCase().indexOf(filter) >= 0 || a.class.toLowerCase().indexOf(filter) >= 0 || a.assembly.toLowerCase().indexOf(filter) >= 0)
     }
     const leftFiltered = applyFilter(state.left, state.filterText);
 
@@ -142,10 +142,10 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
             <Paper sx={{minWidth: 400, minHeight: 500, maxHeight: 500, margin: 'auto', overflow: 'auto'}}>
                 <List dense={true} component="div" role="list">
                     {items.map((value) => {
-                        const labelId = `transfer-list-item-${value.Class}-${value.Method}-label`;
+                        const labelId = `transfer-list-item-${value.class}-${value.method}-label`;
 
                         return (
-                            <ListItem key={value.Class + value.Method} role="listitem" onClick={handleToggle(value)}>
+                            <ListItem key={value.class + value.method} role="listitem" onClick={handleToggle(value)}>
                                 <ListItemIcon>
                                     <Checkbox
                                         checked={state.checked.indexOf(value) !== -1}
@@ -155,8 +155,8 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
                                     />
                                 </ListItemIcon>
                                 <ListItemText id={labelId}
-                                              primary={`${trimMethod(value.Method)}`}
-                                              secondary={trimClass(value.Class)}/>
+                                              primary={`${trimMethod(value.method)}`}
+                                              secondary={trimClass(value.class)}/>
                             </ListItem>
                         );
                     })}
@@ -168,10 +168,10 @@ const TestMethodSelection: React.FC<TestMethodSelectionProps> = (props) => {
 
     useEffect(() => {
         setState(prevState => ({...prevState, loading: true}));
-        getTestFunctions().then(response => {
+        getTestFunctions().then(tfs => {
             setState(prevState => ({
                 ...prevState,
-                left: response.data.filter(d => prevState.right.findIndex(d1 => d.Assembly === d.Assembly && d.Class === d1.Class && d.Method === d1.Method) < 0)
+                left: tfs.filter(d => prevState.right.findIndex(d1 => d.assembly === d.assembly && d.class === d1.class && d.method === d1.method) < 0)
             }));
         }).catch(ex => setError(ex)).finally(() => {
             setState(prevState => ({...prevState, loading: false}));

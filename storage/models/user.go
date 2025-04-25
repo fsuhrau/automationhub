@@ -1,12 +1,10 @@
 package models
 
-import "gorm.io/gorm"
-
 type User struct {
-	gorm.Model
-	Name      string `gorm:"uniqueIndex;not null"`
-	Role      string
-	Auth      []UserAuth
-	Companies []*Company `gorm:"many2many:user_companies;"`
-	Projects  []*Project `gorm:"many2many:user_projects;"`
+	Model
+	Name      string     `json:"name" gorm:"uniqueIndex;not null"`
+	Role      string     `json:"role"`
+	Auth      []UserAuth `json:"auth"`
+	Companies []*Company `json:"companies" gorm:"many2many:user_companies;"`
+	Projects  []*Project `json:"projects" gorm:"many2many:user_projects;"`
 }

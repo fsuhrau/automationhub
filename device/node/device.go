@@ -108,8 +108,35 @@ func (d *NodeDevice) UninstallApp(params *app.Parameter) error {
 	return d.nodeManager.UninstallApp(d.nodeId, d.deviceID, params)
 }
 
-func (d *NodeDevice) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
-	return d.nodeManager.StartApp(d.nodeId, d.deviceID, params, sessionId, nodeUrl)
+func (d *NodeDevice) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
+
+	var (
+		connectionType int
+		ip             string
+		port           int
+		params         map[string]string
+	)
+	params = make(map[string]string)
+
+	if d.Device.Config.ConnectionParameter != nil {
+		connectionType = int(d.Device.Config.ConnectionParameter.ConnectionType)
+		ip = d.Device.Config.ConnectionParameter.IP
+		port = d.Device.Config.ConnectionParameter.Port
+	}
+	if d.Device.Config.CustomParameter != nil {
+		for _, param := range d.Device.Config.CustomParameter {
+			params[param.Key] = param.Value
+		}
+	}
+
+	deviceConfig := device.DeviceConfig{
+		Connection:      connectionType,
+		IP:              ip,
+		Port:            port,
+		DeviceParameter: params,
+	}
+
+	return d.nodeManager.StartApp(d.nodeId, d.deviceID, &deviceConfig, appParams, sessionId, nodeUrl)
 }
 
 func (d *NodeDevice) StopApp(params *app.Parameter) error {

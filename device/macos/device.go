@@ -156,9 +156,9 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return os.RemoveAll(filepath.Join(AppInstallPath, params.App.Hash))
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
-	appDir := filepath.Join(AppInstallPath, params.App.Hash, params.Name)
-	executable := filepath.Join(appDir, params.App.Executable.Executable)
+func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
+	appDir := filepath.Join(AppInstallPath, appParams.App.Hash, appParams.Name)
+	executable := filepath.Join(appDir, appParams.App.Executable.Executable)
 	d.runningExecutable = filepath.Base(executable)
 	cmd := exec2.NewCommand(executable, "--sessionId="+sessionId, "NODE_URL", "--nodeURL="+nodeUrl, "--deviceId="+d.deviceID)
 	if err := cmd.Start(); err != nil {

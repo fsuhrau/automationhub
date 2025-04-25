@@ -20,7 +20,7 @@ const data = [
   { label: 'India', value: 50000 },
   { label: 'USA', value: 35000 },
   { label: 'Brazil', value: 10000 },
-  { label: 'Other', value: 5000 },
+  { label: 'other', value: 5000 },
 ];
 
 const countries = [
@@ -43,7 +43,7 @@ const countries = [
     color: 'hsl(220, 25%, 30%)',
   },
   {
-    name: 'Other',
+    name: 'other',
     value: 5,
     flag: <GlobeFlag />,
     color: 'hsl(220, 25%, 20%)',

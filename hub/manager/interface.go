@@ -56,13 +56,13 @@ type Nodes interface {
 	StartDevice(nodeIdentifier NodeIdentifier, deviceId string) error
 	StopDevice(nodeIdentifier NodeIdentifier, deviceId string) error
 
-	// Device Actions
+	// device Actions
 	IsAppUploaded(node NodeIdentifier, parameter *app.Parameter) (bool, error)
 	UploadApp(ctx context.Context, node NodeIdentifier, parameter *app.Parameter) error
 	IsAppInstalled(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) (bool, error)
 	InstallApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	UninstallApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
-	StartApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter, sessionId string, nodeUrl string) error
+	StartApp(nodeIdentifier NodeIdentifier, deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	IsConnected(nodeIdentifier NodeIdentifier, deviceId string) bool
 	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error

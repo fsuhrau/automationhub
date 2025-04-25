@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import Grid from '@mui/material/Grid';
 import {Box} from '@mui/system';
 import {getHubStats} from '../../services/hub.stats.service';
-import {prettySize} from '../../types/app';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import StatCard, {StatCardProps} from "../../components/StatCard";
 import ProjectDashboardTestResultsDataGrid, {
@@ -11,6 +10,7 @@ import ProjectDashboardTestResultsDataGrid, {
 import {duration} from "../../types/test.protocol";
 import {TitleCard} from "../../components/title.card.component";
 import {useError} from "../../ErrorProvider";
+import {byteFormat} from "../tests/value_formatter";
 
 const ProjectDashboard: React.FC = () => {
 
@@ -22,31 +22,31 @@ const ProjectDashboard: React.FC = () => {
 
     useEffect(() => {
         if (stats.length === 0) {
-            getHubStats(projectIdentifier).then(response => {
+            getHubStats(projectIdentifier).then(state => {
                 setStats([{
                     title: 'Apps',
-                    value: response.data.AppsCount.toString(),
+                    value: state.appsCount.toString(),
                 }, {
                     title: 'App Storage',
-                    value: prettySize(response.data.AppsStorageSize),
+                    value: byteFormat(state.appsStorageSize),
                 }, {
                     title: 'Devices',
-                    value: response.data.DeviceCount.toString(),
+                    value: state.deviceCount.toString(),
                 }, {
                     title: 'Booted',
-                    value: response.data.DeviceBooted.toString(),
+                    value: state.deviceBooted.toString(),
                 },
                 ]);
-                setResultData(response.data.TestsLastProtocols.map(d => {
-                    const testName = d.TestName.split('/');
+                setResultData(state.testsLastProtocols.map(d => {
+                    const testName = d.testName.split('/');
                     return {
-                        id: d.ID!,
-                        name: testName.length > 1 ? testName[1] : d.TestName,
-                        result: d.TestResult,
-                        fps: (+d.AvgFPS).toFixed(0),
-                        mem: (+d.AvgMEM).toFixed(0),
-                        cpu: (+d.AvgCPU).toFixed(0),
-                        time: duration(d.CreatedAt, d.EndedAt),
+                        id: d.id!,
+                        name: testName.length > 1 ? testName[1] : d.testName,
+                        result: d.testResult,
+                        fps: (+d.avgFps).toFixed(0),
+                        mem: (+d.avgMem).toFixed(0),
+                        cpu: (+d.avgCpu).toFixed(0),
+                        time: duration(d.createdAt, d.endedAt),
                     }
                 }));
             }).catch(e => {
@@ -97,23 +97,23 @@ const ProjectDashboard: React.FC = () => {
                             <Typography gutterBottom={true} variant="h5" component="div">
                                 Latest Tests
                             </Typography>
-                            {stats?.TestsLastProtocols.map((data) => {
-                                const testName = data.TestName.split('/');
+                            {stats?.testsLastProtocols.map((data) => {
+                                const testName = data.testName.split('/');
                                 return (
-                                    <Grid container={true} key={`test_protocol_${data.ID}`}>
+                                    <Grid container={true} key={`test_protocol_${data.id}`}>
                                         <Grid item={true} xs={1}>
-                                            <TestStatusIconComponent status={data.TestResult}/>
+                                            <TestStatusIconComponent status={data.testResult}/>
                                         </Grid>
                                         <Grid item={true} xs={true}>
                                             <Link
-                                                href={`/project/${projectId}/app/${data.TestRun.Test.AppID}/test/4/run/${data.TestRunID}/${data.ID}`}
+                                                href={`/project/${projectId}/app/${data.testRun.test.appId}/test/4/run/${data.testRunId}/${data.id}`}
                                                 underline="none">
-                                                {testName.length > 1 ? testName[1] : data.TestName}
+                                                {testName.length > 1 ? testName[1] : data.testName}
                                             </Link> <br/>
-                                            {data.Device && (data.Device.Alias.length > 0 ? data.Device.Alias : data.Device.Name)}
+                                            {data.device && (data.device.alias.length > 0 ? data.device.alias : data.device.name)}
                                         </Grid>
                                         <Grid item={true} xs={2}>
-                                            {duration(data.CreatedAt, data.EndedAt)}
+                                            {duration(data.createdAt, data.endedAt)}
                                         </Grid>
                                     </Grid>
                                 )
@@ -127,21 +127,21 @@ const ProjectDashboard: React.FC = () => {
                             <Typography gutterBottom={true} variant="h5" component="div">
                                 Failed Tests
                             </Typography>
-                            {stats?.TestsLastFailed.map((data) => (
-                                <Grid container={true} key={`test_failed_${data.ID}`}>
+                            {stats?.testsLastFailed.map((data) => (
+                                <Grid container={true} key={`test_failed_${data.id}`}>
                                     <Grid item={true} xs={1}>
-                                        <TestStatusIconComponent status={data.TestResult}/>
+                                        <TestStatusIconComponent status={data.testResult}/>
                                     </Grid>
                                     <Grid item={true} xs={true}>
                                         <Link
-                                            href={`/test/0/run/${data.TestRunID}/${data.ID}`}
+                                            href={`/test/0/run/${data.testRunId}/${data.id}`}
                                             underline="none">
-                                            {data.TestName.split('/')[1]}
+                                            {data.testName.split('/')[1]}
                                         </Link> <br/>
-                                        {data.Device && (data.Device.Alias.length > 0 ? data.Device.Alias : data.Device.Name)}
+                                        {data.device && (data.device.alias.length > 0 ? data.device.alias : data.device.name)}
                                     </Grid>
                                     <Grid item={true} xs={2}>
-                                        {duration(data.CreatedAt, data.EndedAt)}
+                                        {duration(data.createdAt, data.endedAt)}
                                     </Grid>
                                 </Grid>
                             ))}

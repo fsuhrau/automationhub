@@ -48,13 +48,13 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
     };
 
     const deleteAndClose = () => {
-        deleteDevice(projectIdentifier, device.ID as number).then((result) =>
+        deleteDevice(projectIdentifier, device.id as number).then((result) =>
             navigate(-1),
         ).catch(ex => setError(ex));
         handleClose()
     };
 
-    const node = state.nodes?.find(n => n.ID === device.NodeID);
+    const node = state.nodes?.find(n => n.id === device.nodeId);
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
@@ -65,7 +65,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                 aria-describedby="alert-dialog-description"
             >
                 <DialogTitle id="alert-dialog-title">
-                    {"Delete Device?"}
+                    {"Delete device?"}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
@@ -84,7 +84,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                 <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
                     <Typography component="h2" variant="h6">
                         <PlatformTypeIcon
-                            platformType={device.PlatformType}/> {`Device: ${device.Name} (${device.DeviceIdentifier})`}
+                            platformType={device.platformType}/> {`Device: ${device.name} (${device.deviceIdentifier})`}
                     </Typography>
                     <ButtonGroup variant="contained" aria-label="text button group">
                         <Button variant="contained" size={'small'} onClick={() => navigate('edit')}>Edit</Button>
@@ -100,39 +100,39 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                                     ID:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.ID}
+                                    {device.id}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Name:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.Name}
+                                    {device.name}
                                 </Grid>
-                                {device.Alias.length > 0 && <>
+                                {device.alias.length > 0 && <>
                                     <Grid size={{xs: 12, md: 2}}>
                                         Alias:
                                     </Grid>
                                     <Grid size={{xs: 12, md: 10}}>
-                                        {device.Alias}
+                                        {device.alias}
                                     </Grid>
                                 </>}
                                 <Grid size={{xs: 12, md: 2}}>
                                     Operation System:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.OS} {device.OSVersion}
+                                    {device.os} {device.osVersion}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Identifier:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.DeviceIdentifier}
+                                    {device.deviceIdentifier}
                                 </Grid>
                                 <Grid size={{xs: 12, md: 2}}>
                                     Type:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {DeviceType[device.DeviceType]}
+                                    {DeviceType[device.deviceType]}
                                 </Grid>
                                 {
                                     /*
@@ -140,7 +140,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                                     Acknowledged:
                                 </Grid>
                                 <Grid size={{xs: 12, md: 10}}>
-                                    {device.IsAcknowledged ? 'Yes' : 'No'}
+                                    {device.isAcknowledged ? 'Yes' : 'No'}
                                 </Grid>
                                      */
                                 }
@@ -150,38 +150,38 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                     </Grid>
                     <Grid size={12}>
                         {
-                            device.ConnectionParameter && <TitleCard title={'Connection'}>
+                            device.connectionParameter && <TitleCard title={'Connection'}>
                                 <Grid container={true} spacing={1}>
                                     <Grid size={{xs: 12, md: 2}}>
                                         Type
                                     </Grid>
                                     <Grid size={{xs: 12, md: 10}}>
-                                        {DeviceConnectionType[device.ConnectionParameter.ConnectionType]}
+                                        {DeviceConnectionType[device.connectionParameter.connectionType]}
                                     </Grid>
                                     {
-                                        device.ConnectionParameter.ConnectionType == DeviceConnectionType.HubNode && <>
+                                        device.connectionParameter.connectionType == DeviceConnectionType.HubNode && <>
                                             <Grid size={{xs: 12, md: 2}}>
                                                 Node
                                             </Grid>
                                             <Grid size={{xs: 12, md: 10}}>
-                                                {node?.Name}
+                                                {node?.name}
                                             </Grid>
                                         </>
                                     }
                                     {
-                                        device.ConnectionParameter && device.ConnectionParameter.ConnectionType == DeviceConnectionType.Remote && device.ConnectionParameter.IP.length > 0 && device.ConnectionParameter.Port > 0 && (
+                                        device.connectionParameter && device.connectionParameter.connectionType == DeviceConnectionType.Remote && device.connectionParameter.ip.length > 0 && device.connectionParameter.port > 0 && (
                                             <Grid size={{xs: 12, md: 12}} container={true}>
                                                 <Grid size={{xs: 12, md: 2}}>
                                                     IP:
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 10}}>
-                                                    {device.ConnectionParameter.IP}
+                                                    {device.connectionParameter.ip}
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 2}}>
                                                     Port:
                                                 </Grid>
                                                 <Grid size={{xs: 12, md: 10}}>
-                                                    {device.ConnectionParameter.Port}
+                                                    {device.connectionParameter.port}
                                                 </Grid>
                                             </Grid>
                                         )
@@ -191,33 +191,33 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                         }
                     </Grid>
                     <Grid size={12}>
-                        <TitleCard title={'Device Parameter'}>
+                        <TitleCard title={'Device parameter'}>
                             <Grid container={true} spacing={1}>
-                                {device.DeviceParameter.map(d => (
-                                    <>
+                                {device.deviceParameter.map((d, i) => (
+                                    <Grid key={`device_parameter_${i}`} container={true} size={12}>
                                         <Grid size={{xs: 12, md: 2}}>
-                                            {d.Key}
+                                            {d.key}
                                         </Grid>
                                         <Grid size={{xs: 12, md: 10}}>
-                                            {d.Value}
+                                            {d.value}
                                         </Grid>
-                                    </>
-                                ))}
+                                    </Grid>)
+                                )}
                             </Grid>
                         </TitleCard>
                     </Grid>
                     <Grid size={12}>
-                        {device.CustomParameter.length > 0 && <TitleCard title={'Custom User Parameter'}>
+                        {device.customParameter.length > 0 && <TitleCard title={'Custom User parameter'}>
                             <Grid container={true} spacing={1}>
-                                {device.CustomParameter.map(value => (
-                                        <>
+                                {device.customParameter.map((value, i) => (
+                                        <Grid key={`custom_parameter_${i}`} container={true} size={12}>
                                             <Grid size={{xs: 12, md: 2}}>
-                                                {value.Key}
+                                                {value.key}
                                             </Grid>
                                             <Grid size={{xs: 12, md: 10}}>
-                                                {value.Value}
+                                                {value.value}
                                             </Grid>
-                                        </>
+                                        </Grid>
                                     ),
                                 )}
                             </Grid>

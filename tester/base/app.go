@@ -102,7 +102,7 @@ func (tr *TestRunner) startApp(context context.Context, group sync.ExtendedWaitG
 	defer waitTrigger.Stop()
 
 	tr.LogInfo("Start App '%s' on Device '%s' with Session '%s'", appp.Identifier, d.Device.DeviceID(), tr.ProtocolWriter.SessionID())
-	if err := d.Device.StartApp(&appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
+	if err := d.Device.StartApp(nil, &appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
 		tr.LogError("unable to start app: %v", err)
 		return
 	}

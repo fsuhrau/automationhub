@@ -23,7 +23,7 @@ const AppBundlesPage: React.FC = () => {
         navigate('new');
     }
 
-    const app = project.Apps.find(a => a.ID === appId);
+    const app = project.apps.find(a => a.id === appId);
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
@@ -33,10 +33,10 @@ const AppBundlesPage: React.FC = () => {
                         padding: 1,
                     }}>
                         <Grid>
-                            <PlatformTypeIcon platformType={app?.Platform as PlatformType}/>
+                            <PlatformTypeIcon platformType={app?.platform as PlatformType}/>
                         </Grid>
                         <Grid>
-                            <Typography variant={"body1"}>{app?.Name}{' / '}{app?.Identifier}</Typography>
+                            <Typography variant={"body1"}>{app?.name}{' / '}{app?.identifier}</Typography>
                         </Grid>
                         <Grid container={true} justifyContent={"flex-end"}>
                         </Grid>

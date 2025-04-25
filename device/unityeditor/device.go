@@ -120,7 +120,7 @@ func (d *Device) getHTTPClient() *http.Client {
 	return d.client
 }
 
-func (d *Device) StartApp(_ *app.Parameter, sessionId string, nodeUrl string) error {
+func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
 
 	type request struct {
 		Action    string

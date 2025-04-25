@@ -53,7 +53,7 @@ func (s *Session) GetSessionID() string {
 	return s.SessionID
 }
 
-func (s *Session) SetDeviceLock(lock *manager.DeviceLock)  {
+func (s *Session) SetDeviceLock(lock *manager.DeviceLock) {
 	s.Lock = lock
 }
 
@@ -86,7 +86,7 @@ func (s *Session) GetLastAccess() time.Time {
 	return s.LastAccess
 }
 
-func (s *Session) SetLastAccess(t time.Time)  {
+func (s *Session) SetLastAccess(t time.Time) {
 	s.LastAccess = t
 }
 

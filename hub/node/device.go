@@ -79,7 +79,7 @@ func (d *RPCDevice) IsAppConnected() bool {
 	return true
 }
 
-func (d *RPCDevice) StartApp(*app.Parameter, string, string) error {
+func (d *RPCDevice) StartApp(*device.DeviceConfig, *app.Parameter, string, string) error {
 	return nil
 }
 

@@ -11,16 +11,16 @@ function renderStatus(status: TestResultState) {
 export const columns: GridColDef[] = [
     {
         field: 'name',
-        headerName: 'Test Name',
+        headerName: 'test name',
         flex: 1.5,
         minWidth: 300
         /*
                                                     <Link
-                                                href={`/project/${projectId}/app/${data.TestRun.Test.AppID}/test/4/run/${data.TestRunID}/${data.ID}`}
+                                                href={`/project/${projectId}/app/${data.testRun.test.appId}/test/4/run/${data.testRunId}/${data.id}`}
                                                 underline="none">
-                                                {testName.length > 1 ? testName[1] : data.TestName}
+                                                {testName.length > 1 ? testName[1] : data.testName}
                                             </Link> <br/>
-                                            {data.Device && (data.Device.Alias.length > 0 ? data.Device.Alias : data.Device.Name)}
+                                            {data.device && (data.device.alias.length > 0 ? data.device.alias : data.device.name)}
 
          */
     },
@@ -34,7 +34,7 @@ export const columns: GridColDef[] = [
     /*
     {
         field: 'fps',
-        headerName: 'Median FPS',
+        headerName: 'Median fps',
         headerAlign: 'right',
         align: 'right',
         flex: 1,
@@ -50,7 +50,7 @@ export const columns: GridColDef[] = [
     },
     {
         field: 'cpu',
-        headerName: 'Median CPU',
+        headerName: 'Median cpu',
         headerAlign: 'right',
         align: 'right',
         flex: 1,

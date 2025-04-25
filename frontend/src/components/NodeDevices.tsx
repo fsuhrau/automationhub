@@ -1,7 +1,7 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
+import React, {ChangeEvent, useState} from 'react';
 
 import IDeviceData from '../types/device';
-import {getAllDevices, postUnlockDevice, runTest} from '../services/device.service';
+import {postUnlockDevice, runTest} from '../services/device.service';
 import {
     Button,
     Dialog,
@@ -12,46 +12,21 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import {useSSE} from 'react-hooks-sse';
 import {useNavigate} from 'react-router-dom';
-import _ from "lodash";
+import _, {Dictionary} from "lodash";
 import {TitleCard} from "./title.card.component";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {useError} from "../ErrorProvider";
 import DevicesTable from "./DevicesTable";
 import {useHubState} from "../hooks/HubStateProvider";
-
-interface DeviceChangePayload {
-    DeviceID: number,
-    DeviceState: number
-}
+import {HubStateActions} from "../application/HubState";
 
 const NodeDevices: React.FC = () => {
 
     const {projectIdentifier} = useProjectContext();
     const {setError} = useError()
     const navigate = useNavigate();
-    const {state} = useHubState()
-
-    const [devices, setDevices] = useState<IDeviceData[]>([]);
-    const deviceStateChange = useSSE<DeviceChangePayload | null>('devices', null);
-
-    useEffect(() => {
-        if (deviceStateChange === null)
-            return;
-        setDevices(previousDevices => previousDevices.map(device => device.ID === deviceStateChange.DeviceID ? {
-            ...device,
-            Status: deviceStateChange.DeviceState,
-        } : device));
-    }, [deviceStateChange]);
-
-    useEffect(() => {
-        getAllDevices(projectIdentifier).then(response => {
-            setDevices(response.data);
-        }).catch(e => {
-            setError(e);
-        });
-    }, [projectIdentifier]);
+    const {state, dispatch} = useHubState()
 
     // dialog
     const [testName, seTestName] = useState<string>('');
@@ -67,8 +42,8 @@ const NodeDevices: React.FC = () => {
     };
 
     const onRunTest = (): void => {
-        runTest(projectIdentifier, selectedDeviceID, testName, envParameter).then(response => {
-            console.log(response.data);
+        runTest(projectIdentifier, selectedDeviceID, testName, envParameter).then(testRun => {
+            console.log(testRun);
         }).catch(ex => {
             setError(ex);
         });
@@ -83,8 +58,8 @@ const NodeDevices: React.FC = () => {
     };
 
     const unlockDevice = (deviceId: number) => {
-        postUnlockDevice(projectIdentifier, deviceId).then(response => {
-            setDevices(devices.map(d => d.ID === deviceId ? response.data : d) as IDeviceData[]);
+        postUnlockDevice(projectIdentifier, deviceId).then(device => {
+            dispatch({type: HubStateActions.UpdateDevice, payload: device})
         }).catch(ex => setError(ex));
     }
 
@@ -92,14 +67,18 @@ const NodeDevices: React.FC = () => {
         navigate(`/project/${projectIdentifier}/device/${id}`);
     };
 
-    const groups = _.groupBy(devices, function (device) {
-        return device.Node ? `${device.Node.Name} (${state.nodes?.find(n => n.ID === device.NodeID)?.Status === 1 ? 'Connected' : 'Disconnected'})`: "Master";
-    });
+    const getGroups = (devices: IDeviceData[]) => {
+        return _.groupBy(devices, function (device) {
+            return device.node ? `${device.node.name} (${state.nodes?.find(n => n.id === device.nodeId)?.status === 1 ? 'Connected' : 'Disconnected'})` : "Master";
+        });
+    }
 
-    const sortedGroups = _.orderBy(Object.entries(groups), [
-        ([group]) => group.includes('Connected') ? 0 : 1, // Status: Connected first
-        ([group]) => group.replace(/ \(.*\)$/, '') // Name: Ascending
-    ], ['asc', 'asc']);
+    const getSortedGroups = (groups: Dictionary<IDeviceData[]>) => {
+        return _.orderBy(Object.entries(groups), [
+            ([group]) => group.includes('Connected') ? 0 : 1, // status: Connected first
+            ([group]) => group.replace(/ \(.*\)$/, '') // name: Ascending
+        ], ['asc', 'asc']);
+    }
 
     const onDeviceSelected = (deviceId: number | null) => {
         setSelectedDeviceID(deviceId as number)
@@ -157,7 +136,7 @@ const NodeDevices: React.FC = () => {
                 </DialogActions>
             </Dialog>
             {
-                sortedGroups.map(([group, items]) => {
+                getSortedGroups(getGroups(state.devices ? state.devices : [])).map(([group, items]) => {
                     return (
                         <TitleCard key={`device_table_group_${group}`}
                                    title={`Node: ${group === "null" ? "Master" : group}`}>

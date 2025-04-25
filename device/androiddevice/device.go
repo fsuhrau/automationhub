@@ -124,7 +124,7 @@ func (d *Device) UpdateDeviceInfos(infos []string) {
 		d.deviceParameter = make(map[string]string)
 		init = true
 	}
-	// deviceID := infos[1]
+	// deviceId := infos[1]
 	deviceUSB := infos[2]
 	product := infos[3]
 	model := infos[4]
@@ -163,7 +163,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 	if d.deviceAPILevel < 24 {
 		parameter = append(parameter, []string{"-rg" + debug, params.App.AppPath}...)
 		//} else if isApkDebuggable {
-		//	parameter = append(parameter, []string{"-r", "-g", "-d", params.AppPath}...)
+		//	parameter = append(parameter, []string{"-r", "-g", "-d", params.appPath}...)
 	} else {
 		parameter = append(parameter, []string{"-r", "-g", params.App.AppPath}...)
 	}
@@ -194,7 +194,7 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 	return nil
 }
 
-func (d *Device) unlockScreen() error {
+func (d *Device) unlockScreen(config *device.DeviceConfig) error {
 	d.Log("device", "Unlock Screen")
 
 	isAwake, err := d.IsAwake()
@@ -212,7 +212,7 @@ func (d *Device) unlockScreen() error {
 		return err
 	}
 	if isLocked {
-		if pin := d.GetConfig().GetAttribute(generic.AttributePin); len(pin) > 0 {
+		if pin := device.GetAttribute(config, generic.AttributePin); len(pin) > 0 {
 			for i := range pin {
 				offset := int(pin[i] - '0')
 				_ = d.pressKey(KEYCODE_NUMPAD_0 + offset)
@@ -223,13 +223,13 @@ func (d *Device) unlockScreen() error {
 	return nil
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
-	d.Log("device", "Start App '%s' with Session: '%s'", params.Identifier, sessionId)
+func (d *Device) StartApp(deviceConfig *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
+	d.Log("device", "Start App '%s' with Session: '%s'", appParams.Identifier, sessionId)
 
-	if err := d.unlockScreen(); err != nil {
+	if err := d.unlockScreen(deviceConfig); err != nil {
 		return err
 	}
-	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", params.Identifier, params.App.Android.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "NODE_URL", nodeUrl, "-e", "DEVICE_ID", d.deviceID)
+	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", appParams.Identifier, appParams.App.Android.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "NODE_URL", nodeUrl, "-e", "DEVICE_ID", d.deviceID)
 	return cmd.Run()
 }
 
@@ -331,7 +331,7 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	} else {
 		start := time.Now()
 		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
-		//cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", ">", fileName)
+		//cmd := exec2.NewCommand("adb", "-s", d.deviceId(), "shell", "screencap", "-p", ">", fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}

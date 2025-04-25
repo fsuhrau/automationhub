@@ -28,23 +28,23 @@ const TestRunPageLoader: React.FC = () => {
 
     useEffect(() => {
         if (runId !== undefined) {
-            getRun(projectIdentifier, appId as number, testId as string, runId).then(response => {
+            getRun(projectIdentifier, appId as number, testId as string, runId).then(run => {
                 setUiState(prevState => ({
                     ...prevState,
-                    testRun: response.data.TestRun,
-                    nextRunId: response.data.NextRunId,
-                    prevRunId: response.data.PrevRunId
+                    testRun: run.testRun,
+                    nextRunId: run.nextRunId,
+                    prevRunId: run.prevRunId
                 }))
             }).catch(ex => {
                 setError(ex);
             });
         } else {
-            getLastRun(projectIdentifier, appId as number, testId as string).then(response => {
+            getLastRun(projectIdentifier, appId as number, testId as string).then(run => {
                 setUiState(prevState => ({
                     ...prevState,
-                    testRun: response.data.TestRun,
-                    nextRunId: response.data.NextRunId,
-                    prevRunId: response.data.PrevRunId
+                    testRun: run.testRun,
+                    nextRunId: run.nextRunId,
+                    prevRunId: run.prevRunId
                 }))
             }).catch(ex => {
                 setError(ex);

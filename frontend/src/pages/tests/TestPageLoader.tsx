@@ -27,8 +27,8 @@ const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
 
     useEffect(() => {
         if (appId !== null && testId !== undefined) {
-            getTest(projectIdentifier, appId, testId).then(response => {
-                setTest(response.data);
+            getTest(projectIdentifier, appId, testId).then(test => {
+                setTest(test);
             }).catch(ex => {
                 setError(ex);
             });

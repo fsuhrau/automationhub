@@ -343,8 +343,8 @@ function visualXPath() {
             if (node.nodeName === '#document') {
                 continue;
             }
-            var id = node.getAttribute("ID");
-            var cl = node.getAttribute("Class");
+            var id = node.getAttribute("id");
+            var cl = node.getAttribute("class");
             HighlightElement(node);
             elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + getNodeName(node) + "</span></li>";
         }
@@ -435,7 +435,7 @@ function showElementInfos(id) {
     if (id !== undefined) {
         selectedID = id;
     }
-    var xpath = "//*[@ID=" + selectedID + "]";
+    var xpath = "//*[@id=" + selectedID + "]";
     var nodes = xmlDocumentCache.evaluate(xpath, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
     var result = nodes.iterateNext();
     if (result != null) {
@@ -451,7 +451,7 @@ function showElementInfos(id) {
                 var otherChild = result.parentNode.childNodes[i].nodeName;
                 if (otherChild === nodeName) {
                     numNodes++;
-                    if (result.parentNode.childNodes[i].getAttribute("ID") == selectedID) {
+                    if (result.parentNode.childNodes[i].getAttribute("id") == selectedID) {
                         index = numNodes;
                     }
                 }
@@ -485,8 +485,8 @@ function locateAndHighlightElement(x, y, width, height) {
     clearArea();
     var elements = "<ul class=\"mdl-list\">";
     while (result) {
-        var id = result.getAttribute("ID");
-        // var cl = result.getAttribute("Class");
+        var id = result.getAttribute("id");
+        // var cl = result.getAttribute("class");
         HighlightElement(result);
         elements += "<li class=\"mdl-list__item\"><span class=\"mdl-list__item-primary-content\" onclick='selectNode(" + id + ")' onmouseout='showElementInfos()' onmouseover='showElementInfos(" + id + ")' id=\"" + id + "\">" + getNodeName(result) + "</span></li>";
         result = nodes.iterateNext();
@@ -507,7 +507,7 @@ function hoverElementPos(x, y) {
     var nodes = xmlDocumentCache.evaluate(xpath, xmlDocumentCache, null, XPathResult.ANY_TYPE, null);
     var result = nodes.iterateNext();
     while (result) {
-        var id = result.getAttribute("ID");
+        var id = result.getAttribute("id");
         HighlightElement(result);
         // var nodeXPath = buildPath(result);
         // nodeXPath = nodeXPath.replace("/#document", "");
@@ -664,7 +664,7 @@ function selectNode(nodeID) {
 }
 
 function getNodeName(node) {
-    var name = node.getAttribute("Name");
+    var name = node.getAttribute("name");
     if (name.length > 0) {
         name = "(" + name + ")"
     } else {
@@ -683,7 +683,7 @@ function graphRenderChildren(node, expand) {
     var html = "";
     if (node.childNodes.length > 1) {
         html = "<li role=\"treeitem\" aria-expanded=\"" + expand + "\">";
-        html += "<span onclick='selectNode(\"" + node.getAttribute("ID") + "\")'>" + getNodeName(node) + "</span>";
+        html += "<span onclick='selectNode(\"" + node.getAttribute("id") + "\")'>" + getNodeName(node) + "</span>";
         html += "<ul>";
         var i = 0;
         for (i = 0; i < node.childNodes.length; i++) {
@@ -693,7 +693,7 @@ function graphRenderChildren(node, expand) {
             html += "</ul>";
         }
     } else {
-        html = "<li class=\"doc\" onclick='selectNode(\"" + node.getAttribute("ID") + "\")'>";
+        html = "<li class=\"doc\" onclick='selectNode(\"" + node.getAttribute("id") + "\")'>";
         html += getNodeName(node);
     }
     html += "</li>";

@@ -12,13 +12,13 @@ const ProtocolScreensComponent: React.FC<ProtocolEntriesProps> = (props) => {
     return (
         <ImageList rowHeight={ 500 } cols={ 1 }>
             { entries.map((item) => (
-                <ImageListItem key={ 'image_' + item.ID }>
+                <ImageListItem key={ 'image_' + item.id }>
                     <Card>
                         <CardMedia
                             component="img"
                             height="350"
-                            image={ `/api/data/${ item.Data }` }
-                            alt={ item.Data }
+                            image={ `/api/data/${ item.data }` }
+                            alt={ item.data }
                         />
                     </Card>
                 </ImageListItem>

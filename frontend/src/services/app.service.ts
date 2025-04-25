@@ -1,41 +1,41 @@
-import http from '../http-common';
 import { AxiosResponse } from 'axios';
-import { IAppBinaryData, IAppData } from "../types/app";
+import http from '../http-common';
+import {IAppBinaryData, IAppData} from "../types/app";
 
-export const getAllApps = (projectId: string): Promise<AxiosResponse<IAppBinaryData[]>> => {
-    return http.get(`/${projectId}/apps`);
+export const getAllApps = (projectId: string): Promise<IAppBinaryData[]> => {
+    return http.get(`/${projectId}/apps`).then(resp => resp.data)
 };
 
-export const getApp = (projectId: string, id: string): Promise<AxiosResponse<IAppBinaryData | undefined>> => {
-    return http.get(`/${projectId}/app/${id}`);
+export const getApp = (projectId: string, id: string): Promise<IAppBinaryData | undefined> => {
+    return http.get(`/${projectId}/app/${id}`).then(resp => resp.data)
 };
 
-export const createApp = (projectId: string, data: IAppData): Promise<AxiosResponse<IAppData>> => {
-    return http.post(`/${projectId}/app`, data);
+export const createApp = (projectId: string, data: IAppData): Promise<IAppData> => {
+    return http.post(`/${projectId}/app`, data).then(resp => resp.data)
 };
 
-export const updateApp = (projectId: string, appId: number, data: IAppData): Promise<AxiosResponse<IAppData>> => {
-    return http.put(`/${projectId}/app/${appId}`, data);
+export const updateApp = (projectId: string, appId: number, data: IAppData): Promise<IAppData> => {
+    return http.put(`/${projectId}/app/${appId}`, data).then(resp => resp.data)
 };
 
-export const updateAppBundle = (projectId: string, appId: number, id: number, data: IAppBinaryData): Promise<AxiosResponse<IAppBinaryData>> => {
-    return http.put(`/${projectId}/app/${appId}/bundle/${id}`, data);
+export const updateAppBundle = (projectId: string, appId: number, id: number, data: IAppBinaryData): Promise<IAppBinaryData> => {
+    return http.put(`/${projectId}/app/${appId}/bundle/${id}`, data).then(resp => resp.data)
 };
 
-export const deleteAppBundle = (projectId: string, appId: number, id: number): Promise<AxiosResponse<void>> => {
+export const deleteAppBundle = (projectId: string, appId: number, id: number): Promise<void> => {
     return http.delete(`/${projectId}/app/${appId}/bundle/${id}`);
 };
 
-export const getAppBundles = (projectId: string, appId: number): Promise<AxiosResponse<IAppBinaryData[]>> => {
-    return http.get(`/${projectId}/app/${appId}/bundles`);
+export const getAppBundles = (projectId: string, appId: number): Promise<IAppBinaryData[]> => {
+    return http.get(`/${projectId}/app/${appId}/bundles`).then(resp => resp.data)
 };
 
 export type AppFilter = {
     name?: string;
 };
 
-export const findApp = (filter?: AppFilter): Promise<AxiosResponse<IAppBinaryData[]>> => {
-    return http.get('/apps', { params: filter });
+export const findApp = (filter?: AppFilter): Promise<IAppBinaryData[]> => {
+    return http.get('/apps', {params: filter}).then(resp => resp.data)
 };
 
 export const uploadNewApp = (file: File,

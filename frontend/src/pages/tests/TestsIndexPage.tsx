@@ -22,12 +22,12 @@ const TestsIndexPage: React.FC = () => {
 
     useEffect(() => {
         if (appId === 0) {
-            const value = project.Apps === undefined ? null : project.Apps.length === 0 ? null : project.Apps[0].ID;
+            const value = project.apps === undefined ? null : project.apps.length === 0 ? null : project.apps[0].id;
             if (value !== null) {
                 navigate(`/project/${projectIdentifier}/app:${appId}/tests`)
             }
         }
-    }, [project.Apps, appId])
+    }, [project.apps, appId])
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>

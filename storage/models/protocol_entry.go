@@ -1,17 +1,16 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
 type ProtocolEntry struct {
-	gorm.Model
-	TestProtocolID uint
-	Timestamp      time.Time
-	Source         string
-	Level          string
-	Message        string
-	Data           string
-	Runtime        float64
+	Model
+	TestProtocolID uint      `json:"testProtocolId"`
+	Timestamp      time.Time `json:"timestamp"`
+	Source         string    `json:"source"`
+	Level          string    `json:"level"`
+	Message        string    `json:"message"`
+	Data           string    `json:"data"`
+	Runtime        float64   `json:"runtime"`
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/sirupsen/logrus"
@@ -328,6 +329,20 @@ func (s *RPCNode) UninstallApp(req *AppParameterRequest, resp *BoolResponse) err
 	return nil
 }
 
+func getDeviceConfig(req *StartAppRequest) *device.DeviceConfig {
+	var deviceConfig device.DeviceConfig
+	if req.ConnectionParams != nil {
+		deviceConfig.Connection = int(req.ConnectionParams.Type)
+		deviceConfig.IP = req.ConnectionParams.IP
+		deviceConfig.Port = int(req.ConnectionParams.Port)
+	}
+	deviceConfig.DeviceParameter = make(map[string]string)
+	for _, param := range req.CustomParameter {
+		deviceConfig.DeviceParameter[param.Key] = param.Value
+	}
+	return &deviceConfig
+}
+
 func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: StartApp")
 	device, _ := s.dm.GetDevice(req.App.DeviceID)
@@ -335,7 +350,9 @@ func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
 		return fmt.Errorf("device with id %v not found", req.App.DeviceID)
 	}
 
-	err := device.StartApp(getAppParameter(req.App, nil), req.SessionID, s.config.NodeUrl)
+	deviceConfig := getDeviceConfig(req)
+
+	err := device.StartApp(deviceConfig, getAppParameter(req.App, nil), req.SessionID, s.config.NodeUrl)
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()

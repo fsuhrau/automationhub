@@ -13,6 +13,10 @@ import {Divider} from "@mui/material";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import {AddRounded} from "@mui/icons-material";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
+import {useHubState} from "../hooks/HubStateProvider";
+import {getAllApps} from "../services/app.service";
+import appsGroup from "../pages/settings/AppsGroup";
+import {HubStateActions} from "../application/HubState";
 
 const Avatar = styled(MuiAvatar)(({theme}) => ({
     backgroundColor: theme.palette.background.paper,
@@ -30,6 +34,8 @@ export default function ApplicationSelection() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const {state, dispatch} = useHubState()
+
     const {project} = useProjectContext();
     const regex = /app:\d+/g;
 
@@ -43,13 +49,13 @@ export default function ApplicationSelection() {
         if (id !== null) {
             return id.replace("app:", "")
         }
-        if (project.Apps.length > 0) {
-            return project.Apps[0].ID.toString();
+        if (state.apps !== null && state.apps.length > 0) {
+            return state.apps[0].id.toString();
         }
         return "";
     }
 
-    const [state, setState] = React.useState<{ appId: string }>({
+    const [uiState, setUiState] = React.useState<{ appId: string }>({
         appId: extractAppId(),
     })
 
@@ -57,46 +63,53 @@ export default function ApplicationSelection() {
     const handleChange = (event: SelectChangeEvent) => {
         const newAppId = event.target.value;
         if (+newAppId < 0) {
-            navigate(`/project/${project.Identifier}/settings`);
+            navigate(`/project/${project.identifier}/settings`);
             return;
         }
-        setState(prevState => ({...prevState, appId: newAppId}));
+        setUiState(prevState => ({...prevState, appId: newAppId}));
         localStorage.setItem('appId', newAppId);
         if (location.pathname.indexOf("app:") >= 0) {
             const newPath = location.pathname.replace(regex, `app:${newAppId}`);
             navigate(newPath);
         } else {
-            navigate(`/project/${project.Identifier}/app:${newAppId}/home`);
+            navigate(`/project/${project.identifier}/app:${newAppId}/home`);
         }
     };
 
     React.useEffect(() => {
+
+        if (state.apps == null) {
+            getAllApps(project.identifier).then(apps => {
+                dispatch({type: HubStateActions.AppsUpdate, payload: apps})
+            })
+            return
+        }
         if (appId) {
             const cleanId = appId.replace("app:", "")
-            if (cleanId !== state.appId) {
-                setState(prevState => ({...prevState, appId: cleanId}));
+            if (cleanId !== uiState.appId) {
+                setUiState(prevState => ({...prevState, appId: cleanId}));
                 localStorage.setItem('appId', cleanId);
             }
-        } else if (!appId && state.appId) {
+        } else if (!appId && uiState.appId) {
 
             if (location.pathname.indexOf("app:") >= 0) {
-                const newPath = location.pathname.replace(regex, `app:${state.appId}`);
+                const newPath = location.pathname.replace(regex, `app:${uiState.appId}`);
                 navigate(newPath);
             } else if (location.pathname.indexOf("/settings") == -1
                 && location.pathname.indexOf("/users") == -1
                 && location.pathname.indexOf("/devices") == -1
                 && location.pathname.indexOf("/device") == -1
             ) {
-                navigate(`/project/${project.Identifier}/app:${state.appId}/home`);
+                navigate(`/project/${project.identifier}/app:${uiState.appId}/home`);
             }
         }
-    }, [appId, state.appId, project.Identifier, navigate]);
+    }, [appId, uiState.appId, project.identifier, navigate]);
 
     return (
         <Select
             labelId="Application-select"
             id="Application-simple-select"
-            value={state.appId}
+            value={state.apps !== null && state.apps.length > 0 ? uiState.appId : ''}
             onChange={handleChange}
             displayEmpty
             inputProps={{'aria-label': 'Select Application'}}
@@ -117,14 +130,14 @@ export default function ApplicationSelection() {
         >
             <ListSubheader sx={{pt: 0}}>Production</ListSubheader>
             {
-                project.Apps.map(app => (
-                    <MenuItem key={`app_item_${app.ID}`} value={`${app.ID}`}>
+                state.apps?.map(app => (
+                    <MenuItem key={`app_item_${app.id}`} value={`${app.id}`}>
                         <ListItemAvatar>
-                            <Avatar alt={app.Name} variant={'rounded'}>
-                                <PlatformTypeIcon platformType={app.Platform}/>
+                            <Avatar alt={app.name} variant={'rounded'}>
+                                <PlatformTypeIcon platformType={app.platform}/>
                             </Avatar>
                         </ListItemAvatar>
-                        <ListItemText primary={app.Name} secondary={getPlatformName(app.Platform)}/>
+                        <ListItemText primary={app.name} secondary={getPlatformName(app.platform)}/>
                     </MenuItem>
                 ))
             }

@@ -55,8 +55,7 @@ function App(props: any) {
 
                                     <Route element={<PrivateRoute/>}>
                                         <Route path={"/"}>
-                                            <Route index={true}
-                                                   element={<ProjectsIndexPage/>}/>
+                                            <Route index={true} element={<ProjectsIndexPage/>}/>
                                             <Route path={"project"}
                                                    element={<HubMainLayout/>}>
                                                 <Route path={":project_identifier"}

@@ -44,7 +44,7 @@ import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {useError} from "../../ErrorProvider";
 
 function getSteps(): Array<string> {
-    return ['Select Test Type', 'Test Configuration', 'Device Selection'];
+    return ['Select test type', 'test Configuration', 'device Selection'];
 }
 
 export function getUnityTestsConfig(): Array<IdName> {
@@ -55,7 +55,7 @@ export function getUnityTestsConfig(): Array<IdName> {
 }
 
 export function getDeviceOption(): Array<IdName> {
-    return [{id: '0', name: 'All Devices'}, {id: '1', name: 'Selected Devices Only'}];
+    return [{id: '0', name: 'All devices'}, {id: '1', name: 'Selected devices Only'}];
 }
 
 const AddTestPage: React.FC = () => {
@@ -125,17 +125,17 @@ const AddTestPage: React.FC = () => {
     const createNewTest = (): void => {
 
         const requestData: ICreateTestData = {
-            Name: state.testName,
-            TestType: state.testType,
-            ExecutionType: state.executionType,
-            UnityTestCategoryType: state.unityTestCategoryType,
-            UnitySelectedTests: state.selectedTestFunctions,
-            Categories: state.testCategories,
-            AllDevices: state.deviceType === 0,
-            SelectedDevices: state.selectedDevices,
+            name: state.testName,
+            testType: state.testType,
+            executionType: state.executionType,
+            unityTestCategoryType: state.unityTestCategoryType,
+            unitySelectedTests: state.selectedTestFunctions,
+            categories: state.testCategories,
+            allDevices: state.deviceType === 0,
+            selectedDevices: state.selectedDevices,
         };
 
-        createTest(projectIdentifier, appId, requestData).then(response => {
+        createTest(projectIdentifier, appId, requestData).then(test => {
             navigate(`/project/${projectIdentifier}/app:${appId}/tests`);
         }).catch(ex => {
             setError(ex);
@@ -155,11 +155,11 @@ const AddTestPage: React.FC = () => {
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
     useEffect(() => {
-        const app = project.Apps.find(a => a.ID === appId);
-        getAllDevices(projectIdentifier, app?.Platform).then(response => {
-            setDevices(response.data);
+        const app = project.apps.find(a => a.id === appId);
+        getAllDevices(projectIdentifier, app?.platform).then(devices => {
+            setDevices(devices);
         }).catch(ex => setError(ex))
-    }, [project.Apps, projectIdentifier, appId])
+    }, [project.apps, projectIdentifier, appId])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
         if (!isEqual(selectedDevices, state.selectedDevices)) {
@@ -215,7 +215,7 @@ const AddTestPage: React.FC = () => {
                                                       alignItems={'center'}>
                                                     <Grid size={6}>
                                                         <TextField required={true} id="test-name"
-                                                                   placeholder={"Name"}
+                                                                   placeholder={"name"}
                                                                    value={state.testName}
                                                                    fullWidth={true}
                                                                    onChange={event => setState(prevState => ({
@@ -337,7 +337,7 @@ const AddTestPage: React.FC = () => {
                                                                                                 fullWidth={true}
                                                                                                 required={true}
                                                                                                 id="test-name"
-                                                                                                placeholder={"Category Name"}
+                                                                                                placeholder={"Category name"}
                                                                                                 value={state.category}
                                                                                                 onChange={event => setState(prevState => ({
                                                                                                     ...prevState,

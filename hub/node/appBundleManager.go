@@ -14,8 +14,8 @@ var (
 
 type AppBundleMetaData struct {
 	Filename string `json:"filename"`
-	FileHash string `json:"file_hash"`
-	FileSize int64  `json:"file_size"`
+	FileHash string `json:"fileHash"`
+	FileSize int64  `json:"fileSize"`
 	FilePath string `json:"-"`
 }
 

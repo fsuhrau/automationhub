@@ -27,18 +27,18 @@ const NodesTab: React.FC = () => {
     const {setError} = useError()
 
     const [newNode, setNewNode] = useState<NewNodeRequest>({
-        Name: '',
+        name: '',
     });
 
     const handleCreateNode = (): void => {
-        createNode(projectIdentifier, newNode).then(response => {
+        createNode(projectIdentifier, newNode).then(node => {
             setNewNode({
-                Name: '',
+                name: '',
             })
 
             dispatch({
                 type: HubStateActions.NodeAdd,
-                payload: response.data
+                payload: node
             })
         }).catch(exx => {
             setError(exx);
@@ -58,10 +58,10 @@ const NodesTab: React.FC = () => {
     };
 
     useEffect(() => {
-        getNodes(projectIdentifier).then(response => {
+        getNodes(projectIdentifier).then(nodes => {
             dispatch({
                 type: HubStateActions.NodesUpdate,
-                payload: response.data
+                payload: nodes
             })
         }).catch(ex => {
             setError(ex);
@@ -82,12 +82,12 @@ const NodesTab: React.FC = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {state.nodes?.map((node) => <TableRow key={node.ID}>
-                                    <TableCell>{node.Name}</TableCell>
+                                {state.nodes?.map((node) => <TableRow key={node.id}>
+                                    <TableCell>{node.name}</TableCell>
                                     <TableCell>
                                         <Grid container={true} direction={"row"} spacing={1} justifyContent={"right"} alignItems={"center"}>
                                             <Grid>
-                                                {node.Identifier}
+                                                {node.identifier}
                                             </Grid>
                                             <Grid>
                                                 <CopyToClipboard>
@@ -95,7 +95,7 @@ const NodesTab: React.FC = () => {
                                                         <IconButton
                                                             color={'primary'}
                                                             size={'small'}
-                                                            onClick={() => copy(node.Identifier)}
+                                                            onClick={() => copy(node.identifier)}
                                                         >
                                                             <ContentCopy/>
                                                         </IconButton>
@@ -107,7 +107,7 @@ const NodesTab: React.FC = () => {
                                     </TableCell>
                                     <TableCell>
                                         <IconButton color="secondary" size="small" onClick={() => {
-                                            handleDeleteNode(node.ID as number);
+                                            handleDeleteNode(node.id as number);
                                         }}>
                                             <DeleteForeverIcon/>
                                         </IconButton>
@@ -119,10 +119,10 @@ const NodesTab: React.FC = () => {
                                         <TextField id="new_node_name" placeholder="Name"
                                                    variant="outlined"
                                                    fullWidth={true}
-                                                   value={newNode.Name} size="small"
+                                                   value={newNode.name} size="small"
                                                    onChange={event => setNewNode(prevState => ({
                                                        ...prevState,
-                                                       Name: event.target.value
+                                                       name: event.target.value
                                                    }))}/>
                                     </TableCell>
                                     <TableCell></TableCell>

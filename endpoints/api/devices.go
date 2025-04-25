@@ -54,17 +54,18 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 	for i := range devices {
 		dev, _ := s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 		devices[i].Dev = dev
-		if devices[i].NodeID > 0 {
-			devices[i].Status = device2.StateNodeDisconnected
-		} else {
-			devices[i].Status = device2.StateUnknown
-		}
 
 		if dev != nil {
 			devices[i].Status = dev.DeviceState()
 			devices[i].IsLocked = dev.IsLocked()
 			if dev.Connection() != nil {
 				devices[i].Connection = dev.Connection().ConnectionParameter
+			}
+		} else {
+			if devices[i].NodeID > 0 {
+				devices[i].Status = device2.StateNodeDisconnected
+			} else {
+				devices[i].Status = device2.StateUnknown
 			}
 		}
 	}
@@ -176,12 +177,12 @@ func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
 
 func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 	type Request struct {
-		TestName string
-		Env      string
+		TestName string `json:"testName"`
+		Env      string `json:"env"`
 	}
 	type Response struct {
-		Success bool
-		Message string
+		Success bool   `json:"success"`
+		Message string `json:"message"`
 	}
 	var req Request
 	c.Bind(&req)

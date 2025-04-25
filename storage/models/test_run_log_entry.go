@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 type TestRunLogEntry struct {
-	gorm.Model
-	TestRunID uint
-	Level     string
-	Log       string
+	Model
+	TestRunID uint   `json:"testRunId"`
+	Level     string `json:"level"`
+	Log       string `json:"log"`
 }

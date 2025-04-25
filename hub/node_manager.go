@@ -84,7 +84,7 @@ func (nm *NodeManager) GetManagers(nodeIdentifier manager.NodeIdentifier) (map[s
 
 func (nm *NodeManager) IsNodeKnown(nodeIdentifier manager.NodeIdentifier) bool {
 	var dbNode models.Node
-	if err := nm.db.First(&dbNode, "Identifier = ?", nodeIdentifier).Error; err == gorm.ErrRecordNotFound {
+	if err := nm.db.First(&dbNode, "identifier = ?", nodeIdentifier).Error; err == gorm.ErrRecordNotFound {
 		return false
 	}
 	return true
@@ -157,7 +157,7 @@ func (nm *NodeManager) StopDevice(nodeIdentifier manager.NodeIdentifier, deviceI
 	return handler.StopDevice(deviceId)
 }
 
-// Device Actions
+// device Actions
 func (nm *NodeManager) IsAppInstalled(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) (bool, error) {
 	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
@@ -213,13 +213,13 @@ func (nm *NodeManager) UninstallApp(nodeIdentifier manager.NodeIdentifier, devic
 	return handler.UninstallApp(deviceId, parameter)
 }
 
-func (nm *NodeManager) StartApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter, sessionId string, nodeUrl string) error {
+func (nm *NodeManager) StartApp(nodeIdentifier manager.NodeIdentifier, deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error {
 	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {
 		return err
 	}
 
-	return handler.StartApp(deviceId, parameter, sessionId, nodeUrl)
+	return handler.StartApp(deviceId, config, parameter, sessionId, nodeUrl)
 }
 
 func (nm *NodeManager) StopApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {

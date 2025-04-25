@@ -1,13 +1,13 @@
 import IDeviceData from "./device";
 
 export default interface ITesRunDeviceStatusData {
-    ID?: number,
-    TestRunID: number,
-    DeviceID: number,
-    Device: IDeviceData,
-    StartupTime: number,
-    HistAvgStartupTime: number,
-    CreatedAt: Date,
-    UpdatedAt: Date,
-    DeletedAt: Date,
+    id?: number,
+    testRunId: number,
+    deviceId: number,
+    device: IDeviceData,
+    startupTime: number,
+    histAvgStartupTime: number,
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt: Date,
 }

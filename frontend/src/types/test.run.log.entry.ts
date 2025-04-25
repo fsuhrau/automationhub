@@ -1,9 +1,9 @@
 export default interface ITesRunLogEntryData {
-    ID?: number,
-    TestRunID: number,
-    Level: string,
-    Log: string,
-    CreatedAt: Date,
-    UpdatedAt: Date,
-    DeletedAt: Date,
+    id?: number,
+    testRunId: number,
+    level: string,
+    log: string,
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt: Date,
 }

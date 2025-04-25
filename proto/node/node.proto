@@ -23,6 +23,12 @@ enum DeviceState {
   Locked = 5;
 }
 
+enum DeviceConnectionType {
+  USB = 0;
+  Remote = 1;
+  Node = 2;
+}
+
 message DeviceStatusRequest {
   string DeviceId = 1;
 }
@@ -107,10 +113,23 @@ message AppParameterRequest {
   optional WebParams Web = 7;
 }
 
+message DeviceConnectionParams {
+    DeviceConnectionType Type = 1;
+    string IP = 2;
+    int64 Port = 3;
+}
+
+message DeviceCustomParameter {
+  string Key = 1;
+  string Value = 2;
+}
+
 message StartAppRequest {
   AppParameterRequest App = 1;
   string SessionID = 2;
   string HostIP = 3;
+  optional DeviceConnectionParams ConnectionParams = 4;
+  repeated DeviceCustomParameter CustomParameter = 5;
 }
 
 message BoolResponse {

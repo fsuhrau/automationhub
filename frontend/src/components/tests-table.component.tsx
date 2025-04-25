@@ -39,7 +39,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const navigate = useNavigate();
 
-    const app = project.Apps.find(a => a.ID === appId);
+    const app = project.apps.find(a => a.id === appId);
 
     // dialog
     const [open, setOpen] = useState(false);
@@ -71,7 +71,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         testId: null,
         binaryId: null,
         startURL: null,
-        envParams: app === undefined ? '' : app?.DefaultParameter.replaceAll(';', '\n'),
+        envParams: app === undefined ? '' : app?.defaultParameter.replaceAll(';', '\n'),
     });
 
 
@@ -146,16 +146,16 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     useEffect(() => {
         if (appId !== null) {
-            getAllTests(projectIdentifier, appId).then(response => {
-                setGridData(response.data.map(d => {
+            getAllTests(projectIdentifier, appId).then(tests => {
+                setGridData(tests.map(d => {
                     return {
-                        id: d.ID,
-                        name: d.Name,
-                        type: getTestTypeName(d.TestConfig.Type),
-                        execution: getTestExecutionName(d.TestConfig.ExecutionType),
+                        id: d.id,
+                        name: d.name,
+                        type: getTestTypeName(d.testConfig.type),
+                        execution: getTestExecutionName(d.testConfig.executionType),
                         devices: getDevices(d),
                         tests: getTests(d),
-                        actions: d.ID,
+                        actions: d.id,
                     }
                 }));
             }).catch(e => {
@@ -167,11 +167,11 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     const onRunTest = (): void => {
         if (appId !== null) {
             executeTest(projectIdentifier, appId, state.testId, {
-                AppBinaryID: state.binaryId!,
-                Params: state.envParams,
-                StartURL: state.startURL,
-            }).then(response => {
-                navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${response.data.ID}`);
+                appBinaryId: state.binaryId!,
+                params: state.envParams,
+                startUrl: state.startURL,
+            }).then(testRun => {
+                navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${testRun.id}`);
             }).catch(error => {
                 setError(error);
             });
@@ -179,33 +179,33 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     };
 
     const getDevices = (test: ITestData): string => {
-        if (test.TestConfig.AllDevices) {
+        if (test.testConfig.allDevices) {
             return 'all';
         }
-        if (test.TestConfig.Devices !== null) {
-            return test.TestConfig.Devices.length.toString();
+        if (test.testConfig.devices !== null) {
+            return test.testConfig.devices.length.toString();
         }
         return 'n/a';
     };
 
     const getTests = (test: ITestData): string => {
-        if (test.TestConfig.Unity !== undefined && test.TestConfig.Unity !== null) {
-            if (test.TestConfig.Unity?.UnityTestCategoryType == UnityTestCategory.RunAllTests) {
+        if (test.testConfig.unity !== undefined && test.testConfig.unity !== null) {
+            if (test.testConfig.unity?.testCategoryType == UnityTestCategory.RunAllTests) {
                 return 'all';
             }
-            if (test.TestConfig.Unity.UnityTestFunctions !== null) {
-                return test.TestConfig.Unity.UnityTestFunctions.length.toString();
+            if (test.testConfig.unity.testFunctions !== null) {
+                return test.testConfig.unity.testFunctions.length.toString();
             }
         }
 
         return 'n/a';
     };
 
-    const requiresApp = app?.Platform !== PlatformType.Editor && app?.Platform !== PlatformType.Web;
-    const requiresURL = app?.Platform === PlatformType.Web;
+    const requiresApp = app?.platform !== PlatformType.Editor && app?.platform !== PlatformType.Web;
+    const requiresURL = app?.platform === PlatformType.Web;
 
     const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
-        setState(prevState => ({...prevState, binaryId: binary ? binary.ID : null}));
+        setState(prevState => ({...prevState, binaryId: binary ? binary.id : null}));
     };
 
     const onEnvParamsChanged = (event: ChangeEvent<HTMLTextAreaElement>): void => {
@@ -217,7 +217,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         if (app !== null && app !== undefined) {
             setState(prevState => ({
                 ...prevState,
-                envParams: app.DefaultParameter.replaceAll(";", "\n")
+                envParams: app.defaultParameter.replaceAll(";", "\n")
             }));
         }
     }, [app]);
@@ -274,7 +274,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                         <Grid size={12}>
                             <TextareaAutosize
                                 style={{width: '100%', height: '100px'}}
-                                placeholder={"Parameter"}
+                                placeholder={"parameter"}
                                 defaultValue={state.envParams}
                                 value={state.envParams}
                                 onChange={onEnvParamsChanged}

@@ -17,10 +17,10 @@ const DevicesPage: React.FC = () => {
     const {projectIdentifier} = useProjectContext()
 
     useEffect(() => {
-        getNodes(projectIdentifier).then(response => {
+        getNodes(projectIdentifier).then(nodes => {
             dispatch({
                 type: HubStateActions.NodesUpdate,
-                payload: response.data
+                payload: nodes
             })
         }).catch(ex => {
             setError(ex);

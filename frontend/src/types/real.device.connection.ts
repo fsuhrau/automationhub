@@ -1,7 +1,7 @@
 export default interface IRealDeviceConnectionData {
-    appID: string,
-    customerID: string,
-    deviceID: string,
-    sessionID: string,
+    appId: string,
+    customerId: string,
+    deviceId: string,
+    sessionId: string,
     version: string,
 }

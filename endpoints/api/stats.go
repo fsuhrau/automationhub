@@ -9,15 +9,15 @@ import (
 
 func (s *Service) getStats(c *gin.Context) {
 	type Response struct {
-		AppsCount          int
-		AppsStorageSize    int
-		DatabaseSize       int
-		SystemMemoryUsage  int
-		SystemUptime       int
-		TestsLastProtocols []models.TestProtocol
-		TestsLastFailed    []models.TestProtocol
-		DeviceCount        int
-		DeviceBooted       int
+		AppsCount          int                   `json:"appsCount"`
+		AppsStorageSize    int                   `json:"appsStorageSize"`
+		DatabaseSize       int                   `json:"databaseSize"`
+		SystemMemoryUsage  int                   `json:"systemMemoryUsage"`
+		SystemUptime       int                   `json:"systemUptime"`
+		TestsLastProtocols []models.TestProtocol `json:"testsLastProtocols"`
+		TestsLastFailed    []models.TestProtocol `json:"testsLastFailed"`
+		DeviceCount        int                   `json:"deviceCount"`
+		DeviceBooted       int                   `json:"deviceBooted"`
 	}
 
 	var response Response

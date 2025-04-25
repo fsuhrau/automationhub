@@ -58,7 +58,7 @@ const ITEMS: TreeViewBaseItem<ExtendedTreeItemProps>[] = [
       { id: '2.1', label: 'All products', color: 'green' },
       {
         id: '2.2',
-        label: 'Categories',
+        label: 'categories',
         children: [
           { id: '2.2.1', label: 'Gadgets', color: 'blue' },
           { id: '2.2.2', label: 'Phones', color: 'blue' },

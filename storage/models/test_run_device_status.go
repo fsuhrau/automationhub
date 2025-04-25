@@ -1,14 +1,12 @@
 package models
 
-import "gorm.io/gorm"
-
 type TestRunDeviceStatus struct {
-	gorm.Model
-	TestRunID   uint
-	DeviceID    uint
-	Device      *Device
-	StartupTime uint
+	Model
+	TestRunID   uint    `json:"testRunId"`
+	DeviceID    uint    `json:"deviceId"`
+	Device      *Device `json:"device"`
+	StartupTime uint    `json:"startupTime"`
 
 	// calculated fields
-	HistAvgStartupTime uint `db:"-" gorm:"-:all"`
+	HistAvgStartupTime uint `db:"-" gorm:"-:all" json:"histAvgStartupTime"`
 }

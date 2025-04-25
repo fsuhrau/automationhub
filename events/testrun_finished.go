@@ -3,15 +3,15 @@ package events
 var TestRunFinished testRunFinished
 
 type TestRunFinishedPayload struct {
-	ProjectID string
-	AppID     uint
-	TestRunID uint
-	TestName  string
-	Success   bool
-	Succeeded int
-	Unstable  int
-	Failed    int
-	TestRun   interface{}
+	ProjectID string      `json:"projectId"`
+	AppID     uint        `json:"appId"`
+	TestRunID uint        `json:"testRunId"`
+	TestName  string      `json:"testName"`
+	Success   bool        `json:"success"`
+	Succeeded int         `json:"succeeded"`
+	Unstable  int         `json:"unstable"`
+	Failed    int         `json:"failed"`
+	TestRun   interface{} `json:"testRun"`
 }
 
 type testRunFinished struct {

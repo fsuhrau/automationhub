@@ -68,8 +68,8 @@ const ProjectsIndexPage: React.FC = (props: any) => {
     };
 
     const onCreateNewProject = (project: IProject) => {
-        createProject(project).then(resp => {
-            navigate(`/project/${resp.data.Identifier}`)
+        createProject(project).then(project => {
+            navigate(`/project/${project.identifier}`)
         }).catch(ex => {
             console.log(ex)
         })
@@ -77,8 +77,8 @@ const ProjectsIndexPage: React.FC = (props: any) => {
 
     useEffect(() => {
         if (state.projects === null) {
-            getProjects().then(response => {
-                dispatch({type: HubStateActions.ProjectsUpdate, payload: response.data})
+            getProjects().then(projects => {
+                dispatch({type: HubStateActions.ProjectsUpdate, payload: projects})
             })
         }
     }, [state.projects])
@@ -126,31 +126,31 @@ const ProjectsIndexPage: React.FC = (props: any) => {
 
                         {
                             state.projects?.map(project => (
-                                <Grid key={`projects_${project.ID}`} size={3}>
-                                    <Card variant="outlined" key={`project_${project.Identifier}`}
-                                          onClick={() => navigate(`/project/${project.Identifier}`)}>
+                                <Grid key={`projects_${project.id}`} size={3}>
+                                    <Card variant="outlined" key={`project_${project.identifier}`}
+                                          onClick={() => navigate(`/project/${project.identifier}`)}>
                                         <ButtonBase sx={{width: '100%', padding: 2, height: 200, display: 'block'}}>
                                             <Typography
                                                 component="h3"
                                                 variant="h3"
                                                 sx={{width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)'}}
                                             >
-                                                {project.Name}
+                                                {project.name}
                                             </Typography>
                                             <Typography
                                                 component="h3"
                                                 variant="h3"
                                                 sx={{width: '100%', fontSize: 'clamp(1rem, 10vw, 1.15rem)'}}
                                             >
-                                                {project.Identifier}
+                                                {project.identifier}
                                             </Typography>
                                             <Box
                                                 sx={{display: 'flex', flexDirection: 'row', gap: 2}}
                                             >
                                                 {
-                                                    project.Apps.map(app => (
-                                                        <IconButton key={`project_app_${app.ID}`}>
-                                                            <PlatformTypeIcon platformType={app.Platform}/>
+                                                    project.apps.map(app => (
+                                                        <IconButton key={`project_app_${app.id}`}>
+                                                            <PlatformTypeIcon platformType={app.platform}/>
                                                         </IconButton>
                                                     ))
                                                 }

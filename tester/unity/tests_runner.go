@@ -301,8 +301,8 @@ func (tr *testsRunner) runTest(ctx context.Context, dev base.DeviceMap, task act
 		tr.LogInfo("Reset device settings")
 		var reset action.UnityReset
 		resetExec := tester_action.NewExecutor(tr.DeviceManager)
-		if err := resetExec.Execute(dev.Device, &reset, 30*time.Second); err != nil {
-			tr.LogError("unable to reset settings %s: %v", dev.Device.DeviceID(), err)
+		if err := resetExec.Execute(dev.device, &reset, 30*time.Second); err != nil {
+			tr.LogError("unable to reset settings %s: %v", dev.device.deviceId(), err)
 		}
 	*/
 	tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())

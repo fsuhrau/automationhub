@@ -41,7 +41,7 @@ const (
 
 type request struct {
 	Node        string  `json:"node"`
-	DeviceID    string  `json:"device_id"`
+	DeviceID    string  `json:"deviceId"`
 	Source      string  `json:"source"`
 	Type        LogType `json:"type"`
 	Message     string  `json:"message"`
@@ -49,7 +49,7 @@ type request struct {
 	Cpu         float64 `json:"cpu"`
 	Fps         float64 `json:"fps"`
 	Mem         float64 `json:"mem"`
-	VertexCount float64 `json:"vertex_count"`
+	VertexCount float64 `json:"vertexCount"`
 	Triangles   float64 `json:"triangles"`
 	Other       string  `json:"other"`
 }

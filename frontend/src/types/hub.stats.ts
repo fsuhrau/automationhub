@@ -1,13 +1,13 @@
 import ITestProtocolData from './test.protocol';
 
 export default interface IHubStatsData {
-    AppsCount: number,
-    AppsStorageSize: number,
-    DatabaseSize: number,
-    SystemMemoryUsage: number,
-    SystemUptime: number,
-    TestsLastProtocols: ITestProtocolData[],
-    TestsLastFailed: ITestProtocolData[],
-    DeviceCount: number,
-    DeviceBooted: number,
+    appsCount: number,
+    appsStorageSize: number,
+    databaseSize: number,
+    systemMemoryUsage: number,
+    systemUptime: number,
+    testsLastProtocols: ITestProtocolData[],
+    testsLastFailed: ITestProtocolData[],
+    deviceCount: number,
+    deviceBooted: number,
 }

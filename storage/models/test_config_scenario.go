@@ -1,9 +1,7 @@
 package models
 
-import "gorm.io/gorm"
-
 type TestConfigScenario struct {
-	gorm.Model
-	TestConfigID uint
-	Steps        []ScenarioStep
+	Model
+	TestConfigID uint           `json:"testConfigId"`
+	Steps        []ScenarioStep `json:"steps"`
 }

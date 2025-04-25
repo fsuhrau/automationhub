@@ -18,6 +18,7 @@ import {TitleCard} from "../../components/title.card.component";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid";
 import {useLocation} from "react-router-dom";
+import {byteFormat, fixedTwoFormat, kFormat} from "./value_formatter";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -53,8 +54,8 @@ function a11yProps(index: number): Map<string, string> {
 }
 
 interface NewTestProtocolLogPayload {
-    TestProtocolID: number,
-    Entry: IProtocolEntryData,
+    testProtocolId: number,
+    entry: IProtocolEntryData,
 }
 
 interface TestProtocolPageProps {
@@ -66,7 +67,7 @@ const CustomLineLabel: FunctionComponent<any> = (props: any) => {
     const {x, y, stroke, value, unit} = props;
     return (
         <text x={x} y={y} dy={-4} fill={stroke} fontSize={10} textAnchor="middle">
-            {value.toFixed(2)}{unit !== undefined ? unit : ''}
+            {value?.toFixed(2)}{unit !== undefined ? unit : ''}
         </text>
     );
 };
@@ -74,10 +75,11 @@ const CustomLineLabel: FunctionComponent<any> = (props: any) => {
 interface PerformanceNoteLabelProps {
     value: number,
     isHigherBetter: boolean,
+    formatter?: (value: number) => string
 }
 
 const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: PerformanceNoteLabelProps) => {
-    const {value, isHigherBetter} = props;
+    const {value, isHigherBetter, formatter} = props;
     let color = 'red';
     if (isHigherBetter) {
         if (value > 0) {
@@ -88,12 +90,18 @@ const PerformanceNoteLabel: React.FC<PerformanceNoteLabelProps> = (props: Perfor
             color = 'green';
         }
     }
+    let formattedValue: string;
+    if (formatter) {
+        formattedValue = formatter(value)
+    } else {
+        formattedValue = value.toString()
+    }
     return (
         <span style={{
             color: color,
             fontSize: '0.8em',
             verticalAlign: "top"
-        }}>{value >= 0 ? '+' : ''}{value.toFixed(2)}</span>
+        }}>{value >= 0 ? '+' : ''}{formattedValue}</span>
     );
 };
 
@@ -158,7 +166,9 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         entries: IProtocolEntryData[],
         screenEntries: IProtocolEntryData[],
         performanceEntries: IProtocolPerformanceEntryData[],
-        steps: number
+        steps: number,
+        checkpoints: IProtocolPerformanceEntryData[],
+        history: ITestProtocolData[],
     }>({
         lastScreen: null,
         lastErrors: [],
@@ -167,13 +177,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         screenEntries: [],
         performanceEntries: [],
         steps: 0,
+        checkpoints: [],
+        history: [],
     })
 
-    const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${protocol.ID}_log`, null);
+    const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${protocol.id}_log`, null);
     useEffect(() => {
         if (protocolEntry === null)
             return;
-        setState(prevState => ({...prevState, entries: [...prevState.entries, protocolEntry.Entry]}))
+        setState(prevState => ({...prevState, entries: [...prevState.entries, protocolEntry.entry]}))
     }, [protocolEntry]);
 
     const updateStatusEntries = (): void => {
@@ -184,19 +196,19 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         let lastScreen: IProtocolEntryData | null = null;
         const screenEntries: IProtocolEntryData[] = [];
         for (let i = length - 1; i > 0; i--) {
-            if (state.entries[i].Source === 'screen') {
+            if (state.entries[i].source === 'screen') {
                 screenEntries.push(state.entries[i])
                 if (lastScreen === null) {
                     lastScreen = state.entries[i];
                 }
             }
-            if (state.entries[i].Source === 'step') {
+            if (state.entries[i].source === 'step') {
                 numSteps++;
                 if (lastStep === null) {
                     lastStep = state.entries[i];
                 }
             }
-            if (state.entries[i].Level === 'error') {
+            if (state.entries[i].level === 'error') {
                 errors.push(state.entries[i]);
             }
         }
@@ -210,63 +222,73 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         }))
     };
 
+    const getCheckpoints = (entries: IProtocolPerformanceEntryData[]) => {
+        if (entries == null) {
+            return []
+        }
+        return entries.filter(p => p.checkpoint !== "schedule").map((value1, index, array) => {
+            if (index !== 0) {
+                value1.executionTime = value1.runtime - array[index - 1].runtime
+            } else {
+                value1.executionTime = value1.runtime
+            }
+            return value1
+        })
+    }
+
+    const getHistoricalCheckpoints = (testProtocols: ITestProtocolData[] | null) => {
+        if (testProtocols == null) {
+            return []
+        }
+        return testProtocols.slice(-2).map(p => {
+            p.performance = p.performance?.filter(p => p.checkpoint !== "schedule").map((value1, index, array) => {
+                if (index !== 0) {
+                    value1.executionTime = value1.runtime - array[index - 1].runtime
+                } else {
+                    value1.executionTime = value1.runtime
+                }
+                return value1
+            })
+            return p
+        })
+    }
+
     useEffect(() => {
-        setState(prevState => ({...prevState, entries: protocol.Entries, performanceEntries: protocol.Performance}))
+        setState(prevState => ({
+            ...prevState,
+            entries: protocol.entries,
+            performanceEntries: protocol.performance ? protocol.performance : [],
+            checkpoints: getCheckpoints(protocol.performance),
+            history: getHistoricalCheckpoints(protocol.testProtocolHistory)
+        }))
     }, [protocol]);
 
     useEffect(() => {
         updateStatusEntries();
     }, [state.entries]);
 
-    interface Checkpoints {
-        Name: string,
-        Runtime: number,
-        ExecutionTime: number,
-    }
-
-    const checkpoints = state.performanceEntries.filter(p => p.Checkpoint !== "schedule").map((value1, index, array) => {
-        if (index !== 0) {
-            value1.ExecutionTime = value1.Runtime - array[index - 1].Runtime
-        } else {
-            value1.ExecutionTime = value1.Runtime
-        }
-        return value1
-    })
-
-    const historicalCheckpoints = protocol.TestProtocolHistory.slice(-2).map(p => {
-        p.Performance = p.Performance.filter(p => p.Checkpoint !== "schedule").map((value1, index, array) => {
-            if (index !== 0) {
-                value1.ExecutionTime = value1.Runtime - array[index - 1].Runtime
-            } else {
-                value1.ExecutionTime = value1.Runtime
-            }
-            return value1
-        })
-        return p
-    })
-
-    const diffAvgFPS = protocol.AvgFPS - protocol.HistAvgFPS;
-    const diffAvgMEM = protocol.AvgMEM - protocol.HistAvgMEM;
-    const diffAvgCPU = protocol.AvgCPU - protocol.HistAvgCPU;
-    const diffAvgVertexCount = protocol.AvgVertexCount - protocol.HistAvgVertexCount;
-    const diffAvgTriangles = protocol.AvgTriangles - protocol.HistAvgTriangles;
+    const diffAvgFPS = protocol.avgFps - protocol.histAvgFps;
+    const diffAvgMEM = protocol.avgMem - protocol.histAvgMem;
+    const diffAvgCPU = protocol.avgCpu - protocol.histAvgCpu;
+    const diffAvgVertexCount = protocol.avgVertexCount - protocol.histAvgVertexCount;
+    const diffAvgTriangles = protocol.avgTriangles - protocol.histAvgTriangles;
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={protocol.TestName}>
+            <TitleCard title={protocol.testName}>
                 <Grid container={true} spacing={1} alignItems="center" sx={{
                     padding: 1,
                     borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                 }}>
                     <Grid>
                         <TestStatusIconComponent
-                            status={protocol.TestResult}/>
+                            status={protocol.testResult}/>
                     </Grid>
                     <Grid>
                         <DateRange sx={{display: 'block'}} color="inherit"/>
                     </Grid>
                     <Grid>
-                        {moment(protocol.StartedAt).format('YYYY/MM/DD HH:mm:ss')}
+                        {moment(protocol.startedAt).format('YYYY/MM/DD HH:mm:ss')}
                     </Grid>
 
                     <Grid>
@@ -274,14 +296,14 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                     </Grid>
 
                     <Grid>
-                        {duration(protocol.StartedAt, protocol.EndedAt)}
+                        {duration(protocol.startedAt, protocol.endedAt)}
                     </Grid>
 
-                    {protocol.Device && <Grid>
+                    {protocol.device && <Grid>
                         <PhoneAndroid sx={{display: 'block'}} color="inherit"/>
                     </Grid>}
-                    {protocol.Device && <Grid>
-                        {protocol.Device && (protocol.Device.Alias.length > 0 ? protocol.Device.Alias : protocol.Device.Name)}
+                    {protocol.device && <Grid>
+                        {protocol.device && (protocol.device.alias.length > 0 ? protocol.device.alias : protocol.device.name)}
                     </Grid>}
 
                     {/**/
@@ -314,7 +336,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                     <Grid container={true}>
                         <TabPanel value={value} index={0}>
                             <Grid container={true} size={{xs: 12, md: 12}}>
-                                {protocol?.TestResult == TestResultState.TestResultFailed &&
+                                {protocol?.testResult == TestResultState.TestResultFailed &&
                                     <Grid container={true} sx={{padding: 1, backgroundColor: '#ff2b40'}}
                                           size={{xs: 12, md: 12}}>
                                         <Grid container={true} size={{xs: 12, md: 12}} spacing={2}>
@@ -322,11 +344,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                 <Grid container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
-                                                            variant={"body2"}>{moment(state.lastStep.CreatedAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
+                                                            variant={"body2"}>{moment(state.lastStep.createdAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
                                                     </Grid>
                                                     <Grid size={{xs: 12, md: 10}}>
                                                         <Typography
-                                                            variant={"body2"}>{state.lastStep.Message}</Typography>
+                                                            variant={"body2"}>{state.lastStep.message}</Typography>
                                                     </Grid>
                                                     <Grid size={12}>
                                                         <Divider/>
@@ -337,11 +359,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                 (<Grid key={`last_error_${index}`} container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
-                                                            variant={"body2"}>{moment(lastError.CreatedAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
+                                                            variant={"body2"}>{moment(lastError.createdAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
                                                     </Grid>
                                                     <Grid size={{xs: 12, md: 10}}>
                                                         <Typography
-                                                            variant={"body2"}>{lastError.Message}</Typography>
+                                                            variant={"body2"}>{lastError.message}</Typography>
                                                     </Grid>
                                                     <Grid size={12}>
                                                         <Divider/>
@@ -352,7 +374,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <Grid size={{xs: 12, md: 12}} container={true}
                                               justifyContent={"center"} alignItems={"center"} justifyItems={"center"}>
                                             {state.lastScreen && <div>
-                                                <Button aria-describedby={'last_screen_' + state.lastScreen.ID}
+                                                <Button aria-describedby={'last_screen_' + state.lastScreen.id}
                                                         variant="contained" onClick={showScreenPopup}>
                                                     Show
                                                 </Button>
@@ -370,7 +392,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                         <CardMedia
                                                             component="img"
                                                             height="400"
-                                                            image={`/api/data/${state.lastScreen.Data}`}
+                                                            image={`/api/data/${state.lastScreen.data}`}
                                                             alt="green iguana"
                                                         />
                                                     </Card>
@@ -392,7 +414,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                 Execution
                                             </Typography>
                                             <Typography variant="h5" style={{whiteSpace: 'nowrap'}}>
-                                                {duration(protocol.StartedAt, protocol.EndedAt)}
+                                                {duration(protocol.startedAt, protocol.endedAt)}
                                             </Typography>
                                         </Grid>
                                     </Grid>
@@ -414,8 +436,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                     FPS
                                                 </Typography>
                                                 <Typography variant="h5">
-                                                    {protocol.AvgFPS?.toFixed(2)} <PerformanceNoteLabel
-                                                    value={diffAvgFPS} isHigherBetter={true}/>
+                                                    {protocol.avgFps?.toFixed(2)} <PerformanceNoteLabel
+                                                    value={diffAvgFPS}
+                                                    isHigherBetter={true}
+                                                    formatter={fixedTwoFormat}
+                                                />
                                                 </Typography>
                                             </Grid>
                                             <Grid>
@@ -424,8 +449,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                     Memory
                                                 </Typography>
                                                 <Typography variant="h5" component="h5">
-                                                    {protocol.AvgMEM?.toFixed(2)}MB <PerformanceNoteLabel
-                                                    value={diffAvgMEM} isHigherBetter={false}/>
+                                                    {byteFormat(protocol.avgMem * 1024 * 1024)} <PerformanceNoteLabel
+                                                    value={diffAvgMEM * 1024 * 1024}
+                                                    isHigherBetter={false}
+                                                    formatter={byteFormat}
+                                                />
                                                 </Typography>
                                             </Grid>
                                             <Grid>
@@ -434,8 +462,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                     CPU
                                                 </Typography>
                                                 <Typography variant="h5" component="h5">
-                                                    {protocol.AvgCPU?.toFixed(2)}% <PerformanceNoteLabel
-                                                    value={diffAvgCPU} isHigherBetter={false}/>
+                                                    {protocol.avgCpu?.toFixed(2)}% <PerformanceNoteLabel
+                                                    value={diffAvgCPU}
+                                                    isHigherBetter={false}
+                                                    formatter={fixedTwoFormat}
+                                                />
                                                 </Typography>
                                             </Grid>
                                             <Grid>
@@ -444,8 +475,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                     VertexCount
                                                 </Typography>
                                                 <Typography variant="h5" component="h5">
-                                                    {protocol.AvgVertexCount?.toFixed(2)} <PerformanceNoteLabel
-                                                    value={diffAvgVertexCount} isHigherBetter={false}/>
+                                                    {kFormat(protocol.avgVertexCount)} <PerformanceNoteLabel
+                                                    value={diffAvgVertexCount}
+                                                    isHigherBetter={false}
+                                                    formatter={kFormat}
+                                                />
                                                 </Typography>
                                             </Grid>
                                             <Grid>
@@ -454,8 +488,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                     Triangles
                                                 </Typography>
                                                 <Typography variant="h5" component="h5">
-                                                    {protocol.AvgTriangles?.toFixed(2)} <PerformanceNoteLabel
-                                                    value={diffAvgTriangles} isHigherBetter={false}/>
+                                                    {kFormat(protocol.avgTriangles)} <PerformanceNoteLabel
+                                                    value={diffAvgTriangles}
+                                                    isHigherBetter={false}
+                                                    formatter={kFormat}
+                                                />
                                                 </Typography>
                                             </Grid>
                                         </Grid>
@@ -483,15 +520,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <LineChart
                                             width={600}
                                             height={300}
-                                            data={state.performanceEntries}
+                                            data={state.performanceEntries === null ? [] : state.performanceEntries}
                                             syncId="anyId"
                                             margin={{top: 10, right: 20, left: 10, bottom: 5}}
                                         >
                                             <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                            <XAxis dataKey="Checkpoint"/>
+                                            <XAxis dataKey="checkpoint"/>
                                             <YAxis/>
-                                            <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                            <Line type="monotone" dataKey="FPS" stroke="#ff7300" yAxisId={0}>
+                                            <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}} formatter={value1 => fixedTwoFormat(value1 as number)}/>
+                                            <Line type="monotone" dataKey="fps" stroke="#ff7300" yAxisId={0}>
                                                 <LabelList content={<CustomLineLabel unit={'fps'}/>}/>
                                             </Line>
                                         </LineChart>
@@ -506,15 +543,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <LineChart
                                             width={600}
                                             height={300}
-                                            data={state.performanceEntries}
+                                            data={state.performanceEntries == null ? [] : state.performanceEntries}
                                             syncId="anyId"
                                             margin={{top: 10, right: 20, left: 10, bottom: 5}}
                                         >
                                             <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                            <XAxis dataKey="Checkpoint"/>
+                                            <XAxis dataKey="checkpoint"/>
                                             <YAxis/>
-                                            <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                            <Line type="monotone" dataKey="MEM" stroke="#ff7300" yAxisId={0}>
+                                            <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}} formatter={value1 => byteFormat((value1 as number) * 1024 * 1024)}/>
+                                            <Line type="monotone" dataKey="mem" stroke="#ff7300" yAxisId={0}>
                                                 <LabelList content={<CustomLineLabel unit={'MB'}/>}/>
                                             </Line>
                                         </LineChart>
@@ -529,15 +566,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <LineChart
                                             width={600}
                                             height={300}
-                                            data={state.performanceEntries}
+                                            data={state.performanceEntries == null ? [] : state.performanceEntries}
                                             syncId="anyId"
                                             margin={{top: 10, right: 20, left: 10, bottom: 5}}
                                         >
                                             <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                            <XAxis dataKey="Checkpoint"/>
+                                            <XAxis dataKey="checkpoint"/>
                                             <YAxis/>
                                             <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                            <Line type="monotone" dataKey="CPU" stroke="#ff7300" yAxisId={0}>
+                                            <Line type="monotone" dataKey="cpu" stroke="#ff7300" yAxisId={0}>
                                                 <LabelList content={<CustomLineLabel unit={'%'}/>}/>
                                             </Line>
                                         </LineChart>
@@ -553,15 +590,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                     <LineChart
                                         width={600}
                                         height={300}
-                                        data={state.performanceEntries}
+                                        data={state.performanceEntries == null ? [] : state.performanceEntries}
                                         syncId="anyId"
                                         margin={{top: 10, right: 20, left: 10, bottom: 5}}
                                     >
                                         <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                        <XAxis dataKey="Checkpoint"/>
+                                        <XAxis dataKey="checkpoint"/>
                                         <YAxis/>
                                         <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                        <Line type="monotone" dataKey="VertexCount" stroke="#ff7300" yAxisId={0}>
+                                        <Line type="monotone" dataKey="vertexCount" stroke="#ff7300" yAxisId={0}>
                                             <LabelList content={<CustomLineLabel unit={''}/>}/>
                                         </Line>
                                     </LineChart>
@@ -576,70 +613,68 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                     <LineChart
                                         width={600}
                                         height={300}
-                                        data={state.performanceEntries}
+                                        data={state.performanceEntries == null ? [] : state.performanceEntries}
                                         syncId="anyId"
                                         margin={{top: 10, right: 20, left: 10, bottom: 5}}
                                     >
                                         <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                        <XAxis dataKey="Checkpoint"/>
+                                        <XAxis dataKey="checkpoint"/>
                                         <YAxis/>
                                         <Tooltip contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                        <Line type="monotone" dataKey="Triangles" stroke="#ff7300" yAxisId={0}>
+                                        <Line type="monotone" dataKey="triangles" stroke="#ff7300" yAxisId={0}>
                                             <LabelList content={<CustomLineLabel unit={''}/>}/>
                                         </Line>
                                     </LineChart>
                                 </ResponsiveContainer>
                             </Grid>
                         </TabPanel>
-                        {checkpoints !== undefined && checkpoints.length > 0 &&
+                        {state.checkpoints.length > 0 &&
                             <TabPanel value={value} index={5}>
                                 <Grid container={true} sx={{padding: 1}} spacing={1}>
-                                    <Grid size={{xs: 12, md: 12}}>
-                                        <Typography gutterBottom={true} variant="subtitle1">
-                                            Checkpoints
-                                        </Typography>
-                                        <Divider/>
-                                        <ResponsiveContainer width={"100%"} height={200}>
-                                            <LineChart
-                                                width={600}
-                                                height={300}
-                                                margin={{top: 10, right: 20, left: 10, bottom: 5}}
-                                            >
-                                                <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
-                                                <XAxis xAxisId={'pruntime'} dataKey="Checkpoint"/>
-                                                <XAxis xAxisId={'pexecutiontime'} dataKey="Checkpoint"
-                                                       hide={true}/>
-                                                <YAxis/>
-                                                <Tooltip
-                                                    contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
-                                                <Legend/>
-                                                {
-                                                    historicalCheckpoints.map((e, i) => (
-                                                        <XAxis key={`hist_checkpoint_xaxis_${i}`}
-                                                               xAxisId={`xachis_${i}`} dataKey="Checkpoint"
-                                                               hide={true}/>))
-                                                }
-                                                {
-                                                    historicalCheckpoints.map((e, i) => <Line
-                                                        key={`hist_checkpoint_line_${i}`}
-                                                        data={e.Performance} type="monotone" dataKey="Runtime"
-                                                        stroke="#004467" strokeDasharray="5 5"
-                                                        xAxisId={`xachis_${i}`}>
-                                                        <LabelList content={<CustomLineLabel unit={'s'}/>}/>
-                                                    </Line>)
-                                                }
-                                                <Line data={checkpoints} type="monotone" dataKey="Runtime"
-                                                      stroke="#ff7300" xAxisId={'pruntime'}>
+                                    <Typography gutterBottom={true} variant="subtitle1">
+                                        Checkpoints
+                                    </Typography>
+                                    <Divider/>
+                                    <ResponsiveContainer width={"100%"} height={200}>
+                                        <LineChart
+                                            width={600}
+                                            height={300}
+                                            margin={{top: 10, right: 20, left: 10, bottom: 5}}
+                                        >
+                                            <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3"/>
+                                            <XAxis xAxisId={'pruntime'} dataKey="checkpoint"/>
+                                            <XAxis xAxisId={'pexecutiontime'} dataKey="checkpoint"
+                                                   hide={true}/>
+                                            <YAxis/>
+                                            <Tooltip
+                                                contentStyle={{color: 'primary', backgroundColor: 'background'}}/>
+                                            <Legend/>
+                                            {
+                                                state.history.map((e, i) => (
+                                                    <XAxis key={`hist_checkpoint_xaxis_${i}`}
+                                                           xAxisId={`xachis_${i}`} dataKey="checkpoint"
+                                                           hide={true}/>))
+                                            }
+                                            {
+                                                state.history.map((e, i) => <Line
+                                                    key={`hist_checkpoint_line_${i}`}
+                                                    data={e.performance} type="monotone" dataKey="runtime"
+                                                    stroke="#004467" strokeDasharray="5 5"
+                                                    xAxisId={`xachis_${i}`}>
                                                     <LabelList content={<CustomLineLabel unit={'s'}/>}/>
-                                                </Line>
-                                                <Line data={checkpoints} type="monotone"
-                                                      dataKey="ExecutionTime" stroke="#8884d8"
-                                                      xAxisId={'pexecutiontime'}>
-                                                    <LabelList content={<CustomLineLabel unit={'s'}/>}/>
-                                                </Line>
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    </Grid>
+                                                </Line>)
+                                            }
+                                            <Line data={state.checkpoints} type="monotone" dataKey="runtime"
+                                                  stroke="#ff7300" xAxisId={'pruntime'}>
+                                                <LabelList content={<CustomLineLabel unit={'s'}/>}/>
+                                            </Line>
+                                            <Line data={state.checkpoints} type="monotone"
+                                                  dataKey="executionTime" stroke="#8884d8"
+                                                  xAxisId={'pexecutiontime'}>
+                                                <LabelList content={<CustomLineLabel unit={'s'}/>}/>
+                                            </Line>
+                                        </LineChart>
+                                    </ResponsiveContainer>
                                 </Grid>
                             </TabPanel>
                         }

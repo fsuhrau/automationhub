@@ -31,7 +31,7 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
     const {appId: urlAppId} = useParams<{ appId: string }>();
 
     // redirect to project settings if there are no apps
-    if (project.Apps === undefined || project.Apps.length === 0) {
+    if (project.apps === undefined || project.apps.length === 0) {
         return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
     }
 
@@ -39,7 +39,7 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
     if (urlAppId) {
         appIdString = urlAppId.replace("app:", "")
     } else {
-        appIdString = localStorage.getItem('appId') || (project.Apps.length > 0 ? project.Apps[0].ID : "");
+        appIdString = localStorage.getItem('appId') || (project.apps.length > 0 ? project.apps[0].id : "");
     }
     const appId = appIdString !== "" ? +appIdString : null;
 

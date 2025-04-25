@@ -21,10 +21,10 @@ const UsersTab: React.FC = () => {
     const {setError} = useError()
 
     useEffect(() => {
-        getUsers(projectIdentifier).then(response => {
+        getUsers(projectIdentifier).then(users => {
             dispatch({
                 type: HubStateActions.UsersUpdate,
-                payload: response.data
+                payload: users
             })
         }).catch(e => {
             setError(e)
@@ -46,10 +46,10 @@ const UsersTab: React.FC = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {state.users?.map((user) => <TableRow key={`user_${user.ID}`}>
-                                    <TableCell>{user.Name}</TableCell>
-                                    <TableCell>{user.Email}</TableCell>
-                                    <TableCell>{user.Role}</TableCell>
+                                {state.users?.map((user) => <TableRow key={`user_${user.id}`}>
+                                    <TableCell>{user.name}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.role}</TableCell>
                                     <TableCell>
                                     </TableCell>
                                 </TableRow>)}

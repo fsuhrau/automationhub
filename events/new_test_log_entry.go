@@ -3,8 +3,8 @@ package events
 var NewTestLogEntry newTestLogEntry
 
 type NewTestLogEntryPayload struct {
-	TestRunID uint
-	Entry     interface{}
+	TestRunID uint        `json:"testRunId"`
+	Entry     interface{} `json:"entry"`
 }
 
 type newTestLogEntry struct {

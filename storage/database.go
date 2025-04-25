@@ -41,24 +41,7 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 	}
 	tx := db.Begin()
 
-	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		migrations.IntroduceProjects,
-		migrations.AddOsInfosToDevice,
-		migrations.AddPerformanceAverage,
-		migrations.AddNodes,
-		migrations.AddUnityTestCategory,
-		migrations.AddAliasToDevice,
-		migrations.AddPlatformTypeToDevice,
-		migrations.AddStatusToNode,
-		migrations.AddParentProtocolIdToTestProtocol,
-		migrations.AddRoleToUser,
-		migrations.AddIndexForUser,
-		migrations.RemoveRunAllTestsFromUnityConfig,
-		migrations.AddGameMetricsToPerformance,
-		migrations.AddTargetVersionToDevice,
-		migrations.AddStartURLToTestRun,
-		migrations.RemoveParameterFromDevice,
-	})
+	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(migrations.InitSchema)
 
 	if err = m.Migrate(); err != nil {

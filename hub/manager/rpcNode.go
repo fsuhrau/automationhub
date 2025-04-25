@@ -15,7 +15,7 @@ type RPCClient interface {
 	IsAppInstalled(deviceId string, parameter *app.Parameter) (bool, error)
 	InstallApp(deviceId string, parameter *app.Parameter) error
 	UninstallApp(deviceId string, parameter *app.Parameter) error
-	StartApp(deviceId string, parameter *app.Parameter, sessionId string, nodeUrl string) error
+	StartApp(deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(deviceId string, parameter *app.Parameter) error
 	IsConnected(deviceId string) bool
 	StartRecording(deviceId string, path string) error

@@ -22,15 +22,15 @@ var (
 
 type IOSDevice struct {
 	BuildVersion     string `json:"BuildVersion"`
-	ModelSDK         string `json:"modelSDK"`
+	ModelSDK         string `json:"ModelSDK"`
 	DeviceIdentifier string `json:"DeviceIdentifier"`
 	DeviceClass      string `json:"DeviceClass"`
 	ProductType      string `json:"ProductType"`
 	DeviceName       string `json:"DeviceName"`
 	ProductVersion   string `json:"ProductVersion"`
-	ModelArch        string `json:"modelArch"`
+	ModelArch        string `json:"ModelArch"`
 	HardwareModel    string `json:"HardwareModel"`
-	ModelName        string `json:"modelName"`
+	ModelName        string `json:"ModelName"`
 }
 
 type Detect struct {

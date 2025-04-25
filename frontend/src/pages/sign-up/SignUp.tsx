@@ -97,7 +97,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
 
     if (!name.value || name.value.length < 1) {
       setNameError(true);
-      setNameErrorMessage('Name is required.');
+      setNameErrorMessage('name is required.');
       isValid = false;
     } else {
       setNameError(false);

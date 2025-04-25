@@ -1,7 +1,5 @@
 package models
 
-import "gorm.io/gorm"
-
 type StepType uint
 
 const (
@@ -14,11 +12,11 @@ const (
 )
 
 type ScenarioStep struct {
-	gorm.Model
-	TestConfigScenarioID uint
-	StepType             StepType
-	InstallIdentifier    string
-	Checkpoint           string
-	AppIdentifier        string
-	TestName             string
+	Model
+	TestConfigScenarioID uint     `json:"testConfigScenarioId"`
+	StepType             StepType `json:"stepType"`
+	InstallIdentifier    string   `json:"installIdentifier"`
+	Checkpoint           string   `json:"checkpoint"`
+	AppIdentifier        string   `json:"appIdentifier"`
+	TestName             string   `json:"testName"`
 }

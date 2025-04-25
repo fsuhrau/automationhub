@@ -19,22 +19,22 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
 
     const renderActions = (device: any) => {
         return <ButtonGroup variant={"text"} aria-label="text button group">
-            {device.IsLocked && (
+            {device.isLocked && (
                 <Button color="primary" size="small" variant="outlined"
                         endIcon={<LockOpen/>}
-                        onClick={(e) => onUnlockDevice(device.ID)}>
+                        onClick={(e) => onUnlockDevice(device.id)}>
                 </Button>)
             }
-            {device.Connection && (
+            {device.connection && (
                 <Button color="primary" size="small" variant="outlined"
                         endIcon={<PlayArrow/>}
-                        onClick={(e) => onSelectForRun(device.ID)}>
+                        onClick={(e) => onSelectForRun(device.id)}>
                     Run
                 </Button>)
             }
             <Button color="primary" size={'small'}
                     onClick={(e) => {
-                        onOpenDeviceDetails(device.ID);
+                        onOpenDeviceDetails(device.id);
                     }}>
                 <ArrowForward/>
             </Button>
@@ -43,33 +43,33 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
 
     const columns: GridColDef[] = [
         {
-            field: 'ID',
+            field: 'id',
             headerName: 'ID',
         },
         {
-            field: 'Name',
+            field: 'mame',
             headerName: 'Name/Identifier',
             flex: 1,
             minWidth: 90,
             renderCell: (params) => (<Grid container={true}>
-                <Grid size={12}>{params.row.Alias.length > 0 ? params.row.Alias : params.row.Name}</Grid>
-                <Grid size={12}>{params.row.DeviceIdentifier}</Grid>
+                <Grid size={12}>{params.row.alias.length > 0 ? params.row.alias : params.row.name}</Grid>
+                <Grid size={12}>{params.row.deviceIdentifier}</Grid>
             </Grid>)
         },
         {
-            field: 'OS',
+            field: 'os',
             headerName: 'OS',
             flex: 1,
             minWidth: 90,
         },
         {
-            field: 'OSVersion',
+            field: 'osVersion',
             headerName: 'Version',
             flex: 0.5,
             minWidth: 90,
         },
         {
-            field: 'Status',
+            field: 'status',
             headerName: 'Status',
             headerAlign: 'right',
             align: 'right',
@@ -78,7 +78,7 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             renderCell: (params) => deviceState(params.value),
         },
         {
-            field: 'Session',
+            field: 'session',
             headerName: 'Session',
             headerAlign: 'right',
             align: 'right',
@@ -104,7 +104,7 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             getRowClassName={(params) =>
                 params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
             }
-            getRowId={(row) => row.ID}
+            getRowId={(row) => row.id}
             initialState={{
                 pagination: {paginationModel: {pageSize: 20}},
             }}

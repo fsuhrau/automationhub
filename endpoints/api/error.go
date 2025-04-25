@@ -6,7 +6,7 @@ import (
 )
 
 type ErrorResponse struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func (s *Service) error(c *gin.Context, status int, err error) {

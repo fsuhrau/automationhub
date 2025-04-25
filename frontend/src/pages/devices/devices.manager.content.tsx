@@ -32,16 +32,16 @@ const DevicesManagerContent: React.FC = () => {
     }
 
     useEffect(() => {
-        getAllDevices(projectIdentifier).then(response => {
-            setDevices(response.data);
+        getAllDevices(projectIdentifier).then(devices => {
+            setDevices(devices);
         }).catch(e => {
             setError(e);
         });
     }, [projectIdentifier]);
 
     const unlockDevice = (deviceId: number) => {
-        postUnlockDevice(projectIdentifier, deviceId).then(response => {
-            setDevices(devices.map(d => d.ID === deviceId ? response.data : d) as IDeviceData[]);
+        postUnlockDevice(projectIdentifier, deviceId).then(device => {
+            setDevices(devices.map(d => d.id === deviceId ? device : d) as IDeviceData[]);
         }).catch(ex => setError(ex));
     }
 
@@ -89,9 +89,9 @@ const DevicesManagerContent: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {devices.map((device) => <TableRow key={`device_table_row_${device.ID}`}>
+                        {devices.map((device) => <TableRow key={`device_table_row_${device.id}`}>
                             <TableCell component="th" scope="row">
-                                {device.Alias.length > 0 ? device.Alias : device.Name}
+                                {device.alias.length > 0 ? device.alias : device.name}
                             </TableCell>
                             <TableCell>
                             </TableCell>
@@ -100,14 +100,14 @@ const DevicesManagerContent: React.FC = () => {
                             <TableCell>
                             </TableCell>
                             <TableCell>
-                                {deviceState(device.Status)}
-                                {device.Status === DeviceStateType.Locked &&
-                                    <Button onClick={() => unlockDevice(device.ID)}>Unlock</Button>}
+                                {deviceState(device.status)}
+                                {device.status === DeviceStateType.Locked &&
+                                    <Button onClick={() => unlockDevice(device.id)}>Unlock</Button>}
                             </TableCell>
                             <TableCell align="right">
                                 <IconButton color="primary" size={'small'}
                                             onClick={(e) => {
-                                                openDetails(device.ID);
+                                                openDetails(device.id);
                                             }}>
                                     <ArrowForward/>
                                 </IconButton>

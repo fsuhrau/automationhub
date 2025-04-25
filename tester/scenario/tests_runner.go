@@ -217,26 +217,26 @@ func (tr *testsRunner) workerFunction(channel workerChannel, dev base.DeviceMap,
 
 func (tr *testsRunner) runTest(dev base.DeviceMap, task action.TestStart, method string) {
 	/*
-		prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.ID, fmt.Sprintf("%s/%s", task.Class, method))
+		prot, err := tr.ProtocolWriter.NewProtocol(dev.Model.id, fmt.Sprintf("%s/%s", task.class, method))
 		if err != nil {
-			tr.LogError("unable to create LogWriter for %s: %v", dev.Device.DeviceID(), err)
+			tr.LogError("unable to create LogWriter for %s: %v", dev.device.deviceId(), err)
 		}
-		dev.Device.SetLogWriter(prot.Writer)
+		dev.device.SetLogWriter(prot.Writer)
 		defer func() {
-			dev.Device.SetLogWriter(nil)
+			dev.device.SetLogWriter(nil)
 			prot.Close()
 		}()
 
-		tr.LogInfo("Run test '%s/%s' on device '%s'", task.Class, method, dev.Device.DeviceID())
+		tr.LogInfo("Run test '%s/%s' on device '%s'", task.class, method, dev.device.deviceId())
 		executor := NewExecutor(tr.DeviceManager)
-		if err := executor.Execute(dev.Device, task, 5*time.Minute); err != nil {
-			rawData, _, _, err := dev.Device.GetScreenshot()
-			nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.TestRun.SessionID, dev.Device.DeviceID(), task.Method))
+		if err := executor.Execute(dev.device, task, 5*time.Minute); err != nil {
+			rawData, _, _, err := dev.device.GetScreenshot()
+			nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), tr.testRun.sessionId, dev.device.deviceId(), task.method))
 			filePath := fmt.Sprintf("test/data/%x.png", sha1.Sum(nameData))
 			dir, _ := filepath.Split(filePath)
 			os.MkdirAll(dir, os.ModePerm)
 			os.WriteFile(filePath, rawData, os.ModePerm)
-			dev.Device.Data("screen", filePath)
+			dev.device.data("screen", filePath)
 			tr.LogError("test execution failed: %v", err)
 		} else {
 			tr.LogInfo("test execution finished")
@@ -268,7 +268,7 @@ func (tr *testsRunner) stepInstallApp(d device.Device, index int, steps []models
 
 	//	currentStep := steps[index]
 	//	currentStep.AppIdentifier
-	//	app.Parameter{}
+	//	app.parameter{}
 	//	d.InstallApp()
 
 	tr.executeSequence(d, index+1, steps)

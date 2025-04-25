@@ -37,8 +37,8 @@ export default function MenuContent() {
     const mainListItems = [
         { text: 'Home', ref: `/project/${projectIdentifier}/app:${appId}/home`, icon: <HomeRoundedIcon /> },
         { text: 'Tests', ref: appId ? `/project/${projectIdentifier}/app:${appId}/tests` : `/project/${projectIdentifier}/tests`, icon: <AnalyticsRoundedIcon /> },
-        { text: 'Apps', ref: appId ? `/project/${projectIdentifier}/app:${appId}/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
-        { text: 'Devices', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon /> },
+        { text: 'Apps / Bundles', ref: appId ? `/project/${projectIdentifier}/app:${appId}/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
+        { text: 'Device Pool', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon /> },
     ];
 
     const secondaryListItems = [

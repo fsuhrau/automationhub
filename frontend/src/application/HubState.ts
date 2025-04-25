@@ -4,6 +4,7 @@ import IHubStatsData from "../types/hub.stats";
 import IAccessTokenData from "../types/access.token";
 import {INodeData} from "../types/node";
 import {IUserData} from "../types/user";
+import IDeviceData from "../types/device";
 
 export enum HubStateActions {
     ProjectsUpdate = 'ProjectsUpdate',
@@ -19,6 +20,9 @@ export enum HubStateActions {
     NodeAdd = 'NodeAdd',
     NodeDelete = 'NodeDelete',
     UsersUpdate = 'UsersUpdate',
+    UpdateDevices = 'UpdateDevices',
+    UpdateDevice = 'UpdateDevice',
+    UpdateDeviceState = "UpdateDeviceState",
 }
 
 export interface HubStateAction {
@@ -34,6 +38,7 @@ export interface HubState {
     nodes: INodeData[] | null,
     apps: IAppData[] | null,
     users: IUserData[] | null,
+    devices: IDeviceData[] | null,
 }
 
 export const InitialHubState: HubState = {
@@ -44,6 +49,7 @@ export const InitialHubState: HubState = {
     nodes: null,
     apps: null,
     users: null,
+    devices: null,
 }
 
 export function hubReducer(state: HubState, action: HubStateAction): HubState {
@@ -72,7 +78,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
         case HubStateActions.AppAttributeUpdate: {
             return {
                 ...state,
-                apps: state.apps ? state.apps.map(a => (a.ID as number) === (payload.appId as number) ? {
+                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
                     ...a,
                     [payload.attribute]: payload.value
                 } as IAppData : a as IAppData) : [],
@@ -82,7 +88,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
             return {
                 ...state,
                 projects: state.projects!.map(p => {
-                    if (p.Identifier == payload.projectIdentifier) {
+                    if (p.identifier == payload.projectIdentifier) {
                         return {
                             ...p,
                             [payload.attribute]: payload.value
@@ -119,7 +125,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
         case HubStateActions.AccessTokenDelete: {
             return {
                 ...state,
-                accessTokens: state.accessTokens ? state.accessTokens.filter(token => token.ID !== payload) : [],
+                accessTokens: state.accessTokens ? state.accessTokens.filter(token => token.id !== payload) : [],
             }
         }
         case HubStateActions.NodesUpdate: {
@@ -137,7 +143,28 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
         case HubStateActions.NodeDelete: {
             return {
                 ...state,
-                nodes: state.nodes ? state.nodes.filter(node => node.ID !== payload) : [],
+                nodes: state.nodes ? state.nodes.filter(node => node.id !== payload) : [],
+            }
+        }
+        case HubStateActions.UpdateDevices: {
+            return {
+                ...state,
+                devices: payload,
+            }
+        }
+        case HubStateActions.UpdateDevice: {
+            return {
+                ...state,
+                devices: state.devices ? state.devices?.map(d => d.id === payload.id ? payload : d) : [],
+            }
+        }
+        case HubStateActions.UpdateDeviceState: {
+            return {
+                ...state,
+                devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
+                    ...d,
+                    status: payload.deviceState
+                } : d)] : []
             }
         }
         default:

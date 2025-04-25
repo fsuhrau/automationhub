@@ -1,17 +1,15 @@
 package models
 
-import "gorm.io/gorm"
-
 type TestRun struct {
-	gorm.Model
-	TestID       uint
-	Test         *Test
-	AppBinaryID  uint
-	AppBinary    *AppBinary
-	StartURL     string
-	SessionID    string
-	Parameter    string
-	Protocols    []TestProtocol
-	Log          []TestRunLogEntry
-	DeviceStatus []TestRunDeviceStatus
+	Model
+	TestID       uint                  `json:"testId"`
+	Test         *Test                 `json:"test"`
+	AppBinaryID  uint                  `json:"appBinaryId"`
+	AppBinary    *AppBinary            `json:"appBinary"`
+	StartURL     string                `json:"startUrl"`
+	SessionID    string                `json:"sessionId"`
+	Parameter    string                `json:"parameter"`
+	Protocols    []TestProtocol        `json:"protocols"`
+	Log          []TestRunLogEntry     `json:"log"`
+	DeviceStatus []TestRunDeviceStatus `json:"deviceStatus"`
 }

@@ -218,7 +218,6 @@ Treeitem.prototype.handleKeydown = function (event) {
 };
 
 Treeitem.prototype.handleClick = function (event) {
-  // debugger;
   if (this.isExpandable) {
     if (this.isExpanded()) {
       this.tree.collapseTreeitem(this);

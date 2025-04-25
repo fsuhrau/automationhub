@@ -129,7 +129,7 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 func (d *Device) InstallApp(params *app.Parameter) error {
 	return nil
 	/*
-		device, err := ios.GetDevice(d.DeviceID())
+		device, err := ios.GetDevice(d.deviceId())
 		if err != nil {
 			return err
 		}
@@ -137,7 +137,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 		if err != nil {
 			return err
 		}
-		err = conn.SendFile(params.AppPath)
+		err = conn.SendFile(params.appPath)
 		return err
 	*/
 }
@@ -145,7 +145,7 @@ func (d *Device) InstallApp(params *app.Parameter) error {
 func (d *Device) UninstallApp(params *app.Parameter) error {
 	return nil
 	/*
-		device, err := ios.GetDevice(d.DeviceID())
+		device, err := ios.GetDevice(d.deviceId())
 		if err != nil {
 			return err
 		}
@@ -153,16 +153,16 @@ func (d *Device) UninstallApp(params *app.Parameter) error {
 		if err != nil {
 			return err
 		}
-		err = svc.Uninstall(params.Identifier)
+		err = svc.Uninstall(params.identifier)
 		return err
 	*/
 }
 
-func (d *Device) StartApp(params *app.Parameter, sessionId string, nodeUrl string) error {
+func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
 	if d.webDriver == nil {
 		return fmt.Errorf("webdriver not connected")
 	}
-	return d.webDriver.Launch(params.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "NODE_URL", nodeUrl})
+	return d.webDriver.Launch(appParams.Identifier, true, []string{"SESSION_ID", sessionId, "DEVICE_ID", d.deviceID, "NODE_URL", nodeUrl})
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
@@ -184,7 +184,7 @@ func (d *Device) IsAppConnected() bool {
 }
 
 func (d *Device) StartRecording(path string) error {
-	// d.recordingSessionProcess = devices.NewCommand("xcrun", "simctl", "io", d.DeviceID(), "recordVideo", "—", "type=mp4", fmt.Sprintf("./%s.mp4", path))
+	// d.recordingSessionProcess = devices.NewCommand("xcrun", "simctl", "io", d.deviceId(), "recordVideo", "—", "type=mp4", fmt.Sprintf("./%s.mp4", path))
 	// if err := d.recordingSessionProcess.Start(); err != nil {
 	// 	return err
 	// }
@@ -225,7 +225,7 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	}
 
 	/*
-		cmd := exec2.NewCommand("idevicescreenshot", "-u", d.deviceID, fileName)
+		cmd := exec2.NewCommand("idevicescreenshot", "-u", d.deviceId, fileName)
 		if err := cmd.Run(); err != nil {
 			return nil, width, height, err
 		}

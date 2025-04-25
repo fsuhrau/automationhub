@@ -107,10 +107,10 @@ type Request struct {
 
 type Connect struct {
 	CustomerId string  `json:"customerId"`
-	AppID      string  `json:"appID"`
+	AppID      string  `json:"appId"`
 	AppType    AppType `json:"appType"`
-	DeviceID   string  `json:"deviceID"`
-	SessionID  string  `json:"sessionID"`
+	DeviceID   string  `json:"deviceId"`
+	SessionID  string  `json:"sessionId"`
 	Version    string  `json:"version"`
 	AppVersion string  `json:"appVersion"`
 }
@@ -147,11 +147,11 @@ type TestDetails struct {
 
 type PerformanceData struct {
 	Checkpoint  string  `json:"checkpoint"`
-	CPU         float64 `json:"CPU"`
+	CPU         float64 `json:"cpu"`
 	Memory      float64 `json:"memory"`
-	FPS         float64 `json:"FPS"`
-	VertexCount float64 `json:"VertexCount"`
-	Triangles   float64 `json:"Triangles"`
+	FPS         float64 `json:"fps"`
+	VertexCount float64 `json:"vertexCount"`
+	Triangles   float64 `json:"triangles"`
 }
 
 type ResponseData struct {
