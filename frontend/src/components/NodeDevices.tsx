@@ -59,7 +59,7 @@ const NodeDevices: React.FC = () => {
 
     const unlockDevice = (deviceId: number) => {
         postUnlockDevice(projectIdentifier, deviceId).then(device => {
-            dispatch({type: HubStateActions.UpdateDevice, payload: device})
+            dispatch({type: HubStateActions.UnlockDevice, payload: {deviceId: deviceId}})
         }).catch(ex => setError(ex));
     }
 

@@ -23,6 +23,7 @@ export enum HubStateActions {
     UpdateDevices = 'UpdateDevices',
     UpdateDevice = 'UpdateDevice',
     UpdateDeviceState = "UpdateDeviceState",
+    UnlockDevice = "UnlockDevice",
 }
 
 export interface HubStateAction {
@@ -164,6 +165,15 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
                     ...d,
                     status: payload.deviceState
+                } : d)] : []
+            }
+        }
+        case HubStateActions.UnlockDevice: {
+            return {
+                ...state,
+                devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
+                    ...d,
+                    isLocked: false,
                 } : d)] : []
             }
         }
