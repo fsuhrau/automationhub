@@ -24,6 +24,9 @@ export enum HubStateActions {
     UpdateDevice = 'UpdateDevice',
     UpdateDeviceState = "UpdateDeviceState",
     UnlockDevice = "UnlockDevice",
+    AddAppParameter = 'AddAppParameter',
+    UpdateAppParameter = 'UpdateAppParameter',
+    DeleteAppParameter = 'DeleteAppParameter',
 }
 
 export interface HubStateAction {
@@ -82,6 +85,33 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
                     ...a,
                     [payload.attribute]: payload.value
+                } as IAppData : a as IAppData) : [],
+            }
+        }
+        case HubStateActions.AddAppParameter: {
+            return {
+                ...state,
+                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
+                    ...a,
+                    parameter: [...a.parameter, payload],
+                } as IAppData : a as IAppData) : [],
+            }
+        }
+        case HubStateActions.UpdateAppParameter: {
+            return {
+                ...state,
+                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
+                    ...a,
+                    parameter: a.parameter.map(p => p.id === payload.id ? payload : p),
+                } as IAppData : a as IAppData) : [],
+            }
+        }
+        case HubStateActions.DeleteAppParameter: {
+            return {
+                ...state,
+                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
+                    ...a,
+                    parameter: a.parameter.filter(p => p.id !== payload.id),
                 } as IAppData : a as IAppData) : [],
             }
         }

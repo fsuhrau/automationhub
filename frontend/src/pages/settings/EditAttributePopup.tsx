@@ -57,7 +57,7 @@ const EditAttributePopup: React.FC<EditAttributePopupProps> = (props: EditAttrib
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleEditClose}>Cancel</Button>
-                <Button onClick={handleEditSubmit}>Save</Button>
+                <Button variant={'contained'} onClick={handleEditSubmit}>Save</Button>
             </DialogActions>
         </Dialog>
     )

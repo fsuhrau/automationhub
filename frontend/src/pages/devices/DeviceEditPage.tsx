@@ -98,7 +98,6 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
     };
 
     const onSaveClick = () => {
-        debugger;
         device.customParameter = uiState.customParameter;
         device.isAcknowledged = uiState.acknowledged;
         device.alias = uiState.alias;
@@ -125,7 +124,7 @@ const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProp
                             platformType={device.platformType}/> {`Device: ${device.name} (${device.deviceIdentifier})`}
                     </Typography>
                     <ButtonGroup variant="contained" aria-label="text button group">
-                        <Button variant="contained" size={'small'} onClick={navigateBack}>Cancel</Button>
+                        <Button variant="outlined" size={'small'} onClick={navigateBack}>Cancel</Button>
                         <Button color={'primary'} variant="contained" size={'small'} onClick={onSaveClick}>Save</Button>
                     </ButtonGroup>
                 </Box>}>

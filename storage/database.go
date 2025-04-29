@@ -9,7 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"time"
 )
+
+type Model struct {
+	ID        uint           `json:"id" gorm:"primarykey"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"index"`
+}
 
 var db *gorm.DB
 
@@ -41,7 +49,33 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 	}
 	tx := db.Begin()
 
-	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{})
+	m := gormigrate.New(tx, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID: "AddAppParameter",
+			Migrate: func(g *gorm.DB) error {
+
+				type App struct {
+					Model
+				}
+
+				type AppParameter struct {
+					Model
+					AppID uint   `json:"appId"`
+					App   *App   `json:"app" gorm:"foreignKey:AppID"`
+					Name  string `json:"name"`
+					Type  string `json:"type"`
+				}
+
+				if err := g.AutoMigrate(&AppParameter{}); err != nil {
+					return err
+				}
+				if err := g.Migrator().DropColumn(&App{}, "DefaultParameter"); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	})
 	m.InitSchema(migrations.InitSchema)
 
 	if err = m.Migrate(); err != nil {

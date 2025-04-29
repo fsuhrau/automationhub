@@ -298,7 +298,7 @@ func extractParams(param string) map[string]string {
 	var env map[string]string
 	env = make(map[string]string)
 
-	params := strings.Split(param, "\n")
+	params := strings.Split(param, ";")
 	for _, p := range params {
 		kv := strings.Split(p, "=")
 		if len(kv) > 1 {

@@ -1,7 +1,17 @@
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import {Avatar, Divider, List, ListItem, ListItemAvatar, ListItemText, ListSubheader, Typography} from "@mui/material";
+import {
+    Avatar,
+    Chip,
+    Divider,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    ListSubheader,
+    Typography
+} from "@mui/material";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
 import {PlatformType} from "../../types/platform.type.enum";
 import NewAppDialog from "../apps/newapp.dialog";
@@ -11,11 +21,19 @@ import {TitleCard} from "../../components/title.card.component";
 import React, {useEffect, useState} from "react";
 import {useHubState} from "../../hooks/HubStateProvider";
 import {useProjectContext} from "../../hooks/ProjectProvider";
-import {IAppData} from "../../types/app";
-import {createApp, getAllApps, updateApp} from "../../services/app.service";
+import {AppParameter, AppParameterOption, IAppData} from "../../types/app";
+import {
+    addAppParameter,
+    createApp,
+    getAllApps,
+    removeAppParameter,
+    updateApp,
+    updateAppParameter
+} from "../../services/app.service";
 import {HubStateActions} from "../../application/HubState";
 import EditAttributePopup, {EditAttribute} from "./EditAttributePopup";
 import {useError} from "../../ErrorProvider";
+import AppParameterPopup from "./AppParameterPopup";
 
 interface AppNavigationProps {
     title: string,
@@ -64,7 +82,16 @@ const AppsGroup: React.FC = () => {
         setSelectedAppID(id);
     };
 
-    const [showNewAppDialog, setShowNewAppDialog] = useState<boolean>(false);
+    const [uiState, setUiState] = useState<{
+        showNewAppDialog: boolean,
+        showAppParameterPopup: boolean,
+        appParameter: AppParameter | null,
+    }>({
+        showNewAppDialog: false,
+        showAppParameterPopup: false,
+        appParameter: null,
+    })
+
     const submitNewApp = (data: IAppData) => {
         createApp(projectIdentifier as string, data).then(app => {
             dispatch({type: HubStateActions.AppAdd, payload: app})
@@ -108,14 +135,54 @@ const AppsGroup: React.FC = () => {
         onEditAttributeClose();
     };
 
+    const handleEnvParameter = (param: AppParameter): void => {
+        const index = selectedApp?.parameter?.findIndex(p => p.name === param.name);
+        if (index === undefined || index < 0) {
+            addAppParameter(projectIdentifier as string, selectedApp?.id as number, param).then(parameter => {
+                    dispatch({
+                        type: HubStateActions.AddAppParameter,
+                        payload: parameter
+                    })
+                    setUiState(prevState => ({...prevState, showAppParameterPopup: false, appParameter: null}))
+                }
+            )
+        } else {
+            updateAppParameter(projectIdentifier as string, selectedApp?.id as number, param.id, param).then(parameter => {
+                    dispatch({
+                        type: HubStateActions.UpdateAppParameter,
+                        payload: parameter
+                    })
+                    setUiState(prevState => ({...prevState, showAppParameterPopup: false, appParameter: null}))
+                }
+            )
+        }
+    }
+
+    const handleDeleteParameter = (appId: number, parameterId: number) => {
+        removeAppParameter(projectIdentifier as string, appId, parameterId).then(() => {
+            dispatch({type: HubStateActions.DeleteAppParameter, payload: {appId: appId, id: parameterId}})
+        })
+    };
+
 
     return (<TitleCard title={"Apps"}>
         <EditAttributePopup attribute={changeAttributeDialogState.attribute} value={changeAttributeDialogState.value}
                             onSubmit={onEditAttributeSubmit} onClose={onEditAttributeClose}/>
+        <AppParameterPopup open={uiState.showAppParameterPopup} parameter={uiState.appParameter}
+                           onClose={() => setUiState(prevState => ({
+                               ...prevState,
+                               showAppParameterPopup: false,
+                               appParameter: null
+                           }))}
+                           onSubmit={handleEnvParameter}/>
         <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
             <Grid container={true} spacing={1} padding={1}>
                 <Grid size={{xs: 12, md: 12}} container={true} justifyContent={"flex-end"}>
-                    <Button variant={"contained"} onClick={() => setShowNewAppDialog(true)}>Add App</Button>
+                    <Button variant={"contained"}
+                            onClick={() => setUiState(prevState => ({
+                                ...prevState,
+                                showNewAppDialog: true
+                            }))}>{'Add App'}</Button>
                 </Grid>
                 <Grid size={12}>
                     <Divider/>
@@ -134,8 +201,8 @@ const AppsGroup: React.FC = () => {
                     <AppNavigation title={"Web apps"} apps={webApps} onSelect={selectApp}
                                    icon={<PlatformTypeIcon platformType={PlatformType.Web}/>}/>
                 </Grid>
-                <NewAppDialog open={showNewAppDialog} onSubmit={submitNewApp}
-                              onClose={() => setShowNewAppDialog(false)}/>
+                <NewAppDialog open={uiState.showNewAppDialog} onSubmit={submitNewApp}
+                              onClose={() => setUiState(prevState => ({...prevState, showNewAppDialog: false}))}/>
                 <Grid size={{xs: 12, md: 1}}>
                     <Divider orientation={"vertical"}/>
                 </Grid>
@@ -150,6 +217,7 @@ const AppsGroup: React.FC = () => {
                                 <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
                                     {selectedApp?.id}
                                 </Grid>
+                                <Grid size={12}><Divider/></Grid>
                                 <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
                                     <Typography variant={"caption"}>Bundle Identifier</Typography>
                                 </Grid>
@@ -163,6 +231,7 @@ const AppsGroup: React.FC = () => {
                                                         value: selectedApp!.identifier,
                                                     }))}><Edit/></IconButton>}
                                 </Grid>
+                                <Grid size={12}><Divider/></Grid>
                                 <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
                                     <Typography variant={"caption"}>App Name</Typography>
                                 </Grid>
@@ -175,18 +244,48 @@ const AppsGroup: React.FC = () => {
                                                     value: selectedApp!.name,
                                                 }))}><Edit/></IconButton>
                                 </Grid>
-                                <Grid size={{xs: 12, md: 2}} container={true} alignItems={'center'}>
-                                    <Typography variant={"caption"}>Default Parameter</Typography>
+                                <Grid size={12}><Divider/></Grid>
+                                <Grid size={{xs: 12, md: 2}} container={true}>
+                                    <Typography variant={"caption"}>Parameter</Typography>
                                 </Grid>
-                                <Grid size={{xs: 12, md: 10}} spacing={2} container={true} alignItems={'center'}>
-                                    <Typography variant={'body1'}>{selectedApp?.defaultParameter}</Typography>
-                                    <IconButton aria-label="edit"
-                                                size={'small'}
-                                                onClick={() => setChangeAttributeDialogState(prevState => ({
-                                                    ...prevState,
-                                                    attribute: 'defaultParameter',
-                                                    value: selectedApp!.defaultParameter,
-                                                }))}><Edit/></IconButton>
+                                <Grid size={{xs: 12, md: 10}} spacing={1} container={true} alignItems={'center'}>
+                                    {
+                                        selectedApp?.parameter?.map(p => (
+                                            <Grid container={true} size={12} key={`app_param_option_${p.id}`}>
+                                                <Grid size={8}>
+                                                    <Typography variant={"body2"}>
+                                                        {'Name: '}{p.name}
+                                                    </Typography>
+                                                    <Typography variant={"body2"}>
+                                                        {'Variant: '}{p.type.type}
+                                                    </Typography>
+                                                    <Typography variant={"body2"}>
+                                                        {'Default Value: '}{p.type.defaultValue}
+                                                    </Typography>
+                                                    <Typography variant={"body2"}>
+                                                        {'Options: '}
+                                                    </Typography>
+                                                    {p.type.type === 'option' && (p.type as AppParameterOption).options.map(o =>
+                                                        <Chip key={`app_${p.id}_option_${o}`} label={o}/>)}
+                                                </Grid>
+                                                <Grid size={4} spacing={1} container={true}>
+                                                    <Button variant={'contained'} onClick={() => setUiState(prevState => ({
+                                                        ...prevState,
+                                                        showAppParameterPopup: true,
+                                                        appParameter: p
+                                                    }))}>Edit</Button>
+                                                    <Button variant={'contained'} color={"error"}
+                                                            onClick={() => handleDeleteParameter(selectedApp.id, p.id)}>Delete</Button>
+                                                </Grid>
+                                                <Grid size={12}><Divider/></Grid>
+                                            </Grid>
+                                        ))
+                                    }
+                                    <Button variant={'contained'} onClick={() => setUiState(prevState => ({
+                                        ...prevState,
+                                        showAppParameterPopup: true,
+                                        appParameter: null
+                                    }))}>Add new Parameter</Button>
                                 </Grid>
                             </>)
                     }

@@ -29,7 +29,7 @@ func (s *Service) WithProject(wrapperFunction func(*gin.Context, *models.Project
 
 func (s *Service) getProjects(c *gin.Context) {
 	var projects []models.Project
-	if err := s.db.Preload("Apps").Find(&projects).Error; err != nil {
+	if err := s.db.Preload("Apps").Preload("Apps.Parameter").Find(&projects).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

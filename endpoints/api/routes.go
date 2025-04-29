@@ -81,6 +81,9 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 		appApi.Use(s.ResolveApp)
 		{
 			appApi.PUT("/", s.WithApp(s.updateApp))
+			appApi.POST("/parameter", s.WithApp(s.addAppParameter))
+			appApi.PUT("/parameter/:parameter_id", s.WithApp(s.updateAppParameter))
+			appApi.DELETE("/parameter/:parameter_id", s.WithApp(s.removeAppParameter))
 			appApi.GET("/bundles", s.WithApp(s.getBinaries))
 			appApi.PUT("/bundle/:binary_id", s.WithApp(s.updateBinary))
 			appApi.DELETE("/bundle/:binary_id", s.WithApp(s.deleteBinary))

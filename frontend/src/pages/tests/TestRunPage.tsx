@@ -224,7 +224,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         }
     )
 
-    const environmentParameters = testRun?.parameter.split("\n");
+    const environmentParameters = testRun?.parameter.split(";");
 
     const applyProtocolFilter = (value: ITestProtocolData): boolean => {
         return (filter.Success && value.testResult === TestResultState.TestResultSuccess)
@@ -369,7 +369,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
             <TitleCard title={'Environment'}>
                 <Grid container={true}>
                     {environmentParameters.map((e, i) => (
-                        <Grid size={{xs: 12, md: 12}} key={`env_param_${i}`}>
+                        <Grid size={12} key={`env_param_${i}`}>
                             <Typography key={`env_${i}`} variant={"body1"}>
                                 {e}
                             </Typography>

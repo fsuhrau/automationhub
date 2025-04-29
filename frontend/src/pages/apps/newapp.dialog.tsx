@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Grid from '@mui/material/Grid';
-import { IAppData } from '../../types/app';
+import {IAppData} from '../../types/app';
 import {
     Button,
     Dialog,
-    IconButton,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     MenuItem,
     Select,
     Slide,
     TextField,
     Typography
 } from '@mui/material';
-import { getPlatformTypes, PlatformType } from "../../types/platform.type.enum";
-import { TransitionProps } from "@mui/material/transitions";
-import { Close } from "@mui/icons-material";
+import {getPlatformTypes, PlatformType} from "../../types/platform.type.enum";
+import {TransitionProps} from "@mui/material/transitions";
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -21,7 +22,7 @@ const Transition = React.forwardRef(function Transition(
     },
     ref: React.Ref<unknown>,
 ) {
-    return <Slide direction="left" ref={ ref } { ...props } />;
+    return <Slide direction="left" ref={ref} {...props} />;
 });
 
 export interface ApplicationProps {
@@ -40,7 +41,6 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
         name: '',
         identifier: '',
         platform: PlatformType.Android,
-        defaultParameter: ''
     } as IAppData)
 
     const handleClose = () => {
@@ -54,91 +54,70 @@ const NewAppDialog: React.FC<ApplicationProps> = (props: ApplicationProps) => {
 
     return (
         <Dialog
-            fullScreen
-            open={ open }
-            onClose={ handleClose }
-            TransitionComponent={ Transition }
+            open={open}
+            onClose={handleClose}
+            fullWidth={true}
         >
-            <Grid container={ true } sx={ {padding: 5} }>
-                <Grid size={12}>
-                    <Typography variant={ "h5" }><IconButton onClick={ onClose }><Close/></IconButton>Create a new
-                        App</Typography>
-                </Grid>
-                <Grid size={2} container={ true } sx={ {padding: 3} } spacing={ 2 }>
-                    <Grid size={ 12 }>
-                        <Typography variant={ "caption" }>App Name</Typography>
+            <DialogTitle>
+                <Typography variant={"h5"}>Add a new App</Typography>
+            </DialogTitle>
+            <DialogContent>
+                <Grid container={true} sx={{padding: 2}}>
+                    <Grid size={12}>
+                        <Typography variant={"caption"}>App Name</Typography>
                     </Grid>
-                    <Grid size={ 12 }>
+                    <Grid size={12}>
                         <TextField
                             hiddenLabel
                             id="appname"
                             placeholder="Name"
-                            variant="filled"
-                            value={ state.name }
+                            value={state.name}
                             size="small"
                             fullWidth={true}
-                            onChange={ event => setState(prevState => ({...state, name: event.target.value})) }
+                            onChange={event => setState(prevState => ({...state, name: event.target.value}))}
                         />
                     </Grid>
-                    <Grid size={ 12 }>
-                        <Typography variant={ "caption" }>Platform</Typography>
+                    <Grid size={12}>
+                        <Typography variant={"caption"}>Platform</Typography>
                     </Grid>
-                    <Grid size={ 12 }>
+                    <Grid size={12}>
                         <Select
                             fullWidth={true}
-                            defaultValue={ state.platform }
+                            defaultValue={state.platform}
                             labelId="platform-type-selection"
                             id="platform-type"
                             label="Platform"
-                            onChange={ event => setState(prevState => ({
+                            onChange={event => setState(prevState => ({
                                 ...prevState,
                                 platform: +event.target.value as PlatformType
-                            })) }
+                            }))}
                         >
-                            { platformTypes.map((value) => (
-                                <MenuItem key={ 'tt_' + value.id }
-                                          value={ value.id }>{ value.name }</MenuItem>
-                            )) }
+                            {platformTypes.map((value) => (
+                                <MenuItem key={'tt_' + value.id}
+                                          value={value.id}>{value.name}</MenuItem>
+                            ))}
                         </Select>
                     </Grid>
-                    <Grid size={ 12 }>
-                        <Typography variant={ "caption" }>Bundle Identifier</Typography>
+                    <Grid size={12}>
+                        <Typography variant={"caption"}>Bundle Identifier</Typography>
                     </Grid>
-                    <Grid size={ 12 }>
+                    <Grid size={12}>
                         <TextField
                             fullWidth={true}
                             hiddenLabel
                             id="appidentifier"
                             placeholder="com.example.app"
-                            variant="filled"
-                            value={ state.identifier }
+                            value={state.identifier}
                             size="small"
-                            onChange={ event => setState(prevState => ({...state, identifier: event.target.value})) }
+                            onChange={event => setState(prevState => ({...state, identifier: event.target.value}))}
                         />
-                    </Grid>
-                    <Grid size={ 12 }>
-                        <Typography variant={ "caption" }>Default Parameter</Typography>
-                    </Grid>
-                    <Grid size={ 12 }>
-                        <TextField
-                            fullWidth={true}
-                            hiddenLabel
-                            id="appdefaultparameter"
-                            variant="filled"
-                            placeholder={"Proxy=http://localhost:8888"}
-                            value={ state.defaultParameter }
-                            size="small"
-                            onChange={ event => setState(prevState => ({
-                                ...state,
-                                defaultParameter: event.target.value
-                            })) }
-                        />
-                    </Grid>
-                    <Grid size={ 12 }>
-                        <Button variant={"outlined"} onClick={submit}>Create</Button>
                     </Grid>
                 </Grid>
-            </Grid>
+            </DialogContent>
+            <DialogActions>
+                <Button variant={'outlined'} onClick={onClose}>Close</Button>
+                <Button variant={"contained"} onClick={submit}>Create</Button>
+            </DialogActions>
         </Dialog>
     );
 };

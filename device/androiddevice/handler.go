@@ -15,7 +15,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s(usb:([a-zA-Z0-9]+)\s|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9_]+)\s+transport_id:([0-9]+)`)
+var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s((usb:([a-zA-Z0-9]+)\s)|([a-zA-Z0-9-]+\s)|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9_]+)\s+transport_id:([0-9]+)`)
 
 const (
 	Manager = "android_device"

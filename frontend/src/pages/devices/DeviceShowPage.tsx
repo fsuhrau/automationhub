@@ -87,9 +87,8 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                             platformType={device.platformType}/> {`Device: ${device.name} (${device.deviceIdentifier})`}
                     </Typography>
                     <ButtonGroup variant="contained" aria-label="text button group">
+                        <Button variant="contained" color="error" size={'small'} onClick={handleClickOpen}> Delete</Button>
                         <Button variant="contained" size={'small'} onClick={() => navigate('edit')}>Edit</Button>
-                        <Button variant="contained" color="error" size={'small'}
-                                onClick={handleClickOpen}> Delete</Button>
                     </ButtonGroup>
                 </Box>}>
                 <Grid container={true} spacing={2}>

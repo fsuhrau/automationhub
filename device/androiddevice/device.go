@@ -124,16 +124,23 @@ func (d *Device) UpdateDeviceInfos(infos []string) {
 		d.deviceParameter = make(map[string]string)
 		init = true
 	}
-	// deviceId := infos[1]
-	deviceUSB := infos[2]
-	product := infos[3]
-	model := infos[4]
-	name := infos[5]
-	transportID := infos[6]
+	deviceId := infos[1]
+	device := infos[2]
+	_ = deviceId
+	deviceUSB := infos[3]
+	deviceConnection := infos[5]
+	_ = deviceConnection
+	product := infos[6]
+	model := infos[7]
+	name := deviceId // infos[8]
+	transportID := infos[9]
 
 	d.deviceName = name
 	d.product = product
 
+	if len(device) > 0 {
+		d.deviceParameter["Device"] = device
+	}
 	d.deviceParameter["Device Model"] = model
 	d.deviceParameter["Transport ID"] = transportID
 	d.deviceParameter["Device USB"] = deviceUSB

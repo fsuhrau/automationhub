@@ -1,5 +1,26 @@
 import IProject from "../project/project";
-import { PlatformType } from "./platform.type.enum";
+import {PlatformType} from "./platform.type.enum";
+
+export type AppParameterType = 'string' | 'option'
+
+export interface AppParameterString {
+    type: AppParameterType
+    defaultValue: string
+}
+
+export interface AppParameterOption {
+    type: AppParameterType
+    options: string[]
+    defaultValue: string
+}
+
+export type Parameter = AppParameterString | AppParameterOption;
+
+export interface AppParameter {
+    id: number
+    name: string
+    type: Parameter
+}
 
 export interface IAppData {
     id: number,
@@ -7,7 +28,7 @@ export interface IAppData {
     identifier: string,
     projectId: number,
     project: IProject,
-    defaultParameter: string,
+    parameter: AppParameter[],
     platform: PlatformType,
     createdAt: Date,
     updatedAt: Date,

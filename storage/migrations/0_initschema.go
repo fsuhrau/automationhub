@@ -24,6 +24,9 @@ func InitSchema(tx *gorm.DB) error {
 	if err := tx.AutoMigrate(&models.App{}); err != nil {
 		return err
 	}
+	if err := tx.AutoMigrate(&models.AppParameter{}); err != nil {
+		return err
+	}
 	if err := tx.AutoMigrate(&models.AppBinary{}); err != nil {
 		return err
 	}

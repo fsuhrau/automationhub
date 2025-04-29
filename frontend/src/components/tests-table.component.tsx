@@ -1,4 +1,4 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import ITestData from '../types/test';
 import {executeTest, getAllTests} from '../services/test.service';
@@ -9,6 +9,8 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    MenuItem,
+    Select,
     TextField,
     Typography,
 } from '@mui/material';
@@ -16,7 +18,7 @@ import {PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
 import {PlatformType} from '../types/platform.type.enum';
-import {IAppBinaryData} from "../types/app";
+import {AppParameterOption, IAppBinaryData} from "../types/app";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
@@ -25,7 +27,6 @@ import Grid from "@mui/material/Grid";
 import {getTestTypeName} from "../types/test.type.enum";
 import {getTestExecutionName} from "../types/test.execution.type.enum";
 import {useError} from "../ErrorProvider";
-import TextareaAutosize from '@mui/material/TextareaAutosize';
 
 interface TestTableProps {
     appId: number | null
@@ -60,18 +61,23 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         setOpen(false);
     };
 
+    interface Parameter {
+        name: string
+        value: string
+    }
+
     type RunTestState = {
         testId: number | null,
         binaryId: number | null,
-        envParams: string,
         startURL: string | null,
+        envParams: Parameter[],
     }
 
-    const [state, setState] = useState<RunTestState>({
+    const [testRunState, setTestRunState] = useState<RunTestState>({
         testId: null,
         binaryId: null,
         startURL: null,
-        envParams: app === undefined ? '' : app?.defaultParameter.replaceAll(';', '\n'),
+        envParams: app!.parameter.map(p => ({name: p.name, value: p.type.defaultValue})),
     });
 
 
@@ -90,7 +96,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             <Button size="small"
                     onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}/runs/last`)}>Protocol</Button>
             <Button size="small" endIcon={<PlayArrow/>} onClick={() => {
-                setState(prevState => ({...prevState, testId: id}))
+                setTestRunState(prevState => ({...prevState, testId: id}))
                 handleRunClickOpen();
             }}>Run</Button>
         </ButtonGroup>;
@@ -166,12 +172,14 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const onRunTest = (): void => {
         if (appId !== null) {
-            executeTest(projectIdentifier, appId, state.testId, {
-                appBinaryId: state.binaryId!,
-                params: state.envParams,
-                startUrl: state.startURL,
+            executeTest(projectIdentifier, appId, testRunState.testId, {
+                appBinaryId: testRunState.binaryId!,
+                params: testRunState.envParams.filter(p => p.value.length > 0).map(p => {
+                    return `${p.name}=${p.value}`
+                }).join(";"),
+                startUrl: testRunState.startURL,
             }).then(testRun => {
-                navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.testId}/run/${testRun.id}`);
+                navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRunState.testId}/run/${testRun.id}`);
             }).catch(error => {
                 setError(error);
             });
@@ -205,19 +213,21 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     const requiresURL = app?.platform === PlatformType.Web;
 
     const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
-        setState(prevState => ({...prevState, binaryId: binary ? binary.id : null}));
+        setTestRunState(prevState => ({...prevState, binaryId: binary ? binary.id : null}));
     };
 
-    const onEnvParamsChanged = (event: ChangeEvent<HTMLTextAreaElement>): void => {
-        setState(prevState => ({...prevState, envParams: event.target.value}));
-    };
-
+    const handleParameterChange = (idx: number, value: string) => {
+        setTestRunState(prevState => ({
+            ...prevState,
+            envParams: prevState.envParams.map((d, i) => idx === i ? {...d, value: value} : d)
+        }));
+    }
 
     useEffect(() => {
         if (app !== null && app !== undefined) {
-            setState(prevState => ({
+            setTestRunState(prevState => ({
                 ...prevState,
-                envParams: app.defaultParameter.replaceAll(";", "\n")
+                envParams: app.parameter?.map(value => ({name: value.name, value: value.type.defaultValue}))
             }));
         }
     }, [app]);
@@ -239,7 +249,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                     </Typography>
                                 </Grid>
                                 <Grid size={12}>
-                                    <BinarySelection binaryId={state.binaryId} upload={true}
+                                    <BinarySelection binaryId={testRunState.binaryId} upload={true}
                                                      onSelectionChanged={onBinarySelectionChanged}/>
                                 </Grid>
                             </Grid>
@@ -251,35 +261,48 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                 </Typography>
                             </Grid>
                             <Grid size={12}>
-                                <TextField required={true} fullWidth={true} value={state.startURL}
-                                           onChange={(e) => setState(prevState => ({
+                                <TextField required={true} fullWidth={true} value={testRunState.startURL}
+                                           onChange={(e) => setTestRunState(prevState => ({
                                                ...prevState,
                                                startURL: e.target.value
                                            }))}/>
                             </Grid>
                         </Grid>}
-                        <Grid size={12}>
-                            <Typography variant={"body1"}>
-                                You can change parameters of your app by providing key value pairs in an environment
-                                like
-                                format:
-                            </Typography>
-                        </Grid>
-                        <Grid size={12}>
-                            <Typography variant={'subtitle2'}>
-                                server=http://localhost:8080<br/>
-                                user=autohub
-                            </Typography>
-                        </Grid>
-                        <Grid size={12}>
-                            <TextareaAutosize
-                                style={{width: '100%', height: '100px'}}
-                                placeholder={"parameter"}
-                                defaultValue={state.envParams}
-                                value={state.envParams}
-                                onChange={onEnvParamsChanged}
-                            />
-
+                        <Grid size={12} container={true}>
+                            {app?.parameter?.map((p, i) => {
+                                if (p.type.type === 'string') return (
+                                    <>
+                                        <Grid size={4}>
+                                            {p.name}
+                                        </Grid>
+                                        <Grid size={8}>
+                                            <TextField defaultValue={p.type.defaultValue}
+                                                       fullWidth={true}
+                                                       value={testRunState.envParams[i].value}
+                                                       onChange={e => handleParameterChange(i, e.target.value)}/>
+                                        </Grid>
+                                    </>
+                                );
+                                if (p.type.type === 'option') return (
+                                    <>
+                                        <Grid size={4}>
+                                            {p.name}
+                                        </Grid>
+                                        <Grid size={8}>
+                                            <Select
+                                                id={`${p.name}-option-select`}
+                                                value={testRunState.envParams[i].value}
+                                                label={p.name}
+                                                onChange={e => handleParameterChange(i, e.target.value)}>
+                                                {
+                                                    (p.type as AppParameterOption).options.map(o => (
+                                                        <MenuItem value={o}>{o}</MenuItem>))
+                                                }
+                                            </Select>
+                                        </Grid>
+                                    </>);
+                                return null;
+                            })}
                         </Grid>
                     </Grid>
                 </DialogContent>
@@ -290,7 +313,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                     <Button onClick={() => {
                         onRunTest();
                         handleRunClose();
-                    }} color="primary" variant={'contained'} disabled={requiresApp && state.binaryId === null}>
+                    }} color="primary" variant={'contained'} disabled={requiresApp && testRunState.binaryId === null}>
                         Start
                     </Button>
                 </DialogActions>

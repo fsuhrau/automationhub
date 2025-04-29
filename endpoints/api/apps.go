@@ -20,7 +20,7 @@ func (s *Service) ResolveApp(context *gin.Context) {
 	project := p.(*models.Project)
 
 	var application models.App
-	if err := s.db.First(&application, "project_id = ? and id = ?", project.ID, appId).Error; err != nil {
+	if err := s.db.Preload("Parameter").First(&application, "project_id = ? and id = ?", project.ID, appId).Error; err != nil {
 		s.error(context, http.StatusNotFound, err)
 		return
 	}
@@ -40,7 +40,7 @@ func (s *Service) WithApp(wrapperFunction func(*gin.Context, *models.Project, *m
 func (s *Service) getApps(c *gin.Context, project *models.Project) {
 
 	var apps []models.App
-	if err := s.db.Where("project_id = ?", project.ID).Find(&apps).Error; err != nil {
+	if err := s.db.Where("project_id = ?", project.ID).Preload("Parameter").Find(&apps).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -91,7 +91,10 @@ func (s *Service) deleteBinary(c *gin.Context, project *models.Project, applicat
 
 func (s *Service) createApp(c *gin.Context, project *models.Project) {
 	var application models.App
-	c.Bind(&application)
+	if err := c.Bind(&application); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
 	application.ProjectID = project.ID
 	if err := s.db.Create(&application).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
@@ -102,15 +105,80 @@ func (s *Service) createApp(c *gin.Context, project *models.Project) {
 
 func (s *Service) updateApp(c *gin.Context, project *models.Project, application *models.App) {
 	var request models.App
-	c.Bind(&request)
+	if err := c.Bind(&request); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
 	application.Name = request.Name
-	application.DefaultParameter = request.DefaultParameter
+
 	// allow change it once since it's a default generated one
 	if application.Identifier == "default_app" {
 		application.Identifier = request.Identifier
 	}
 
 	if err := s.db.Save(&application).Error; err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, application)
+}
+
+func (s *Service) addAppParameter(c *gin.Context, project *models.Project, application *models.App) {
+	var request models.AppParameter
+	if err := c.Bind(&request); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	for _, p := range application.Parameter {
+		if p.Name == request.Name {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("parameter %s already exists", p.Name))
+			return
+		}
+	}
+
+	request.AppID = application.ID
+
+	if err := s.db.Create(&request).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, request)
+}
+
+func (s *Service) removeAppParameter(c *gin.Context, project *models.Project, application *models.App) {
+
+	paramId := c.Param("parameter_id")
+
+	if err := s.db.Delete(&models.AppParameter{}, "app_id = ? and id = ?", application.ID, paramId).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (s *Service) updateAppParameter(c *gin.Context, project *models.Project, application *models.App) {
+	var request models.AppParameter
+	if err := c.Bind(&request); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	paramId := c.Param("parameter_id")
+	var param models.AppParameter
+	if err := s.db.First(&param, "app_id = ? and id = ?", application.ID, paramId).Error; err != nil {
+		s.error(c, http.StatusNotFound, err)
+		return
+	}
+
+	param.Type = request.Type
+	param.Name = request.Name
+
+	if err := s.db.Save(&param).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
