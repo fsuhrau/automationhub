@@ -35,6 +35,8 @@ type DeviceManager struct {
 	masterUrl      string
 	nodeIdentifier string
 	authToken      *string
+
+	refreshSignal chan struct{}
 }
 
 func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceManager {
@@ -178,43 +180,42 @@ func (dm *DeviceManager) Run(ctx context.Context, runSocketListener bool) error 
 		v.Start()
 	}
 
+	refreshDevicesTicker := time.NewTicker(5 * time.Second)
+	defer refreshDevicesTicker.Stop()
+
+	dm.refreshSignal = make(chan struct{}, 1)
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				dm.log.Infof("Stop DeviceManager")
 				return
-			default:
-			}
-			// dm.log.Debugf("refreshing device lists...")
-			for _, m := range dm.deviceHandlers {
-				if err := m.RefreshDevices(false); err != nil {
-					// dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
-				}
+			case <-refreshDevicesTicker.C:
+				dm.refreshDeviceList()
+			case <-dm.refreshSignal:
+				dm.refreshDeviceList()
 			}
 		}
 	}()
+
 	return nil
 }
 
-/*
-func (dm *DeviceManager) getDevice(deviceID string) *models.Device {
-	if m, ok := dm.deviceCache[deviceID]; ok {
-		return m
+func (dm *DeviceManager) refreshDeviceList() {
+	for _, m := range dm.deviceHandlers {
+		if err := m.RefreshDevices(false); err != nil {
+			// dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
+		}
 	}
-
-	deviceData := models.Device{
-		DeviceIdentifier: deviceID,
-		Status:           device.StateUnknown,
-	}
-
-	if err := dm.db.FirstOrCreate(&deviceData, "device_identifier = ?", deviceID).Error; err != nil {
-		logrus.Errorf("fail to create new device: %v", err)
-	}
-	dm.deviceCache[deviceID] = &deviceData
-	return dm.deviceCache[deviceID]
 }
-*/
+
+func (dm *DeviceManager) TriggerRefresh() {
+	select {
+	case dm.refreshSignal <- struct{}{}:
+	default: // Avoid blocking if the channel is full
+	}
+}
 
 func (dm *DeviceManager) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	deviceApi := auth.Group("/device")
