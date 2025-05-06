@@ -14,19 +14,45 @@ interface AppParameterPopupProps {
 
 const AppParameterPopup: React.FC<AppParameterPopupProps> = (props: AppParameterPopupProps) => {
 
-    console.log(props.parameter)
-
-    const [state, setState] = useState<{
+    type State = {
         name: string,
         type: AppParameterType
         defaultValue: string
         options: string[],
-    }>({
-        name: props.parameter ? props.parameter.name : '',
-        type: props.parameter ? props.parameter.type.type : 'string',
-        defaultValue: props.parameter ? props.parameter.type.defaultValue : '',
-        options: props.parameter ? (props.parameter.type as AppParameterOption).options : [],
-    });
+    }
+
+    const initialState = (param: AppParameter | null) : State => {
+        if (param == null) {
+            return {
+                name: '',
+                type: 'string',
+                defaultValue: '',
+                options: [],
+            }
+        }
+        let defaultValue = '';
+        let type = param.type.type;
+        let options: string[] = [];
+
+        if (param.type.type === 'string') {
+            const stringParam = (param.type as AppParameterString);
+            defaultValue = stringParam.defaultValue;
+        }
+        if (param.type.type === 'option') {
+            const optionParam = (param.type as AppParameterOption);
+            defaultValue = optionParam.defaultValue;
+            options = optionParam.options;
+        }
+
+        return {
+            name: param.name,
+            type: type,
+            defaultValue: defaultValue,
+            options: options,
+        }
+    }
+
+    const [state, setState] = useState<State>(initialState(props.parameter));
 
     const handleEditClose = () => {
         props.onClose();
@@ -83,13 +109,18 @@ const AppParameterPopup: React.FC<AppParameterPopupProps> = (props: AppParameter
         }))
     };
 
+    React.useEffect(() => {
+        setState(initialState(props.parameter))
+    }, [props.parameter]);
+
     return (
         <Dialog open={props.open} onClose={handleEditClose}>
             <DialogContent>
                 <Grid container={true} spacing={1}>
                     <Grid size={12}>
                         <Typography variant={"body2"}>Name</Typography>
-                        <TextField placeholder={"Name"} value={state.name}
+                        <TextField placeholder={"Name"}
+                                   value={state.name}
                                    fullWidth={true}
                                    onChange={e => setState(prevState => ({
                                        ...prevState,
