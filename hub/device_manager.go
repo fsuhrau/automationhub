@@ -181,7 +181,7 @@ func (dm *DeviceManager) Run(ctx context.Context, runSocketListener bool) error 
 	}
 
 	refreshDevicesTicker := time.NewTicker(5 * time.Second)
-	defer refreshDevicesTicker.Stop()
+	//defer refreshDevicesTicker.Stop()
 
 	dm.refreshSignal = make(chan struct{}, 1)
 
@@ -190,6 +190,7 @@ func (dm *DeviceManager) Run(ctx context.Context, runSocketListener bool) error 
 			select {
 			case <-ctx.Done():
 				dm.log.Infof("Stop DeviceManager")
+				refreshDevicesTicker.Stop()
 				return
 			case <-refreshDevicesTicker.C:
 				dm.refreshDeviceList()

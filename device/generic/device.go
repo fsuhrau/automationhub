@@ -161,6 +161,7 @@ func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
 	for i := range d.actionHandler {
 		if d.actionHandler[i] == handler {
 			d.actionHandler = append(d.actionHandler[:i], d.actionHandler[i+1:]...)
+			return
 		}
 	}
 }
