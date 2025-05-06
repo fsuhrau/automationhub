@@ -9,6 +9,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import Moment from "react-moment";
 import {byteFormat} from "../tests/value_formatter";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 interface AppBundlesTableProps {
     appId: number | null
@@ -18,9 +19,10 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
 
     const {appId} = props;
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
     const {setError} = useError()
 
-    const app = project.apps.find(a => a.id === appId);
+    const app = state.apps?.find(a => a.id === appId);
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
 
     const renderActions = (bundle: any) => {

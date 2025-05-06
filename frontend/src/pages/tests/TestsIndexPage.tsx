@@ -7,10 +7,12 @@ import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 const TestsIndexPage: React.FC = () => {
 
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
 
     const {appId} = useApplicationContext();
 
@@ -22,12 +24,12 @@ const TestsIndexPage: React.FC = () => {
 
     useEffect(() => {
         if (appId === 0) {
-            const value = project.apps === undefined ? null : project.apps.length === 0 ? null : project.apps[0].id;
+            const value = state.apps === undefined ? null : state.apps?.length === 0 ? null : state.apps![0].id;
             if (value !== null) {
                 navigate(`/project/${projectIdentifier}/app:${appId}/tests`)
             }
         }
-    }, [project.apps, appId])
+    }, [state.apps, appId])
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>

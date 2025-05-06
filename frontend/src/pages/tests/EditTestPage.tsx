@@ -36,6 +36,7 @@ import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import Grid from "@mui/material/Grid";
 import {TitleCard} from "../../components/title.card.component";
 import {useError} from "../../ErrorProvider";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 interface TestContentProps {
     test: ITestData
@@ -44,6 +45,7 @@ interface TestContentProps {
 const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
     const {appId} = useApplicationContext();
     const {setError} = useError()
 
@@ -64,7 +66,7 @@ const EditTestPage: React.FC<TestContentProps> = (props: TestContentProps) => {
 
     const {test} = props;
 
-    const app = project.apps.find(a => a.id === appId);
+    const app = state.apps?.find(a => a.id === appId);
 
     const testTypes = getTestTypes();
     const executionTypes = getExecutionTypes();

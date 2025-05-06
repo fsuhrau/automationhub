@@ -42,6 +42,7 @@ import {IdName} from "../../helper/enum_to_array";
 import {getUnityTestCategoryTypes, UnityTestCategory} from "../../types/unity.test.category.type.enum";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {useError} from "../../ErrorProvider";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 function getSteps(): Array<string> {
     return ['Select test type', 'test Configuration', 'device Selection'];
@@ -61,6 +62,7 @@ export function getDeviceOption(): Array<IdName> {
 const AddTestPage: React.FC = () => {
 
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
     const {appId} = useApplicationContext();
     const {setError} = useError()
 
@@ -87,7 +89,7 @@ const AddTestPage: React.FC = () => {
 
     const navigate = useNavigate();
 
-    const [state, setState] = React.useState<NewTestState>({
+    const [uiState, setUiState] = React.useState<NewTestState>({
             testType: TestType.Unity,
             executionType: TestExecutionType.Concurrent,
             testName: "",
@@ -107,8 +109,8 @@ const AddTestPage: React.FC = () => {
     const deviceTypes = getDeviceOption();
 
     const addCategory = () => {
-        if (state.category != '') {
-            setState(prevState => ({
+        if (uiState.category != '') {
+            setUiState(prevState => ({
                 ...prevState,
                 testCategories: [...prevState.testCategories, prevState.category],
                 category: ''
@@ -116,7 +118,7 @@ const AddTestPage: React.FC = () => {
         }
     };
     const removeCategory = (index: number) => {
-        setState(prevState => ({
+        setUiState(prevState => ({
             ...prevState,
             testCategories: [...prevState.testCategories.slice(0, index), ...prevState.testCategories.slice(index + 1)]
         }))
@@ -125,14 +127,14 @@ const AddTestPage: React.FC = () => {
     const createNewTest = (): void => {
 
         const requestData: ICreateTestData = {
-            name: state.testName,
-            testType: state.testType,
-            executionType: state.executionType,
-            unityTestCategoryType: state.unityTestCategoryType,
-            unitySelectedTests: state.selectedTestFunctions,
-            categories: state.testCategories,
-            allDevices: state.deviceType === 0,
-            selectedDevices: state.selectedDevices,
+            name: uiState.testName,
+            testType: uiState.testType,
+            executionType: uiState.executionType,
+            unityTestCategoryType: uiState.unityTestCategoryType,
+            unitySelectedTests: uiState.selectedTestFunctions,
+            categories: uiState.testCategories,
+            allDevices: uiState.deviceType === 0,
+            selectedDevices: uiState.selectedDevices,
         };
 
         createTest(projectIdentifier, appId, requestData).then(test => {
@@ -155,21 +157,21 @@ const AddTestPage: React.FC = () => {
 
     const [devices, setDevices] = useState<IDeviceData[]>([]);
     useEffect(() => {
-        const app = project.apps.find(a => a.id === appId);
+        const app = state.apps?.find(a => a.id === appId);
         getAllDevices(projectIdentifier, app?.platform).then(devices => {
             setDevices(devices);
         }).catch(ex => setError(ex))
-    }, [project.apps, projectIdentifier, appId])
+    }, [state.apps, projectIdentifier, appId])
 
     const onDeviceSelectionChanged = (selectedDevices: number[]) => {
-        if (!isEqual(selectedDevices, state.selectedDevices)) {
-            setState(prevState => ({...prevState, selectedDevices: selectedDevices}))
+        if (!isEqual(selectedDevices, uiState.selectedDevices)) {
+            setUiState(prevState => ({...prevState, selectedDevices: selectedDevices}))
         }
     }
 
     const onTestSelectionChanged = (testSelection: IAppFunctionData[]) => {
-        if (!isEqual(testSelection, state.selectedTestFunctions)) {
-            setState(prevState => ({...prevState, selectedTestFunctions: testSelection}))
+        if (!isEqual(testSelection, uiState.selectedTestFunctions)) {
+            setUiState(prevState => ({...prevState, selectedTestFunctions: testSelection}))
         }
     }
 
@@ -216,9 +218,9 @@ const AddTestPage: React.FC = () => {
                                                     <Grid size={6}>
                                                         <TextField required={true} id="test-name"
                                                                    placeholder={"name"}
-                                                                   value={state.testName}
+                                                                   value={uiState.testName}
                                                                    fullWidth={true}
-                                                                   onChange={event => setState(prevState => ({
+                                                                   onChange={event => setUiState(prevState => ({
                                                                        ...prevState,
                                                                        testName: event.target.value
                                                                    }))}/>
@@ -227,11 +229,11 @@ const AddTestPage: React.FC = () => {
                                                     <Grid size={6}>
                                                         <Select
                                                             fullWidth={true}
-                                                            defaultValue={state.testType}
+                                                            defaultValue={uiState.testType}
                                                             labelId="test-type-selection"
                                                             id="test-type"
                                                             label="Test Type"
-                                                            onChange={event => setState(prevState => ({
+                                                            onChange={event => setUiState(prevState => ({
                                                                 ...prevState,
                                                                 testType: +event.target.value as TestType
                                                             }))}
@@ -251,8 +253,8 @@ const AddTestPage: React.FC = () => {
                                                                 <RadioGroup
                                                                     name="execution-type-selection"
                                                                     aria-label="spacing"
-                                                                    value={state.executionType.toString()}
-                                                                    onChange={event => setState(prevState => ({
+                                                                    value={uiState.executionType.toString()}
+                                                                    onChange={event => setUiState(prevState => ({
                                                                         ...prevState,
                                                                         executionType: +event.target.value as TestExecutionType
                                                                     }))}
@@ -280,14 +282,14 @@ const AddTestPage: React.FC = () => {
                                             {activeStep === TestCreationSteps.Tests && (
                                                 <Grid container={true} justifyContent="center" spacing={2}
                                                       alignItems={'center'} direction={'column'}>
-                                                    {state.testType === TestType.Unity && (
+                                                    {uiState.testType === TestType.Unity && (
                                                         <>
                                                             <Grid>
                                                                 <RadioGroup
                                                                     name="unity-test-execution-selection"
                                                                     aria-label="spacing"
-                                                                    value={state.unityTestCategoryType.toString()}
-                                                                    onChange={event => setState(prevState => ({
+                                                                    value={uiState.unityTestCategoryType.toString()}
+                                                                    onChange={event => setUiState(prevState => ({
                                                                         ...prevState,
                                                                         unityTestCategoryType: +event.target.value
                                                                     }))}
@@ -304,7 +306,7 @@ const AddTestPage: React.FC = () => {
                                                                 </RadioGroup>
                                                             </Grid>
                                                             <Grid>
-                                                                {state.unityTestCategoryType === UnityTestCategory.RunAllOfCategory && (
+                                                                {uiState.unityTestCategoryType === UnityTestCategory.RunAllOfCategory && (
                                                                     <Grid container={true} justifyContent="center"
                                                                           spacing={1} alignItems={'center'}>
                                                                         <Grid>
@@ -318,7 +320,7 @@ const AddTestPage: React.FC = () => {
                                                                                     </TableRow>
                                                                                 </TableHead>
                                                                                 <TableBody>
-                                                                                    {state.testCategories.map((element, index) =>
+                                                                                    {uiState.testCategories.map((element, index) =>
                                                                                         <TableRow
                                                                                             key={`categories_${index}`}>
                                                                                             <TableCell>{element}</TableCell>
@@ -338,8 +340,8 @@ const AddTestPage: React.FC = () => {
                                                                                                 required={true}
                                                                                                 id="test-name"
                                                                                                 placeholder={"Category name"}
-                                                                                                value={state.category}
-                                                                                                onChange={event => setState(prevState => ({
+                                                                                                value={uiState.category}
+                                                                                                onChange={event => setUiState(prevState => ({
                                                                                                     ...prevState,
                                                                                                     category: event.target.value
                                                                                                 }))}
@@ -355,7 +357,7 @@ const AddTestPage: React.FC = () => {
                                                                         </Grid>
                                                                     </Grid>
                                                                 )}
-                                                                {state.unityTestCategoryType === UnityTestCategory.RunSelectedTestsOnly && (
+                                                                {uiState.unityTestCategoryType === UnityTestCategory.RunSelectedTestsOnly && (
                                                                     <TestMethodSelection
                                                                         onSelectionChanged={onTestSelectionChanged}/>
                                                                 )}
@@ -371,8 +373,8 @@ const AddTestPage: React.FC = () => {
                                                         <RadioGroup
                                                             name="device-selection"
                                                             aria-label="spacing"
-                                                            value={state.deviceType.toString()}
-                                                            onChange={event => setState(prevState => ({
+                                                            value={uiState.deviceType.toString()}
+                                                            onChange={event => setUiState(prevState => ({
                                                                 ...prevState,
                                                                 deviceType: +event.target.value
                                                             }))}
@@ -390,7 +392,7 @@ const AddTestPage: React.FC = () => {
                                                     </Grid>
                                                 </Grid>
                                             )}
-                                            {activeStep === TestCreationSteps.Devices && state.deviceType === 1 && (
+                                            {activeStep === TestCreationSteps.Devices && uiState.deviceType === 1 && (
                                                 <Grid container={true} justifyContent="center" spacing={2}
                                                       alignItems={'center'} direction={'column'}>
                                                     <Grid>
@@ -403,7 +405,7 @@ const AddTestPage: React.FC = () => {
                                                             devices !== undefined && devices.length > 0 &&
                                                             <DeviceSelection
                                                                 devices={devices}
-                                                                selectedDevices={state.selectedDevices}
+                                                                selectedDevices={uiState.selectedDevices}
                                                                 onSelectionChanged={onDeviceSelectionChanged}/>
                                                         }
                                                     </Grid>

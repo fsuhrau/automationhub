@@ -10,10 +10,12 @@ import Grid from "@mui/material/Grid";
 import PlatformTypeIcon from "../../components/PlatformTypeIcon";
 import {useError} from "../../ErrorProvider";
 import AppBundlesTable from "./AppBundlesTable";
+import {useHubState} from "../../hooks/HubStateProvider";
 
 const AppBundlesPage: React.FC = () => {
 
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
     const {appId} = useApplicationContext();
     const {setError} = useError()
 
@@ -23,7 +25,7 @@ const AppBundlesPage: React.FC = () => {
         navigate('new');
     }
 
-    const app = project.apps.find(a => a.id === appId);
+    const app = state.apps?.find(a => a.id === appId);
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>

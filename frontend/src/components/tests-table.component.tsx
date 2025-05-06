@@ -27,6 +27,7 @@ import Grid from "@mui/material/Grid";
 import {getTestTypeName} from "../types/test.type.enum";
 import {getTestExecutionName} from "../types/test.execution.type.enum";
 import {useError} from "../ErrorProvider";
+import {useHubState} from "../hooks/HubStateProvider";
 
 interface TestTableProps {
     appId: number | null
@@ -36,11 +37,12 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const {appId} = props;
     const {project, projectIdentifier} = useProjectContext();
+    const {state} = useHubState();
     const {setError} = useError()
 
     const navigate = useNavigate();
 
-    const app = project.apps.find(a => a.id === appId);
+    const app = state.apps?.find(a => a.id === appId);
 
     // dialog
     const [open, setOpen] = useState(false);
