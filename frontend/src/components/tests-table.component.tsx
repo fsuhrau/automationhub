@@ -18,7 +18,7 @@ import {PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
 import {PlatformType} from '../types/platform.type.enum';
-import {AppParameterOption, IAppBinaryData} from "../types/app";
+import {AppParameterOption, IAppBinaryData, IAppData} from "../types/app";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import Chip from "@mui/material/Chip";
@@ -42,10 +42,6 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
 
     const navigate = useNavigate();
 
-    const app = state.apps?.find(a => a.id === appId);
-
-    // dialog
-    const [open, setOpen] = useState(false);
     const [gridData, setGridData] = useState<{
         id: number,
         name: string,
@@ -56,11 +52,16 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         actions: number
     }[]>([]);
 
+    const [uiState, setUiState] = useState<{ app: IAppData | null, open: boolean }>({
+        open: false,
+        app: state.apps?.find(a => a.id === appId) || null
+    })
+
     const handleRunClickOpen = (): void => {
-        setOpen(true);
+        setUiState(prevState => ({...prevState, open: true}))
     };
     const handleRunClose = (): void => {
-        setOpen(false);
+        setUiState(prevState => ({...prevState, open: false}))
     };
 
     interface Parameter {
@@ -79,9 +80,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         testId: null,
         binaryId: null,
         startURL: null,
-        envParams: app!.parameter.map(p => ({name: p.name, value: p.type.defaultValue})),
+        envParams: uiState.app ? uiState.app.parameter.map(p => ({name: p.name, value: p.type.defaultValue})) : [],
     });
-
 
     const renderChip = (type: string) => {
         return <Chip label={type} color={'default'} size="small"/>;
@@ -211,8 +211,8 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         return 'n/a';
     };
 
-    const requiresApp = app?.platform !== PlatformType.Editor && app?.platform !== PlatformType.Web;
-    const requiresURL = app?.platform === PlatformType.Web;
+    const requiresApp = uiState.app != null && uiState.app?.platform !== PlatformType.Editor && uiState.app.platform !== PlatformType.Web;
+    const requiresURL = uiState.app != null && uiState.app.platform === PlatformType.Web;
 
     const onBinarySelectionChanged = (binary: IAppBinaryData | null): void => {
         setTestRunState(prevState => ({...prevState, binaryId: binary ? binary.id : null}));
@@ -226,19 +226,19 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
     }
 
     useEffect(() => {
-        if (app !== null && app !== undefined) {
+        if (uiState.app !== null && uiState.app !== undefined) {
             setTestRunState(prevState => ({
                 ...prevState,
-                envParams: app.parameter?.map(value => ({name: value.name, value: value.type.defaultValue}))
+                envParams: uiState.app!.parameter.map(value => ({name: value.name, value: value.type.defaultValue}))
             }));
         }
-    }, [app]);
+    }, [uiState.app]);
 
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
             <Dialog fullWidth={true}
                     maxWidth={"sm"}
-                    open={open} onClose={handleRunClose} aria-labelledby="form-dialog-title">
+                    open={uiState.open} onClose={handleRunClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Execute Test</DialogTitle>
                 <DialogContent>
                     <Grid container={true} spacing={2}>
@@ -271,7 +271,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                             </Grid>
                         </Grid>}
                         <Grid size={12} container={true}>
-                            {app?.parameter?.map((p, i) => {
+                            {uiState.app !== null && uiState.app.parameter.map((p, i) => {
                                 if (p.type.type === 'string') return (
                                     <>
                                         <Grid size={4}>
