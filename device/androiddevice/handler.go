@@ -115,6 +115,12 @@ func (m *Handler) StartDevice(deviceID string) error {
 				if err != nil {
 					return device.DeviceNotFoundError
 				}
+				// only network devices can be reconnected; an unplugged USB
+				// device can't be started from here
+				if dev.ConnectionParameter == nil || dev.ConnectionParameter.ConnectionType != models.ConnectionTypeRemote {
+					found = true
+					break
+				}
 				cmd := exec.NewCommand("adb", "connect", GetConnectionString(dev.ConnectionParameter))
 				// cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
@@ -234,7 +240,8 @@ func (m *Handler) RefreshDevices(force bool) error {
 				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 				m.deviceStorage.Update(m.Name(), m.devices[i])
 			} else {
-				m.devices[i].SetDeviceState("StateUnknown")
+				// a known USB device adb doesn't list is unplugged or not running
+				m.devices[i].SetDeviceState("StateRemoteDisconnected")
 				m.deviceStorage.Update(m.Name(), m.devices[i])
 			}
 		}

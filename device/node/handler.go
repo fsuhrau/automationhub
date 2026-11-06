@@ -172,6 +172,9 @@ func (h *Handler) RefreshDevices(force bool) error {
 	}
 	h.mu.Unlock()
 
+	// nodes whose device list was fetched in this refresh
+	refreshed := make(map[manager.NodeIdentifier]bool)
+
 	for _, nodeIdentifier := range knownNodes {
 		var no models.Node
 		if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
@@ -188,6 +191,8 @@ func (h *Handler) RefreshDevices(force bool) error {
 			//h.log.Errorf("unable to get manager: %v", err)
 			continue
 		}
+
+		refreshed[nodeIdentifier] = true
 
 		// remote calls above are done without holding the lock
 		h.mu.Lock()
@@ -267,15 +272,20 @@ func (h *Handler) RefreshDevices(force bool) error {
 
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	for _, managers := range h.nodes {
+	// devices missing from this refresh: either their node is offline, or the
+	// node is connected but no longer reports the device (unplugged, stopped)
+	for nodeIdentifier, managers := range h.nodes {
+		state := device.StateNodeDisconnected
+		if refreshed[nodeIdentifier] {
+			state = device.StateRemoteDisconnected
+		}
 		for _, devices := range managers {
 			for _, dev := range devices {
 				nd, ok := dev.(*NodeDevice)
 				if ok && nd.lastUpdateAt != lastUpdate {
-					nd.SetDeviceState("StateNodeDisconnected")
+					nd.deviceState = state
 					h.deviceStorage.Update(h.Name(), nd)
 				}
-
 			}
 		}
 	}

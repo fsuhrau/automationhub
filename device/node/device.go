@@ -81,6 +81,10 @@ func (d *NodeDevice) SetDeviceState(state string) {
 		d.deviceState = device.StateBooted
 	case "StateShutdown":
 		d.deviceState = device.StateShutdown
+	case "StateRemoteDisconnected":
+		d.deviceState = device.StateRemoteDisconnected
+	case "StateNodeDisconnected":
+		d.deviceState = device.StateNodeDisconnected
 	default:
 		d.deviceState = device.StateUnknown
 	}
