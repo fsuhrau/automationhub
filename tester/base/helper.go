@@ -11,7 +11,12 @@ func GetParams(binary *models.AppBinary, startupUrl string) app.Parameter {
 	var params app.Parameter
 	if binary != nil {
 		// handle parameter with binary
-		params.Identifier = binary.App.Identifier
+		// the bundle's own package wins: feature and enterprise builds use
+		// another package than the app is registered with
+		params.Identifier = binary.Identifier
+		if params.Identifier == "" && binary.App != nil {
+			params.Identifier = binary.App.Identifier
+		}
 		params.Name = binary.Name
 		params.Version = binary.Version
 		var android *app.AndroidParams
