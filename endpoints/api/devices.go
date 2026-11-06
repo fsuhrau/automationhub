@@ -175,46 +175,93 @@ func (s *Service) deleteDevice(c *gin.Context, project *models.Project) {
 	c.Status(http.StatusOK)
 }
 
+// deviceUpdate is what the device edit page changes: the alias and the
+// custom parameters. Everything else is reported by the device or its node.
+type deviceUpdate struct {
+	Alias           string `json:"alias"`
+	CustomParameter []struct {
+		ID    uint   `json:"id"`
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	} `json:"customParameter"`
+}
+
+// updateDevice sets the alias (an empty one clears it) and replaces the
+// custom parameters: submitted ones with the id of an existing parameter are
+// updated, others are added, and existing ones not submitted are removed.
+// Keys must be set and unique.
 func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
-	var dev models.Device
-	if err := c.Bind(&dev); err != nil {
+	var req deviceUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		s.error(c, http.StatusBadRequest, err)
 		return
 	}
+	seen := map[string]bool{}
+	for i := range req.CustomParameter {
+		key := strings.TrimSpace(req.CustomParameter[i].Key)
+		if key == "" {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("custom parameter %d has no key", i+1))
+			return
+		}
+		if seen[key] {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("custom parameter %q is there twice", key))
+			return
+		}
+		seen[key] = true
+		req.CustomParameter[i].Key = key
+	}
 
-	device, ok := s.findProjectDevice(c, project, "ConnectionParameter", "CustomParameter")
+	device, ok := s.findProjectDevice(c, project, "CustomParameter")
 	if !ok {
 		return
 	}
-	// never let the body address a different device or move it to another company
-	dev.ID = device.ID
-	dev.CompanyID = device.CompanyID
 
-	var ids []uint
-	for i := range device.CustomParameter {
-		exists := false
-		for d := range dev.CustomParameter {
-			if device.CustomParameter[i].Key == dev.CustomParameter[d].Key {
-				exists = true
-				break
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Device{}).Where("id = ?", device.ID).Update("alias", strings.TrimSpace(req.Alias)).Error; err != nil {
+			return err
+		}
+		existing := map[uint]bool{}
+		for _, p := range device.CustomParameter {
+			existing[p.ID] = true
+		}
+		kept := map[uint]bool{}
+		for _, p := range req.CustomParameter {
+			// an id of another device's parameter is treated as new
+			if p.ID != 0 && existing[p.ID] {
+				kept[p.ID] = true
+				if err := tx.Model(&models.CustomParameter{}).Where("id = ? AND device_id = ?", p.ID, device.ID).
+					Updates(map[string]interface{}{"key": p.Key, "value": p.Value}).Error; err != nil {
+					return err
+				}
+				continue
+			}
+			if err := tx.Create(&models.CustomParameter{DeviceID: device.ID, Key: p.Key, Value: p.Value}).Error; err != nil {
+				return err
 			}
 		}
-		if !exists {
-			ids = append(ids, device.CustomParameter[i].ID)
+		var removed []uint
+		for id := range existing {
+			if !kept[id] {
+				removed = append(removed, id)
+			}
 		}
-	}
-
-	if len(ids) > 0 {
-		if err := s.db.Delete(&models.CustomParameter{}, "id in (?)", ids).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
+		if len(removed) > 0 {
+			if err := tx.Delete(&models.CustomParameter{}, "id IN ? AND device_id = ?", removed, device.ID).Error; err != nil {
+				return err
+			}
 		}
-	}
-
-	if err := s.db.Updates(&dev).Error; err != nil {
+		return nil
+	})
+	if err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-	c.Status(http.StatusOK)
+
+	updated, ok := s.findProjectDevice(c, project, "ConnectionParameter", "DeviceParameter", "CustomParameter")
+	if !ok {
+		return
+	}
+	c.JSON(http.StatusOK, updated)
 }
 
 func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {

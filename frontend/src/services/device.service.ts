@@ -23,7 +23,14 @@ export const postUnlockDevice = (projectId: string, id: number): Promise<IDevice
     return http.post(`/${projectId}/device/${id}/unlock`).then(resp => resp.data)
 };
 
-export const updateDevice = (projectId: string, data: IDeviceData, id: number): Promise<IDeviceData> => {
+export interface DeviceUpdate {
+    alias: string,
+    customParameter: { id?: number, key: string, value: string }[],
+}
+
+// updateDevice changes what a person can set on a device: the alias and the
+// custom parameters (replaced as a whole). Returns the saved device.
+export const updateDevice = (projectId: string, id: number, data: DeviceUpdate): Promise<IDeviceData> => {
     return http.put(`/${projectId}/device/${id}`, data).then(resp => resp.data)
 };
 

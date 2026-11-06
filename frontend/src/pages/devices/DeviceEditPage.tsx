@@ -1,289 +1,198 @@
-import React from 'react';
-import {Box, ButtonGroup, IconButton, SelectChangeEvent, TextField, Typography} from '@mui/material';
-import Grid from "@mui/material/Grid";
-import Button from '@mui/material/Button';
+import React, {useEffect, useMemo, useState} from 'react';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography,
+} from '@mui/material';
+import {AddRounded, DeleteOutlineRounded} from '@mui/icons-material';
+import {useNavigate} from 'react-router-dom';
 import IDeviceData from '../../types/device';
 import {updateDevice} from '../../services/device.service';
-import {useNavigate} from 'react-router-dom';
-import {DeviceType} from '../../types/device.type.enum';
-import {DeviceConnectionType} from '../../types/device.connection.type.enum';
-import {useProjectContext} from "../../hooks/ProjectProvider";
-import {TitleCard} from "../../components/title.card.component";
-import {useError} from "../../ErrorProvider";
-import PlatformTypeIcon from "../../components/PlatformTypeIcon";
-import {useHubState} from "../../hooks/HubStateProvider";
-import IParameter from '../../types/device.parameter';
-import {Add, Remove} from '@mui/icons-material';
-
-const StringIsNumber = (value: any): boolean => !isNaN(Number(value));
-
-function ToArray(en: any): Array<Object> {
-    return Object.keys(en).filter(StringIsNumber).map(key => ({id: key, name: en[key]}));
-}
-
-function getConnectionType(): Array<{ id: DeviceConnectionType, name: string }> {
-    return ToArray(DeviceConnectionType) as Array<{ id: DeviceConnectionType, name: string }>;
-}
+import {useProjectContext} from '../../hooks/ProjectProvider';
+import {useHubState} from '../../hooks/HubStateProvider';
+import {useError} from '../../ErrorProvider';
+import {HubStateActions} from '../../application/HubState';
+import PlatformTypeIcon from '../../components/PlatformTypeIcon';
+import {EditForm, isDirty, keyErrors, ParameterRow, toRequest} from './deviceEditModel';
 
 interface DeviceEditPageProps {
     device: IDeviceData
 }
 
-const DeviceEditPage: React.FC<DeviceEditPageProps> = (props: DeviceEditPageProps) => {
+let nextRow = 0;
+const rowId = () => `row-${nextRow++}`;
 
-    const {device} = props;
+const formOf = (device: IDeviceData): EditForm => ({
+    alias: device.alias ?? '',
+    parameters: (device.customParameter ?? []).map(p => ({rowId: rowId(), id: p.id, key: p.key, value: p.value})),
+});
 
+const Section: React.FC<{ title: string, description: React.ReactNode, children: React.ReactNode }> = ({title, description, children}) =>
+    <Card variant="outlined">
+        <CardContent>
+            <Typography component="h2" variant="subtitle1" sx={{fontWeight: 600}}>{title}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>{description}</Typography>
+            {children}
+        </CardContent>
+    </Card>;
+
+// DeviceEditPage changes what a person sets on a device: the alias and the
+// custom parameters. The rest is reported by the device and isn't editable.
+const DeviceEditPage: React.FC<DeviceEditPageProps> = ({device}) => {
     const navigate = useNavigate();
     const {projectIdentifier} = useProjectContext();
-    const {state} = useHubState()
-    const {setError} = useError()
+    const {state, dispatch} = useHubState();
+    const {setError} = useError();
 
-    const node = state.nodes?.find(n => n.id === device.nodeId);
+    const initial = useMemo(() => formOf(device), [device]);
+    const [form, setForm] = useState<EditForm>(initial);
+    const [saving, setSaving] = useState(false);
+    const [leaving, setLeaving] = useState(false);
 
-    const [uiState, setUiState] = React.useState<{
-        alias: string,
-        customParameter: IParameter[],
-        acknowledged: boolean,
-        connectionType: DeviceConnectionType,
-        ipAddress: string,
-        port: number
-        currentKey: string
-        currentValue: string
-    }>({
-        alias: device.alias,
-        customParameter: device.customParameter,
-        acknowledged: device.isAcknowledged,
-        connectionType: device.connectionParameter ? device.connectionParameter.connectionType : DeviceConnectionType.USB,
-        ipAddress: device.connectionParameter ? device.connectionParameter.ip : "",
-        port: device.connectionParameter ? device.connectionParameter.port : 0,
-        currentKey: '',
-        currentValue: '',
-    })
+    const errors = keyErrors(form.parameters);
+    const dirty = isDirty(initial, form);
+    const valid = errors.size === 0;
+    const detailsUrl = `/project/${projectIdentifier}/device/${device.id}`;
 
-    const updateParameterKey = (index: number, value: string) => {
-        setUiState(prevState => ({
-            ...prevState,
-            customParameter: [...prevState.customParameter.map((value1, index1) => index1 == index ? {
-                ...value1,
-                key: value
-            } : value1)]
-        }))
+    // closing or reloading the tab with unsaved changes asks first
+    useEffect(() => {
+        if (!dirty) return;
+        const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [dirty]);
+
+    const setRow = (id: string, change: Partial<ParameterRow>) =>
+        setForm(f => ({...f, parameters: f.parameters.map(p => p.rowId === id ? {...p, ...change} : p)}));
+    const addRow = () => {
+        const id = rowId();
+        setForm(f => ({...f, parameters: [...f.parameters, {rowId: id, key: '', value: ''}]}));
+        // focus the new key field once it is rendered
+        setTimeout(() => document.getElementById(`param-key-${id}`)?.focus());
     };
-    const updateParameterValue = (index: number, value: string) => {
-        setUiState(prevState => ({
-            ...prevState,
-            customParameter: [...prevState.customParameter.map((value1, index1) => index1 == index ? {
-                ...value1,
-                value: value
-            } : value1)]
-        }))
-    };
+    const removeRow = (id: string) => setForm(f => ({...f, parameters: f.parameters.filter(p => p.rowId !== id)}));
 
-    const addParameter = (): void => {
-        setUiState(prevState => ({...prevState, customParameter: [...prevState.customParameter, {key: '', value: ''}]}))
-    };
-
-    const removeParameter = (param: string) => {
-        setUiState(prevState => ({
-            ...prevState, customParameter: [...prevState.customParameter.filter(value => value.key !== param)]
-        }))
+    const save = () => {
+        if (!valid || !dirty) return;
+        setSaving(true);
+        updateDevice(projectIdentifier, device.id, toRequest(form)).then(saved => {
+            // the device list keeps its live state; only what was edited changes
+            const listed = state.devices?.find(d => d.id === device.id);
+            if (listed && saved?.id) {
+                dispatch({type: HubStateActions.UpdateDevice, payload: {...listed, alias: saved.alias, customParameter: saved.customParameter}});
+            }
+            navigate(detailsUrl);
+        }).catch(e => {
+            setError(e);
+            setSaving(false);
+        });
     };
 
-    const connectionTypes = getConnectionType();
-
-    const handleConnectionTypeChange = (event: SelectChangeEvent) => {
-        setUiState(prevState => ({
-            ...prevState, connectionType: +event.target.value as DeviceConnectionType
-        }))
-    };
-
-    const onSaveClick = () => {
-        device.customParameter = uiState.customParameter;
-        device.isAcknowledged = uiState.acknowledged;
-        device.alias = uiState.alias;
-        device.connectionParameter = {
-            connectionType: uiState.connectionType,
-            ip: uiState.ipAddress,
-            port: uiState.port,
-        };
-        updateDevice(projectIdentifier, device, device.id).then(response => {
-            navigateBack()
-        }).catch(ex => setError(ex));
-    };
-
-    const navigateBack = () => {
-        navigate(`/project/${projectIdentifier}/device/${device.id}`);
-    }
+    const cancel = () => dirty ? setLeaving(true) : navigate(detailsUrl);
 
     return (
-        <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard titleElement={
-                <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
-                    <Typography component="h2" variant="h6">
-                        <PlatformTypeIcon
-                            platformType={device.platformType}/> {`Device: ${device.name} (${device.deviceIdentifier})`}
-                    </Typography>
-                    <ButtonGroup variant="contained" aria-label="text button group">
-                        <Button variant="outlined" size={'small'} onClick={navigateBack}>Cancel</Button>
-                        <Button color={'primary'} variant="contained" size={'small'} onClick={onSaveClick}>Save</Button>
-                    </ButtonGroup>
-                </Box>}>
-                <Grid container={true} spacing={2}>
-                    <Grid size={12}>
-                        <TitleCard title={'Device Infos'}>
-                            <Grid container={true} spacing={1}>
-                                <Grid size={{xs: 12, md: 2}}>
-                                    ID:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {device.id}
-                                </Grid>
-                                <Grid size={{xs: 12, md: 2}}>
-                                    Name:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {device.name}
-                                </Grid>
+        // full width like the other pages, so it lines up with the breadcrumbs;
+        // the form itself stays narrow enough to read
+        <Box component="form" sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}, mt: 2, '& > *': {maxWidth: 900}}} noValidate
+             onSubmit={e => {
+                 e.preventDefault();
+                 save();
+             }}
+             onKeyDown={e => {
+                 // Cmd/Ctrl+S saves, as in an editor
+                 if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                     e.preventDefault();
+                     save();
+                 }
+             }}>
+            <Stack direction={{xs: 'column', sm: 'row'}} spacing={2} useFlexGap alignItems={{sm: 'center'}} sx={{mb: 2}}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{minWidth: 0}}>
+                    <Box sx={{display: 'flex', p: 1, borderRadius: 1, border: 1, borderColor: 'divider'}}>
+                        <PlatformTypeIcon platformType={device.platformType}/>
+                    </Box>
+                    <Box sx={{minWidth: 0}}>
+                        <Typography component="h1" variant="h5" sx={{wordBreak: 'break-word'}}>
+                            Edit {device.alias || device.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {dirty ? 'Unsaved changes' : 'No changes yet'}
+                        </Typography>
+                    </Box>
+                </Stack>
+                <Stack direction="row" spacing={1} sx={{ml: {sm: 'auto'}}}>
+                    <Button onClick={cancel} disabled={saving}>Cancel</Button>
+                    <Tooltip title={!valid ? 'Fix the marked parameters first' : !dirty ? 'Nothing to save yet' : 'Save (⌘S / Ctrl+S)'}>
+                        <span><Button type="submit" variant="contained" disabled={!valid || !dirty || saving}
+                                      startIcon={saving ? <CircularProgress size={16} color="inherit"/> : undefined}>
+                            Save
+                        </Button></span>
+                    </Tooltip>
+                </Stack>
+            </Stack>
 
-                                <Grid size={{xs: 12, md: 2}}>
-                                    Alias:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    <TextField id={"alias_edit"} placeholder={"Alias"} variant={'outlined'}
-                                               size={'small'} value={uiState.alias}
-                                               onChange={event => {
-                                                   setUiState(prevState => ({...prevState, alias: event.target.value}))
-                                               }}/>
-                                </Grid>
+            <Stack spacing={2}>
+                <Section title="Alias" description={<>
+                    Shown instead of the device name <Box component="span" sx={{fontFamily: 'monospace'}}>{device.name}</Box> in
+                    lists, test results and the device pool. Leave it empty to use the device name.
+                </>}>
+                    <TextField size="small" fullWidth label="Alias" placeholder={device.name} value={form.alias}
+                               onChange={e => setForm(f => ({...f, alias: e.target.value}))}
+                               slotProps={{htmlInput: {maxLength: 100}}}/>
+                </Section>
 
-                                <Grid size={{xs: 12, md: 2}}>
-                                    Operation System:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {device.os} {device.osVersion}
-                                </Grid>
-                                <Grid size={{xs: 12, md: 2}}>
-                                    Identifier:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {device.deviceIdentifier}
-                                </Grid>
-                                <Grid size={{xs: 12, md: 2}}>
-                                    Type:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {DeviceType[device.deviceType]}
-                                </Grid>
-                                {
-                                    /*
-                                    <Grid size={{xs: 12, md: 2}}>
-                                    Acknowledged:
-                                </Grid>
-                                <Grid size={{xs: 12, md: 10}}>
-                                    {device.isAcknowledged ? 'Yes' : 'No'}
-                                </Grid>
-                                     */
-                                }
-
-                            </Grid>
-                        </TitleCard>
-                    </Grid>
-                    <Grid size={12}>
-                        {
-                            device.connectionParameter && <TitleCard title={'Connection'}>
-                                <Grid container={true} spacing={1}>
-                                    <Grid size={{xs: 12, md: 2}}>
-                                        Type
-                                    </Grid>
-                                    <Grid size={{xs: 12, md: 10}}>
-                                        {DeviceConnectionType[device.connectionParameter.connectionType]}
-                                    </Grid>
-                                    {
-                                        device.connectionParameter.connectionType == DeviceConnectionType.HubNode && <>
-                                            <Grid size={{xs: 12, md: 2}}>
-                                                Node
-                                            </Grid>
-                                            <Grid size={{xs: 12, md: 10}}>
-                                                {node?.name}
-                                            </Grid>
-                                        </>
-                                    }
-                                    {
-                                        device.connectionParameter && device.connectionParameter.connectionType == DeviceConnectionType.Remote && device.connectionParameter.ip.length > 0 && device.connectionParameter.port > 0 && (
-                                            <Grid size={{xs: 12, md: 12}} container={true}>
-                                                <Grid size={{xs: 12, md: 2}}>
-                                                    IP:
-                                                </Grid>
-                                                <Grid size={{xs: 12, md: 10}}>
-                                                    {device.connectionParameter.ip}
-                                                </Grid>
-                                                <Grid size={{xs: 12, md: 2}}>
-                                                    Port:
-                                                </Grid>
-                                                <Grid size={{xs: 12, md: 10}}>
-                                                    {device.connectionParameter.port}
-                                                </Grid>
-                                            </Grid>
-                                        )
-                                    }
-                                </Grid>
-                            </TitleCard>
-                        }
-                    </Grid>
-                    <Grid size={12}>
-                        <TitleCard title={'Device parameter'}>
-                            <Grid container={true} spacing={1}>
-                                {device.deviceParameter.map(d => (
-                                    <>
-                                        <Grid size={{xs: 12, md: 2}}>
-                                            {d.key}
-                                        </Grid>
-                                        <Grid size={{xs: 12, md: 10}}>
-                                            {d.value}
-                                        </Grid>
-                                    </>
-                                ))}
-                            </Grid>
-                        </TitleCard>
-                    </Grid>
-                    <Grid size={12}>
-                        <TitleCard title={'Custom User parameter'}>
-                            <Grid container={true} spacing={1}>
-                                {uiState.customParameter.map((value, index) => (
-                                        <Grid size={{xs: 12, md: 12}} container={true} spacing={1}>
-                                            <Grid size={{xs: 12, md: 2}}>
-                                                <TextField id={`update_parameter_key_${index}`} value={value.key}
-                                                           placeholder={"Key"} variant={"outlined"} size={'small'} fullWidth={true}
-                                                           onChange={event => updateParameterKey(index, event.target.value)}/>
-                                            </Grid>
-                                            <Grid size={{xs: 12, md: 2}}>
-                                                <TextField id={`update_parameter_value_${index}`} value={value.value} fullWidth={true}
-                                                           placeholder={"Value"} variant={"outlined"} size={'small'}
-                                                           onChange={event => updateParameterValue(index, event.target.value)}/>
-                                            </Grid>
-                                            <Grid size={{xs: 12, md: 8}}>
-                                                <IconButton color={"error"} aria-label={"remove"} component={"span"}
-                                                            size={"small"}
-                                                            onClick={() => removeParameter(value.key)}>
-                                                    <Remove/>
-                                                </IconButton>
-                                            </Grid>
-                                        </Grid>
-                                    ),
-                                )}
-                                <Grid size={{xs: 12, md: 2}}>
-                                </Grid>
-                                <Grid size={{xs: 12, md: 8}}>
-                                    <IconButton color="primary" aria-label="remove" component="span" size={'small'}
-                                                onClick={addParameter}>
-                                        <Add/>
+                <Section title="Custom parameters" description={<>
+                    Values the hub uses for this device and passes to tests, for example <Box component="span" sx={{fontFamily: 'monospace'}}>PIN</Box> to
+                    unlock an Android phone. Keys must be unique.
+                </>}>
+                    {form.parameters.length === 0
+                        ? <Typography variant="body2" color="text.secondary" sx={{mb: 1.5}}>No custom parameters.</Typography>
+                        : <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', sm: 'minmax(140px, 2fr) 3fr auto'}, gap: 1, alignItems: 'start', mb: 1.5}}
+                               role="group" aria-label="Custom parameters">
+                            {form.parameters.map((p, i) => <React.Fragment key={p.rowId}>
+                                <TextField size="small" id={`param-key-${p.rowId}`} placeholder="Key" value={p.key}
+                                           error={errors.has(i)} helperText={errors.get(i)}
+                                           onChange={e => setRow(p.rowId, {key: e.target.value})}
+                                           slotProps={{htmlInput: {'aria-label': `Key of parameter ${i + 1}`, spellCheck: false}}}/>
+                                <TextField size="small" placeholder="Value" value={p.value}
+                                           onChange={e => setRow(p.rowId, {value: e.target.value})}
+                                           slotProps={{htmlInput: {'aria-label': `Value of ${p.key || `parameter ${i + 1}`}`, spellCheck: false}}}/>
+                                <Tooltip title="Remove">
+                                    <IconButton aria-label={`Remove ${p.key || `parameter ${i + 1}`}`} onClick={() => removeRow(p.rowId)}>
+                                        <DeleteOutlineRounded fontSize="small"/>
                                     </IconButton>
-                                </Grid>
-                            </Grid>
-                        </TitleCard>
-                    </Grid>
-                </Grid>
-            </TitleCard>
+                                </Tooltip>
+                            </React.Fragment>)}
+                        </Box>}
+                    <Button size="small" startIcon={<AddRounded/>} onClick={addRow}>Add parameter</Button>
+                </Section>
+
+                <Typography variant="body2" color="text.secondary">
+                    The name, system, type and connection are reported by the device and its node, so they can't be edited here.
+                </Typography>
+            </Stack>
+
+            <Dialog open={leaving} onClose={() => setLeaving(false)} aria-labelledby="discard-title">
+                <DialogTitle id="discard-title">Discard your changes?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>The alias and parameter changes on this page aren't saved yet.</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setLeaving(false)}>Keep editing</Button>
+                    <Button color="warning" onClick={() => navigate(detailsUrl)}>Discard</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
