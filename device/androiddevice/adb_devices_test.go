@@ -28,9 +28,10 @@ func TestParseADBDeviceLine(t *testing.T) {
 	}
 }
 
-func TestDeviceLineStillMatchesRegex(t *testing.T) {
-	line := "emulator-5554          device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a transport_id:1"
-	if m := DeviceListRegex.FindAllStringSubmatch(line, -1); len(m) != 1 || m[0][1] != "emulator-5554" {
-		t.Fatalf("regex no longer matches device lines: %v", m)
+func TestParseADBDeviceLineWithUSBPath(t *testing.T) {
+	// newer adb versions print the usb port as a path (the old regex rejected it)
+	entry, ok := parseADBDeviceLine("RZCTA1YRJ5W            device usb:0-1.3 product:a52qnsxx model:SM_A525F device:a52q transport_id:2")
+	if !ok || entry.State != adbStateDevice || entry.Fields["model"] != "SM_A525F" || entry.Fields["usb"] != "0-1.3" || entry.Fields["product"] != "a52qnsxx" {
+		t.Fatalf("unexpected entry %+v", entry)
 	}
 }

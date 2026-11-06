@@ -6,7 +6,7 @@ import Grid from '@mui/system/Grid';
 import {ArrowForward, PlayArrow, LockOpen, ScreenShare} from "@mui/icons-material";
 import {useNavigate} from "react-router-dom";
 import {useProjectContext} from "../hooks/ProjectProvider";
-import {deviceState, DeviceStateType} from "../types/deviceStateType";
+import DeviceStatus from "./DeviceStatus";
 
 interface DevicesTableProps {
     devices: IDeviceData[]
@@ -86,9 +86,7 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             align: 'right',
             flex: 1,
             minWidth: 100,
-            renderCell: (params) => params.value === DeviceStateType.Unauthorized
-                ? <span title="Accept the USB debugging prompt on the device">{deviceState(params.value)}</span>
-                : deviceState(params.value),
+            renderCell: (params) => <DeviceStatus state={params.value}/>,
         },
         {
             field: 'session',

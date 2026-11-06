@@ -120,32 +120,30 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	return installed && isAppInstalled, err
 }
 
-func (d *Device) UpdateDeviceInfos(infos []string) {
+// UpdateDeviceInfos applies the fields of an "adb devices -l" entry. The
+// first call also reads the device properties over adb.
+func (d *Device) UpdateDeviceInfos(entry adbDeviceEntry) {
 	init := false
 	if d.deviceParameter == nil {
 		d.deviceParameter = make(map[string]string)
 		init = true
 	}
-	deviceId := infos[1]
-	device := infos[2]
-	_ = deviceId
-	deviceUSB := infos[3]
-	deviceConnection := infos[5]
-	_ = deviceConnection
-	product := infos[6]
-	model := infos[7]
-	name := deviceId // infos[8]
-	transportID := infos[9]
 
-	d.deviceName = name
-	d.product = product
+	d.deviceName = entry.Serial
+	d.product = entry.Fields["product"]
 
-	if len(device) > 0 {
-		d.deviceParameter["Device"] = device
+	if v := entry.Fields["device"]; v != "" {
+		d.deviceParameter["Device"] = v
 	}
-	d.deviceParameter["Device Model"] = model
-	d.deviceParameter["Transport ID"] = transportID
-	d.deviceParameter["Device USB"] = deviceUSB
+	if v := entry.Fields["model"]; v != "" {
+		d.deviceParameter["Device Model"] = v
+	}
+	if v := entry.Fields["transport_id"]; v != "" {
+		d.deviceParameter["Transport ID"] = v
+	}
+	if v := entry.Fields["usb"]; v != "" {
+		d.deviceParameter["Device USB"] = v
+	}
 
 	if init {
 		d.deviceAPILevel = android.GetParameterInt(d.deviceID, "ro.build.version.sdk")

@@ -9,13 +9,11 @@ import (
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tools/exec"
-	"regexp"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 )
 
-var DeviceListRegex = regexp.MustCompile(`([a-zA-Z0-9.:\-]+)\s+device\s((usb:([a-zA-Z0-9]+)\s)|([a-zA-Z0-9-]+\s)|)product:([a-zA-Z0-9_]+)\smodel:([a-zA-Z0-9_]+)\s+device:([a-zA-Z0-9_]+)\s+transport_id:([0-9]+)`)
 
 const (
 	Manager = "android_device"
@@ -242,14 +240,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 			m.updateUnavailableDevice(entry, lastUpdate)
 			continue
 		}
-		matches := DeviceListRegex.FindAllStringSubmatch(line, -1)
-		if len(matches) < 1 {
-			continue
-		}
-		if len(matches[0]) < 7 {
-			continue
-		}
-		deviceID := matches[0][1]
+		deviceID := entry.Serial
 		if dev, ok := m.devices[deviceID]; ok && dev.deviceParameter != nil {
 			if dev.GetConfig() == nil {
 				for _, d := range devs {
@@ -261,12 +252,12 @@ func (m *Handler) RefreshDevices(force bool) error {
 			dev.deviceID = deviceID
 			dev.lastUpdateAt = lastUpdate
 			dev.SetDeviceState("StateBooted")
-			m.devices[deviceID].UpdateDeviceInfos(matches[0])
+			m.devices[deviceID].UpdateDeviceInfos(entry)
 			m.deviceStorage.Update(m.Name(), dev)
 		} else if ok {
 			// known from an unauthorized state: now readable, load its infos
 			dev.lastUpdateAt = lastUpdate
-			dev.UpdateDeviceInfos(matches[0])
+			dev.UpdateDeviceInfos(entry)
 			dev.SetDeviceState("StateBooted")
 			m.deviceStorage.Update(m.Name(), dev)
 		} else {
@@ -276,7 +267,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 				lastUpdateAt:  lastUpdate,
 				installedApps: make(map[string]string),
 			}
-			m.devices[deviceID].UpdateDeviceInfos(matches[0])
+			m.devices[deviceID].UpdateDeviceInfos(entry)
 			m.devices[deviceID].SetDeviceState("StateBooted")
 			m.registerNewDevice(m.devices[deviceID])
 		}
