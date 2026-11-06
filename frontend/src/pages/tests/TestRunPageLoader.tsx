@@ -54,7 +54,7 @@ const TestRunPageLoader: React.FC = () => {
 
     return (
         uiState.testRun
-            ? <TestRunPage testRun={uiState.testRun} nextRunId={uiState.nextRunId} prevRunId={uiState.prevRunId}/>
+            ? <TestRunPage key={uiState.testRun.id} testRun={uiState.testRun} nextRunId={uiState.nextRunId} prevRunId={uiState.prevRunId}/>
             : <Backdrop sx={{zIndex: 1, color: '#fff'}} open={true}><CircularProgress color="inherit"/></Backdrop>
     );
 };
