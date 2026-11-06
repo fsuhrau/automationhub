@@ -12,19 +12,142 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	AVG_HISTORY_LIMIT = 20
 )
 
+// recentRunsPerTest is how many runs the tests list shows per test
+const recentRunsPerTest = 10
+
+// runSummary is one run in the tests list: when it ran and how it went
+type runSummary struct {
+	ID        uint          `json:"id"`
+	CreatedAt time.Time     `json:"createdAt"`
+	State     runs.RunState `json:"state"`
+	// running, passed, failed, unstable, interrupted, not_run or empty;
+	// the same rules as the run page
+	Status   string `json:"status"`
+	Passed   int    `json:"passed"`
+	Failed   int    `json:"failed"`
+	Unstable int    `json:"unstable"`
+	Open     int    `json:"open"`
+}
+
+type testListEntry struct {
+	models.Test
+	// the latest runs, newest first
+	RecentRuns []runSummary `json:"recentRuns"`
+}
+
+// summarizeRun is the run status of the run page: a running run is running;
+// otherwise failures, then unstable tests, then tests that never finished
+// decide; a run without results did not run when its log has errors
+func summarizeRun(state runs.RunState, passed, failed, unstable, open, logErrors int) string {
+	switch {
+	case state == runs.RunRunning:
+		return "running"
+	case passed+failed+unstable+open == 0 && logErrors > 0:
+		return "not_run"
+	case passed+failed+unstable+open == 0:
+		return "empty"
+	case failed > 0:
+		return "failed"
+	case unstable > 0:
+		return "unstable"
+	case open > 0:
+		return "interrupted"
+	default:
+		return "passed"
+	}
+}
+
+// getTests lists the tests of an app with their latest runs. It used to
+// preload every run of every test, which the list never showed.
 func (s *Service) getTests(c *gin.Context, project *models.Project, application *models.App) {
 	var tests []models.Test
-	if err := s.db.Where("app_id = ?", application.ID).Preload("TestRuns").Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Find(&tests).Error; err != nil {
+	if err := s.db.Where("app_id = ?", application.ID).Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Order("id").Find(&tests).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, tests)
+
+	list := make([]testListEntry, len(tests))
+	var runIDs []uint
+	for i := range tests {
+		list[i].Test = tests[i]
+		var recent []models.TestRun
+		if err := s.db.Where("test_id = ?", tests[i].ID).Order("id desc").Limit(recentRunsPerTest).Find(&recent).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		list[i].RecentRuns = make([]runSummary, len(recent))
+		for j, r := range recent {
+			list[i].RecentRuns[j] = runSummary{ID: r.ID, CreatedAt: r.CreatedAt}
+			runIDs = append(runIDs, r.ID)
+		}
+	}
+
+	// results of the tests themselves; runner protocols wrap one of them
+	var results []struct {
+		TestRunID  uint
+		TestResult models.TestResultState
+		N          int
+	}
+	var logErrors []struct {
+		TestRunID uint
+		N         int
+	}
+	if len(runIDs) > 0 {
+		if err := s.db.Model(&models.TestProtocol{}).Select("test_run_id, test_result, count(*) as n").
+			Where("test_run_id IN ?", runIDs).
+			Where("NOT EXISTS (SELECT 1 FROM test_protocols c WHERE c.parent_test_protocol_id = test_protocols.id AND c.deleted_at IS NULL)").
+			Group("test_run_id, test_result").Scan(&results).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		if err := s.db.Model(&models.TestRunLogEntry{}).Select("test_run_id, count(*) as n").
+			Where("test_run_id IN ? AND level = ?", runIDs, "error").
+			Group("test_run_id").Scan(&logErrors).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+	type counts struct{ passed, failed, unstable, open, logErrors int }
+	byRun := map[uint]*counts{}
+	get := func(id uint) *counts {
+		if byRun[id] == nil {
+			byRun[id] = &counts{}
+		}
+		return byRun[id]
+	}
+	for _, r := range results {
+		n := get(r.TestRunID)
+		switch r.TestResult {
+		case models.TestResultSuccess:
+			n.passed += r.N
+		case models.TestResultFailed:
+			n.failed += r.N
+		case models.TestResultUnstable:
+			n.unstable += r.N
+		default:
+			n.open += r.N
+		}
+	}
+	for _, e := range logErrors {
+		get(e.TestRunID).logErrors = e.N
+	}
+	for i := range list {
+		for j := range list[i].RecentRuns {
+			run := &list[i].RecentRuns[j]
+			n := get(run.ID)
+			run.State = s.runState(run.ID)
+			run.Passed, run.Failed, run.Unstable, run.Open = n.passed, n.failed, n.unstable, n.open
+			run.Status = summarizeRun(run.State, n.passed, n.failed, n.unstable, n.open, n.logErrors)
+		}
+	}
+	c.JSON(http.StatusOK, list)
 }
 
 func (s *Service) newTest(c *gin.Context, project *models.Project, application *models.App) {

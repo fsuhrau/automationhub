@@ -1,4 +1,3 @@
-import { AxiosResponse } from 'axios';
 import http from '../http-common';
 import {AppParameter, AppParameterType, IAppBinaryData, IAppData, Parameter} from "../types/app";
 
@@ -49,36 +48,6 @@ export type AppFilter = {
 
 export const findApp = (filter?: AppFilter): Promise<IAppBinaryData[]> => {
     return http.get('/apps', {params: filter}).then(resp => resp.data)
-};
-
-export const uploadNewApp = (file: File,
-    projectId: string,
-    appId: number,
-    uploadProgress: (progressEvent: number) => void,
-    finished: (finished: AxiosResponse<IAppBinaryData>) => void): void => {
-
-    const formData = new FormData();
-    formData.append('test_target', file);
-
-    http.request({
-        method: 'post',
-        url: `/${projectId}/app/${appId}/upload`,
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: progressEvent => {
-            if (progressEvent.total) {
-                uploadProgress((progressEvent.loaded / progressEvent.total) * 100);
-            } else return ''
-        },
-    }).then(data => {
-        console.log(data);
-        uploadProgress(100);
-        finished(data);
-    }).catch(ex => {
-        alert(ex)
-    });
 };
 // uploadBundle uploads a build; onProgress gets 0..1 while the file is sent,
 // then the master reads the file before it answers with the bundle. An
