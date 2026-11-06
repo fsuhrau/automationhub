@@ -8,7 +8,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import NavbarBreadcrumbs from './NavbarBreadcrumbs';
 import OptionsMenu from './OptionsMenu';
 import ColorModeIconDropdown from '../shared-theme/ColorModeIconDropdown';
-import {CustomIcon} from './AppNavbar';
+import HubLogo from './HubLogo';
 import {useAuth} from '../hooks/AuthProvider';
 
 // TopBar is the header of the pages outside a project (the project list and
@@ -25,7 +25,7 @@ export default function TopBar() {
                    sx={{maxWidth: 1700, mx: 'auto', px: {xs: 2, sm: 3}, py: 1}}>
                 <ButtonBase component={RouterLink} to="/" aria-label="Automation Hub, all projects"
                             sx={{borderRadius: 1, gap: 1, p: 0.5}}>
-                    <CustomIcon/>
+                    <HubLogo sx={{fontSize: 28}}/>
                     <Typography variant="subtitle1" sx={{fontWeight: 600, display: {xs: 'none', sm: 'block'}}}>
                         Automation Hub
                     </Typography>

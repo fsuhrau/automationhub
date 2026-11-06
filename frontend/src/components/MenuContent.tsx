@@ -24,6 +24,7 @@ import {useProjectContext} from "../hooks/ProjectProvider";
 import {useHubState} from "../hooks/HubStateProvider";
 import {useSelectedApp} from "../hooks/useSelectedApp";
 import ApplicationSelection from "./ApplicationSelection";
+import HubLogo from "./HubLogo";
 
 interface NavItem {
     text: string,
@@ -77,12 +78,14 @@ export default function MenuContent({onNavigate}: { onNavigate?: () => void }) {
     return (
         <Stack sx={{flexGrow: 1, justifyContent: 'space-between', overflowY: 'auto'}}>
             <Box>
-                <Stack direction="row" alignItems="center" spacing={1}
+                <Stack direction="row" alignItems="center" spacing={1.5}
                        sx={{px: 2, pt: 'calc(var(--template-frame-height, 0px) + 12px)', pb: 1.5}}>
+                    <HubLogo sx={{fontSize: 28}}/>
                     <Box sx={{minWidth: 0, flexGrow: 1}}>
                         <Typography variant="caption" color="text.secondary">Project</Typography>
-                        <Typography variant="subtitle1" noWrap sx={{fontWeight: 600, lineHeight: 1.3}}
-                                    title={project.name}>
+                        {/* up to two lines, so the logo doesn't cut the name short */}
+                        <Typography variant="subtitle1" title={project.name}
+                                    sx={{fontWeight: 600, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>
                             {project.name}
                         </Typography>
                     </Box>

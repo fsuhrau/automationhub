@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import {GitHub, LoginRounded, VisibilityOffRounded, VisibilityRounded} from '@mui/icons-material';
-import {CustomIcon} from '../../components/AppNavbar';
+import HubLogo from '../../components/HubLogo';
 import ColorModeSelect from '../../shared-theme/ColorModeSelect';
 import {useAuth} from '../../hooks/AuthProvider';
 
@@ -33,7 +33,7 @@ export const AuthPage: React.FC<{ title: string, subtitle?: React.ReactNode, chi
             <Card variant="outlined" sx={{width: '100%', maxWidth: 420, p: {xs: 3, sm: 4}}}>
                 <Stack spacing={1} sx={{mb: 3}}>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 1}}>
-                        <CustomIcon/>
+                        <HubLogo sx={{fontSize: 28}}/>
                         <Typography variant="subtitle1" sx={{fontWeight: 600}}>Automation Hub</Typography>
                     </Stack>
                     <Typography component="h1" variant="h5">{title}</Typography>
