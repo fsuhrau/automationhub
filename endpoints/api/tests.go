@@ -281,7 +281,7 @@ func (s *Service) getTest(c *gin.Context, project *models.Project, application *
 	testId := c.Param("test_id")
 
 	var test models.Test
-	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
+	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, "id = ? AND app_id = ?", testId, application.ID).Error; err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
@@ -289,141 +289,161 @@ func (s *Service) getTest(c *gin.Context, project *models.Project, application *
 	c.JSON(http.StatusOK, test)
 }
 
-func (s *Service) updateTest(c *gin.Context, project *models.Project, application *models.App) {
-	testId := c.Param("test_id")
+// testUpdate is what the test edit page saves: the name, how and where the
+// test runs, and for Unity tests what it runs
+type testUpdate struct {
+	Name                  string                       `json:"name"`
+	ExecutionType         models.ExecutionType         `json:"executionType"`
+	AllDevices            bool                         `json:"allDevices"`
+	Devices               []uint                       `json:"devices"`
+	UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
+	Categories            string                       `json:"categories"`
+	TestFunctions         []models.UnityTestFunction   `json:"testFunctions"`
+}
 
-	type request struct {
-		Name                  string                       `json:"name"`
-		ExecutionType         models.ExecutionType         `json:"executionType"`
-		AllDevices            bool                         `json:"allDevices"`
-		Devices               []uint                       `json:"devices"`
-		UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
-		Categories            string                       `json:"categories"`
-		TestFunctions         []models.UnityTestFunction   `json:"testFunctions"`
+// validate tidies the update (trimmed name and categories, no repeated
+// devices or functions) and says what keeps the test from running
+func (u *testUpdate) validate(unity bool) error {
+	u.Name = strings.TrimSpace(u.Name)
+	if u.Name == "" {
+		return fmt.Errorf("the test needs a name")
 	}
+	if u.ExecutionType != models.ConcurrentExecutionType && u.ExecutionType != models.SimultaneouslyExecutionType {
+		return fmt.Errorf("unknown execution type %d", u.ExecutionType)
+	}
+	seen := map[uint]bool{}
+	devices := u.Devices[:0:0]
+	for _, d := range u.Devices {
+		if !seen[d] {
+			seen[d] = true
+			devices = append(devices, d)
+		}
+	}
+	u.Devices = devices
+	if u.AllDevices {
+		u.Devices = nil
+	} else if len(u.Devices) == 0 {
+		return fmt.Errorf("pick at least one device, or run on all devices")
+	}
+	if !unity {
+		return nil
+	}
+	u.Categories = normalizeTags(u.Categories)
+	type key struct{ assembly, class, method string }
+	known := map[key]bool{}
+	functions := u.TestFunctions[:0:0]
+	for _, f := range u.TestFunctions {
+		k := key{strings.TrimSpace(f.Assembly), strings.TrimSpace(f.Class), strings.TrimSpace(f.Method)}
+		if k.method == "" || known[k] {
+			continue
+		}
+		known[k] = true
+		functions = append(functions, models.UnityTestFunction{Assembly: k.assembly, Class: k.class, Method: k.method})
+	}
+	u.TestFunctions = functions
+	switch u.UnityTestCategoryType {
+	case models.AllTest:
+	case models.AllOfCategory:
+		if u.Categories == "" {
+			return fmt.Errorf("name at least one category")
+		}
+	case models.SelectedTestsOnly:
+		if len(u.TestFunctions) == 0 {
+			return fmt.Errorf("pick at least one test")
+		}
+	default:
+		return fmt.Errorf("unknown Unity test selection %d", u.UnityTestCategoryType)
+	}
+	return nil
+}
 
-	var req request
-	c.Bind(&req)
-
-	var test models.Test
-	if err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").First(&test, testId).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
+// updateTest saves the test edit page in one transaction: the devices and
+// the Unity test functions are replaced by the submitted ones. The test
+// must belong to the app and the devices to the project.
+func (s *Service) updateTest(c *gin.Context, project *models.Project, application *models.App) {
+	var req testUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		s.error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	test.Name = req.Name
-	test.TestConfig.ExecutionType = req.ExecutionType
-	test.TestConfig.AllDevices = req.AllDevices
-
-	if req.AllDevices {
-		// since all devices are selected we don't need to specify them
-		s.db.Where("test_config_id = ?", test.TestConfig.ID).Delete(&models.TestConfigDevice{})
-		test.TestConfig.Devices = []models.TestConfigDevice{}
-	} else {
-		// remove devices that are not needed anymore
-		for i := range test.TestConfig.Devices {
-
-			stillNeeded := false
-			for _, d := range req.Devices {
-				if test.TestConfig.Devices[i].DeviceID == d {
-					stillNeeded = true
-					break
-				}
-			}
-
-			if !stillNeeded {
-				if err := s.db.Delete(&test.TestConfig.Devices[i]).Error; err != nil {
-					s.error(c, http.StatusBadRequest, err)
-					return
-				}
-			}
-		}
-
-		for _, i := range req.Devices {
-			needCreation := true
-			for d := range test.TestConfig.Devices {
-				if test.TestConfig.Devices[d].DeviceID == i {
-					needCreation = false
-				}
-			}
-
-			if needCreation {
-				newDevice := models.TestConfigDevice{
-					TestConfigID: test.TestConfig.ID,
-					DeviceID:     i,
-				}
-				if err := s.db.Create(&newDevice).Error; err != nil {
-					s.error(c, http.StatusBadRequest, err)
-					return
-				}
-				test.TestConfig.Devices = append(test.TestConfig.Devices, newDevice)
-			}
-		}
+	load := func() (*models.Test, error) {
+		var test models.Test
+		err := s.db.Preload("TestConfig").Preload("TestConfig.Devices").Preload("TestConfig.Devices.Device").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").
+			First(&test, "id = ? AND app_id = ?", c.Param("test_id"), application.ID).Error
+		return &test, err
 	}
-
-	if test.TestConfig.Type == models.TestTypeUnity {
-
-		// remove devices that are not needed anymore
-		for i, function := range test.TestConfig.Unity.UnityTestFunctions {
-
-			stillNeeded := false
-			for _, d := range req.TestFunctions {
-				if function.Assembly == d.Assembly && function.Class == d.Class && function.Method == d.Method {
-					stillNeeded = true
-					break
-				}
-			}
-
-			if !stillNeeded {
-				if err := s.db.Delete(&test.TestConfig.Unity.UnityTestFunctions[i]).Error; err != nil {
-					s.error(c, http.StatusBadRequest, err)
-					return
-				}
-			}
+	test, err := load()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.error(c, http.StatusNotFound, fmt.Errorf("test %s not found", c.Param("test_id")))
+		} else {
+			s.error(c, http.StatusInternalServerError, err)
 		}
-
-		for _, reqFunc := range req.TestFunctions {
-			needCreation := true
-			for _, extFunc := range test.TestConfig.Unity.UnityTestFunctions {
-				if extFunc.Assembly == reqFunc.Assembly && extFunc.Class == reqFunc.Class && extFunc.Method == reqFunc.Method {
-					needCreation = false
-				}
-			}
-
-			if needCreation {
-				newFunction := models.UnityTestFunction{
-					TestConfigUnityID: test.TestConfig.Unity.ID,
-					Assembly:          reqFunc.Assembly,
-					Class:             reqFunc.Class,
-					Method:            reqFunc.Method,
-				}
-				if err := s.db.Create(&newFunction).Error; err != nil {
-					s.error(c, http.StatusBadRequest, err)
-					return
-				}
-				test.TestConfig.Unity.UnityTestFunctions = append(test.TestConfig.Unity.UnityTestFunctions, newFunction)
-			}
+		return
+	}
+	unity := test.TestConfig.Type == models.TestTypeUnity && test.TestConfig.Unity != nil
+	if err := req.validate(unity); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.Devices) > 0 {
+		var visible int64
+		if err := s.projectDevices(project).Model(&models.Device{}).Where("id IN ?", req.Devices).Count(&visible).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
 		}
-
-		test.TestConfig.Unity.UnityTestCategoryType = req.UnityTestCategoryType
-		test.TestConfig.Unity.Categories = req.Categories
-		if err := s.db.Save(&test.TestConfig.Unity).Error; err != nil {
-			s.error(c, http.StatusBadRequest, err)
+		if int(visible) != len(req.Devices) {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("some of the picked devices don't exist"))
 			return
 		}
 	}
 
-	if err := s.db.Save(&test.TestConfig).Error; err != nil {
-		s.error(c, http.StatusBadRequest, err)
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Test{}).Where("id = ?", test.ID).Update("name", req.Name).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.TestConfig{}).Where("id = ?", test.TestConfig.ID).
+			Updates(map[string]interface{}{"execution_type": req.ExecutionType, "all_devices": req.AllDevices}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("test_config_id = ?", test.TestConfig.ID).Delete(&models.TestConfigDevice{}).Error; err != nil {
+			return err
+		}
+		for _, d := range req.Devices {
+			if err := tx.Create(&models.TestConfigDevice{TestConfigID: test.TestConfig.ID, DeviceID: d}).Error; err != nil {
+				return err
+			}
+		}
+		if !unity {
+			return nil
+		}
+		if err := tx.Model(&models.TestConfigUnity{}).Where("id = ?", test.TestConfig.Unity.ID).
+			Updates(map[string]interface{}{"unity_test_category_type": req.UnityTestCategoryType, "categories": req.Categories}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("test_config_unity_id = ?", test.TestConfig.Unity.ID).Delete(&models.UnityTestFunction{}).Error; err != nil {
+			return err
+		}
+		for _, f := range req.TestFunctions {
+			f.TestConfigUnityID = test.TestConfig.Unity.ID
+			if err := tx.Create(&f).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := s.db.Save(&test).Error; err != nil {
-		s.error(c, http.StatusBadRequest, err)
+	saved, err := load()
+	if err != nil {
+		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-
-	c.JSON(http.StatusOK, test)
+	c.JSON(http.StatusOK, saved)
 }
 
 func extractParams(param string) map[string]string {

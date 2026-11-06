@@ -1,4 +1,5 @@
 import http from '../http-common';
+import IAppFunctionData from '../types/app.function';
 import ITestData from '../types/test';
 import ICreateTestData from '../types/request.create.test';
 import ITestRunData from '../types/test.run';
@@ -25,7 +26,8 @@ export interface UpdateTestData {
     devices: number[],
     unityTestCategoryType: UnityTestCategory,
     categories: string,
-    testFunctions: IUnityTestFunctionData[],
+    // the picked Unity tests; stored ones carry more fields, which are ignored
+    testFunctions: IAppFunctionData[],
 }
 
 export const updateTest = (projectId: string, appId: number | null, id: number, data: UpdateTestData): Promise<ITestData> => {
