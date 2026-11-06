@@ -23,6 +23,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {useTheme} from '@mui/material/styles';
+// error text needs the lighter red of the ramp to read on the dark surface
+import {red} from '../../shared-theme/themePrimitives';
 import {
     ArrowBackRounded,
     ArrowForwardRounded,
@@ -497,8 +499,12 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                     {formatDateTime(entry.createdAt, 'HH:mm:ss')}
                                                 </Typography>
                                             </Tooltip>
-                                            <Typography variant="body2" color={isError ? 'error' : 'text.primary'}
-                                                        sx={{fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-word'}}>
+                                            <Typography variant="body2"
+                                                        sx={t => ({
+                                                            fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-word',
+                                                            color: isError ? 'error.main' : 'text.primary',
+                                                            ...(isError ? t.applyStyles('dark', {color: red[300]}) : {}),
+                                                        })}>
                                                 {entry.log}
                                             </Typography>
                                         </Box>;

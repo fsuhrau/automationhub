@@ -76,3 +76,69 @@ func TestRunResponseState(t *testing.T) {
 		t.Errorf("no tracker: state %q", resp.State)
 	}
 }
+
+// The protocol page compares a test with its earlier runs. Only earlier runs
+// on the same device that measured performance count: not the protocol
+// itself, not its runner (same test name, no measurements), not later runs.
+func TestProtocolHistoryAverages(t *testing.T) {
+	s, _ := runStateSetup(t)
+	db := s.db
+	device := uint(7)
+	other := uint(8)
+	name := "Smoke/Main"
+	protocol := func(run uint, parent *uint, dev *uint, fps float64, measured bool) uint {
+		p := models.TestProtocol{TestRunID: run, ParentTestProtocolID: parent, DeviceID: dev, TestName: name, AvgFPS: fps}
+		db.Create(&p)
+		if measured {
+			db.Create(&models.ProtocolPerformanceEntry{TestProtocolID: p.ID, Checkpoint: "Load", FPS: fps})
+		}
+		return p.ID
+	}
+	// runs 1-3 exist from the setup; add a later run 4
+	db.Create(&models.TestRun{TestID: 1})
+	for i, fps := range []float64{10, 30, 50, 100} {
+		run := uint(i + 1)
+		runner := protocol(run, nil, &device, 0, false)
+		protocol(run, &runner, &device, fps, true)
+	}
+	protocol(2, nil, &other, 999, true) // another device
+	var current models.TestProtocol
+	db.Where("test_run_id = 3 and parent_test_protocol_id is not null").First(&current)
+
+	r := gin.New()
+	r.GET("/run/:run_id/:protocol_id", func(c *gin.Context) { s.getTestRunProtocol(c, nil, nil) })
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/3/%d", current.ID), nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	var run models.TestRun
+	if err := json.Unmarshal(w.Body.Bytes(), &run); err != nil {
+		t.Fatal(err)
+	}
+	if len(run.Protocols) != 1 || run.Protocols[0].ID != current.ID {
+		t.Fatalf("protocols %+v", run.Protocols)
+	}
+	got := run.Protocols[0]
+	if got.HistAvgFPS != 20 {
+		t.Errorf("hist avg fps %v, want 20 (runs 1 and 2)", got.HistAvgFPS)
+	}
+	var runs []uint
+	for _, h := range got.TestProtocolHistory {
+		runs = append(runs, h.TestRunID)
+	}
+	if fmt.Sprint(runs) != "[2 1]" {
+		t.Errorf("history runs %v, want [2 1]", runs)
+	}
+
+	// the first run has nothing to compare with
+	var first models.TestProtocol
+	db.Where("test_run_id = 1 and parent_test_protocol_id is not null").First(&first)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/1/%d", first.ID), nil))
+	run = models.TestRun{}
+	_ = json.Unmarshal(w.Body.Bytes(), &run)
+	if run.Protocols[0].HistAvgFPS != 0 || len(run.Protocols[0].TestProtocolHistory) != 0 {
+		t.Errorf("first run: hist %v, history %d", run.Protocols[0].HistAvgFPS, len(run.Protocols[0].TestProtocolHistory))
+	}
+}

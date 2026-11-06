@@ -490,31 +490,34 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 	if len(run.Protocols) > 0 {
 		defaultNaN(&run.Protocols[0])
 
+		// earlier runs of the same test on the same device that measured
+		// performance: not this run (its runner protocol shares the test
+		// name but has no measurements), not later runs, and not runners
+		// of earlier runs, which would count as zeros
+		current := &run.Protocols[0]
 		var histProtocols []models.TestProtocol
-		if err := s.db.Where("device_id = ? and test_name = ?", run.Protocols[0].DeviceID, run.Protocols[0].TestName).Order("id desc").Limit(AVG_HISTORY_LIMIT).Preload("Performance").Find(&histProtocols).Error; err != nil {
+		if err := s.db.Where("device_id = ? and test_name = ? and test_run_id < ?", current.DeviceID, current.TestName, run.ID).
+			Where("exists (select 1 from protocol_performance_entries pe where pe.test_protocol_id = test_protocols.id and pe.deleted_at is null)").
+			Order("id desc").Limit(AVG_HISTORY_LIMIT).Preload("Performance").Find(&histProtocols).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}
-		for i, _ := range histProtocols {
+		for i := range histProtocols {
 			defaultNaN(&histProtocols[i])
 
-			run.Protocols[0].HistAvgFPS += histProtocols[i].AvgFPS
-			run.Protocols[0].HistAvgMEM += histProtocols[i].AvgMEM
-			run.Protocols[0].HistAvgCPU += histProtocols[i].AvgCPU
-			run.Protocols[0].HistAvgVertexCount += histProtocols[i].AvgVertexCount
-			run.Protocols[0].HistAvgTriangles += histProtocols[i].AvgTriangles
+			current.HistAvgFPS += histProtocols[i].AvgFPS
+			current.HistAvgMEM += histProtocols[i].AvgMEM
+			current.HistAvgCPU += histProtocols[i].AvgCPU
+			current.HistAvgVertexCount += histProtocols[i].AvgVertexCount
+			current.HistAvgTriangles += histProtocols[i].AvgTriangles
 		}
-		historyEntries := 1
-
-		if len(histProtocols) > 0 {
-			historyEntries = len(histProtocols)
+		if n := float64(len(histProtocols)); n > 0 {
+			current.HistAvgFPS /= n
+			current.HistAvgMEM /= n
+			current.HistAvgCPU /= n
+			current.HistAvgVertexCount /= n
+			current.HistAvgTriangles /= n
 		}
-
-		run.Protocols[0].HistAvgFPS = run.Protocols[0].HistAvgFPS / float64(historyEntries)
-		run.Protocols[0].HistAvgMEM = run.Protocols[0].HistAvgMEM / float64(historyEntries)
-		run.Protocols[0].HistAvgCPU = run.Protocols[0].HistAvgCPU / float64(historyEntries)
-		run.Protocols[0].HistAvgVertexCount = run.Protocols[0].HistAvgVertexCount / float64(historyEntries)
-		run.Protocols[0].HistAvgTriangles = run.Protocols[0].HistAvgTriangles / float64(historyEntries)
 		run.Protocols[0].TestProtocolHistory = histProtocols
 	}
 
