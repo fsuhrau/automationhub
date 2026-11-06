@@ -80,6 +80,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	api.GET("/:project_id/settings/nodes", s.getNodes)
 	api.DELETE("/:project_id/settings/nodes/:node_id", s.deleteNode)
 	api.GET("/:project_id/settings/nodes/:node_id", s.getNodeStatus)
+	api.POST("/:project_id/settings/nodes/:node_id/token", s.issueNodeTokenHandler)
 
 	api.GET("/projects", s.getProjects)
 	api.POST("/project", s.createProject)

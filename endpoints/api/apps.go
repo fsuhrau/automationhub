@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/apps"
@@ -140,13 +141,34 @@ func (s *Service) deleteBinary(c *gin.Context, project *models.Project, applicat
 	c.Status(http.StatusOK)
 }
 
+// createApp adds an app to the project; it needs a name, a platform an app
+// can target, and an identifier for the platforms that install bundles
 func (s *Service) createApp(c *gin.Context, project *models.Project) {
 	var application models.App
-	if err := c.Bind(&application); err != nil {
+	if err := c.ShouldBindJSON(&application); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
+	application.Name = strings.TrimSpace(application.Name)
+	application.Identifier = strings.TrimSpace(application.Identifier)
+	if application.Name == "" {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("the app needs a name"))
+		return
+	}
+	switch application.Platform {
+	case models.PlatformTypeAndroid, models.PlatformTypeiOS, models.PlatformTypeMac:
+		if application.Identifier == "" {
+			s.error(c, http.StatusBadRequest, fmt.Errorf("the app needs its bundle identifier or package name"))
+			return
+		}
+	case models.PlatformTypeWindows, models.PlatformTypeLinux, models.PlatformTypeWeb, models.PlatformTypeEditor:
+	default:
+		s.error(c, http.StatusBadRequest, fmt.Errorf("unknown platform %d", application.Platform))
+		return
+	}
+	application.ID = 0
 	application.ProjectID = project.ID
+	application.Parameter = nil
 	if err := s.db.Create(&application).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
@@ -176,28 +198,84 @@ func (s *Service) updateApp(c *gin.Context, project *models.Project, application
 	c.JSON(http.StatusOK, application)
 }
 
+// parameterType is the JSON the parameter's type is stored as
+type parameterType struct {
+	Type         string   `json:"type"`
+	DefaultValue string   `json:"defaultValue"`
+	Options      []string `json:"options,omitempty"`
+}
+
+// validateParameter checks a parameter of an app: a name no other parameter
+// of the app has (but itself, by id), a text or choice type, and for a
+// choice its options with the default among them. It stores the tidied type.
+func (s *Service) validateParameter(application *models.App, p *models.AppParameter, id uint) error {
+	p.Name = strings.TrimSpace(p.Name)
+	if p.Name == "" {
+		return badRequest("the parameter needs a name")
+	}
+	var others []models.AppParameter
+	if err := s.db.Where("app_id = ? AND id <> ?", application.ID, id).Find(&others).Error; err != nil {
+		return err
+	}
+	for _, o := range others {
+		if strings.EqualFold(o.Name, p.Name) {
+			return badRequest("the app has a parameter %s already", o.Name)
+		}
+	}
+	var t parameterType
+	if err := json.Unmarshal([]byte(p.Type), &t); err != nil {
+		return badRequest("the parameter's type isn't valid")
+	}
+	switch t.Type {
+	case "string":
+		t.Options = nil
+	case "option":
+		seen := map[string]bool{}
+		var options []string
+		for _, o := range t.Options {
+			o = strings.TrimSpace(o)
+			if o != "" && !seen[o] {
+				seen[o] = true
+				options = append(options, o)
+			}
+		}
+		if len(options) == 0 {
+			return badRequest("a choice needs at least one option")
+		}
+		t.Options = options
+		if t.DefaultValue != "" && !seen[t.DefaultValue] {
+			return badRequest("the default %s isn't one of the options", t.DefaultValue)
+		}
+	default:
+		return badRequest("unknown parameter type %q", t.Type)
+	}
+	tidy, err := json.Marshal(t)
+	if err != nil {
+		return err
+	}
+	p.Type = string(tidy)
+	return nil
+}
+
 func (s *Service) addAppParameter(c *gin.Context, project *models.Project, application *models.App) {
 	var request models.AppParameter
-	if err := c.Bind(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
-
-	for _, p := range application.Parameter {
-		if p.Name == request.Name {
-			s.error(c, http.StatusBadRequest, fmt.Errorf("parameter %s already exists", p.Name))
-			return
-		}
+	if err := s.validateParameter(application, &request, 0); err != nil {
+		s.error(c, statusForError(err), err)
+		return
 	}
 
+	request.ID = 0
 	request.AppID = application.ID
-
 	if err := s.db.Create(&request).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, request)
+	c.JSON(http.StatusOK, &request)
 }
 
 func (s *Service) removeAppParameter(c *gin.Context, project *models.Project, application *models.App) {
@@ -212,29 +290,33 @@ func (s *Service) removeAppParameter(c *gin.Context, project *models.Project, ap
 	c.JSON(http.StatusOK, nil)
 }
 
+// updateAppParameter changes a parameter and returns it (it used to return
+// the whole app)
 func (s *Service) updateAppParameter(c *gin.Context, project *models.Project, application *models.App) {
 	var request models.AppParameter
-	if err := c.Bind(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	paramId := c.Param("parameter_id")
 	var param models.AppParameter
-	if err := s.db.First(&param, "app_id = ? and id = ?", application.ID, paramId).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
+	if err := s.db.First(&param, "app_id = ? and id = ?", application.ID, c.Param("parameter_id")).Error; err != nil {
+		s.error(c, http.StatusNotFound, fmt.Errorf("parameter %s not found", c.Param("parameter_id")))
+		return
+	}
+	if err := s.validateParameter(application, &request, param.ID); err != nil {
+		s.error(c, statusForError(err), err)
 		return
 	}
 
 	param.Type = request.Type
 	param.Name = request.Name
-
 	if err := s.db.Save(&param).Error; err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, application)
+	c.JSON(http.StatusOK, &param)
 }
 
 // normalizeTags trims the comma separated tags and drops empty and repeated ones

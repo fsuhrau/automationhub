@@ -38,7 +38,7 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
     }
     // redirect to project settings if there are no apps
     if (state.apps.length === 0) {
-        return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
+        return (<Navigate to={`/project/${projectIdentifier}/settings?tab=apps`}/>);
     }
 
     const known = (id: number | null) => id !== null && !isNaN(id) && state.apps!.some(a => a.id === id);

@@ -93,7 +93,8 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 ...state,
                 apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
                     ...a,
-                    parameter: [...a.parameter, payload],
+                    // a new app has no parameter list yet
+                    parameter: [...(a.parameter ?? []), payload],
                 } as IAppData : a as IAppData) : [],
             }
         }
@@ -102,7 +103,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 ...state,
                 apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
                     ...a,
-                    parameter: a.parameter.map(p => p.id === payload.id ? payload : p),
+                    parameter: (a.parameter ?? []).map(p => p.id === payload.id ? payload : p),
                 } as IAppData : a as IAppData) : [],
             }
         }
@@ -111,7 +112,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 ...state,
                 apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
                     ...a,
-                    parameter: a.parameter.filter(p => p.id !== payload.id),
+                    parameter: (a.parameter ?? []).filter(p => p.id !== payload.id),
                 } as IAppData : a as IAppData) : [],
             }
         }

@@ -60,7 +60,7 @@ export default function ApplicationSelection() {
         const value = event.target.value;
         const base = `/project/${projectIdentifier}`;
         if (value === ADD_APP) {
-            navigate(`${base}/settings`);
+            navigate(`${base}/settings?tab=apps`);
             return;
         }
         rememberApp(+value);

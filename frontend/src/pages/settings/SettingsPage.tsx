@@ -1,103 +1,52 @@
-import React, {useState} from 'react';
-import Grid from "@mui/material/Grid";
-import {Box, Divider, Tab, Tabs,} from '@mui/material';
-import {TitleCard} from "../../components/title.card.component";
-import AccessTokenTab from "./AccessTokenTab";
-import NodesTab from "./NodesTab";
-import AppsGroup from "./AppsGroup";
-import ProjectGroup from "./ProjectGroup";
-import UsersTab from "./UsersTab";
+import React from 'react';
+import {Box, Tab, Tabs, Typography} from '@mui/material';
+import {useSearchParams} from 'react-router-dom';
+import AccessTokenTab from './AccessTokenTab';
+import NodesTab from './NodesTab';
+import AppsGroup from './AppsGroup';
+import ProjectGroup from './ProjectGroup';
+import UsersTab from './UsersTab';
+import {useProjectContext} from '../../hooks/ProjectProvider';
 
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
+const TABS = [
+    {key: 'project', label: 'Project'},
+    {key: 'apps', label: 'Apps'},
+    {key: 'tokens', label: 'Access tokens'},
+    {key: 'nodes', label: 'Nodes'},
+    {key: 'people', label: 'People'},
+] as const;
+type TabKey = typeof TABS[number]['key'];
 
-const TabPanel: React.FC<TabPanelProps> = (props: TabPanelProps) => {
-    const {children, value, index, ...other} = props;
-    return (
-        <Grid
-
-            size={{xs: 12, md: 12}}
-            style={{width: '100%'}}
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && children}
-        </Grid>
-    )
-};
-
+// SettingsPage sets up the project; the tab is in the URL, so a link can
+// lead straight to it (e.g. "add an app" from the menu)
 const SettingsPage: React.FC = () => {
-
-    function a11yProps(index: number): Map<string, string> {
-        return new Map([
-            ['id', `simple-tab-${index}`],
-            ['aria-controls', `simple-tabpanel-${index}`],
-        ]);
-    }
-
-    const [tabIndex, setTabIndex] = useState(0);
-    const onTabIndexChange = (event: React.ChangeEvent<{}>, newValue: number): void => {
-        setTabIndex(newValue);
-    };
+    const {project} = useProjectContext();
+    const [query, setQuery] = useSearchParams();
+    const tab: TabKey = TABS.some(t => t.key === query.get('tab')) ? query.get('tab') as TabKey : 'project';
+    const setTab = (t: TabKey) => setQuery(q => {
+        const next = new URLSearchParams(q);
+        if (t === 'project') next.delete('tab'); else next.set('tab', t);
+        return next;
+    }, {replace: true});
 
     return (
-        <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={'Project Settings'}>
-                <Grid container={true} spacing={2}
-                      sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}
-                >
-                    <Grid size={{xs: 12, md: 12}}>
-                        <Tabs
-                            value={tabIndex}
-                            onChange={onTabIndexChange}
-                            indicatorColor="primary"
-                            textColor="inherit"
-                            aria-label="secondary tabs"
-                        >
-                            <Tab label="General" {...a11yProps(0)} />
-                            <Tab label="Access Tokens" {...a11yProps(1)} />
-                            <Tab label="Users and Permissions" {...a11yProps(2)} />
-                            <Tab label="Notifications" {...a11yProps(3)} />
-                            <Tab label="Nodes" {...a11yProps(4)} />
-                        </Tabs>
-                        <Divider/>
-                    </Grid>
-                    <Grid container={true} size={{xs: 12, md: 12}} alignItems={"center"} justifyContent={"center"}
-                          sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}
-                    >
-                        { /* General */}
-                        <TabPanel index={tabIndex} value={0}>
-                            <ProjectGroup/>
-                            <AppsGroup/>
-                        </TabPanel>
-                        { /* Access Tokens */}
-                        <TabPanel index={tabIndex} value={1}>
-                            <AccessTokenTab/>
-                        </TabPanel>
-                        { /* User and Permissions */}
-                        <TabPanel index={tabIndex} value={2}>
-                            <UsersTab />
-                        </TabPanel>
-                        { /* Notifications */}
-                        <TabPanel index={tabIndex} value={3}>
-                            <TitleCard title={"Notifications"}>
-                                not implemented
-                            </TitleCard>
-                        </TabPanel>
-                        { /* Nodes */}
-                        <TabPanel index={tabIndex} value={4}>
-                            <NodesTab/>
-                        </TabPanel>
-                    </Grid>
-                </Grid>
-            </TitleCard>
-        </Box>);
+        <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}, mt: 2}}>
+            <Typography component="h1" variant="h5">Settings</Typography>
+            <Typography variant="body2" color="text.secondary">How {project.name} is set up: its apps, the tokens tools use, and the nodes that connect devices.</Typography>
+            <Box sx={{borderBottom: 1, borderColor: 'divider', mt: 1.5, mb: 2}}>
+                <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" allowScrollButtonsMobile>
+                    {TABS.map(t => <Tab key={t.key} value={t.key} label={t.label}/>)}
+                </Tabs>
+            </Box>
+            <Box sx={{maxWidth: 1100}}>
+                {tab === 'project' && <ProjectGroup/>}
+                {tab === 'apps' && <AppsGroup/>}
+                {tab === 'tokens' && <AccessTokenTab/>}
+                {tab === 'nodes' && <NodesTab/>}
+                {tab === 'people' && <UsersTab/>}
+            </Box>
+        </Box>
+    );
 };
 
 export default SettingsPage;

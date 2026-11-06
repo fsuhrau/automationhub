@@ -29,8 +29,16 @@ export interface NewNodeRequest {
     name: string,
 }
 
-export const createNode = (projectId: string, data: NewNodeRequest): Promise<INodeData> => {
+// a node with its token; the token only comes with these two answers
+export type NodeWithToken = INodeData & { token: string };
+
+export const createNode = (projectId: string, data: NewNodeRequest): Promise<NodeWithToken> => {
     return http.post(`/${projectId}/settings/node`, data).then(response => response.data);
+};
+
+// issueNodeToken gives a node a new token; its old token stops working
+export const issueNodeToken = (projectId: string, id: number): Promise<NodeWithToken> => {
+    return http.post(`/${projectId}/settings/nodes/${id}/token`).then(response => response.data);
 };
 
 export const getNode = (projectId: string, id: number): Promise<INodeData> => {

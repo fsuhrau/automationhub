@@ -1,171 +1,154 @@
-import React, {useEffect, useState} from "react";
-import {useHubState} from "../../hooks/HubStateProvider";
+import React, {useEffect, useState} from 'react';
 import {
-    createAccessToken,
-    deleteAccessToken,
-    getAccessTokens,
-    NewAccessTokenRequest
-} from "../../services/settings.service";
-import {useProjectContext} from "../../hooks/ProjectProvider";
-import Paper from "@mui/material/Paper";
-import {Box, TextField} from "@mui/material";
-import Table from "@mui/material/Table";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import TableBody from "@mui/material/TableBody";
-import Grid from "@mui/material/Grid";
-import CopyToClipboard from "../../components/copy.clipboard.component";
-import IconButton from "@mui/material/IconButton";
-import {ContentCopy} from "@mui/icons-material";
-import DateTime from "../../components/DateTime";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import {LocalizationProvider, MobileDatePicker} from "@mui/x-date-pickers";
-import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
-import {Dayjs} from "dayjs";
-import Button from "@mui/material/Button";
-import {TitleCard} from "../../components/title.card.component";
-import {HubStateActions} from "../../application/HubState";
-import {useError} from "../../ErrorProvider";
+    Box,
+    Button,
+    Chip,
+    IconButton,
+    Link,
+    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    TextField,
+    Tooltip,
+    Typography,
+} from '@mui/material';
+import {DeleteOutlineRounded, VisibilityOffRounded, VisibilityRounded} from '@mui/icons-material';
+import {LocalizationProvider, DatePicker} from '@mui/x-date-pickers';
+import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
+import {Dayjs} from 'dayjs';
+import {Link as RouterLink} from 'react-router-dom';
+import {createAccessToken, deleteAccessToken, getAccessTokens} from '../../services/settings.service';
+import {HubStateActions} from '../../application/HubState';
+import {useHubState} from '../../hooks/HubStateProvider';
+import {useProjectContext} from '../../hooks/ProjectProvider';
+import {useError} from '../../ErrorProvider';
+import {formatDateTime} from '../../components/DateTime';
+import IAccessTokenData from '../../types/access.token';
+import {Code, ConfirmDialog, CopyButton, messageOf, Section} from './parts';
+import {isExpired, maskToken} from './settingsModel';
 
+// AccessTokenTab manages the project's tokens for scripts, CI and the MCP
+// server; personal tokens live on the profile page
 const AccessTokenTab: React.FC = () => {
-
-    const {state, dispatch} = useHubState()
+    const {state, dispatch} = useHubState();
     const {projectIdentifier} = useProjectContext();
-    const {setError} = useError()
-
-    const [newToken, setNewToken] = useState<NewAccessTokenRequest>({
-        name: '',
-        expiresAt: null,
-    });
-
-    const handleDeleteAccessToken = (accessTokenID: number): void => {
-        deleteAccessToken(projectIdentifier, accessTokenID).then(value => {
-            dispatch({
-                type: HubStateActions.AccessTokenDelete,
-                payload: accessTokenID,
-            })
-        }).catch(ex => {
-            setError(ex)
-        });
-    };
-
-    const createNewAccessToken = (): void => {
-        createAccessToken(projectIdentifier, newToken).then(accessToken => {
-            setNewToken({
-                name: '',
-                expiresAt: null,
-            })
-
-            dispatch({
-                type: HubStateActions.AccessTokenAdd,
-                payload: accessToken
-            })
-        }).catch(ex => {
-            setError(ex)
-        });
-    };
+    const {setError} = useError();
+    const [name, setName] = useState('');
+    const [expiresAt, setExpiresAt] = useState<Dayjs | null>(null);
+    const [tried, setTried] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [shown, setShown] = useState<Set<number>>(new Set());
+    const [revoking, setRevoking] = useState<IAccessTokenData | null>(null);
+    const [created, setCreated] = useState<IAccessTokenData | null>(null);
+    const now = Date.now();
 
     useEffect(() => {
-        getAccessTokens(projectIdentifier).then(accessTokens => {
-            dispatch({
-                type: HubStateActions.AccessTokensUpdate,
-                payload: accessTokens
-            })
-        }).catch(ex => {
-            setError(ex)
-        });
+        getAccessTokens(projectIdentifier).then(list => dispatch({type: HubStateActions.AccessTokensUpdate, payload: list}))
+            .catch(e => setError(messageOf(e)));
     }, [projectIdentifier]);
 
-    return (
-        <TitleCard title={"Access Tokens"}>
-            <Paper sx={{width: '100%', margin: 'auto', overflow: 'hidden'}}>
-                <Box sx={{width: '100%'}}>
-                    <Box sx={{p: 3}}>
-                        <Table size="small" aria-label="a dense table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Name</TableCell>
-                                    <TableCell align="right">Token</TableCell>
-                                    <TableCell align="right">Expires</TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {state.accessTokens?.map((accessToken) => <TableRow key={accessToken.id}>
-                                    <TableCell>{accessToken.name}</TableCell>
-                                    <TableCell>
-                                        <Grid container={true} direction={"row"} spacing={1} justifyContent={"right"}
-                                              alignItems={"center"}>
-                                            <Grid>
-                                                {accessToken.token}
-                                            </Grid>
-                                            <Grid>
-                                                <CopyToClipboard>
-                                                    {({copy}) => (
-                                                        <IconButton
-                                                            color={'primary'}
-                                                            size={'small'}
-                                                            onClick={() => copy(accessToken.token)}
-                                                        >
-                                                            <ContentCopy/>
-                                                        </IconButton>
-                                                    )}
-                                                </CopyToClipboard>
+    const create = () => {
+        setTried(true);
+        if (!name.trim()) return;
+        setBusy(true);
+        createAccessToken(projectIdentifier, {name: name.trim(), expiresAt}).then(token => {
+            dispatch({type: HubStateActions.AccessTokenAdd, payload: token});
+            setCreated(token);
+            setName('');
+            setExpiresAt(null);
+            setTried(false);
+        }).catch(e => setError(messageOf(e))).finally(() => setBusy(false));
+    };
 
-                                            </Grid>
-                                        </Grid>
-                                    </TableCell>
-                                    <TableCell align="right">{accessToken.expiresAt !== null ? (
-                                        <DateTime format="YYYY/MM/DD HH:mm:ss" value={accessToken.expiresAt}/>) : ('Unlimited')}</TableCell>
-                                    <TableCell>
-                                        <IconButton color="secondary" size="small" onClick={() => {
-                                            handleDeleteAccessToken(accessToken.id as number);
-                                        }}>
-                                            <DeleteForeverIcon/>
+    const revoke = () => {
+        if (!revoking) return;
+        setBusy(true);
+        deleteAccessToken(projectIdentifier, revoking.id).then(() => {
+            dispatch({type: HubStateActions.AccessTokenDelete, payload: revoking.id});
+            if (created?.id === revoking.id) setCreated(null);
+            setRevoking(null);
+        }).catch(e => setError(messageOf(e))).finally(() => setBusy(false));
+    };
+
+    const tokens = state.accessTokens ?? [];
+
+    return <Section title="Access tokens" description={<>
+        Tokens for scripts, CI and agents to use this project's API, sent in the <code>X-Auth-Token</code> header.
+        They only work for this project. For a token that acts as you, use your <Link component={RouterLink} to="/profile">profile</Link>.
+    </>}>
+        <Box component="form" noValidate onSubmit={e => {
+            e.preventDefault();
+            create();
+        }} sx={{mb: 2}}>
+            <Stack direction={{xs: 'column', sm: 'row'}} spacing={1} alignItems={{sm: 'flex-start'}}>
+                <TextField size="small" label="Name" placeholder="e.g. CI nightly" value={name} onChange={e => setName(e.target.value)}
+                           error={tried && !name.trim()} helperText={tried && !name.trim() ? 'A name is needed.' : 'Says where the token is used.'}
+                           sx={{minWidth: 240}}/>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker label="Expires (optional)" value={expiresAt} onChange={setExpiresAt} disablePast
+                                slotProps={{textField: {size: 'small', helperText: 'Empty: until revoked'}, field: {clearable: true}}}/>
+                </LocalizationProvider>
+                <Button type="submit" variant="contained" disabled={busy}>Create token</Button>
+            </Stack>
+        </Box>
+
+        {created && <Box sx={{mb: 2}}>
+            <Typography variant="body2" sx={{mb: 1}}>Token <b>{created.name}</b> is ready. For example:</Typography>
+            <Code label="Copy the command">{`curl -H "X-Auth-Token: ${created.token}" ${window.location.origin}/api/${projectIdentifier}/devices`}</Code>
+        </Box>}
+
+        {tokens.length === 0
+            ? <Typography variant="body2" color="text.secondary">No tokens yet.</Typography>
+            : <Box sx={{overflowX: 'auto'}}><Table size="small" aria-label="Access tokens">
+                <TableHead><TableRow>
+                    <TableCell>Name</TableCell><TableCell>Token</TableCell><TableCell>Created</TableCell><TableCell>Expires</TableCell><TableCell/>
+                </TableRow></TableHead>
+                <TableBody>
+                    {tokens.map(t => {
+                        const visible = shown.has(t.id);
+                        const expired = isExpired(t.expiresAt, now);
+                        return <TableRow key={t.id}>
+                            <TableCell>{t.name || <Typography variant="body2" color="text.secondary" component="span">unnamed</Typography>}</TableCell>
+                            <TableCell sx={{whiteSpace: 'nowrap'}}>
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <Typography variant="body2" sx={{fontFamily: 'monospace'}}>{visible ? t.token : maskToken(t.token)}</Typography>
+                                    <Tooltip title={visible ? 'Hide' : 'Show'}>
+                                        <IconButton size="small" aria-label={visible ? 'Hide the token' : 'Show the token'}
+                                                    onClick={() => setShown(prev => {
+                                                        const next = new Set(prev);
+                                                        if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
+                                                        return next;
+                                                    })}>
+                                            {visible ? <VisibilityOffRounded fontSize="small"/> : <VisibilityRounded fontSize="small"/>}
                                         </IconButton>
-                                    </TableCell>
-                                </TableRow>)}
+                                    </Tooltip>
+                                    <CopyButton text={t.token} label="Copy the token"/>
+                                </Stack>
+                            </TableCell>
+                            <TableCell sx={{whiteSpace: 'nowrap'}}>{formatDateTime(t.createdAt, 'YYYY/MM/DD')}</TableCell>
+                            <TableCell sx={{whiteSpace: 'nowrap'}}>
+                                {t.expiresAt
+                                    ? <>{formatDateTime(t.expiresAt, 'YYYY/MM/DD')}{expired && <Chip size="small" color="warning" label="expired" sx={{ml: 1}}/>}</>
+                                    : 'never'}
+                            </TableCell>
+                            <TableCell align="right">
+                                <Tooltip title="Revoke">
+                                    <IconButton size="small" aria-label={`Revoke ${t.name}`} onClick={() => setRevoking(t)}><DeleteOutlineRounded fontSize="small"/></IconButton>
+                                </Tooltip>
+                            </TableCell>
+                        </TableRow>;
+                    })}
+                </TableBody>
+            </Table></Box>}
 
-                                <TableRow>
-                                    <TableCell>
-                                        <TextField id="new_name" placeholder="Name"
-                                                   variant="outlined"
-                                                   fullWidth={true}
-                                                   value={newToken.name} size="small"
-                                                   onChange={event => setNewToken(prevState => ({
-                                                       ...prevState,
-                                                       name: event.target.value
-                                                   }))}/>
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell align="right">
-                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                            <MobileDatePicker
-                                                value={newToken.expiresAt}
-                                                onChange={(newValue: Dayjs | null) => {
-                                                    setNewToken(prevState => ({
-                                                        ...prevState,
-                                                        expiresAt: newValue
-                                                    }))
-                                                }}
-                                            />
-                                        </LocalizationProvider>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button variant="contained" color="primary" size="small"
-                                                onClick={createNewAccessToken}>
-                                            Add
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                    </Box>
-                </Box>
-            </Paper>
-        </TitleCard>
-    )
-}
+        <ConfirmDialog open={!!revoking} title={`Revoke ${revoking?.name || 'this token'}?`} confirm="Revoke token" busy={busy}
+                       onConfirm={revoke} onClose={() => setRevoking(null)}>
+            Anything that uses it (scripts, CI, an MCP client) gets "unauthorized" from now on.
+        </ConfirmDialog>
+    </Section>;
+};
 
 export default AccessTokenTab;

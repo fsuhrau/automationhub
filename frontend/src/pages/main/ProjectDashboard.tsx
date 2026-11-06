@@ -30,7 +30,7 @@ const ProjectDashboard: React.FC = () => {
                 setStats([{
                     title: 'Apps',
                     value: state.appsCount.toString(),
-                    to: `${base}/settings`,
+                    to: `${base}/settings?tab=apps`,
                 }, {
                     title: 'App Storage',
                     value: byteFormat(state.appsStorageSize),

@@ -105,7 +105,7 @@ export default function MenuContent({onNavigate}: { onNavigate?: () => void }) {
                     {state.apps !== null && state.apps.length === 0
                         ? <Typography variant="body2" color="text.secondary" sx={{px: 1, pb: 1}}>
                             This project has no apps yet.{' '}
-                            <Link component={RouterLink} to={`${base}/settings`} onClick={onNavigate}>
+                            <Link component={RouterLink} to={`${base}/settings?tab=apps`} onClick={onNavigate}>
                                 Add one in Settings
                             </Link> to create tests and upload bundles.
                         </Typography>
