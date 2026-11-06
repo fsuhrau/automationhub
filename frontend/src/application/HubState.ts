@@ -204,6 +204,7 @@ export function hubReducer(state: HubState, action: HubStateAction): HubState {
                 devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
                     ...d,
                     isLocked: false,
+                    lockedBy: undefined,
                 } : d)] : []
             }
         }

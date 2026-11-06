@@ -1,5 +1,5 @@
 import React from 'react';
-import {Button, ButtonGroup,} from '@mui/material';
+import {Button, ButtonGroup, Stack,} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import IDeviceData from '../types/device';
 import Grid from '@mui/system/Grid';
@@ -7,6 +7,7 @@ import {ArrowForward, PlayArrow, LockOpen, ScreenShare} from "@mui/icons-materia
 import {useNavigate} from "react-router-dom";
 import {useProjectContext} from "../hooks/ProjectProvider";
 import DeviceStatus from "./DeviceStatus";
+import DeviceController from "./DeviceController";
 
 interface DevicesTableProps {
     devices: IDeviceData[]
@@ -86,7 +87,12 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             align: 'right',
             flex: 1,
             minWidth: 100,
-            renderCell: (params) => <DeviceStatus state={params.value} platform={params.row.platformType}/>,
+            renderCell: (params) => (
+                <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end"
+                       sx={{height: '100%'}}>
+                    <DeviceStatus state={params.value} platform={params.row.platformType}/>
+                    <DeviceController owner={params.row.lockedBy}/>
+                </Stack>),
         },
         {
             field: 'session',

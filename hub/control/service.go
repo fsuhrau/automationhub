@@ -66,8 +66,9 @@ type Service struct {
 	actionTimeout time.Duration
 	now           func() time.Time
 
-	mu     sync.Mutex
-	leases map[string]*leaseEntry // by device id
+	mu       sync.Mutex
+	leases   map[string]*leaseEntry // by device id
+	onChange func(deviceID string)
 }
 
 func New(dm manager.Devices) *Service {
@@ -85,6 +86,27 @@ func (s *Service) SetIdleTimeout(d time.Duration) {
 	s.mu.Lock()
 	s.idleTimeout = d
 	s.mu.Unlock()
+}
+
+// OnChange registers a callback that runs when a device gets a new controller
+// or loses its controller, e.g. to update the device pool. It is called
+// outside the service lock.
+func (s *Service) OnChange(fn func(deviceID string)) {
+	s.mu.Lock()
+	s.onChange = fn
+	s.mu.Unlock()
+}
+
+func (s *Service) notify(deviceIDs ...string) {
+	s.mu.Lock()
+	fn := s.onChange
+	s.mu.Unlock()
+	if fn == nil {
+		return
+	}
+	for _, id := range deviceIDs {
+		fn(id)
+	}
 }
 
 // Run releases idle leases until ctx is done.
@@ -115,6 +137,7 @@ func (s *Service) ReapExpired() int {
 	s.mu.Unlock()
 	for _, l := range expired {
 		unlockDevice(l.dev)
+		s.notify(l.DeviceID)
 	}
 	return len(expired)
 }
@@ -139,6 +162,13 @@ func (s *Service) Acquire(dev device.Device, owner string) (Lease, error) {
 	if owner == "" {
 		return Lease{}, errors.New("lease owner is required")
 	}
+	changed := false
+	defer func() {
+		// runs after the unlock below
+		if changed {
+			s.notify(dev.DeviceID())
+		}
+	}()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -147,6 +177,7 @@ func (s *Service) Acquire(dev device.Device, owner string) (Lease, error) {
 		if now.After(l.ExpiresAt) {
 			delete(s.leases, dev.DeviceID())
 			unlockDevice(l.dev)
+			changed = true
 		} else if l.Owner == owner {
 			s.touch(l, now)
 			return l.Lease, nil
@@ -169,6 +200,7 @@ func (s *Service) Acquire(dev device.Device, owner string) (Lease, error) {
 	}
 	s.touch(l, now)
 	s.leases[dev.DeviceID()] = l
+	changed = true
 	return l.Lease, nil
 }
 
@@ -188,6 +220,7 @@ func (s *Service) Release(deviceID, token string) error {
 	delete(s.leases, deviceID)
 	s.mu.Unlock()
 	unlockDevice(l.dev)
+	s.notify(deviceID)
 	return nil
 }
 
@@ -195,9 +228,12 @@ func (s *Service) Release(deviceID, token string) error {
 // the device is unlocked through the regular unlock route.
 func (s *Service) ForceRelease(deviceID string) bool {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	_, ok := s.leases[deviceID]
 	delete(s.leases, deviceID)
+	s.mu.Unlock()
+	if ok {
+		s.notify(deviceID)
+	}
 	return ok
 }
 
@@ -214,6 +250,7 @@ func (s *Service) ReleaseOwner(owner string) int {
 	s.mu.Unlock()
 	for _, l := range released {
 		unlockDevice(l.dev)
+		s.notify(l.DeviceID)
 	}
 	return len(released)
 }

@@ -22,6 +22,8 @@ export default interface IDeviceData {
     osVersion: string,
     status: DeviceStateType,
     isLocked: boolean,
+    // owner of the live control lease, when someone controls the device
+    lockedBy?: string,
     manager: string,
     dev?: IRealDeviceData | null,
     isAcknowledged: boolean,

@@ -47,6 +47,7 @@ func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices,
 		runners:         make(map[string]tester.Interface),
 		control:         hubcontrol.New(dm),
 	}
+	svc.control.OnChange(svc.onDeviceControlChanged)
 	svc.runTracker = runs.NewTracker(svc.onRunFinished)
 	events.TestRunFinished.Register(svc.runTracker)
 	svc.mcp = hubmcp.NewHandler(hubmcp.Deps{

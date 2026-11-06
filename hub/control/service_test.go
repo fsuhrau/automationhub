@@ -260,3 +260,57 @@ func TestTouchElementByXPath(t *testing.T) {
 		t.Fatalf("hierarchy failed: %v", err)
 	}
 }
+
+func TestOnChangeNotifiesControllerChanges(t *testing.T) {
+	s := New(nil)
+	now := time.Now()
+	s.now = func() time.Time { return now }
+	s.SetIdleTimeout(time.Minute)
+	var changes []string
+	s.OnChange(func(id string) { changes = append(changes, id) })
+	d1, d2 := newFakeDevice("d1"), newFakeDevice("d2")
+
+	lease, _ := s.Acquire(d1, "alice")
+	_, _ = s.Acquire(d1, "alice") // renewal: same controller, no change
+	_, _ = s.Acquire(d1, "bob")   // rejected: no change
+	if err := s.Release("d1", lease.Token); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = s.Acquire(d2, "mcp:1")
+	s.ForceRelease("d2")
+	_ = d2.Unlock()      // the unlock route unlocks the device itself
+	s.ForceRelease("d2") // nothing to release
+	_, _ = s.Acquire(d1, "mcp:1")
+	s.ReleaseOwner("mcp:1")
+	_, _ = s.Acquire(d2, "alice")
+	now = now.Add(2 * time.Minute)
+	s.ReapExpired()
+
+	want := []string{"d1", "d1", "d2", "d2", "d1", "d1", "d2", "d2"}
+	if len(changes) != len(want) {
+		t.Fatalf("expected changes %v, got %v", want, changes)
+	}
+	for i := range want {
+		if changes[i] != want[i] {
+			t.Fatalf("expected changes %v, got %v", want, changes)
+		}
+	}
+}
+
+func TestOnChangeRunsOutsideTheLock(t *testing.T) {
+	s := New(nil)
+	dev := newFakeDevice("d1")
+	var holder string
+	s.OnChange(func(id string) {
+		// would deadlock if called while the service lock is held
+		if l, ok := s.Holder(id); ok {
+			holder = l.Owner
+		}
+	})
+	if _, err := s.Acquire(dev, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	if holder != "alice" {
+		t.Fatalf("expected holder alice in callback, got %q", holder)
+	}
+}

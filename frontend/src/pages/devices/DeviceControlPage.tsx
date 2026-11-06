@@ -47,6 +47,7 @@ import {
     touchElement,
 } from '../../services/device.control.service';
 import {TitleCard} from '../../components/title.card.component';
+import {describeController} from "../../components/DeviceController";
 
 const TAP_DISTANCE = 12; // css px; a longer drag is a swipe
 const KEYS = ['back', 'home', 'app_switch', 'enter', 'delete', 'volume_up', 'volume_down'];
@@ -292,9 +293,9 @@ const DeviceControlPage: React.FC = () => {
             <TitleCard title={`Control: ${device ? (device.alias || device.name) : deviceId}`}>
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap sx={{p: 1}}>
                     {ownLease
-                        ? <Chip color="success" label={`Controlled by you (${holder})`}/>
+                        ? <Chip color="success" label={`Controlled by you (${describeController(holder!).label})`}/>
                         : holder
-                            ? <Chip color="warning" label={`Controlled by ${holder}`}/>
+                            ? <Chip color="warning" label={`Controlled by ${describeController(holder).label}`}/>
                             : lockStatus?.lockedByTest
                                 ? <Chip color="warning" label="In use by a test run"/>
                                 : <Chip label="Free"/>}
