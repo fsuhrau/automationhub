@@ -2,6 +2,20 @@ package config
 
 type WebDriver struct {
 	BundleID string `yaml:"bundleId,omitempty" mapstructure:"bundleId"`
+	// Launcher starts WebDriverAgent on iOS devices: "auto" (default:
+	// xcodebuild for iOS 17 and later, go-ios before), "xcodebuild" or
+	// "go-ios".
+	Launcher string `yaml:"launcher,omitempty" mapstructure:"launcher"`
+	// XCTestRun is the .xctestrun file of a WebDriverAgentRunner built with
+	// "xcodebuild build-for-testing"; xcodebuild runs it with
+	// test-without-building. It wins over Project.
+	XCTestRun string `yaml:"xctestrun,omitempty" mapstructure:"xctestrun"`
+	// Project is WebDriverAgent.xcodeproj, built and run with "xcodebuild
+	// test" (Scheme defaults to WebDriverAgentRunner).
+	Project string `yaml:"project,omitempty" mapstructure:"project"`
+	Scheme  string `yaml:"scheme,omitempty" mapstructure:"scheme"`
+	// DerivedData is passed as -derivedDataPath when set.
+	DerivedData string `yaml:"derived_data,omitempty" mapstructure:"derived_data"`
 }
 
 type Device struct {

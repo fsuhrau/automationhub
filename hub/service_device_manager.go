@@ -21,7 +21,7 @@ func (s *Service) RegisterDeviceHandler(masterUrl string) {
 	}
 	if d, ok := s.cfg.DeviceManager[iosdevice.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager ios_device")
-		s.deviceManager.AddHandler(iosdevice.NewHandler(s.sd))
+		s.deviceManager.AddHandler(iosdevice.NewHandler(d, s.sd))
 	}
 	if d, ok := s.cfg.DeviceManager[macos.Manager]; ok && d.Enabled {
 		s.logger.Info("adding manager macos")

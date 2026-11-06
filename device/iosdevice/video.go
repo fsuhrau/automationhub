@@ -83,13 +83,11 @@ func (d *Device) StartVideo(ctx context.Context, opts device.VideoOptions) (devi
 	if state := d.DeviceState(); state != device.StateBooted {
 		return nil, fmt.Errorf("device %s is %s", d.DeviceID(), device.StateToString(state))
 	}
-	wd, err := d.ensureWebDriver()
+	wd, address, err := d.ensureWebDriver()
 	if err != nil {
-		return nil, fmt.Errorf("live video needs WebDriverAgent: %w", err)
-	}
-	address, err := wd.MjpegURL(webdriver.DefaultMjpegServerPort)
-	if err != nil {
-		return nil, err
+		// unsupported: the page falls back to screenshots instead of
+		// starting a runner again with every reconnect
+		return nil, fmt.Errorf("live video needs WebDriverAgent, which didn't start (%v): %w", err, device.ErrUnsupported)
 	}
 	d.Log("device", "Start video stream (WebDriverAgent MJPEG %s)", address)
 

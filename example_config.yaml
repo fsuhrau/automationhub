@@ -30,6 +30,16 @@ managers:
     use_os_screenshot: false
     webdriver:
       bundleId: com.facebook.WebDriver
+      # iOS 17 and later start WebDriverAgent with xcodebuild (Xcode on this
+      # host). launcher: auto (default) | xcodebuild | go-ios
+      # A runner built once with
+      #   xcodebuild build-for-testing -project WebDriverAgent.xcodeproj \
+      #     -scheme WebDriverAgentRunner -destination generic/platform=iOS \
+      #     -derivedDataPath ~/wda-build -allowProvisioningUpdates
+      # starts fastest:
+      # xctestrun: /Users/me/wda-build/Build/Products/WebDriverAgentRunner_iphoneos26.0-arm64.xctestrun
+      # or build and run the project on each start:
+      # project: /Users/me/WebDriverAgent/WebDriverAgent.xcodeproj
   ios_sim:
     enabled: true             # enable to disable it
     use_os_screenshot: false

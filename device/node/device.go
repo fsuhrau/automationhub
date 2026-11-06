@@ -194,8 +194,8 @@ func (d *NodeDevice) ReadLogs(lines int) ([]string, error) {
 
 // videoConnectTimeout bounds how long the master waits for the node to
 // connect the stream back. iOS devices may start WebDriverAgent first
-// (iosdevice.WDAStartTimeout).
-const videoConnectTimeout = 90 * time.Second
+// (iosdevice.XcodebuildStartTimeout).
+const videoConnectTimeout = 150 * time.Second
 
 // StartVideo implements device.VideoStreamer. The node starts the stream and
 // dials back to the master, which pairs the socket through the rendezvous.

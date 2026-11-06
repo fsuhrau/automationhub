@@ -3,6 +3,7 @@ package iosdevice
 import (
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/modules/webdriver"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -40,8 +41,10 @@ type Device struct {
 	recordingSessionProcess *exec.Cmd
 	lastUpdateAt            time.Time
 	wdaMu                   sync.Mutex // serializes starting and stopping WebDriverAgent
+	wdaConfig               *config.WebDriver
 	webDriver               *webdriver.Client
-	screenScale             float64 // screenshot pixels per WDA point, 0 = unknown
+	wdaRunner               *wdaRunner // set when xcodebuild runs WebDriverAgent
+	screenScale             float64    // screenshot pixels per WDA point, 0 = unknown
 	deviceParameter         map[string]string
 }
 
@@ -273,22 +276,63 @@ func (d *Device) StartXCUITestRunner() error {
 	return d.startWebDriver()
 }
 
-// ensureWebDriver starts WebDriverAgent unless it is up already.
-func (d *Device) ensureWebDriver() (*webdriver.Client, error) {
+// ensureWebDriver starts WebDriverAgent unless it is up already. It returns
+// the client and the URL of the MJPEG server.
+func (d *Device) ensureWebDriver() (*webdriver.Client, string, error) {
 	d.wdaMu.Lock()
 	defer d.wdaMu.Unlock()
-	if wd := d.webDriver; wd != nil && wd.Alive(3*time.Second) {
-		return wd, nil
+	if wd := d.webDriver; wd == nil || !wd.Alive(3*time.Second) {
+		if err := d.startWebDriver(); err != nil {
+			return nil, "", err
+		}
 	}
-	if err := d.startWebDriver(); err != nil {
-		return nil, err
+	if d.wdaRunner != nil {
+		return d.webDriver, d.wdaRunner.MjpegAddress, nil
 	}
-	return d.webDriver, nil
+	mjpeg, err := d.webDriver.MjpegURL(webdriver.DefaultMjpegServerPort)
+	return d.webDriver, mjpeg, err
+}
+
+// stopRunner ends WebDriverAgent; the caller holds wdaMu.
+func (d *Device) stopRunner() {
+	if d.wdaRunner != nil {
+		d.wdaRunner.Stop()
+		d.wdaRunner = nil
+	} else {
+		_ = testmanagerd.CloseXCUITestRunner()
+	}
+	d.webDriver = nil
 }
 
 func (d *Device) startWebDriver() error {
 	if wd := d.webDriver; wd != nil && wd.Alive(3*time.Second) {
 		if _, err := wd.CreateSession(); err != nil {
+			return fmt.Errorf("create WebDriverAgent session: %w", err)
+		}
+		return nil
+	}
+	if d.webDriver != nil || d.wdaRunner != nil {
+		// a runner that stopped answering
+		d.stopRunner()
+	}
+	d.screenScale = 0
+	if useXcodebuild(d.wdaConfig, d.deviceOSVersion) {
+		runner, attachErr := attachRunningWDA(d.DeviceID())
+		if attachErr == nil {
+			d.Log("device", "Use the WebDriverAgent that already runs on the device")
+		} else {
+			d.Log("device", "No running WebDriverAgent: %v", attachErr)
+			var err error
+			runner, err = startXcodebuildRunner(d.wdaConfig, d.DeviceID(), func(format string, args ...any) {
+				d.Log("device", format, args...)
+			})
+			if err != nil {
+				return fmt.Errorf("no running WebDriverAgent (%v), and starting one failed: %w", attachErr, err)
+			}
+		}
+		d.wdaRunner = runner
+		d.webDriver = webdriver.New(runner.Address)
+		if _, err := d.webDriver.CreateSession(); err != nil {
 			return fmt.Errorf("create WebDriverAgent session: %w", err)
 		}
 		return nil
@@ -303,10 +347,11 @@ func (d *Device) startWebDriver() error {
 	var wdaArg []string
 	var wdaEnv []string
 
-	address, err := webdriver.WDAHook.Await(WDAStartTimeout, func() {
+	address, err := webdriver.WDAHook.Await(WDAStartTimeout, func(fail func(error)) {
 		go func() {
 			if err := testmanagerd.RunXCUIWithBundleIds(bundleID, testbundleID, xctestconfig, device, wdaArg, wdaEnv); err != nil {
 				d.Error("device", "WebDriverAgent runner stopped: %v", err)
+				fail(err)
 			}
 		}()
 	})
@@ -327,8 +372,7 @@ func (d *Device) StopXCUITestRunner() error {
 	if d.webDriver != nil {
 		d.webDriver.CloseSession()
 	}
-	_ = testmanagerd.CloseXCUITestRunner()
-	d.webDriver = nil
+	d.stopRunner()
 	// the device stays attached; its state follows usbmuxd, not WebDriverAgent
 	return nil
 }

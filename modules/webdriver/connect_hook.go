@@ -30,12 +30,22 @@ type WDAConnectHook struct {
 	waiter chan string
 }
 
-func (hook *WDAConnectHook) Fire(entry *logrus.Entry) error {
-	if !strings.Contains(entry.Message, "ServerURLHere") {
-		return nil
+// ParseServerURL finds the server URL that WebDriverAgent logs as
+// "ServerURLHere->http://…:8100<-ServerURLHere".
+func ParseServerURL(line string) (string, bool) {
+	if !strings.Contains(line, "ServerURLHere") {
+		return "", false
 	}
-	matches := serverRegex.FindStringSubmatch(entry.Message)
+	matches := serverRegex.FindStringSubmatch(line)
 	if len(matches) < 2 || len(matches[1]) == 0 {
+		return "", false
+	}
+	return matches[1], true
+}
+
+func (hook *WDAConnectHook) Fire(entry *logrus.Entry) error {
+	address, ok := ParseServerURL(entry.Message)
+	if !ok {
 		return nil
 	}
 
@@ -45,15 +55,16 @@ func (hook *WDAConnectHook) Fire(entry *logrus.Entry) error {
 	if waiter != nil {
 		// never block the logger; the waiter channel is buffered
 		select {
-		case waiter <- matches[1]:
+		case waiter <- address:
 		default:
 		}
 	}
 	return nil
 }
 
-// Await runs start and waits for the server URL it logs.
-func (hook *WDAConnectHook) Await(timeout time.Duration, start func()) (string, error) {
+// Await runs start and waits for the server URL it logs. start calls fail
+// when the runner stops before it reported the URL, which ends the wait.
+func (hook *WDAConnectHook) Await(timeout time.Duration, start func(fail func(error))) (string, error) {
 	hook.startMu.Lock()
 	defer hook.startMu.Unlock()
 
@@ -67,11 +78,19 @@ func (hook *WDAConnectHook) Await(timeout time.Duration, start func()) (string, 
 		hook.mu.Unlock()
 	}()
 
-	start()
+	failed := make(chan error, 1)
+	start(func(err error) {
+		select {
+		case failed <- err:
+		default:
+		}
+	})
 
 	select {
 	case address := <-waiter:
 		return address, nil
+	case err := <-failed:
+		return "", fmt.Errorf("WebDriverAgent runner failed to start: %w", err)
 	case <-time.After(timeout):
 		return "", fmt.Errorf("WebDriverAgent did not report its server URL within %v", timeout)
 	}

@@ -3,6 +3,7 @@ package device
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -85,6 +86,10 @@ func ApplyControl(dev Device, req ControlRequest) (ControlResponse, error) {
 func ControlError(message string) error {
 	if message == ErrUnsupported.Error() {
 		return ErrUnsupported
+	}
+	// a wrapped one, "<context>: operation not supported by this device"
+	if prefix, ok := strings.CutSuffix(message, ": "+ErrUnsupported.Error()); ok {
+		return fmt.Errorf("%s: %w", prefix, ErrUnsupported)
 	}
 	return errors.New(message)
 }

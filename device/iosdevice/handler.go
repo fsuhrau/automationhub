@@ -3,6 +3,7 @@ package iosdevice
 import (
 	"context"
 	"fmt"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage"
@@ -54,6 +55,7 @@ type Handler struct {
 	mu            sync.Mutex // guards devices and lastPoll
 	refreshMu     sync.Mutex // serializes refreshes
 	devices       map[string]*Device
+	wdaConfig     *config.WebDriver
 	deviceStorage storage.Device
 
 	masterURL      string
@@ -66,8 +68,15 @@ type Handler struct {
 	stopWatch    context.CancelFunc
 }
 
-func NewHandler(ds storage.Device) *Handler {
-	return &Handler{devices: make(map[string]*Device), deviceStorage: ds}
+func NewHandler(cfg config.Manager, ds storage.Device) *Handler {
+	return &Handler{devices: make(map[string]*Device), deviceStorage: ds, wdaConfig: cfg.WebDriver}
+}
+
+// newDevice creates a device that starts WebDriverAgent with the manager's
+// config.
+func (m *Handler) newDevice(dev *Device) *Device {
+	dev.wdaConfig = m.wdaConfig
+	return dev
 }
 
 // SetChangeNotifier implements device.ChangeNotifying.
@@ -96,7 +105,7 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 
 	for i := range devs {
 		deviceId := devs[i].DeviceIdentifier
-		dev := &Device{deviceID: deviceId}
+		dev := m.newDevice(&Device{deviceID: deviceId})
 		dev.SetConfig(devs[i])
 		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
 		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
@@ -234,7 +243,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 			// attached but lockdown refuses: not trusted yet, or locked with a passcode
 			logrus.Debugf("ios device %s not readable: %v", a.serial, a.err)
 			if !known {
-				dev = &Device{deviceID: a.serial, deviceName: a.serial, deviceOSName: "iOS"}
+				dev = m.newDevice(&Device{deviceID: a.serial, deviceName: a.serial, deviceOSName: "iOS"})
 				m.devices[a.serial] = dev
 				m.registerNewDevice(dev, nil)
 			}
@@ -252,7 +261,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 			m.deviceStorage.Update(m.Name(), dev)
 			continue
 		}
-		dev = &Device{deviceID: a.serial, lastUpdateAt: lastUpdate}
+		dev = m.newDevice(&Device{deviceID: a.serial, lastUpdateAt: lastUpdate})
 		dev.UpdateDeviceInfos(*a.values)
 		dev.SetDeviceState("StateBooted")
 		m.devices[a.serial] = dev

@@ -326,8 +326,13 @@ const DeviceControlPage: React.FC = () => {
             status => {
                 setVideoStatus(status);
                 if (status.state === 'unsupported') {
-                    // e.g. iOS: fall back to the screenshot stream
+                    // e.g. a simulator, or WebDriverAgent didn't start: fall
+                    // back to the screenshot stream and say why, unless it's
+                    // just "not supported"
                     setMode('screenshots');
+                    if (status.message && status.message !== 'operation not supported by this device') {
+                        setError(`Live video unavailable, showing screenshots: ${status.message}`);
+                    }
                 }
             },
             setVideoMeta,
