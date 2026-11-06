@@ -63,15 +63,23 @@ func (d *Device) InputText(text string) error {
 
 // PressKey implements device.InputCapable.
 func (d *Device) PressKey(key string) error {
-	code, ok := namedKeys[strings.ToLower(key)]
-	if !ok {
-		n, err := strconv.Atoi(key)
-		if err != nil || n < 0 {
-			return fmt.Errorf("unknown key %q", key)
-		}
-		code = n
+	code, err := keyCode(key)
+	if err != nil {
+		return err
 	}
 	return d.pressKey(code)
+}
+
+// keyCode resolves a named key or a numeric Android key code.
+func keyCode(key string) (int, error) {
+	if code, ok := namedKeys[strings.ToLower(key)]; ok {
+		return code, nil
+	}
+	n, err := strconv.Atoi(key)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("unknown key %q", key)
+	}
+	return n, nil
 }
 
 // ReadLogs implements device.LogReader using a logcat dump.

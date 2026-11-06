@@ -19,6 +19,7 @@ type RPCClient interface {
 	StopApp(deviceId string, parameter *app.Parameter) error
 	ClearAppData(deviceId string, parameter *app.Parameter) error
 	Control(req device.ControlRequest) (device.ControlResponse, error)
+	StartVideoStream(req device.VideoStreamRequest) error
 	IsConnected(deviceId string) bool
 	StartRecording(deviceId string, path string) error
 	StopRecording(deviceId string) error

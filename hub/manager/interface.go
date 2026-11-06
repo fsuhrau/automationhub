@@ -66,6 +66,7 @@ type Nodes interface {
 	StopApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	ClearAppData(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	Control(nodeIdentifier NodeIdentifier, req device.ControlRequest) (device.ControlResponse, error)
+	StartVideoStream(nodeIdentifier NodeIdentifier, req device.VideoStreamRequest) error
 	IsConnected(nodeIdentifier NodeIdentifier, deviceId string) bool
 	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error
 	StopRecording(nodeIdentifier NodeIdentifier, deviceId string) error

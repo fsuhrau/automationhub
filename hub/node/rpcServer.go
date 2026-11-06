@@ -1,12 +1,14 @@
 package node
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -436,6 +438,28 @@ func (s *RPCNode) Control(req *device.ControlRequest, resp *device.ControlRespon
 	result, err := device.ApplyControl(dev, *req)
 	*resp = result
 	return err
+}
+
+// StartVideoStream starts the video of a local device and pumps it into a
+// websocket to the master's /node/video/:stream_id endpoint.
+func (s *RPCNode) StartVideoStream(req *device.VideoStreamRequest, resp *Void) error {
+	dev, _ := s.dm.GetDevice(req.DeviceID)
+	if dev == nil {
+		return fmt.Errorf("device with id %v not found", req.DeviceID)
+	}
+	streamer, ok := dev.(device.VideoStreamer)
+	if !ok {
+		return device.ErrUnsupported
+	}
+	stream, err := streamer.StartVideo(context.Background(), req.Options)
+	if err != nil {
+		return err
+	}
+	token := ""
+	if s.config.Auth.Token != nil {
+		token = s.config.Auth.Token.AuthToken
+	}
+	return videostream.ServeToMaster(s.config.MasterURL, token, req.StreamID, stream)
 }
 
 func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {

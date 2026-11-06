@@ -1,11 +1,15 @@
 package node
 
 import (
+	"context"
+
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/fsuhrau/automationhub/storage/models"
+	"github.com/google/uuid"
 	"os/exec"
 	"time"
 )
@@ -186,6 +190,30 @@ func (d *NodeDevice) PressKey(key string) error {
 func (d *NodeDevice) ReadLogs(lines int) ([]string, error) {
 	resp, err := d.control(device.ControlRequest{Op: device.ControlReadLogs, Lines: lines})
 	return resp.Lines, err
+}
+
+// videoConnectTimeout bounds how long the master waits for the node to
+// connect the stream back.
+const videoConnectTimeout = 20 * time.Second
+
+// StartVideo implements device.VideoStreamer. The node starts the stream and
+// dials back to the master, which pairs the socket through the rendezvous.
+func (d *NodeDevice) StartVideo(ctx context.Context, opts device.VideoOptions) (device.VideoStream, error) {
+	streamID := uuid.NewString()
+	ch, done := videostream.Default.Expect(streamID)
+	defer done()
+	if err := d.nodeManager.StartVideoStream(d.nodeId, device.VideoStreamRequest{DeviceID: d.deviceID, StreamID: streamID, Options: opts}); err != nil {
+		return nil, err
+	}
+	stream, err := videostream.Await(ctx, ch, videoConnectTimeout)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		<-ctx.Done()
+		_ = stream.Close()
+	}()
+	return stream, nil
 }
 
 func (d *NodeDevice) IsAppConnected() bool {

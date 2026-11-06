@@ -15,10 +15,12 @@ import {
     Paper,
     Select,
     Stack,
-    Switch,
     Tab,
     Tabs,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
@@ -48,8 +50,13 @@ import {
 } from '../../services/device.control.service';
 import {TitleCard} from '../../components/title.card.component';
 import {describeController} from "../../components/DeviceController";
+import {DeviceVideoPlayer, VIDEO_TEXT_MAX_BYTES, VideoMeta, videoDecodingAvailable, VideoStatus, videoUrl} from '../../services/device.video';
 
 const TAP_DISTANCE = 12; // css px; a longer drag is a swipe
+
+// video: H.264 stream (Android), screenshots: MJPEG of screenshots, off: manual refresh
+type ScreenMode = 'video' | 'screenshots' | 'off';
+const VIDEO_OPTIONS = {maxSize: 1280, maxFps: 30};
 const KEYS = ['back', 'home', 'app_switch', 'enter', 'delete', 'volume_up', 'volume_down'];
 
 const leaseStorageKey = (deviceId: number) => `device-lease-${deviceId}`;
@@ -144,7 +151,10 @@ const DeviceControlPage: React.FC = () => {
     const [lockStatus, setLockStatus] = useState<DeviceLockStatus | null>(null);
     const [lease, setLease] = useState<string | null>(() => loadLease(deviceId));
     const [busy, setBusy] = useState(false);
-    const [live, setLive] = useState(true);
+    const canDecodeVideo = useMemo(videoDecodingAvailable, []);
+    const [mode, setMode] = useState<ScreenMode>(canDecodeVideo ? 'video' : 'screenshots');
+    const [videoStatus, setVideoStatus] = useState<VideoStatus | null>(null);
+    const [videoMeta, setVideoMeta] = useState<VideoMeta | null>(null);
     const [snapshot, setSnapshot] = useState(() => screenshotUrl(projectIdentifier, deviceId));
     const [tab, setTab] = useState(0);
     const [text, setText] = useState('');
@@ -159,8 +169,17 @@ const DeviceControlPage: React.FC = () => {
     const [bundleId, setBundleId] = useState<number | ''>('');
     const [clearData, setClearData] = useState(false);
 
-    const imgRef = useRef<HTMLImageElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const pointerStart = useRef<{ x: number, y: number, t: number } | null>(null);
+    // live input over the video socket (scrcpy control channel)
+    const playerRef = useRef<DeviceVideoPlayer | null>(null);
+    const activeTouch = useRef<{ pointerId: number, player: DeviceVideoPlayer } | null>(null);
+    const pendingMove = useRef<{ x: number, y: number } | null>(null);
+    const moveFrame = useRef(0);
+    const leaseRef = useRef(lease);
+    leaseRef.current = lease;
+    const inputErrorRef = useRef<(message: string) => void>(() => undefined);
+    const lastInputError = useRef(0);
 
     const fail = useCallback((error: unknown) => setError(errorMessage(error)), [setError]);
 
@@ -187,6 +206,52 @@ const DeviceControlPage: React.FC = () => {
     }, [refreshLock]);
 
     useEffect(() => {
+        if (mode !== 'video' || !canvasRef.current) return;
+        setVideoMeta(null);
+        const player = new DeviceVideoPlayer(
+            videoUrl(projectIdentifier, deviceId, VIDEO_OPTIONS),
+            canvasRef.current,
+            status => {
+                setVideoStatus(status);
+                if (status.state === 'unsupported') {
+                    // e.g. iOS: fall back to the screenshot stream
+                    setMode('screenshots');
+                }
+            },
+            setVideoMeta,
+            message => inputErrorRef.current(message),
+        );
+        playerRef.current = player;
+        return () => {
+            player.close();
+            playerRef.current = null;
+            activeTouch.current = null;
+        };
+    }, [mode, projectIdentifier, deviceId]);
+
+    // the mouse wheel scrolls on the device; a native listener, since React's
+    // wheel listener is passive and can't keep the page from scrolling
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (mode !== 'video' || !canvas) return;
+        const onWheel = (e: WheelEvent) => {
+            const player = playerRef.current;
+            const token = leaseRef.current;
+            if (!player?.canSendInput || !token) return;
+            e.preventDefault();
+            // pixels to lines; scrcpy scrolls up for positive values
+            const scale = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 1 : 1 / 100;
+            const clamp = (v: number) => Math.max(-16, Math.min(16, v));
+            player.sendInput({
+                kind: 'scroll', ...player.toVideo(e.clientX, e.clientY),
+                scrollX: clamp(-e.deltaX * scale), scrollY: clamp(-e.deltaY * scale),
+            }, token);
+        };
+        canvas.addEventListener('wheel', onWheel, {passive: false});
+        return () => canvas.removeEventListener('wheel', onWheel);
+    }, [mode]);
+
+    useEffect(() => {
         if (appId === '') {
             setBundles([]);
             return;
@@ -207,6 +272,42 @@ const DeviceControlPage: React.FC = () => {
         }
     };
 
+    // input errors of the video socket arrive per event; show one at a time
+    inputErrorRef.current = (message: string) => {
+        const now = Date.now();
+        if (now - lastInputError.current < 3000) return;
+        lastInputError.current = now;
+        setError(message);
+        refreshLock();
+    };
+
+    // the video player when input can go over the video socket, else null
+    // (screenshots, iOS, not connected yet): then the REST API is used
+    const liveInput = (): DeviceVideoPlayer | null =>
+        mode === 'video' && lease && playerRef.current?.canSendInput ? playerRef.current : null;
+
+    const sendKey = (key: string) => {
+        const player = liveInput();
+        if (player) {
+            player.sendInput({kind: 'key', action: 'press', key}, lease);
+            return;
+        }
+        run(() => pressKey(projectIdentifier, deviceId, lease!, key));
+    };
+
+    const sendText = () => {
+        const player = liveInput();
+        if (player && new TextEncoder().encode(text).length <= VIDEO_TEXT_MAX_BYTES) {
+            player.sendInput({kind: 'text', text}, lease);
+            setText('');
+            return;
+        }
+        run(async () => {
+            await inputText(projectIdentifier, deviceId, lease!, text);
+            setText('');
+        });
+    };
+
     const onLock = () => run(async () => {
         const l = await lockDevice(projectIdentifier, deviceId);
         setLease(l.token ?? null);
@@ -223,21 +324,79 @@ const DeviceControlPage: React.FC = () => {
         refreshLock();
     });
 
-    // map a pointer position on the image to device pixels
-    const toDevice = (clientX: number, clientY: number) => {
-        const img = imgRef.current!;
-        const rect = img.getBoundingClientRect();
-        const sx = (img.naturalWidth || rect.width) / rect.width;
-        const sy = (img.naturalHeight || rect.height) / rect.height;
+    // device pixels of the shown screen: screenshots are in device pixels; the
+    // video may be scaled, so it uses the screen size from the stream meta,
+    // turned to the orientation of the current video frame
+    const deviceSize = (el: HTMLElement): { width: number, height: number } => {
+        if (el instanceof HTMLImageElement) {
+            return {width: el.naturalWidth, height: el.naturalHeight};
+        }
+        const canvas = el as HTMLCanvasElement;
+        const sw = videoMeta?.screenWidth ?? 0;
+        const sh = videoMeta?.screenHeight ?? 0;
+        if (!sw || !sh) {
+            return {width: canvas.width, height: canvas.height};
+        }
+        const landscape = canvas.width > canvas.height;
+        return landscape === (sw > sh) ? {width: sw, height: sh} : {width: sh, height: sw};
+    };
+
+    // map a pointer position on the screen element to device pixels
+    const toDevice = (el: HTMLElement, clientX: number, clientY: number) => {
+        const rect = el.getBoundingClientRect();
+        const size = deviceSize(el);
+        const sx = (size.width || rect.width) / rect.width;
+        const sy = (size.height || rect.height) / rect.height;
         return {x: Math.round((clientX - rect.left) * sx), y: Math.round((clientY - rect.top) * sy)};
     };
 
-    const onPointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
         e.preventDefault();
+        const player = liveInput();
+        if (player && !activeTouch.current) {
+            // live touch: down, moves and up go to the device as they happen
+            e.currentTarget.setPointerCapture(e.pointerId);
+            activeTouch.current = {pointerId: e.pointerId, player};
+            player.sendInput({kind: 'touch', action: 'down', pointerId: e.pointerId, ...player.toVideo(e.clientX, e.clientY)}, lease);
+            return;
+        }
         pointerStart.current = {x: e.clientX, y: e.clientY, t: Date.now()};
     };
 
-    const onPointerUp = (e: React.PointerEvent<HTMLImageElement>) => {
+    const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+        const touch = activeTouch.current;
+        if (!touch || touch.pointerId !== e.pointerId) return;
+        // at most one move per animation frame
+        pendingMove.current = {x: e.clientX, y: e.clientY};
+        if (moveFrame.current) return;
+        moveFrame.current = requestAnimationFrame(() => {
+            moveFrame.current = 0;
+            const pos = pendingMove.current;
+            const current = activeTouch.current;
+            if (!pos || !current) return;
+            current.player.sendInput({kind: 'touch', action: 'move', pointerId: current.pointerId, ...current.player.toVideo(pos.x, pos.y)}, leaseRef.current);
+        });
+    };
+
+    // ends a live touch; returns false when the event isn't part of one
+    const endTouch = (e: React.PointerEvent<HTMLElement>, action: 'up' | 'cancel'): boolean => {
+        const touch = activeTouch.current;
+        if (!touch || touch.pointerId !== e.pointerId) return false;
+        activeTouch.current = null;
+        if (moveFrame.current) {
+            cancelAnimationFrame(moveFrame.current);
+            moveFrame.current = 0;
+        }
+        touch.player.sendInput({kind: 'touch', action, pointerId: touch.pointerId, ...touch.player.toVideo(e.clientX, e.clientY)}, leaseRef.current);
+        return true;
+    };
+
+    const onPointerCancel = (e: React.PointerEvent<HTMLElement>) => {
+        if (!endTouch(e, 'cancel')) pointerStart.current = null;
+    };
+
+    const onPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+        if (endTouch(e, 'up')) return;
         const start = pointerStart.current;
         pointerStart.current = null;
         if (!start) return;
@@ -245,8 +404,8 @@ const DeviceControlPage: React.FC = () => {
             setError('Lock the device to control it');
             return;
         }
-        const from = toDevice(start.x, start.y);
-        const to = toDevice(e.clientX, e.clientY);
+        const from = toDevice(e.currentTarget, start.x, start.y);
+        const to = toDevice(e.currentTarget, e.clientX, e.clientY);
         const distance = Math.hypot(e.clientX - start.x, e.clientY - start.y);
         if (distance < TAP_DISTANCE) {
             run(() => tap(projectIdentifier, deviceId, lease, from.x, from.y));
@@ -254,7 +413,7 @@ const DeviceControlPage: React.FC = () => {
             const duration = Math.min(Math.max(Date.now() - start.t, 100), 2000);
             run(() => swipe(projectIdentifier, deviceId, lease, from.x, from.y, to.x, to.y, duration));
         }
-        if (!live) {
+        if (mode === 'off') {
             setTimeout(() => setSnapshot(screenshotUrl(projectIdentifier, deviceId)), 700);
         }
     };
@@ -286,7 +445,10 @@ const DeviceControlPage: React.FC = () => {
 
     const holder = lockStatus?.lease?.owner;
     const ownLease = lease !== null && lockStatus?.lease !== undefined;
-    const imageSrc = live ? streamUrl(projectIdentifier, deviceId, 2) : snapshot;
+    const imageSrc = mode === 'screenshots' ? streamUrl(projectIdentifier, deviceId, 2) : snapshot;
+    const screenStyle: React.CSSProperties = {
+        maxHeight: '75vh', maxWidth: '100%', cursor: lease ? 'crosshair' : 'not-allowed', userSelect: 'none', touchAction: 'none',
+    };
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
@@ -302,8 +464,22 @@ const DeviceControlPage: React.FC = () => {
                     {ownLease
                         ? <Button variant="outlined" onClick={onRelease} disabled={busy}>Release</Button>
                         : <Button variant="contained" onClick={onLock} disabled={busy || lockStatus?.locked}>Lock for control</Button>}
-                    <FormControlLabel control={<Switch checked={live} onChange={(_, v) => setLive(v)}/>} label="Live stream"/>
-                    {!live && <Button onClick={() => setSnapshot(screenshotUrl(projectIdentifier, deviceId))}>Refresh</Button>}
+                    <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, v: ScreenMode | null) => v && setMode(v)}>
+                        <Tooltip title={canDecodeVideo
+                            ? 'Live H.264 video (Android)'
+                            : 'Video decoding needs a secure context: open the hub over HTTPS or localhost'}>
+                            <span><ToggleButton value="video" disabled={!canDecodeVideo}>Video</ToggleButton></span>
+                        </Tooltip>
+                        <ToggleButton value="screenshots">Screenshots</ToggleButton>
+                        <ToggleButton value="off">Off</ToggleButton>
+                    </ToggleButtonGroup>
+                    {mode === 'video' && videoStatus?.state === 'connecting' && <Chip size="small" label="Connecting video…"/>}
+                    {mode === 'video' && videoStatus?.state === 'playing' && lease &&
+                        <Tooltip title="Touch, drag, scroll and keys go through the video connection (scrcpy) instead of adb">
+                            <Chip size="small" color="success" variant="outlined" label="Live input"/>
+                        </Tooltip>}
+                    {mode === 'video' && videoStatus?.state === 'error' && <Chip size="small" color="error" label={videoStatus.message ?? 'Video error'}/>}
+                    {mode === 'off' && <Button onClick={() => setSnapshot(screenshotUrl(projectIdentifier, deviceId))}>Refresh</Button>}
                     {busy && <CircularProgress size={20}/>}
                     <Box sx={{flexGrow: 1}}/>
                     <Button onClick={() => navigate(`/project/${projectIdentifier}/device/${deviceId}`)}>Device details</Button>
@@ -313,21 +489,31 @@ const DeviceControlPage: React.FC = () => {
             <Box sx={{display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start'}}>
                 <Paper sx={{p: 1, flex: '0 1 auto', maxWidth: '100%'}}>
                     <Box sx={{position: 'relative', display: 'inline-block', lineHeight: 0}}>
-                        <img
-                            ref={imgRef}
-                            src={imageSrc}
-                            alt="device screen"
-                            draggable={false}
-                            onPointerDown={onPointerDown}
-                            onPointerUp={onPointerUp}
-                            style={{maxHeight: '75vh', maxWidth: '100%', cursor: lease ? 'crosshair' : 'not-allowed', userSelect: 'none', touchAction: 'none'}}
-                        />
+                        {mode === 'video'
+                            ? <canvas
+                                ref={canvasRef}
+                                width={360}
+                                height={640}
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onPointerMove}
+                                onPointerUp={onPointerUp}
+                                onPointerCancel={onPointerCancel}
+                                style={{...screenStyle, backgroundColor: '#000'}}
+                            />
+                            : <img
+                                src={imageSrc}
+                                alt="device screen"
+                                draggable={false}
+                                onPointerDown={onPointerDown}
+                                onPointerUp={onPointerUp}
+                                style={screenStyle}
+                            />}
                         {highlight && <Box sx={{
                             position: 'absolute', pointerEvents: 'none', border: '2px solid red',
                             backgroundColor: 'rgba(255,0,0,0.15)', ...highlight,
                         }}/>}
                     </Box>
-                    {!lease && <Alert severity="info" sx={{mt: 1}}>Lock the device to tap (click) and swipe (drag) on the screen.</Alert>}
+                    {!lease && <Alert severity="info" sx={{mt: 1}}>Lock the device to tap (click), swipe (drag) and scroll (wheel) on the screen.</Alert>}
                 </Paper>
 
                 <Paper sx={{p: 1, flex: '1 1 420px', minWidth: 320}}>
@@ -342,14 +528,11 @@ const DeviceControlPage: React.FC = () => {
                         <Stack direction="row" spacing={1}>
                             <TextField size="small" fullWidth label="Text" value={text} onChange={e => setText(e.target.value)}/>
                             <Button variant="contained" disabled={!lease || !text}
-                                    onClick={() => run(async () => {
-                                        await inputText(projectIdentifier, deviceId, lease!, text);
-                                        setText('');
-                                    })}>Type</Button>
+                                    onClick={sendText}>Type</Button>
                         </Stack>
                         <ButtonGroup variant="outlined" size="small" sx={{flexWrap: 'wrap'}}>
                             {KEYS.map(key => <Button key={key} disabled={!lease}
-                                                     onClick={() => run(() => pressKey(projectIdentifier, deviceId, lease!, key))}>{key}</Button>)}
+                                                     onClick={() => sendKey(key)}>{key}</Button>)}
                         </ButtonGroup>
                     </Stack>}
 

@@ -4,21 +4,27 @@ package control
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
 	_ "image/png"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
+	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 // LeaseHeader carries the lease token for control calls.
@@ -29,6 +35,14 @@ const (
 	maxStreamFPS     = 5
 	streamBoundary   = "frame"
 	maxStreamBackoff = 10 * time.Second
+
+	defaultVideoMaxSize = 1280
+	maxVideoMaxSize     = 4096
+	defaultVideoFPS     = 30
+	maxVideoFPS         = 60
+	defaultVideoBitRate = 4_000_000
+	minVideoBitRate     = 250_000
+	maxVideoBitRate     = 20_000_000
 )
 
 // DeviceResolver resolves the device addressed by the request. It writes the
@@ -47,10 +61,19 @@ type Handler struct {
 	resolveApp    AppResolver
 	owner         OwnerResolver
 	nodeURL       string
+	// allowedOrigins may open the video websocket in addition to same-host pages
+	allowedOrigins []string
 }
 
 func NewHandler(svc *hubcontrol.Service, resolveDevice DeviceResolver, resolveApp AppResolver, owner OwnerResolver, nodeURL string) *Handler {
 	return &Handler{svc: svc, resolveDevice: resolveDevice, resolveApp: resolveApp, owner: owner, nodeURL: nodeURL}
+}
+
+// WithAllowedOrigins lets pages from these origins (e.g. the configured CORS
+// origins) open the video websocket. Same-host pages are always allowed.
+func (h *Handler) WithAllowedOrigins(origins []string) *Handler {
+	h.allowedOrigins = origins
+	return h
 }
 
 // Register adds the routes to a project scoped group.
@@ -62,6 +85,7 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 
 	d.GET("/screenshot", h.withDevice(h.screenshot))
 	d.GET("/stream", h.withDevice(h.stream))
+	d.GET("/video", h.withDevice(h.video))
 	d.GET("/hierarchy", h.withDevice(h.hierarchy))
 	d.GET("/logs", h.withDevice(h.logs))
 
@@ -229,6 +253,86 @@ func (h *Handler) stream(c *gin.Context, dev device.Device) {
 		case <-time.After(wait):
 		}
 	}
+}
+
+// video streams the screen as H.264 over a websocket; see package
+// videostream for the messages. Devices without video support get an error
+// message with "unsupported" set, so the client can fall back to /stream.
+// Watching needs no lease; "input" messages must carry the lease token.
+func (h *Handler) video(c *gin.Context, dev device.Device) {
+	opts := device.VideoOptions{
+		MaxSize: queryInt(c, "maxSize", defaultVideoMaxSize, 0, maxVideoMaxSize),
+		MaxFPS:  queryInt(c, "maxFps", defaultVideoFPS, 1, maxVideoFPS),
+		BitRate: queryInt(c, "bitRate", defaultVideoBitRate, minVideoBitRate, maxVideoBitRate),
+	}
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  4 << 10,
+		WriteBufferSize: 256 << 10,
+		CheckOrigin:     h.checkOrigin,
+	}
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		// the upgrader already wrote the error response
+		return
+	}
+	defer conn.Close()
+
+	// the connection is hijacked, so the request context doesn't notice a
+	// client that goes away; Pump watches the socket for that.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := h.svc.Video(ctx, dev, opts)
+	if err != nil {
+		_ = videostream.WriteError(conn, err)
+	} else if err := videostream.Pump(ctx, conn, stream, h.videoInput(dev, stream)); err != nil {
+		logrus.Debugf("video stream of %s ended: %v", dev.DeviceID(), err)
+	}
+	_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Now().Add(time.Second))
+}
+
+func (h *Handler) videoInput(dev device.Device, stream device.VideoStream) videostream.InputHandler {
+	return func(m videostream.Message, reply func(videostream.Message)) {
+		if m.Type != videostream.TypeInput || m.Input == nil {
+			return
+		}
+		if err := h.svc.InjectInput(dev, m.Lease, stream, *m.Input); err != nil {
+			reply(videostream.Message{
+				Type:        videostream.TypeInputError,
+				Message:     err.Error(),
+				Unsupported: errors.Is(err, device.ErrUnsupported),
+			})
+		}
+	}
+}
+
+// checkOrigin blocks cross-site websocket requests, which would otherwise
+// carry the user's session cookie.
+func (h *Handler) checkOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	if strings.EqualFold(u.Host, r.Host) {
+		return true
+	}
+	for _, allowed := range h.allowedOrigins {
+		if allowed == "*" || strings.EqualFold(strings.TrimSuffix(allowed, "/"), origin) {
+			return true
+		}
+	}
+	return false
+}
+
+func queryInt(c *gin.Context, key string, def, lo, hi int) int {
+	v, err := strconv.Atoi(c.Query(key))
+	if err != nil {
+		return def
+	}
+	return max(lo, min(v, hi))
 }
 
 func toJPEG(data []byte) ([]byte, error) {

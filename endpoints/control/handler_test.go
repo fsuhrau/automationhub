@@ -18,7 +18,10 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
+	"github.com/fsuhrau/automationhub/hub/videostream"
+	"github.com/fsuhrau/automationhub/hub/videostream/videostreamtest"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 type fakeDevice struct {
@@ -30,6 +33,8 @@ type fakeDevice struct {
 	taps   [][2]int
 	keys   []string
 	png    []byte
+
+	videoOpts device.VideoOptions
 }
 
 func (d *fakeDevice) DeviceID() string     { return d.id }
@@ -232,5 +237,143 @@ func TestStreamSendsJPEGFrames(t *testing.T) {
 	head := string(buf[:n])
 	if !strings.Contains(head, "--frame") || !strings.Contains(head, "image/jpeg") {
 		t.Fatalf("no jpeg frame in stream: %q", head)
+	}
+}
+
+// videoDevice additionally streams video.
+type videoDevice struct {
+	*fakeDevice
+	stream *videostreamtest.Stream
+}
+
+func (d videoDevice) StartVideo(ctx context.Context, opts device.VideoOptions) (device.VideoStream, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.videoOpts = opts
+	return d.stream, nil
+}
+
+func dialVideo(t *testing.T, srv *httptest.Server, path string, header http.Header) (*websocket.Conn, *http.Response, error) {
+	t.Helper()
+	conn, resp, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+path, header)
+	if conn != nil {
+		t.Cleanup(func() { _ = conn.Close() })
+	}
+	return conn, resp, err
+}
+
+func TestVideo(t *testing.T) {
+	r, devices := setup(t)
+	meta := device.VideoMeta{Codec: "h264", Width: 576, Height: 1280, ScreenWidth: 1080, ScreenHeight: 2400}
+	stream := videostreamtest.New(meta, device.VideoPacket{Config: true, Data: []byte{0, 0, 0, 1, 0x67}})
+	fake := &fakeDevice{id: "video-3"}
+	devices["3"] = videoDevice{fakeDevice: fake, stream: stream}
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	conn, _, err := dialVideo(t, srv, "/api/p/device/3/video?maxSize=99999&maxFps=24", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m videostream.Message
+	if err := conn.ReadJSON(&m); err != nil || m.Type != videostream.TypeMeta || *m.Meta != meta {
+		t.Fatalf("meta message %+v %v", m, err)
+	}
+	kind, data, err := conn.ReadMessage()
+	if err != nil || kind != websocket.BinaryMessage {
+		t.Fatalf("packet: %v", err)
+	}
+	if p, _ := videostream.DecodePacket(data); !p.Config {
+		t.Fatalf("expected the config packet, got %+v", p)
+	}
+	fake.mu.Lock()
+	opts := fake.videoOpts
+	fake.mu.Unlock()
+	if opts.MaxSize != maxVideoMaxSize || opts.MaxFPS != 24 || opts.BitRate != defaultVideoBitRate {
+		t.Fatalf("options not clamped or defaulted: %+v", opts)
+	}
+
+	_ = conn.Close()
+	select {
+	case <-stream.Closed():
+	case <-time.After(2 * time.Second):
+		t.Fatal("stream not closed after the viewer left")
+	}
+}
+
+func TestVideoInputNeedsLease(t *testing.T) {
+	r, devices := setup(t)
+	stream := videostreamtest.New(device.VideoMeta{Codec: "h264", Width: 576, Height: 1280})
+	devices["3"] = videoDevice{fakeDevice: &fakeDevice{id: "video-3"}, stream: stream}
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	conn, _, err := dialVideo(t, srv, "/api/p/device/3/video", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m videostream.Message
+	if err := conn.ReadJSON(&m); err != nil || m.Type != videostream.TypeMeta {
+		t.Fatalf("meta: %+v %v", m, err)
+	}
+	touch := device.InputEvent{Kind: device.InputTouch, Action: device.InputDown, X: 1, Y: 2, Width: 576, Height: 1280}
+
+	// without a lease the input is rejected and the stream goes on
+	if err := conn.WriteJSON(videostream.Message{Type: videostream.TypeInput, Input: &touch}); err != nil {
+		t.Fatal(err)
+	}
+	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	m = videostream.Message{}
+	if err := conn.ReadJSON(&m); err != nil || m.Type != videostream.TypeInputError || !strings.Contains(m.Message, "lock") {
+		t.Fatalf("expected a lease error, got %+v %v", m, err)
+	}
+
+	w := do(r, "POST", "/api/p/device/3/lock", "alice", "", "")
+	var lease hubcontrol.Lease
+	_ = json.Unmarshal(w.Body.Bytes(), &lease)
+	if err := conn.WriteJSON(videostream.Message{Type: videostream.TypeInput, Input: &touch, Lease: lease.Token}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-stream.Inputs:
+		if got != touch {
+			t.Fatalf("input %+v", got)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("input not injected")
+	}
+	select {
+	case <-stream.Inputs:
+		t.Fatal("the input without lease was injected")
+	default:
+	}
+}
+
+func TestVideoUnsupported(t *testing.T) {
+	r, _ := setup(t)
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	conn, _, err := dialVideo(t, srv, "/api/p/device/1/video", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m videostream.Message
+	if err := conn.ReadJSON(&m); err != nil || m.Type != videostream.TypeError || !m.Unsupported {
+		t.Fatalf("expected an unsupported error, got %+v %v", m, err)
+	}
+}
+
+func TestVideoRejectsCrossOrigin(t *testing.T) {
+	r, _ := setup(t)
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	_, resp, err := dialVideo(t, srv, "/api/p/device/1/video", http.Header{"Origin": {"https://evil.example"}})
+	if err == nil || resp == nil || resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("expected 403 for a foreign origin, got %v", err)
+	}
+	if _, _, err := dialVideo(t, srv, "/api/p/device/1/video", http.Header{"Origin": {srv.URL}}); err != nil {
+		t.Fatalf("same origin rejected: %v", err)
 	}
 }

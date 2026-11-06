@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/node"
+	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
@@ -51,4 +52,21 @@ func (s *nodeMaster) handleNode(conn *websocket.Conn, c *gin.Context) {
 		NodeIdentifier: manager.NodeIdentifier(request.GetIdentifier()),
 		Hostname:       request.GetHostname(),
 	})
+}
+
+var videoUpgrader = websocket.Upgrader{
+	ReadBufferSize:  4 << 10,
+	WriteBufferSize: 4 << 10,
+}
+
+// Video accepts the websocket a node opens to deliver a device video stream
+// the master asked for (see videostream.Rendezvous).
+func (s *nodeMaster) Video(c *gin.Context) {
+	conn, err := videoUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+	if !videostream.Default.Deliver(c.Param("stream_id"), conn) {
+		_ = conn.Close()
+	}
 }

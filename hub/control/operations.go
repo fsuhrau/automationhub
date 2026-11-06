@@ -38,6 +38,32 @@ func (s *Service) Screenshot(dev device.Device) ([]byte, int, int, error) {
 	return dev.GetScreenshot()
 }
 
+// Video starts a live video stream of the screen. It ends when ctx is done
+// or the stream is closed.
+func (s *Service) Video(ctx context.Context, dev device.Device, opts device.VideoOptions) (device.VideoStream, error) {
+	streamer, ok := dev.(device.VideoStreamer)
+	if !ok {
+		return nil, device.ErrUnsupported
+	}
+	return streamer.StartVideo(ctx, opts)
+}
+
+// InjectInput injects low latency input through a running video stream of
+// the device. It needs the lease like the other control calls, except for a
+// video reset, which only asks for a new key frame.
+func (s *Service) InjectInput(dev device.Device, token string, stream device.VideoStream, ev device.InputEvent) error {
+	if ev.Kind != device.InputResetVideo {
+		if err := s.Authorize(dev.DeviceID(), token); err != nil {
+			return err
+		}
+	}
+	input, ok := stream.(device.VideoInput)
+	if !ok {
+		return device.ErrUnsupported
+	}
+	return input.InjectInput(ev)
+}
+
 // AppScreenshot asks the connected app (Unity plugin) for a screenshot.
 func (s *Service) AppScreenshot(ctx context.Context, dev device.Device) ([]byte, int, int, error) {
 	var a action.GetScreenshot

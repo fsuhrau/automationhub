@@ -282,6 +282,15 @@ func (nm *NodeManager) Control(nodeIdentifier manager.NodeIdentifier, req device
 	return handler.Control(req)
 }
 
+func (nm *NodeManager) StartVideoStream(nodeIdentifier manager.NodeIdentifier, req device.VideoStreamRequest) error {
+	handler, err := nm.getHandler(nodeIdentifier)
+	if err != nil {
+		return err
+	}
+
+	return handler.StartVideoStream(req)
+}
+
 func (nm *NodeManager) IsConnected(nodeIdentifier manager.NodeIdentifier, deviceId string) bool {
 	handler, err := nm.getHandler(nodeIdentifier)
 	if err != nil {

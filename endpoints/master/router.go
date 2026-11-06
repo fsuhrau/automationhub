@@ -30,6 +30,7 @@ func (s *nodeMaster) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error 
 	apiNode.POST("/action", s.Action)
 	apiNode.POST("/devices", s.DevicesChanged)
 	apiNode.GET("/connect", s.Connect)
+	apiNode.GET("/video/:stream_id", s.Video)
 
 	return nil
 }

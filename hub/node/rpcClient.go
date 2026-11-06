@@ -312,6 +312,18 @@ func (rpc *RPCClient) Control(req device.ControlRequest) (device.ControlResponse
 	return resp, nil
 }
 
+// StartVideoStream asks the node to stream a device's video to the master.
+func (rpc *RPCClient) StartVideoStream(req device.VideoStreamRequest) error {
+	if err := rpc.safeCall("RPCNode.StartVideoStream", &req, &Void{}); err != nil {
+		var serverErr netrpc.ServerError
+		if errors.As(err, &serverErr) {
+			return device.ControlError(string(serverErr))
+		}
+		return err
+	}
+	return nil
+}
+
 func (rpc *RPCClient) IsConnected(deviceId string) bool {
 	logrus.Info("RPCNode.IsConnected")
 

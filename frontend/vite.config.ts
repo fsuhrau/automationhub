@@ -25,7 +25,8 @@ export default defineConfig({
     server: {
         port: 3000,
         proxy: {
-            '/api': { target: backend, changeOrigin: true },
+            // ws: the device video stream is a websocket under /api
+            '/api': { target: backend, changeOrigin: true, ws: true },
             '/auth': { target: backend, changeOrigin: true },
             '/upload': { target: backend, changeOrigin: true },
             '/data': { target: backend, changeOrigin: true },

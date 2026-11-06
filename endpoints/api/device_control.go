@@ -16,7 +16,7 @@ import (
 )
 
 func (s *Service) registerDeviceControl(projectApi *gin.RouterGroup) {
-	controlapi.NewHandler(s.control, s.resolveControlDevice, s.resolveControlApp, requestOwner, s.nodeUrl).Register(projectApi)
+	controlapi.NewHandler(s.control, s.resolveControlDevice, s.resolveControlApp, requestOwner, s.nodeUrl).WithAllowedOrigins(s.cfg.Cors).Register(projectApi)
 }
 
 func projectFromContext(c *gin.Context) *models.Project {
