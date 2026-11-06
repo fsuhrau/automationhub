@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"github.com/fsuhrau/automationhub/hub/runs"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
@@ -372,6 +373,18 @@ type Response struct {
 	TestRun   models.TestRun `json:"testRun"`
 	PrevRunId uint           `json:"prevRunId"`
 	NextRunId uint           `json:"nextRunId"`
+	// State says whether the run still executes. The run model has no status
+	// of its own: "running" and "finished" come from the run tracker, and
+	// "not_running" is a run this master didn't start (e.g. before a restart).
+	State runs.RunState `json:"state"`
+}
+
+func (s *Service) runState(runID uint) runs.RunState {
+	if s.runTracker == nil {
+		return runs.RunUnknown
+	}
+	state, _ := s.runTracker.Status(runID)
+	return state
 }
 
 func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
@@ -393,6 +406,7 @@ func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, applic
 	for i := range resp.TestRun.Protocols {
 		defaultNaN(&resp.TestRun.Protocols[i])
 	}
+	resp.State = s.runState(resp.TestRun.ID)
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -430,6 +444,7 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 
 	// get next
 	s.db.Table("test_runs").Where("test_id = ? and id > ?", testId, runId).Order("created_at asc").Limit(1).Select("id").Scan(&resp.NextRunId)
+	resp.State = s.runState(resp.TestRun.ID)
 
 	c.JSON(http.StatusOK, resp)
 }
