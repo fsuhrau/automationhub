@@ -98,6 +98,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 		projectApi.PUT("/device/:device_id", s.WithProject(s.updateDevice))
 		projectApi.POST("/device/:device_id/tests", s.WithProject(s.deviceRunTests))
 		projectApi.GET("/device/:device_id/protocols", s.WithProject(s.getDeviceProtocols))
+		projectApi.GET("/overview", s.WithProject(s.getOverview))
 		projectApi.GET("/devices", s.WithProject(s.getDevices))
 		s.registerDeviceControl(projectApi)
 		// MCP (streamable HTTP): POST for messages, GET for the event stream, DELETE ends a session

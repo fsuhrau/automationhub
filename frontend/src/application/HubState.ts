@@ -1,6 +1,5 @@
 import IProject from "../project/project";
 import {IAppData} from "../types/app";
-import IHubStatsData from "../types/hub.stats";
 import IAccessTokenData from "../types/access.token";
 import {INodeData} from "../types/node";
 import {IUserData} from "../types/user";
@@ -37,7 +36,6 @@ export interface HubStateAction {
 export interface HubState {
     mobileOpen: boolean,
     projects: IProject[] | null,
-    stats: IHubStatsData | null,
     accessTokens: IAccessTokenData[] | null,
     nodes: INodeData[] | null,
     apps: IAppData[] | null,
@@ -48,7 +46,6 @@ export interface HubState {
 export const InitialHubState: HubState = {
     mobileOpen: false,
     projects: null,
-    stats: null,
     accessTokens: null,
     nodes: null,
     apps: null,
