@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useSSE} from 'react-hooks-sse';
 import {HubStateActions} from "./HubState";
 import {useProjectContext} from "../hooks/ProjectProvider";
@@ -6,6 +6,7 @@ import {useHubState} from "../hooks/HubStateProvider";
 import {getAllDevices} from "../services/device.service";
 import {getAllApps} from "../services/app.service";
 import {useError} from "../ErrorProvider";
+import {SSE_CONNECTED_EVENT} from "./sseSource";
 
 interface DeviceChangePayload {
     deviceId: number,
@@ -26,6 +27,30 @@ const HubStateUpdates: React.FC<{ children: any }> = ({children}) => {
     const {dispatch} = useHubState()
     const {projectIdentifier} = useProjectContext()
     const {setError} = useError()
+
+    // reload devices whenever the event stream reconnects (e.g. after a master
+    // restart), because status changes sent while it was down are lost
+    const [reconnects, setReconnects] = useState(0);
+    useEffect(() => {
+        let first = true;
+        const onConnected = () => {
+            if (first) {
+                // the initial connect; the effect below loads anyway
+                first = false;
+                return;
+            }
+            setReconnects(n => n + 1);
+        };
+        window.addEventListener(SSE_CONNECTED_EVENT, onConnected);
+        return () => window.removeEventListener(SSE_CONNECTED_EVENT, onConnected);
+    }, []);
+
+    useEffect(() => {
+        if (reconnects === 0) return;
+        getAllDevices(projectIdentifier).then(devices => {
+            dispatch({type: HubStateActions.UpdateDevices, payload: devices})
+        }).catch(() => undefined);
+    }, [reconnects, projectIdentifier, dispatch]);
 
     // devices and apps belong to the project; reload both when it changes
     useEffect(() => {

@@ -2,6 +2,9 @@ import React, {useEffect} from 'react';
 import {Outlet} from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import {SSEProvider, useSSE} from 'react-hooks-sse';
+import {createHubEventSource} from "./sseSource";
+
+const hubEventSource = createHubEventSource('/api/sse');
 import {Box} from '@mui/system';
 import {HubStateActions} from "./HubState";
 import MainMenu from "../components/MainMenu";
@@ -32,7 +35,7 @@ const HubMainLayout: React.FC = () => {
 
 
     return <ProjectProvider>
-        <SSEProvider endpoint="/api/sse">
+        <SSEProvider source={hubEventSource}>
             <HubStateUpdates>
                 <CssBaseline enableColorScheme/>
                 <Box sx={{display: 'flex'}}>

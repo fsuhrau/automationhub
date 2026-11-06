@@ -19,5 +19,7 @@ func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterEventTestRunFinishedListener(s)
 
 	sseApi := api.Group("/sse")
+	// with and without trailing slash, so clients don't get a redirect first
+	sseApi.GET("", sse.HeadersMiddleware(), s.sseBroker.ServeHTTP())
 	sseApi.GET("/", sse.HeadersMiddleware(), s.sseBroker.ServeHTTP())
 }

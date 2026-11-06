@@ -1,8 +1,10 @@
 package sse
 
 import (
+	"io"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +12,10 @@ import (
 // DefaultClientBuffer is the number of events buffered per client before the
 // client is considered too slow and gets evicted.
 const DefaultClientBuffer = 256
+
+// KeepAliveInterval is how often an idle stream gets a comment line, so
+// proxies don't time out the connection.
+var KeepAliveInterval = 25 * time.Second
 
 // Client is a single SSE subscriber.
 type Client struct {
@@ -110,11 +116,25 @@ func (b *Broker) ServeHTTP() gin.HandlerFunc {
 		defer b.Unsubscribe(client)
 
 		ctx := c.Request.Context()
+		// send a first byte right away: some proxies (e.g. the Vite dev
+		// server) hold back the headers until body data arrives, so the
+		// browser's EventSource would never see the stream open
+		if _, err := io.WriteString(c.Writer, ": connected\n\n"); err != nil {
+			return
+		}
 		c.Writer.Flush()
+
+		keepAlive := time.NewTicker(KeepAliveInterval)
+		defer keepAlive.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case <-keepAlive.C:
+				if _, err := io.WriteString(c.Writer, ": keep-alive\n\n"); err != nil {
+					return
+				}
+				c.Writer.Flush()
 			case msg, ok := <-client.Events():
 				if !ok {
 					return

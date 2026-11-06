@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -118,4 +119,42 @@ func waitFor(t *testing.T, cond func() bool) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	t.Fatal("condition not met")
+}
+
+func TestServeHTTPSendsFirstByteAndKeepAlive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	old := KeepAliveInterval
+	KeepAliveInterval = 20 * time.Millisecond
+	defer func() { KeepAliveInterval = old }()
+
+	b := NewBroker()
+	r := gin.New()
+	r.GET("/sse", HeadersMiddleware(), b.ServeHTTP())
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/sse", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.Header.Get("Content-Type") != "text/event-stream" {
+		t.Fatalf("unexpected content type %q", resp.Header.Get("Content-Type"))
+	}
+
+	buf := make([]byte, 0, 256)
+	chunk := make([]byte, 64)
+	for !bytes.Contains(buf, []byte(": keep-alive")) {
+		n, err := resp.Body.Read(chunk)
+		if err != nil {
+			t.Fatalf("read: %v (got %q)", err, buf)
+		}
+		buf = append(buf, chunk[:n]...)
+	}
+	if !bytes.HasPrefix(buf, []byte(": connected\n\n")) {
+		t.Fatalf("stream must start with a comment, got %q", buf)
+	}
 }
