@@ -21,8 +21,12 @@ func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
 		xauth := ctx.GetHeader("X-Auth-Token")
 		if xauth != "" {
 
+			// fail closed: only a token that was found signs the request in
 			if err := lookup(db, xauth, &token); errors.Is(err, gorm.ErrRecordNotFound) {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+				return
+			} else if err != nil {
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "token lookup failed"})
 				return
 			}
 

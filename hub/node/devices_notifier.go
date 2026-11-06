@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -34,6 +35,9 @@ type DevicesChangedRequest struct {
 	Devices *[]*DeviceResponse `json:"devices,omitempty"`
 }
 
+// errTokenRejected is a push the master refused for its X-Auth-Token.
+var errTokenRejected = errors.New("master rejected the node token")
+
 // DevicesNotifier pushes this node's device list to the master whenever it
 // changed. Notify is cheap: the list is only sent when it differs from the
 // last one the master accepted, and a failed send is retried with backoff.
@@ -44,8 +48,9 @@ type DevicesNotifier struct {
 	client    *http.Client
 	snapshot  func() []*DeviceResponse
 
-	sendMu   sync.Mutex // serializes flushes, guards lastSent
+	sendMu   sync.Mutex // serializes flushes, guards lastSent and rejected
 	lastSent []byte
+	rejected bool // the master refused the token; warned once until a push works
 
 	mu      sync.Mutex // guards pending and retry
 	pending *time.Timer
@@ -117,10 +122,20 @@ func (n *DevicesNotifier) flush() {
 		n.retry = min(max(n.retry*2, devicesNotifierMinRetry), devicesNotifierMaxRetry)
 		retry := n.retry
 		n.mu.Unlock()
-		logrus.Debugf("push device list to master (retry in %v): %v", retry, err)
+		if errors.Is(err, errTokenRejected) {
+			// retrying won't help until the token is replaced, so say it once
+			// where the operator sees it instead of at debug level
+			if !n.rejected {
+				n.rejected = true
+				logrus.Warnf("push device list to master: %v; issue a new token for this node in the master's settings and put it in the node config (retry in %v)", err, retry)
+			}
+		} else {
+			logrus.Debugf("push device list to master (retry in %v): %v", retry, err)
+		}
 		n.schedule(retry)
 		return
 	}
+	n.rejected = false
 	n.lastSent = data
 	n.mu.Lock()
 	n.retry = 0
@@ -145,6 +160,9 @@ func (n *DevicesNotifier) send(devices []*DeviceResponse) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("%w (%s)", errTokenRejected, resp.Status)
+	}
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("master answered %s", resp.Status)
 	}

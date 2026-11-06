@@ -8,6 +8,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
 type pushRecorder struct {
@@ -15,6 +18,7 @@ type pushRecorder struct {
 	pushes []DevicesChangedRequest
 	tokens []string
 	fail   int // answer this many requests with 503 first
+	status int // answer every request with this status, when set
 }
 
 func (r *pushRecorder) handler(t *testing.T) http.HandlerFunc {
@@ -24,6 +28,10 @@ func (r *pushRecorder) handler(t *testing.T) http.HandlerFunc {
 		}
 		r.mu.Lock()
 		defer r.mu.Unlock()
+		if r.status != 0 {
+			w.WriteHeader(r.status)
+			return
+		}
 		if r.fail > 0 {
 			r.fail--
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -163,4 +171,39 @@ func TestDevicesNotifierWithoutMasterIsNoop(t *testing.T) {
 		t.Fatal("expected nil notifier without master")
 	}
 	n.Notify() // must not panic
+}
+
+// A refused token is told once at warn level, not hidden in debug retries.
+func TestDevicesNotifierWarnsOnceAboutRejectedToken(t *testing.T) {
+	hook := test.NewGlobal()
+	defer hook.Reset()
+
+	var mu sync.Mutex
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		mu.Lock()
+		requests++
+		mu.Unlock()
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	list := &deviceList{}
+	list.set(&DeviceResponse{Manager: "android_device", DeviceID: "a"})
+	token := "1235123"
+	n := NewDevicesNotifier(strings.TrimPrefix(srv.URL, "http://"), "node-1", &token, list.snapshot)
+
+	n.Notify()
+	// first try after the delay, retries after 1s and 2s
+	waitFor(t, "two retries", func() bool { mu.Lock(); defer mu.Unlock(); return requests >= 3 })
+
+	warnings := 0
+	for _, e := range hook.AllEntries() {
+		if e.Level == logrus.WarnLevel && strings.Contains(e.Message, "rejected the node token") {
+			warnings++
+		}
+	}
+	if warnings != 1 {
+		t.Fatalf("expected one warning about the token, got %d", warnings)
+	}
 }

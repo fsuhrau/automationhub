@@ -130,3 +130,26 @@ func TestProjectTokenUnchanged(t *testing.T) {
 		t.Fatalf("no token falls through to the session handler: %d", w.Code)
 	}
 }
+
+// A token that matches nothing is refused.
+func TestUnknownTokenRejected(t *testing.T) {
+	db := testDB(t)
+	db.Create(&models.Project{Name: "Game", Identifier: "game"})
+	if w := get(server(db), "/api/game/x", "1235123"); w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d %q", w.Code, w.Body.String())
+	}
+}
+
+// A lookup that fails for another reason than "not found" must not sign the
+// request in.
+func TestLookupErrorFailsClosed(t *testing.T) {
+	db := testDB(t)
+	db.Create(&models.Project{Name: "Game", Identifier: "game"})
+	if err := db.Migrator().DropTable(&models.AccessToken{}); err != nil {
+		t.Fatal(err)
+	}
+	w := get(server(db), "/api/game/x", "1235123")
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d %q", w.Code, w.Body.String())
+	}
+}

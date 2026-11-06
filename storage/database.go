@@ -9,6 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"io"
+	"log"
+	"os"
 	"time"
 )
 
@@ -33,6 +37,20 @@ func getDialect(database config.Database) gorm.Dialector {
 	return nil
 }
 
+// newLogger is gorm's default logger without two kinds of noise: a lookup
+// that finds nothing (an unknown token, a missing device) is a normal result
+// for the caller to handle, not an error, and SQL is logged without its
+// values so tokens and passwords never reach the log.
+func newLogger(w io.Writer) logger.Interface {
+	return logger.New(log.New(w, "\r\n", log.LstdFlags), logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true,
+		ParameterizedQueries:      true,
+		Colorful:                  true,
+	})
+}
+
 func GetDB(database config.Database) (*gorm.DB, error) {
 
 	if db != nil {
@@ -42,6 +60,7 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 	var err error
 	db, err = gorm.Open(getDialect(database), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
+		Logger:                                   newLogger(os.Stdout),
 	})
 
 	if err != nil {
