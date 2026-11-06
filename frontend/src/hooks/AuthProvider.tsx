@@ -22,7 +22,7 @@ type AuthContextProps = {
     user: IUser | null,
     authState: AuthState,
     loginAction: (d: LoginData, onError: (error: string) => void) => {},
-    registerAction: (d: RegisterData) => {},
+    registerAction: (d: RegisterData, onError: (error: string) => void) => {},
     logOut: () => {},
 };
 
@@ -101,13 +101,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 navigate("/");
                 return;
             }
-            onError("Invalid email or password");
+            onError(res.error ?? "Invalid email or password");
         } catch (err) {
             console.error(err);
+            onError("Sign in failed: the server could not be reached.");
         }
     };
 
-    const registerAction = async (data: RegisterData) => {
+    const registerAction = async (data: RegisterData, onError: (error: string) => void) => {
         try {
             const response = await fetch("/auth/register", {
                 method: "POST",
@@ -117,6 +118,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 body: JSON.stringify(data),
                 credentials: "include", // Include cookies in the request
             });
+            const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
+            if (!isJson) {
+                // without password auth the master has no /auth routes
+                onError("Registration is not available: the master is not configured for password authentication.");
+                return;
+            }
             const res = await response.json();
             if (res.user) {
                 setUser(res.user);
@@ -124,8 +131,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 navigate("/");
                 return;
             }
+            onError(res.error ?? `Registration failed (${response.status})`);
         } catch (err) {
             console.error(err);
+            onError("Registration failed: the server could not be reached.");
         }
     };
 

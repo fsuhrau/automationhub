@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
 import CssBaseline from '@mui/material/CssBaseline';
 import Divider from '@mui/material/Divider';
@@ -107,13 +108,27 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     return isValid;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (nameError || emailError || passwordError) {
+    // validate here: the error flags in state are stale within this event
+    if (!validateInputs()) {
       return;
     }
     const data = new FormData(event.currentTarget);
-    auth.registerAction({name: data.get('name') as string, email: data.get('email') as string, password: data.get('password') as string })
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await auth.registerAction({
+        name: data.get('name') as string,
+        email: data.get('email') as string,
+        password: data.get('password') as string,
+      }, setSubmitError);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -184,11 +199,12 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
               control={<Checkbox value="allowExtraEmails" color="primary" />}
               label="I want to receive updates via email."
             />
+            {submitError && <Alert severity="error">{submitError}</Alert>}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              onClick={validateInputs}
+              disabled={submitting}
             >
               Sign up
             </Button>

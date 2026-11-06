@@ -184,6 +184,16 @@ func RegisterRoute(ctx *gin.Context) {
 	req.Email = strings.TrimSpace(req.Email)
 	req.Password = strings.TrimSpace(req.Password)
 	req.Name = strings.TrimSpace(req.Name)
+	if req.Email == "" || req.Password == "" || req.Name == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name, email and password are required"})
+		return
+	}
+
+	var existing models.UserAuth
+	if err := db.Where("email = ? and provider = ?", req.Email, ProviderName).First(&existing).Error; err == nil {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "an account with this email exists already, please sign in"})
+		return
+	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -204,6 +214,7 @@ func RegisterRoute(ctx *gin.Context) {
 	}
 
 	if err := db.Create(&user).Error; err != nil {
+		logrus.Errorf("register user %s: %v", req.Email, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
