@@ -378,12 +378,6 @@ func (d *Device) Execute(feature string) {
 	}
 }
 
-func (d *Device) Tap(x, y int64) error {
-	d.Log("device", "Execute Tap: %d,%d", x, y)
-	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", fmt.Sprintf("%d", x), fmt.Sprintf("%d", y))
-	return cmd.Run()
-}
-
 func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }

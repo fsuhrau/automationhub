@@ -25,6 +25,7 @@ import (
 
 const (
 	ConnectionTimeout = 120 * time.Second
+	WDAStartTimeout   = 60 * time.Second
 )
 
 type Device struct {
@@ -38,6 +39,7 @@ type Device struct {
 	recordingSessionProcess *exec.Cmd
 	lastUpdateAt            time.Time
 	webDriver               *webdriver.Client
+	screenScale             float64 // screenshot pixels per WDA point, 0 = unknown
 	deviceParameter         map[string]string
 }
 
@@ -270,17 +272,21 @@ func (d *Device) StartXCUITestRunner() error {
 	var wdaArg []string
 	var wdaEnv []string
 
-	go func() {
-		err := testmanagerd.RunXCUIWithBundleIds(bundleID, testbundleID, xctestconfig, device, wdaArg, wdaEnv)
-		fmt.Println(err)
-	}()
-
-	address, ok := <-webdriver.WDAHook.Connected
-	if !ok {
-		return fmt.Errorf("webdriver wdahook not connected")
+	address, err := webdriver.WDAHook.Await(WDAStartTimeout, func() {
+		go func() {
+			if err := testmanagerd.RunXCUIWithBundleIds(bundleID, testbundleID, xctestconfig, device, wdaArg, wdaEnv); err != nil {
+				d.Error("device", "WebDriverAgent runner stopped: %v", err)
+			}
+		}()
+	})
+	if err != nil {
+		return err
 	}
 	d.webDriver = webdriver.New(address)
-	d.webDriver.CreateSession()
+	d.screenScale = 0
+	if _, err := d.webDriver.CreateSession(); err != nil {
+		return fmt.Errorf("create WebDriverAgent session: %w", err)
+	}
 	return nil
 }
 

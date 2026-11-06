@@ -58,6 +58,7 @@ type Device struct {
 	IsAcknowledged      bool                 `json:"isAcknowledged"`
 	Status              device.State         `json:"status" gorm:"-"`
 	IsLocked            bool                 `json:"isLocked" gorm:"-"`
+	LockedBy            string               `json:"lockedBy,omitempty" gorm:"-"`
 	Dev                 interface{}          `json:"dev" gorm:"-"`
 	Connection          interface{}          `json:"connection" gorm:"-"`
 	PlatformType        PlatformType         `json:"platformType"`

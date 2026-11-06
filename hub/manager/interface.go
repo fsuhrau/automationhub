@@ -65,6 +65,7 @@ type Nodes interface {
 	StartApp(nodeIdentifier NodeIdentifier, deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	ClearAppData(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
+	Control(nodeIdentifier NodeIdentifier, req device.ControlRequest) (device.ControlResponse, error)
 	IsConnected(nodeIdentifier NodeIdentifier, deviceId string) bool
 	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error
 	StopRecording(nodeIdentifier NodeIdentifier, deviceId string) error

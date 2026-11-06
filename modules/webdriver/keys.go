@@ -39,29 +39,10 @@ func (c *Client) SendText(value string) error {
 	return nil
 }
 
+// PressButton presses a hardware button: "home", "volumeUp" or "volumeDown".
 func (c *Client) PressButton(name string) error {
-	type request struct {
-		Name []byte `json:"name"`
+	if _, _, err := c.postJSON("/wda/pressButton", map[string]string{"name": name}); err != nil {
+		return fmt.Errorf("unable to press button: %w", err)
 	}
-	requestJson, _ := json.Marshal(request{
-		Name: []byte(name),
-	})
-	requestBody := bytes.NewBuffer(requestJson)
-
-	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/pressButton"), requestBody)
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var result Element
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(respBody, &wdaError)
-		return fmt.Errorf("unable to press button: %s", wdaError.Value.Error)
-	}
-
 	return nil
 }

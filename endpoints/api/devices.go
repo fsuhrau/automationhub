@@ -86,6 +86,9 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 		if dev != nil {
 			devices[i].Status = dev.DeviceState()
 			devices[i].IsLocked = dev.IsLocked()
+			if l, ok := s.control.Holder(dev.DeviceID()); ok {
+				devices[i].LockedBy = l.Owner
+			}
 			if dev.Connection() != nil {
 				devices[i].Connection = dev.Connection().ConnectionParameter
 			}
@@ -112,6 +115,8 @@ func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
 		s.error(c, http.StatusNotFound, fmt.Errorf("device %s is not connected", device.DeviceIdentifier))
 		return
 	}
+	// an explicit unlock also ends a live control lease
+	s.control.ForceRelease(dev.DeviceID())
 	if dev.IsLocked() {
 		err := dev.Unlock()
 		if err != nil {
@@ -134,6 +139,9 @@ func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 	if dev != nil {
 		device.Status = dev.DeviceState()
 		device.IsLocked = dev.IsLocked()
+		if l, ok := s.control.Holder(dev.DeviceID()); ok {
+			device.LockedBy = l.Owner
+		}
 		if dev.Connection() != nil {
 			device.Connection = dev.Connection().ConnectionParameter
 		}

@@ -104,7 +104,7 @@ func (l *LuaScriptHandler) click(L *lua.LState) int {
 		x := (xs + xe) * 0.5
 		y := (ys + ye) * 0.5
 
-		if err := l.dev.Tap(int64(x), int64(y)); err != nil {
+		if err := l.dev.Tap(int(x), int(y)); err != nil {
 			l.dev.Error("device", "Touch element '%s' failed: '%v'", lookup, err)
 			l.dev.pressKey(KEYCODE_BACK)
 			return 0

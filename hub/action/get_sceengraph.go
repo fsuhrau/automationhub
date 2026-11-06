@@ -107,10 +107,55 @@ func (a *GetSceenGraph) Content() string {
 	return result
 }
 
-func (a *GetSceenGraph) XML() (*xmlquery.Node, error) {
+// XMLBytes returns the scene graph as XML. JSON scene graphs can't be
+// converted and return an error.
+func (a *GetSceenGraph) XMLBytes(pretty bool) ([]byte, error) {
 	if len(a.content) == 0 {
 		return nil, fmt.Errorf("can't convert sceengraph because no content available")
 	}
-	xmlDocString := convertFlatToXml(a.content, false)
-	return xmlquery.Parse(bytes.NewReader(xmlDocString))
+	switch a.contentType {
+	case ContentType_Flatbuffer:
+		return convertFlatToXml(a.content, pretty), nil
+	case ContentType_Xml:
+		return a.content, nil
+	}
+	return nil, fmt.Errorf("scene graph content type %v is not xml", a.contentType)
+}
+
+func (a *GetSceenGraph) XML() (*xmlquery.Node, error) {
+	content, err := a.XMLBytes(false)
+	if err != nil {
+		return nil, err
+	}
+	return xmlquery.Parse(bytes.NewReader(content))
+}
+
+// FindElementID returns the ID attribute of the first element matching the
+// XPath expression, preferring visible elements.
+func (a *GetSceenGraph) FindElementID(xpath string) (string, error) {
+	doc, err := a.XML()
+	if err != nil {
+		return "", err
+	}
+	nodes, err := xmlquery.QueryAll(doc, xpath)
+	if err != nil {
+		return "", fmt.Errorf("invalid xpath %q: %w", xpath, err)
+	}
+	var fallback string
+	for _, n := range nodes {
+		id := n.SelectAttr("ID")
+		if id == "" {
+			continue
+		}
+		if n.SelectAttr("isVisible") != "0" {
+			return id, nil
+		}
+		if fallback == "" {
+			fallback = id
+		}
+	}
+	if fallback != "" {
+		return fallback, nil
+	}
+	return "", fmt.Errorf("no element matches %q", xpath)
 }

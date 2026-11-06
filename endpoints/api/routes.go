@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"github.com/fsuhrau/automationhub/config"
+	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/tester"
@@ -23,6 +25,8 @@ type Service struct {
 
 	runners      map[string]tester.Interface
 	runnersMutex sync.Mutex
+
+	control *hubcontrol.Service
 }
 
 func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices, sm manager.Sessions, config config.Service, nodeManager manager.Nodes) *Service {
@@ -36,6 +40,7 @@ func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices,
 		sseBroker:       sse.NewBroker(),
 		cfg:             config,
 		runners:         make(map[string]tester.Interface),
+		control:         hubcontrol.New(dm),
 	}
 }
 
@@ -43,6 +48,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	api := auth.Group("/api")
 
 	s.initSSE(api)
+	go s.control.Run(context.Background())
 
 	api.GET("/stats", s.getStats)
 
@@ -73,6 +79,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 		projectApi.PUT("/device/:device_id", s.WithProject(s.updateDevice))
 		projectApi.POST("/device/:device_id/tests", s.WithProject(s.deviceRunTests))
 		projectApi.GET("/devices", s.WithProject(s.getDevices))
+		s.registerDeviceControl(projectApi)
 
 		projectApi.POST("/app", s.WithProject(s.createApp))
 		projectApi.GET("/apps", s.WithProject(s.getApps))

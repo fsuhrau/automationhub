@@ -108,6 +108,18 @@ func (d *Device) Unlock() error {
 	return nil
 }
 
+// Release clears the lock without cancelling the device context, so a
+// connected app stays connected. Used for interactive control leases.
+func (d *Device) Release() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if !d.locked {
+		return DeviceUnlockedError
+	}
+	d.locked = false
+	return nil
+}
+
 func (d *Device) IsLocked() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()

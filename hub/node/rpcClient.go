@@ -10,14 +10,14 @@ import (
 	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"net/rpc"
+	netrpc "net/rpc"
 	"net/url"
 	"path/filepath"
 	"time"
 )
 
 type RPCClient struct {
-	client    *rpc.Client
+	client    *netrpc.Client
 	masterURL string
 }
 
@@ -304,6 +304,19 @@ func (rpc *RPCClient) ClearAppData(deviceId string, parameter *app.Parameter) er
 		return errors.New(resp.ErrorMessage)
 	}
 	return nil
+}
+
+// Control forwards a native control call (tap, swipe, text, key, logs).
+func (rpc *RPCClient) Control(req device.ControlRequest) (device.ControlResponse, error) {
+	var resp device.ControlResponse
+	if err := rpc.safeCall("RPCNode.Control", &req, &resp); err != nil {
+		var serverErr netrpc.ServerError
+		if errors.As(err, &serverErr) {
+			return resp, device.ControlError(string(serverErr))
+		}
+		return resp, err
+	}
+	return resp, nil
 }
 
 func (rpc *RPCClient) IsConnected(deviceId string) bool {

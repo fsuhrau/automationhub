@@ -432,6 +432,17 @@ func (s *RPCNode) ClearAppData(req *AppParameterRequest, resp *BoolResponse) err
 	return nil
 }
 
+// Control applies a native control call to a local device.
+func (s *RPCNode) Control(req *device.ControlRequest, resp *device.ControlResponse) error {
+	dev, _ := s.dm.GetDevice(req.DeviceID)
+	if dev == nil {
+		return fmt.Errorf("device with id %v not found", req.DeviceID)
+	}
+	result, err := device.ApplyControl(dev, *req)
+	*resp = result
+	return err
+}
+
 func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: IsConnected")
 	device, _ := s.dm.GetDevice(req.DeviceID)
