@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"fmt"
 	"github.com/fsuhrau/automationhub/authentication"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
@@ -18,6 +19,8 @@ import (
 
 const (
 	ProviderName = "password"
+	// MinPasswordLength is the shortest password a new account can have
+	MinPasswordLength = 8
 )
 
 var (
@@ -190,9 +193,25 @@ func RegisterRoute(ctx *gin.Context) {
 		return
 	}
 
+	if !strings.Contains(req.Email, "@") || strings.ContainsAny(req.Email, " \t") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "that doesn't look like an email address"})
+		return
+	}
+	if len([]rune(req.Password)) < MinPasswordLength {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("the password needs at least %d characters", MinPasswordLength)})
+		return
+	}
+
 	var existing models.UserAuth
 	if err := db.Where("email = ? and provider = ?", req.Email, ProviderName).First(&existing).Error; err == nil {
 		ctx.JSON(http.StatusConflict, gin.H{"error": "an account with this email exists already, please sign in"})
+		return
+	}
+	// names are unique (sessions and tokens find the account by it); a taken
+	// name used to fail as "Failed to create user"
+	var named int64
+	if err := db.Model(&models.User{}).Where("name = ?", req.Name).Count(&named).Error; err == nil && named > 0 {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "someone has this name already; add your last name or an initial"})
 		return
 	}
 

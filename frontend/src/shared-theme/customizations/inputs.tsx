@@ -7,7 +7,7 @@ import { toggleButtonClasses } from '@mui/material/ToggleButton';
 import CheckBoxOutlineBlankRoundedIcon from '@mui/icons-material/CheckBoxOutlineBlankRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
-import { gray, brand } from '../themePrimitives';
+import { gray, brand, red } from '../themePrimitives';
 
 /* eslint-disable import/prefer-default-export */
 export const inputsCustomizations: Components<Theme> = {
@@ -479,6 +479,9 @@ export const inputsCustomizations: Components<Theme> = {
   },
   MuiInputLabel: {
     styleOverrides: {
+      root: ({ theme }) => ({
+        ...theme.applyStyles('dark', { '&.Mui-error': { color: red[300] } }),
+      }),
       outlined: {
         // resting, the label is centered like a placeholder
         transform: 'translate(13px, 10px) scale(1)',
@@ -492,6 +495,15 @@ export const inputsCustomizations: Components<Theme> = {
           },
         },
       },
+    },
+  },
+  // the dark scheme's error red is too dark to read on the dark surface;
+  // field messages and labels use the lighter red of the ramp there
+  MuiFormHelperText: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        ...theme.applyStyles('dark', { '&.Mui-error': { color: red[300] } }),
+      }),
     },
   },
   MuiFormLabel: {

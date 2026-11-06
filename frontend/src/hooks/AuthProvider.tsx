@@ -32,7 +32,8 @@ type AuthContextProps = {
     signIn: SignInMethod | null,
     // signs in and opens `to` (the page that asked for it) or the project list
     loginAction: (d: LoginData, onError: (error: string) => void, to?: string) => {},
-    registerAction: (d: RegisterData, onError: (error: string) => void) => {},
+    // creates the account, signs in and opens `to` or the project list
+    registerAction: (d: RegisterData, onError: (error: string) => void, to?: string) => {},
     logOut: () => {},
 };
 
@@ -132,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
         }
     };
 
-    const registerAction = async (data: RegisterData, onError: (error: string) => void) => {
+    const registerAction = async (data: RegisterData, onError: (error: string) => void, to: string = "/") => {
         try {
             const response = await fetch("/auth/register", {
                 method: "POST",
@@ -152,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             if (res.user) {
                 setUser(res.user);
                 setAuthState('authenticated');
-                navigate("/");
+                navigate(to, {replace: true});
                 return;
             }
             onError(res.error ?? `Registration failed (${response.status})`);
