@@ -85,3 +85,33 @@ export const describeConfig = (c: TestConfigLike): string => {
     parts.push(c.executionType === TestExecutionType.Simultaneously ? 'devices at the same time' : 'one device after the other');
     return parts.join(' · ');
 };
+
+export interface RunLike {
+    createdAt: Date | string,
+    endedAt?: Date | string | null,
+    status?: RunSummaryStatus,
+}
+
+export interface RunStats {
+    // runs with a verdict (not running, not interrupted or empty)
+    judged: number,
+    passed: number,
+    lastPassedAt: Date | string | null,
+    // the middle duration of the passed runs, in ms
+    typicalMs: number | null,
+}
+
+// runStats sums up runs (newest first) for the test page
+export const runStats = (runs: RunLike[]): RunStats => {
+    const judged = runs.filter(r => r.status === 'passed' || r.status === 'failed' || r.status === 'unstable' || r.status === 'not_run');
+    const passed = judged.filter(r => r.status === 'passed');
+    const durations = passed.filter(r => r.endedAt)
+        .map(r => new Date(r.endedAt!).valueOf() - new Date(r.createdAt).valueOf())
+        .filter(ms => ms >= 0).sort((a, b) => a - b);
+    return {
+        judged: judged.length,
+        passed: passed.length,
+        lastPassedAt: passed[0]?.createdAt ?? null,
+        typicalMs: durations.length ? durations[Math.floor((durations.length - 1) / 2)] : null,
+    };
+};

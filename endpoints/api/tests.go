@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"math"
 	"net/http"
 	"path/filepath"
@@ -64,55 +65,36 @@ func summarizeRun(state runs.RunState, passed, failed, unstable, open, logErrors
 	}
 }
 
-// getTests lists the tests of an app with their latest runs. It used to
-// preload every run of every test, which the list never showed.
-func (s *Service) getTests(c *gin.Context, project *models.Project, application *models.App) {
-	var tests []models.Test
-	if err := s.db.Where("app_id = ?", application.ID).Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Order("id").Find(&tests).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
-		return
+// summarizeRuns gives each run its status and result counts, in the order
+// of runs. It counts the tests themselves; a runner protocol wraps one.
+func (s *Service) summarizeRuns(testRuns []models.TestRun) ([]runSummary, error) {
+	summaries := make([]runSummary, len(testRuns))
+	if len(testRuns) == 0 {
+		return summaries, nil
 	}
-
-	list := make([]testListEntry, len(tests))
-	var runIDs []uint
-	for i := range tests {
-		list[i].Test = tests[i]
-		var recent []models.TestRun
-		if err := s.db.Where("test_id = ?", tests[i].ID).Order("id desc").Limit(recentRunsPerTest).Find(&recent).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
-		list[i].RecentRuns = make([]runSummary, len(recent))
-		for j, r := range recent {
-			list[i].RecentRuns[j] = runSummary{ID: r.ID, CreatedAt: r.CreatedAt}
-			runIDs = append(runIDs, r.ID)
-		}
+	ids := make([]uint, len(testRuns))
+	for i, r := range testRuns {
+		ids[i] = r.ID
 	}
-
-	// results of the tests themselves; runner protocols wrap one of them
 	var results []struct {
 		TestRunID  uint
 		TestResult models.TestResultState
 		N          int
 	}
+	if err := s.db.Model(&models.TestProtocol{}).Select("test_run_id, test_result, count(*) as n").
+		Where("test_run_id IN ?", ids).
+		Where("NOT EXISTS (SELECT 1 FROM test_protocols c WHERE c.parent_test_protocol_id = test_protocols.id AND c.deleted_at IS NULL)").
+		Group("test_run_id, test_result").Scan(&results).Error; err != nil {
+		return nil, err
+	}
 	var logErrors []struct {
 		TestRunID uint
 		N         int
 	}
-	if len(runIDs) > 0 {
-		if err := s.db.Model(&models.TestProtocol{}).Select("test_run_id, test_result, count(*) as n").
-			Where("test_run_id IN ?", runIDs).
-			Where("NOT EXISTS (SELECT 1 FROM test_protocols c WHERE c.parent_test_protocol_id = test_protocols.id AND c.deleted_at IS NULL)").
-			Group("test_run_id, test_result").Scan(&results).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
-		if err := s.db.Model(&models.TestRunLogEntry{}).Select("test_run_id, count(*) as n").
-			Where("test_run_id IN ? AND level = ?", runIDs, "error").
-			Group("test_run_id").Scan(&logErrors).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
+	if err := s.db.Model(&models.TestRunLogEntry{}).Select("test_run_id, count(*) as n").
+		Where("test_run_id IN ? AND level = ?", ids, "error").
+		Group("test_run_id").Scan(&logErrors).Error; err != nil {
+		return nil, err
 	}
 	type counts struct{ passed, failed, unstable, open, logErrors int }
 	byRun := map[uint]*counts{}
@@ -138,14 +120,41 @@ func (s *Service) getTests(c *gin.Context, project *models.Project, application 
 	for _, e := range logErrors {
 		get(e.TestRunID).logErrors = e.N
 	}
-	for i := range list {
-		for j := range list[i].RecentRuns {
-			run := &list[i].RecentRuns[j]
-			n := get(run.ID)
-			run.State = s.runState(run.ID)
-			run.Passed, run.Failed, run.Unstable, run.Open = n.passed, n.failed, n.unstable, n.open
-			run.Status = summarizeRun(run.State, n.passed, n.failed, n.unstable, n.open, n.logErrors)
+	for i, r := range testRuns {
+		n := get(r.ID)
+		state := s.runState(r.ID)
+		summaries[i] = runSummary{
+			ID: r.ID, CreatedAt: r.CreatedAt, State: state,
+			Passed: n.passed, Failed: n.failed, Unstable: n.unstable, Open: n.open,
+			Status: summarizeRun(state, n.passed, n.failed, n.unstable, n.open, n.logErrors),
 		}
+	}
+	return summaries, nil
+}
+
+// getTests lists the tests of an app with their latest runs. It used to
+// preload every run of every test, which the list never showed.
+func (s *Service) getTests(c *gin.Context, project *models.Project, application *models.App) {
+	var tests []models.Test
+	if err := s.db.Where("app_id = ?", application.ID).Preload("TestConfig").Preload("TestConfig.Unity").Preload("TestConfig.Unity.UnityTestFunctions").Preload("TestConfig.Devices").Order("id").Find(&tests).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	list := make([]testListEntry, len(tests))
+	for i := range tests {
+		list[i].Test = tests[i]
+		var recent []models.TestRun
+		if err := s.db.Where("test_id = ?", tests[i].ID).Order("id desc").Limit(recentRunsPerTest).Find(&recent).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		summaries, err := s.summarizeRuns(recent)
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		list[i].RecentRuns = summaries
 	}
 	c.JSON(http.StatusOK, list)
 }
@@ -480,16 +489,98 @@ func statusForError(err error) int {
 	return http.StatusInternalServerError
 }
 
-func (s *Service) getTestRuns(c *gin.Context, project *models.Project, application *models.App) {
-	testId := c.Param("test_id")
+const (
+	testRunsPageDefault = 25
+	testRunsPageMax     = 100
+)
 
+type bundleRef struct {
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// testRunListEntry is a run on the test page: its summary, what it ran
+// with, and when its last test ended
+type testRunListEntry struct {
+	runSummary
+	Parameter string     `json:"parameter"`
+	Bundle    *bundleRef `json:"bundle"`
+	EndedAt   *time.Time `json:"endedAt"`
+}
+
+type testRunsPage struct {
+	Runs []testRunListEntry `json:"runs"`
+	// more older runs exist; ask again with before = the last id
+	More bool `json:"more"`
+}
+
+// getTestRuns pages through the runs of a test, newest first: limit runs
+// (default 25, at most 100) older than the run id before, if given.
+func (s *Service) getTestRuns(c *gin.Context, project *models.Project, application *models.App) {
+	var test models.Test
+	if err := s.db.First(&test, "id = ? AND app_id = ?", c.Param("test_id"), application.ID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.error(c, http.StatusNotFound, fmt.Errorf("test %s not found", c.Param("test_id")))
+		} else {
+			s.error(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+	limit := testRunsPageDefault
+	if v, err := strconv.Atoi(c.Query("limit")); err == nil && v > 0 {
+		limit = min(v, testRunsPageMax)
+	}
+	query := s.db.Where("test_id = ?", test.ID)
+	if before, err := strconv.Atoi(c.Query("before")); err == nil && before > 0 {
+		query = query.Where("id < ?", before)
+	}
 	var testRuns []models.TestRun
-	if err := s.db.Preload("Protocols").Find(&testRuns, "test_id = ?", testId).Error; err != nil {
+	if err := query.Preload("AppBinary").Order("id desc").Limit(limit + 1).Find(&testRuns).Error; err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+	page := testRunsPage{More: len(testRuns) > limit}
+	if page.More {
+		testRuns = testRuns[:limit]
+	}
+	summaries, err := s.summarizeRuns(testRuns)
+	if err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, testRuns)
+	ids := make([]uint, len(testRuns))
+	for i, r := range testRuns {
+		ids[i] = r.ID
+	}
+	// the latest end of a run's protocols; read as columns and compared
+	// here, since an aggregate of a time column comes back as text on SQLite
+	var ends []models.TestProtocol
+	if len(ids) > 0 {
+		if err := s.db.Select("test_run_id", "ended_at").Where("test_run_id IN ? AND ended_at IS NOT NULL", ids).
+			Find(&ends).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+	endOf := map[uint]*time.Time{}
+	for i := range ends {
+		e := ends[i].EndedAt
+		if e != nil && (endOf[ends[i].TestRunID] == nil || e.After(*endOf[ends[i].TestRunID])) {
+			endOf[ends[i].TestRunID] = e
+		}
+	}
+
+	page.Runs = make([]testRunListEntry, len(testRuns))
+	for i, r := range testRuns {
+		entry := testRunListEntry{runSummary: summaries[i], Parameter: r.Parameter, EndedAt: endOf[r.ID]}
+		if r.AppBinary != nil {
+			entry.Bundle = &bundleRef{ID: r.AppBinary.ID, Name: r.AppBinary.Name, Version: r.AppBinary.Version}
+		}
+		page.Runs[i] = entry
+	}
+	c.JSON(http.StatusOK, page)
 }
 
 type Response struct {
