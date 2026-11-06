@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/runs"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -602,7 +603,7 @@ func (t *tools) unlockDevice(ctx context.Context, req *mcp.CallToolRequest, in D
 	}
 	t.Control.ForceRelease(dev.DeviceID())
 	if dev.IsLocked() {
-		if err := dev.Unlock(); err != nil {
+		if err := events.UnlockDevice(dev); err != nil {
 			return nil, nil, err
 		}
 	}

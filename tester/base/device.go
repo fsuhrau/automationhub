@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/utils/sync"
@@ -17,7 +18,7 @@ func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
 		}
 		dev := d.Dev.(device.Device)
 		tr.LogInfo("locking device: %s", dev.DeviceID())
-		if err := dev.Lock(); err == nil {
+		if err := events.LockDevice(dev); err == nil {
 			devices = append(devices, DeviceMap{
 				Device: dev,
 				Model:  d,
@@ -32,7 +33,7 @@ func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
 func (tr *TestRunner) UnlockDevices(devices []DeviceMap) {
 	for i := range devices {
 		tr.DeviceManager.Stop(devices[i].Device)
-		_ = devices[i].Device.Unlock()
+		_ = events.UnlockDevice(devices[i].Device)
 	}
 }
 

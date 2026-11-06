@@ -12,6 +12,7 @@ func (s *Service) PublishEvent(event sse.Event) {
 func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterEventDeviceStatusListener(s)
 	RegisterEventDeviceListListener(s)
+	RegisterEventDeviceLockListener(s)
 	RegisterEventAppCreatedListener(s)
 	RegisterEventTestCreatedListener(s)
 	RegisterNewTestProtocolListener(s)

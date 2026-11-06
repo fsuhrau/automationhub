@@ -130,7 +130,7 @@ func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
 	// an explicit unlock also ends a live control lease
 	s.control.ForceRelease(dev.DeviceID())
 	if dev.IsLocked() {
-		err := dev.Unlock()
+		err := events.UnlockDevice(dev)
 		if err != nil {
 			s.error(c, http.StatusConflict, err)
 			return
@@ -292,12 +292,12 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 		return
 	}
 
-	if err := dev.Lock(); err != nil {
+	if err := events.LockDevice(dev); err != nil {
 		s.error(c, http.StatusNotFound, err)
 		return
 	}
 	defer func() {
-		_ = dev.Unlock()
+		_ = events.UnlockDevice(dev)
 	}()
 
 	if !dev.IsAppConnected() {
