@@ -223,7 +223,7 @@ func (dm *DeviceManager) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) er
 	deviceApi.GET("/connect", func(c *gin.Context) {
 		conn, err := dm.upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			fmt.Println("Failed to set websocket upgrade: %+v", err)
+			fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
 			return
 		}
 
@@ -345,55 +345,68 @@ func logError(dev device.Device, log *action.LogData) bool {
 func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 	dm.log.Info("handleActions")
 
+	con := d.Connection()
+	if con == nil {
+		return
+	}
+
 	defer func() {
 		dm.log.Info("handleActions finished")
-		if d.Connection() != nil {
-			d.Connection().Close()
+		con.Close()
+		// do not reset a newer connection that replaced this one
+		if d.Connection() == con {
+			d.SetConnection(nil)
 		}
-		d.SetConnection(nil)
 	}()
 
 	for {
 		select {
-		case data, ok := <-d.Connection().ResponseChannel:
+		case data, ok := <-con.ResponseChannel:
 			if !ok {
 				dm.log.Info("channel closed")
 				return
 			}
-			if data.Err == nil {
-				resp := action.Response{}
-				if err := json.Unmarshal(data.Data, &resp); err != nil {
-					logrus.Error(err)
-				}
-				if resp.ActionType == action.ActionType_Log {
-					logError(d, resp.Payload.LogData)
-					continue
-				}
-				if handler := d.ActionHandlers(); handler != nil {
-					for i := range handler {
-						handler[i].OnActionResponse(d, &resp)
-					}
-					continue
-				}
-				if resp.ActionType == action.ActionType_Performance {
-					continue
-				}
-				if resp.ActionID != "" {
-					d.Connection().ActionChannel <- resp
-					continue
-				}
-
-				d.Log("unhandled", "Received: %v", resp.Payload)
-				return
-			} else {
+			if data.Err != nil {
 				return
 			}
+
+			resp := action.Response{}
+			if err := json.Unmarshal(data.Data, &resp); err != nil {
+				dm.log.Errorf("invalid action response from %s: %v", d.DeviceID(), err)
+				continue
+			}
+			if resp.ActionType == action.ActionType_Log {
+				if resp.Payload.LogData != nil {
+					logError(d, resp.Payload.LogData)
+				}
+				continue
+			}
+			if handlers := d.ActionHandlers(); len(handlers) > 0 {
+				for i := range handlers {
+					handlers[i].OnActionResponse(d, &resp)
+				}
+				continue
+			}
+			if resp.ActionType == action.ActionType_Performance {
+				continue
+			}
+			if resp.ActionID != "" {
+				// nobody is required to consume this channel; never block the read loop
+				select {
+				case con.ActionChannel <- resp:
+				default:
+					dm.log.Debugf("dropping unhandled action response %s (%v)", resp.ActionID, resp.ActionType)
+				}
+				continue
+			}
+
+			d.Log("unhandled", "Received: %v", resp.Payload)
 		case <-ctx.Done():
 			dm.log.Info("handleActions cancel")
-			if handler := d.ActionHandlers(); handler != nil {
-				for i := range handler {
-					handler[i].OnActionResponse(d, nil)
-				}
+			// executors registered on the device stay registered across app
+			// reconnects; only a cancelled device context aborts them
+			for _, handler := range d.ActionHandlers() {
+				handler.OnActionResponse(d, nil)
 			}
 			return
 		}

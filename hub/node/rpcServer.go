@@ -12,13 +12,28 @@ import (
 	"io"
 	"net/http"
 	"sync"
-	"time"
+	"sync/atomic"
 )
 
 type UploadProgress struct {
-	Request           *UploadAppRequest
-	NextProgressPrint *time.Time
-	Data              []byte
+	Request  *UploadAppRequest
+	received atomic.Int64
+	done     atomic.Bool
+	errMu    sync.Mutex
+	err      error
+}
+
+func (p *UploadProgress) setError(err error) {
+	p.errMu.Lock()
+	p.err = err
+	p.errMu.Unlock()
+	logrus.Errorf("app upload %d failed: %v", p.Request.AppID, err)
+}
+
+func (p *UploadProgress) Error() error {
+	p.errMu.Lock()
+	defer p.errMu.Unlock()
+	return p.err
 }
 
 type RPCNode struct {
@@ -28,6 +43,7 @@ type RPCNode struct {
 	abm               *AppBundleManager
 	mutex             sync.Mutex
 	uploadRequests    map[int32]*UploadProgress
+	screenshotMutex   sync.Mutex
 	screenshots       map[string][]byte
 }
 
@@ -52,7 +68,7 @@ func (s *RPCNode) DeviceStatus(req *DeviceStatusRequest, resp *DeviceResponse) e
 	if device == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceId)
 	}
-	resp = toDeviceResponse(mng, device)
+	*resp = *toDeviceResponse(mng, device)
 	return nil
 }
 
@@ -207,7 +223,7 @@ func (s *RPCNode) UploadApp(req *UploadAppRequest, resp *BoolResponse) error {
 func (s *RPCNode) downloadFile(progress *UploadProgress) {
 	req, err := http.NewRequest("GET", progress.Request.URL, nil)
 	if err != nil {
-		logrus.Error("Failed to create request: ", err)
+		progress.setError(fmt.Errorf("create request: %w", err))
 		return
 	}
 
@@ -215,46 +231,50 @@ func (s *RPCNode) downloadFile(progress *UploadProgress) {
 		req.Header.Set("X-Auth-Token", s.config.Auth.Token.AuthToken)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logrus.Error("Failed to download file: ", err)
+		progress.setError(fmt.Errorf("download: %w", err))
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logrus.Error("Failed to download file: ", resp.Status)
+		progress.setError(fmt.Errorf("download: %s", resp.Status))
 		return
 	}
 
-	progress.Data = make([]byte, 0, progress.Request.Size)
-	buffer := make([]byte, 10*1024*1024) // 10MB buffer size
-	totalRead := int64(0)
-
+	data := make([]byte, 0, progress.Request.Size)
+	buffer := make([]byte, 4*1024*1024)
 	for {
 		n, err := resp.Body.Read(buffer)
 		if n > 0 {
-			progress.Data = append(progress.Data, buffer[:n]...)
-			totalRead += int64(n)
+			data = append(data, buffer[:n]...)
+			progress.received.Add(int64(n))
 		}
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
-			logrus.Error("Failed to read file data: ", err)
+			progress.setError(fmt.Errorf("read file data: %w", err))
 			return
 		}
 	}
 
-	logrus.Infof("Download Complete stroging file")
-	if err := s.abm.StoreData(progress.Data, &AppBundleMetaData{
+	if progress.Request.Size > 0 && int64(len(data)) != progress.Request.Size {
+		progress.setError(fmt.Errorf("size mismatch: got %d bytes, expected %d", len(data), progress.Request.Size))
+		return
+	}
+
+	logrus.Infof("Download complete, storing file")
+	if err := s.abm.StoreData(data, &AppBundleMetaData{
 		Filename: progress.Request.Name,
 		FileHash: progress.Request.Hash,
 		FileSize: progress.Request.Size,
 	}); err != nil {
-		logrus.Error(err)
+		progress.setError(fmt.Errorf("store app bundle: %w", err))
+		return
 	}
+	progress.done.Store(true)
 }
 
 func humanReadableSize(bytes int64) string {
@@ -278,12 +298,24 @@ func (s *RPCNode) UploadAppProgress(req *UploadAppProgressRequest, resp *UploadA
 
 	progress, exists := s.uploadRequests[req.AppID]
 	if !exists {
-		err := fmt.Errorf("No Meta Progress found for Upload Data")
+		return fmt.Errorf("no upload in progress for app %d", req.AppID)
+	}
+
+	if err := progress.Error(); err != nil {
+		delete(s.uploadRequests, req.AppID)
 		return err
 	}
 
 	resp.AppID = req.AppID
-	resp.DataReceived = int64(len(progress.Data))
+	resp.DataReceived = progress.received.Load()
+	if progress.done.Load() {
+		// report completion only once the bundle is stored
+		resp.DataReceived = progress.Request.Size
+		delete(s.uploadRequests, req.AppID)
+	} else if resp.DataReceived >= progress.Request.Size {
+		// downloaded but not stored yet
+		resp.DataReceived = progress.Request.Size - 1
+	}
 
 	return nil
 }
@@ -381,6 +413,25 @@ func (s *RPCNode) StopApp(req *AppParameterRequest, resp *BoolResponse) error {
 	return nil
 }
 
+func (s *RPCNode) ClearAppData(req *AppParameterRequest, resp *BoolResponse) error {
+	logrus.Info("RPC: ClearAppData")
+	dev, _ := s.dm.GetDevice(req.DeviceID)
+	if dev == nil {
+		return fmt.Errorf("device with id %v not found", req.DeviceID)
+	}
+	clearer, ok := dev.(device.AppDataClearer)
+	if !ok {
+		return device.ErrUnsupported
+	}
+	if err := clearer.ClearAppData(getAppParameter(req, nil)); err != nil {
+		resp.ErrorMessage = err.Error()
+		resp.ErrorCode = 1
+		return err
+	}
+	resp.Value = true
+	return nil
+}
+
 func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: IsConnected")
 	device, _ := s.dm.GetDevice(req.DeviceID)
@@ -396,24 +447,46 @@ func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 
 func (s *RPCNode) TakeScreenshot(req *DeviceRequest, resp *ScreenShotResponse) error {
 	logrus.Info("RPC: TakeScreenshot")
-	device, _ := s.dm.GetDevice(req.DeviceID)
-	if device == nil {
+	dev, _ := s.dm.GetDevice(req.DeviceID)
+	if dev == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	b, w, h, err := device.GetScreenshot()
+	b, w, h, err := dev.GetScreenshot()
+	if err != nil {
+		return err
+	}
+
 	resp.Hash = req.DeviceID
 	resp.Size = int32(len(b))
 	resp.Width = int32(w)
 	resp.Height = int32(h)
 
+	s.screenshotMutex.Lock()
 	s.screenshots[req.DeviceID] = b
-	return err
+	s.screenshotMutex.Unlock()
+	return nil
 }
 
+// GetScreenshotData returns a slice of the last screenshot taken for the
+// device. The buffer is released once its last chunk was requested.
 func (s *RPCNode) GetScreenshotData(req *ScreenShotDataRequest, resp *ScreenShotDataResponse) error {
-	if data, ok := s.screenshots[req.Hash]; ok {
-		resp.Data = data[req.Start:req.End]
+	s.screenshotMutex.Lock()
+	defer s.screenshotMutex.Unlock()
+	data, ok := s.screenshots[req.Hash]
+	if !ok {
+		return fmt.Errorf("no screenshot data for %s", req.Hash)
+	}
+	start, end := int(req.Start), int(req.End)
+	if start < 0 || end < start || start > len(data) {
+		return fmt.Errorf("invalid screenshot range %d-%d (size %d)", start, end, len(data))
+	}
+	if end > len(data) {
+		end = len(data)
+	}
+	resp.Data = data[start:end]
+	if end == len(data) {
+		delete(s.screenshots, req.Hash)
 	}
 	return nil
 }

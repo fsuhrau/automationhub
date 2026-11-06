@@ -2,6 +2,7 @@ package device
 
 import (
 	"context"
+	"errors"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"time"
@@ -19,6 +20,15 @@ func GetAttribute(config *DeviceConfig, attribute string) string {
 		return v
 	}
 	return ""
+}
+
+// ErrUnsupported is returned by optional device capabilities that the
+// platform does not implement.
+var ErrUnsupported = errors.New("operation not supported by this device")
+
+// AppDataClearer is implemented by devices that can wipe an app's data.
+type AppDataClearer interface {
+	ClearAppData(*app.Parameter) error
 }
 
 type Device interface {

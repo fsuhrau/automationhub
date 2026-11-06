@@ -10,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/rpc"
+	"sync"
+	"sync/atomic"
 )
 
 type Service struct {
@@ -21,7 +23,9 @@ type Service struct {
 	reconnect      node.ConnectionHandler
 	rpcNode        *node.RPCNode
 	managers       []string
+	connMu         sync.Mutex
 	c              *websocket.Conn
+	dialing        atomic.Bool
 }
 
 func New(logger *logrus.Logger, db *gorm.DB, rpcNode *node.RPCNode, dm manager.Devices, config config.Service, managers []string, reconnect node.ConnectionHandler) *Service {

@@ -14,13 +14,13 @@ func (tr *TestRunner) LogInfo(format string, params ...interface{}) {
 	}
 	tr.DB.Create(logEntry)
 	events.NewTestLogEntry.Trigger(events.NewTestLogEntryPayload{
-		logEntry.TestRunID,
-		logEntry,
+		TestRunID: logEntry.TestRunID,
+		Entry:     logEntry,
 	})
 }
 
 func (tr *TestRunner) LogError(format string, params ...interface{}) {
-	tr.Err = fmt.Errorf(format, params)
+	tr.Err = fmt.Errorf(format, params...)
 	logEntry := &models.TestRunLogEntry{
 		TestRunID: tr.ProtocolWriter.RunID(),
 		Level:     "error",
@@ -29,7 +29,7 @@ func (tr *TestRunner) LogError(format string, params ...interface{}) {
 	tr.DB.Create(logEntry)
 
 	events.NewTestLogEntry.Trigger(events.NewTestLogEntryPayload{
-		logEntry.TestRunID,
-		logEntry,
+		TestRunID: logEntry.TestRunID,
+		Entry:     logEntry,
 	})
 }

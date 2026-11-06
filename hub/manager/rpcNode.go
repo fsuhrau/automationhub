@@ -17,6 +17,7 @@ type RPCClient interface {
 	UninstallApp(deviceId string, parameter *app.Parameter) error
 	StartApp(deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(deviceId string, parameter *app.Parameter) error
+	ClearAppData(deviceId string, parameter *app.Parameter) error
 	IsConnected(deviceId string) bool
 	StartRecording(deviceId string, path string) error
 	StopRecording(deviceId string) error

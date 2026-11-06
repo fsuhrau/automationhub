@@ -9,7 +9,7 @@ import (
 	exec2 "github.com/fsuhrau/automationhub/tools/exec"
 	"github.com/google/uuid"
 	"image"
-	"io"
+	_ "image/png"
 	"net"
 	"os"
 	"os/exec"
@@ -242,16 +242,13 @@ func (d *Device) StartApp(deviceConfig *device.DeviceConfig, appParams *app.Para
 
 func (d *Device) StopApp(params *app.Parameter) error {
 	d.Log("device", "Stop App '%s'", params.Identifier)
-	if false {
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier)
-		return cmd.Run()
-	} else {
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "clear", params.Identifier)
-		// adb shell pm clear com.my.app.package
-		return cmd.Run()
-	}
+	return exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "force-stop", params.Identifier).Run()
+}
 
-	return nil
+// ClearAppData stops the app and wipes its data (adb shell pm clear).
+func (d *Device) ClearAppData(params *app.Parameter) error {
+	d.Log("device", "Clear App Data '%s'", params.Identifier)
+	return exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "pm", "clear", params.Identifier).Run()
 }
 
 func (d *Device) IsAppConnected() bool {
@@ -316,48 +313,50 @@ func (d *Device) IsAwake() (bool, error) {
 
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	d.Log("device", "Get Native Screenshot")
-	id := uuid.New()
-	fileName := fmt.Sprintf("%s.png", id.String())
-	var width int
-	var height int
-	if true {
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", "/sdcard/"+fileName)
-		if err := cmd.Run(); err != nil {
-			return nil, width, height, err
-		}
-
-		cmd = exec2.NewCommand("adb", "-s", d.DeviceID(), "pull", "/sdcard/"+fileName)
-		if err := cmd.Run(); err != nil {
-			return nil, width, height, err
-		}
-
-		cmd = exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", "/sdcard/"+fileName)
-		if err := cmd.Run(); err != nil {
-			return nil, width, height, err
-		}
-	} else {
-		start := time.Now()
-		cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p", ">", fileName)
-		//cmd := exec2.NewCommand("adb", "-s", d.deviceId(), "shell", "screencap", "-p", ">", fileName)
-		if err := cmd.Run(); err != nil {
-			return nil, width, height, err
-		}
-		logrus.Infof("Android Take Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
-	}
-
 	start := time.Now()
-	imagePath, _ := os.Open(fileName)
-	defer imagePath.Close()
+	data, err := d.screencapExecOut()
+	if err != nil {
+		d.Log("device", "exec-out screencap failed (%v), falling back to file transfer", err)
+		data, err = d.screencapViaFile()
+		if err != nil {
+			return nil, 0, 0, err
+		}
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("decode screenshot: %w", err)
+	}
+	logrus.Debugf("Android take screenshot took: %d ms", time.Since(start).Milliseconds())
+	return data, cfg.Width, cfg.Height, nil
+}
 
-	srcImage, _, _ := image.Decode(imagePath)
+// screencapExecOut streams the PNG over a single binary-safe adb call.
+func (d *Device) screencapExecOut() ([]byte, error) {
+	data, err := exec2.NewCommand("adb", "-s", d.DeviceID(), "exec-out", "screencap", "-p").Output()
+	if err != nil {
+		return nil, err
+	}
+	if _, _, err := image.DecodeConfig(bytes.NewReader(data)); err != nil {
+		return nil, fmt.Errorf("invalid png from exec-out: %w", err)
+	}
+	return data, nil
+}
 
-	width = srcImage.Bounds().Dx()
-	height = srcImage.Bounds().Dy()
-	imagePath.Seek(0, 0)
-	bytes, err := io.ReadAll(imagePath)
-	logrus.Infof("Android open Screenshot took: %d ms", time.Now().Sub(start).Milliseconds())
+// screencapViaFile is the fallback for devices without a binary-safe exec-out.
+func (d *Device) screencapViaFile() ([]byte, error) {
+	fileName := fmt.Sprintf("%s.png", uuid.New().String())
+	remote := "/sdcard/" + fileName
+	if err := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "screencap", "-p", remote).Run(); err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "rm", remote).Run()
+	}()
+	if err := exec2.NewCommand("adb", "-s", d.DeviceID(), "pull", remote, fileName).Run(); err != nil {
+		return nil, err
+	}
 	defer os.Remove(fileName)
-	return bytes, width, height, err
+	return os.ReadFile(fileName)
 }
 
 func (d *Device) HasFeature(feature string) bool {

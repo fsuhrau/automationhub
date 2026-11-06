@@ -9,9 +9,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"io/ioutil"
 	"net"
-	"os"
 	"os/exec"
 	"time"
 
@@ -19,6 +17,7 @@ import (
 	"github.com/danielpaulus/go-ios/ios/installationproxy"
 	"github.com/danielpaulus/go-ios/ios/screenshotr"
 	"github.com/danielpaulus/go-ios/ios/testmanagerd"
+	"github.com/danielpaulus/go-ios/ios/zipconduit"
 	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
@@ -111,7 +110,12 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 		return false, err
 	}
 
-	svc, _ := installationproxy.New(device)
+	svc, err := installationproxy.New(device)
+	if err != nil {
+		return false, fmt.Errorf("installation proxy: %w", err)
+	}
+	defer svc.Close()
+
 	response, err := svc.BrowseUserApps()
 	if err != nil {
 		return false, err
@@ -126,36 +130,48 @@ func (d *Device) IsAppInstalled(params *app.Parameter) (bool, error) {
 	return false, nil
 }
 
+// InstallApp installs an .ipa (or .app directory) through the zipconduit service.
 func (d *Device) InstallApp(params *app.Parameter) error {
-	return nil
-	/*
-		device, err := ios.GetDevice(d.deviceId())
-		if err != nil {
-			return err
-		}
-		conn, err := zipconduit.New(device)
-		if err != nil {
-			return err
-		}
-		err = conn.SendFile(params.appPath)
+	if params == nil || params.App == nil || params.App.AppPath == "" {
+		return fmt.Errorf("install app: no app path given")
+	}
+	device, err := ios.GetDevice(d.DeviceID())
+	if err != nil {
 		return err
-	*/
+	}
+	conn, err := zipconduit.New(device)
+	if err != nil {
+		return fmt.Errorf("install app: zipconduit: %w", err)
+	}
+	defer conn.Close()
+
+	d.Log("device", "Install App '%s' from %s", params.Identifier, params.App.AppPath)
+	if err := conn.SendFile(params.App.AppPath); err != nil {
+		return fmt.Errorf("install app %s: %w", params.Identifier, err)
+	}
+	return nil
 }
 
+// UninstallApp removes the app with the given bundle identifier.
 func (d *Device) UninstallApp(params *app.Parameter) error {
-	return nil
-	/*
-		device, err := ios.GetDevice(d.deviceId())
-		if err != nil {
-			return err
-		}
-		svc, err := installationproxy.New(device)
-		if err != nil {
-			return err
-		}
-		err = svc.Uninstall(params.identifier)
+	if params == nil || params.Identifier == "" {
+		return fmt.Errorf("uninstall app: no bundle identifier given")
+	}
+	device, err := ios.GetDevice(d.DeviceID())
+	if err != nil {
 		return err
-	*/
+	}
+	svc, err := installationproxy.New(device)
+	if err != nil {
+		return fmt.Errorf("uninstall app: installation proxy: %w", err)
+	}
+	defer svc.Close()
+
+	d.Log("device", "Uninstall App '%s'", params.Identifier)
+	if err := svc.Uninstall(params.Identifier); err != nil {
+		return fmt.Errorf("uninstall app %s: %w", params.Identifier, err)
+	}
+	return nil
 }
 
 func (d *Device) StartApp(_ *device.DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error {
@@ -203,8 +219,6 @@ func (d *Device) StopRecording() error {
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	var width int
 	var height int
-	fileName := fmt.Sprintf("%s.png", d.deviceID)
-
 	device, err := ios.GetDevice(d.DeviceID())
 	if err != nil {
 		return nil, width, height, err
@@ -219,21 +233,10 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 		return nil, width, height, err
 	}
 
-	err = ioutil.WriteFile(fileName, imageBytes, 0777)
+	srcImage, _, err := image.Decode(bytes.NewReader(imageBytes))
 	if err != nil {
-		return nil, width, height, err
+		return nil, width, height, fmt.Errorf("decode screenshot: %w", err)
 	}
-
-	/*
-		cmd := exec2.NewCommand("idevicescreenshot", "-u", d.deviceId, fileName)
-		if err := cmd.Run(); err != nil {
-			return nil, width, height, err
-		}
-	*/
-
-	imagePath, _ := os.Open(fileName)
-	defer imagePath.Close()
-	srcImage, _, _ := image.Decode(imagePath)
 
 	uploadedImage := imaging.Rotate(srcImage, -90, color.Gray{})
 	width = uploadedImage.Bounds().Dx()
@@ -292,12 +295,14 @@ func (d *Device) StopXCUITestRunner() error {
 }
 
 func (d *Device) RunNativeScript(script []byte) {
+	if d.webDriver == nil {
+		d.Error("device", "Script Failed: no WebDriverAgent session for device %s", d.DeviceID())
+		return
+	}
 	scriptHandler := New(d.webDriver, d)
 	if err := scriptHandler.Execute(string(script)); err != nil {
 		d.Error("device", "Script Failed: %v", err)
-		if d.webDriver != nil {
-			d.webDriver.CloseSession()
-		}
 		d.webDriver.PressButton(KEYCODE_HOME)
+		d.webDriver.CloseSession()
 	}
 }

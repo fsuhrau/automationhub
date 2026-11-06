@@ -112,7 +112,7 @@ func (d *Device) StopApp(params *app.Parameter) error {
 }
 
 func (d *Device) IsAppConnected() bool {
-	return d.Connection() == nil
+	return d.Connection() != nil
 }
 
 func (d *Device) StartRecording(path string) error {
@@ -141,16 +141,21 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 		return nil, 0, 0, err
 	}
 
-	imagePath, _ := os.Open(fileName)
-	defer imagePath.Close()
-	srcImage, _, _ := image.Decode(imagePath)
+	defer os.Remove(fileName)
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	srcImage, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("decode screenshot: %w", err)
+	}
 
 	height = srcImage.Bounds().Dy()
 	width = srcImage.Bounds().Dx()
 
-	var data []byte
-	writer := bytes.NewBuffer(data)
-	err := png.Encode(writer, srcImage)
+	writer := &bytes.Buffer{}
+	err = png.Encode(writer, srcImage)
 	return writer.Bytes(), width, height, err
 }
 

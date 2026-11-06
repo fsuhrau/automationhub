@@ -143,6 +143,10 @@ func (d *NodeDevice) StopApp(params *app.Parameter) error {
 	return d.nodeManager.StopApp(d.nodeId, d.deviceID, params)
 }
 
+func (d *NodeDevice) ClearAppData(params *app.Parameter) error {
+	return d.nodeManager.ClearAppData(d.nodeId, d.deviceID, params)
+}
+
 func (d *NodeDevice) IsAppConnected() bool {
 	// return d.Connection() != nil && d.Connection().Connection != nil
 	return d.nodeManager.IsConnected(d.nodeId, d.deviceID)

@@ -64,6 +64,7 @@ type Nodes interface {
 	UninstallApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	StartApp(nodeIdentifier NodeIdentifier, deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error
 	StopApp(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
+	ClearAppData(nodeIdentifier NodeIdentifier, deviceId string, parameter *app.Parameter) error
 	IsConnected(nodeIdentifier NodeIdentifier, deviceId string) bool
 	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error
 	StopRecording(nodeIdentifier NodeIdentifier, deviceId string) error

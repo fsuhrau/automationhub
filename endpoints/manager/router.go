@@ -36,12 +36,12 @@ func New(logger *logrus.Logger, devicesManager manager.Devices, cfg config.Servi
 func (s *Service) socketHandler(c *gin.Context, w http.ResponseWriter, r *http.Request) {
 	conn, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Failed to set websocket upgrade: %+v", err)
+		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
 		return
 	}
 	_, msg, err := conn.ReadMessage()
 	if err != nil {
-		fmt.Println("Fail to get register request: %+v", err)
+		fmt.Printf("Fail to get register request: %+v\n", err)
 		return
 	}
 

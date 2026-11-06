@@ -8,12 +8,13 @@ import (
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/tester/protocol"
 	"github.com/fsuhrau/automationhub/utils/sync"
+	gosync "sync"
 	"time"
 )
 
 type testExecutor struct {
 	devicesManager manager.Devices
-	fin            chan bool
+	finishOnce     gosync.Once
 	wg             sync.ExtendedWaitGroup
 	actionHandler  map[action.ActionType]func(device.Device, *action.Response)
 	protocolWriter *protocol.ProtocolWriter
@@ -22,7 +23,6 @@ type testExecutor struct {
 func NewExecutor(devices manager.Devices, protocolWriter *protocol.ProtocolWriter) *testExecutor {
 	executor := &testExecutor{
 		devicesManager: devices,
-		fin:            make(chan bool, 1),
 		protocolWriter: protocolWriter,
 	}
 	executor.actionHandler = map[action.ActionType]func(device.Device, *action.Response){
@@ -38,25 +38,19 @@ func NewExecutor(devices manager.Devices, protocolWriter *protocol.ProtocolWrite
 }
 
 func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test action.TestStart, timeout time.Duration) error {
+	// set up before registering the handler, so responses always see a group
+	e.wg = sync.NewExtendedWaitGroup(ctx)
+	e.wg.Add(1)
+	e.finishOnce = gosync.Once{}
+
 	dev.AddActionHandler(e)
 	defer func() {
 		dev.RemoveActionHandler(e)
 	}()
 
-	e.wg = sync.NewExtendedWaitGroup(ctx)
-	e.wg.Add(1)
-	go func(wg sync.ExtendedWaitGroup) {
-		select {
-		case finished, ok := <-e.fin:
-			if !ok {
-				return
-			}
-			if finished {
-				wg.Done()
-				break
-			}
-		}
-	}(e.wg)
+	// releases the wait group on every exit path, so late responses are no-ops
+	defer e.finish()
+
 	if err := e.devicesManager.SendAction(dev, &test); err != nil {
 		dev.Error("testrunner", err.Error())
 		return err
@@ -69,6 +63,12 @@ func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test acti
 	return nil
 }
 
+// finish marks the test execution as done. Safe to call multiple times and
+// from the device read loop; it never blocks.
+func (e *testExecutor) finish() {
+	e.finishOnce.Do(e.wg.Done)
+}
+
 func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Response) {
 	if response.Success {
 		dev.Log("testrunner", fmt.Sprintf("Timeout: %d", response.Payload.TestDetails.Timeout))
@@ -78,7 +78,7 @@ func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Re
 		}
 	} else {
 		dev.Error("testrunner", "Starting test failed")
-		tr.fin <- true
+		tr.finish()
 	}
 }
 
@@ -92,7 +92,7 @@ func (tr *testExecutor) handleExecutionResult(dev device.Device, response *actio
 	if writer != nil {
 		writer.Passed(response.Success)
 	}
-	tr.fin <- true
+	tr.finish()
 }
 
 func (tr *testExecutor) handleTestMethodStart(dev device.Device, response *action.Response) {
@@ -144,14 +144,14 @@ func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.R
 
 func (tr *testExecutor) handleLog(dev device.Device, response *action.Response) {
 	if response.Payload.LogData.Level == action.LogLevel_Exception {
-		tr.fin <- true
+		tr.finish()
 	}
 }
 
 func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Response) {
 	dev := d.(device.Device)
 	if response == nil {
-		tr.fin <- true
+		tr.finish()
 		dev.Error("testrunner", "Device Disconnected")
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
+	"sync"
 )
 
 const (
@@ -16,9 +17,11 @@ const (
 var (
 	DeviceLockedError   = fmt.Errorf("can't lock device, device is already locked")
 	DeviceUnlockedError = fmt.Errorf("can't unlock device, device was not locked")
+	ErrNotConnected     = fmt.Errorf("app is not connected to the device")
 )
 
 type Device struct {
+	mu            sync.Mutex
 	con           *device.Connection
 	writer        device.LogWriter
 	actionHandler []action.ActionHandler
@@ -37,6 +40,8 @@ func (d *Device) SetConfig(config *models.Device) {
 }
 
 func (d *Device) NewContext() context.Context {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.ctx, d.cancel = context.WithCancel(context.Background())
 	return d.ctx
 }
@@ -47,29 +52,39 @@ func (d *Device) SetConnection(connection *device.Connection) {
 	} else {
 		d.Log("device", "Device Disconnected")
 	}
+	d.mu.Lock()
 	d.con = connection
+	d.mu.Unlock()
 }
 
 func (d *Device) Cancel() {
-	if d.cancel != nil {
-		c := d.cancel
-		d.cancel = nil
+	d.mu.Lock()
+	c := d.cancel
+	d.cancel = nil
+	d.mu.Unlock()
+	if c != nil {
 		c()
 	}
 }
 
 func (d *Device) Connection() *device.Connection {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.con
 }
 
 func (d *Device) Send(data []byte) error {
-	if err := d.con.Send(data); err != nil {
-		return err
+	con := d.Connection()
+	if con == nil {
+		return ErrNotConnected
 	}
-	return nil
+	return con.Send(data)
 }
 
+// Lock atomically marks the device as locked. It fails if it is locked already.
 func (d *Device) Lock() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.locked {
 		return DeviceLockedError
 	}
@@ -78,15 +93,24 @@ func (d *Device) Lock() error {
 }
 
 func (d *Device) Unlock() error {
+	d.mu.Lock()
 	if !d.locked {
+		d.mu.Unlock()
 		return DeviceUnlockedError
 	}
-	d.Cancel()
 	d.locked = false
+	c := d.cancel
+	d.cancel = nil
+	d.mu.Unlock()
+	if c != nil {
+		c()
+	}
 	return nil
 }
 
 func (d *Device) IsLocked() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.locked
 }
 
@@ -133,7 +157,7 @@ func (d *Device) Passed(result bool) {
 	if d.writer != nil {
 		d.writer.Passed(result)
 	} else {
-		logrus.Infof("Test: %s", result)
+		logrus.Infof("Test: %v", result)
 	}
 }
 
@@ -154,18 +178,28 @@ func (d *Device) Exception(source, format string, params ...interface{}) {
 }
 
 func (d *Device) AddActionHandler(handler action.ActionHandler) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.actionHandler = append(d.actionHandler, handler)
 }
 
 func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	for i := range d.actionHandler {
 		if d.actionHandler[i] == handler {
-			d.actionHandler = append(d.actionHandler[:i], d.actionHandler[i+1:]...)
+			handlers := make([]action.ActionHandler, 0, len(d.actionHandler)-1)
+			handlers = append(handlers, d.actionHandler[:i]...)
+			d.actionHandler = append(handlers, d.actionHandler[i+1:]...)
 			return
 		}
 	}
 }
 
+// ActionHandlers returns a snapshot of the registered handlers that is safe to
+// iterate while handlers are added or removed.
 func (d *Device) ActionHandlers() []action.ActionHandler {
-	return d.actionHandler
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return append([]action.ActionHandler(nil), d.actionHandler...)
 }

@@ -3,7 +3,10 @@ package action
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 type GetScreenshot struct {
@@ -27,16 +30,21 @@ func (a *GetScreenshot) Serialize() ([]byte, error) {
 func (a *GetScreenshot) ProcessResponse(response *Response) error {
 	a.Success = response.Success
 	a.screenshot = response.Payload.Screenshot
-	if a.screenshot != nil {
-		reader := bytes.NewReader(a.screenshot.Screenshot)
-		srcImage, _, _ := image.Decode(reader)
-		a.width = srcImage.Bounds().Dx()
-		a.height = srcImage.Bounds().Dy()
+	if a.screenshot != nil && len(a.screenshot.Screenshot) > 0 {
+		cfg, _, err := image.DecodeConfig(bytes.NewReader(a.screenshot.Screenshot))
+		if err != nil {
+			return fmt.Errorf("decode screenshot: %w", err)
+		}
+		a.width = cfg.Width
+		a.height = cfg.Height
 	}
 	return nil
 }
 
 func (a *GetScreenshot) SceengraphXML() []byte {
+	if a.screenshot == nil {
+		return nil
+	}
 	var content []byte
 	switch a.screenshot.ContentType {
 	case ContentType_Flatbuffer:
@@ -53,6 +61,9 @@ func (a *GetScreenshot) SceengraphXML() []byte {
 }
 
 func (a *GetScreenshot) ScreenshotData() []byte {
+	if a.screenshot == nil {
+		return nil
+	}
 	return a.screenshot.Screenshot
 }
 

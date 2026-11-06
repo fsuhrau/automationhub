@@ -3,6 +3,7 @@ package androiddevice
 import "testing"
 
 func TestNativeLuaScriptParser(t *testing.T) {
+	t.Skip("needs a connected device and app; the handler is created without one")
 	script := `
 			hub.waitFor("xpath", "//*[@name='Kaufen']", 20)
 			hub.click("xpath", "//*[@name='Kaufen']")

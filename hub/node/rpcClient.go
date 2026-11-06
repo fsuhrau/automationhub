@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config/protocol"
@@ -186,23 +187,41 @@ func (rpc *RPCClient) UploadApp(ctx context.Context, parameter *app.Parameter) e
 		return fmt.Errorf(resp.ErrorMessage)
 	}
 
-	var progressResponse UploadAppProgressResponse
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	lastReceived := int64(-1)
+	lastProgress := time.Now()
 	for {
-		time.Sleep(time.Second)
-		if err := rpc.safeCall("RPCNode.UploadAppProgress", UploadAppProgressRequest{AppID: appId}, &progressResponse); err != nil {
-			return err
-		}
-		if resp.ErrorCode != 0 {
-			return fmt.Errorf(resp.ErrorMessage)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
 		}
 
-		if progressResponse.DataReceived == appSize {
+		var progressResponse UploadAppProgressResponse
+		if err := rpc.safeCall("RPCNode.UploadAppProgress", &UploadAppProgressRequest{AppID: appId}, &progressResponse); err != nil {
+			return fmt.Errorf("upload app to node: %w", err)
+		}
+
+		if progressResponse.DataReceived >= appSize {
 			logrus.Info("RPCNode.UploadApp complete")
-			break
+			return nil
+		}
+
+		if progressResponse.DataReceived != lastReceived {
+			lastReceived = progressResponse.DataReceived
+			lastProgress = time.Now()
+		} else if time.Since(lastProgress) > UploadStallTimeout {
+			return fmt.Errorf("upload app to node: no progress for %v (%d/%d bytes)", UploadStallTimeout, lastReceived, appSize)
 		}
 	}
-	return nil
 }
+
+// UploadStallTimeout aborts an app upload to a node when no progress was made.
+const UploadStallTimeout = 2 * time.Minute
+
+// ScreenshotChunkSize is the number of bytes requested per GetScreenshotData call.
+const ScreenshotChunkSize = 512 * 1024
 
 func (rpc *RPCClient) InstallApp(deviceId string, parameter *app.Parameter) error {
 	logrus.Info("RPCNode.InstallApp")
@@ -274,6 +293,19 @@ func (rpc *RPCClient) StopApp(deviceId string, parameter *app.Parameter) error {
 	return nil
 }
 
+func (rpc *RPCClient) ClearAppData(deviceId string, parameter *app.Parameter) error {
+	logrus.Info("RPCNode.ClearAppData")
+
+	var resp BoolResponse
+	if err := rpc.safeCall("RPCNode.ClearAppData", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
+		return err
+	}
+	if resp.ErrorCode != 0 {
+		return errors.New(resp.ErrorMessage)
+	}
+	return nil
+}
+
 func (rpc *RPCClient) IsConnected(deviceId string) bool {
 	logrus.Info("RPCNode.IsConnected")
 
@@ -301,7 +333,7 @@ func (rpc *RPCClient) GetScreenshot(deviceId string) ([]byte, int, int, error) {
 	}
 
 	screenshotData := make([]byte, 0, resp.Size)
-	chunkSize := 1024
+	chunkSize := ScreenshotChunkSize
 	for start := 0; start < int(resp.Size); start += chunkSize {
 		end := start + chunkSize
 		if end > int(resp.Size) {

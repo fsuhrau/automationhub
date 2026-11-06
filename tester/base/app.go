@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"errors"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -62,7 +63,7 @@ func (tr *TestRunner) StopApp(ctx context.Context, params app.Parameter, devices
 	for _, d := range devices {
 		wg.Add(1)
 		go func(dm manager.Devices, param app.Parameter, d device.Device, group sync.ExtendedWaitGroup) {
-			if err := d.StopApp(&param); err != nil {
+			if err := StopAndClearApp(d, &param); err != nil {
 				tr.LogError("unable to stop app: %v", err)
 			}
 			group.Done()
@@ -114,7 +115,7 @@ func (tr *TestRunner) startApp(context context.Context, group sync.ExtendedWaitG
 	for {
 		select {
 		case <-context.Done():
-			_ = d.Device.StopApp(&appp)
+			_ = StopAndClearApp(d.Device, &appp)
 			tr.LogInfo("Context cancelled, stopping app start process")
 			return
 		case <-waitTrigger.C:
@@ -132,4 +133,19 @@ func (tr *TestRunner) startApp(context context.Context, group sync.ExtendedWaitG
 	}
 
 	deviceChan <- d
+}
+
+// StopAndClearApp stops the app and, where the platform supports it, wipes its
+// data so the next run starts from a clean state. Test runs rely on this;
+// interactive control uses plain StopApp.
+func StopAndClearApp(d device.Device, params *app.Parameter) error {
+	if err := d.StopApp(params); err != nil {
+		return err
+	}
+	if clearer, ok := d.(device.AppDataClearer); ok {
+		if err := clearer.ClearAppData(params); err != nil && !errors.Is(err, device.ErrUnsupported) {
+			return err
+		}
+	}
+	return nil
 }

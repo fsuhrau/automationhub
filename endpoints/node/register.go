@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func (rpc *Service) RegisterNode(identifier, hostname, os, path string, port int32, managers []string) error {
+func (rpc *Service) registerNode(c *websocket.Conn, identifier, hostname, os, path string, port int32, managers []string) error {
 	request := node.RegisterNodeRequest{
 		Identifier:           identifier,
 		Hostname:             hostname,
@@ -20,5 +20,5 @@ func (rpc *Service) RegisterNode(identifier, hostname, os, path string, port int
 		return err
 	}
 
-	return rpc.c.WriteMessage(websocket.BinaryMessage, data)
+	return c.WriteMessage(websocket.BinaryMessage, data)
 }

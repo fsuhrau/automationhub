@@ -6,6 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
+	"sync"
 )
 
 type Device interface {
@@ -16,6 +17,7 @@ type Device interface {
 }
 
 type deviceStore struct {
+	mu      sync.Mutex // guards devices cache and serializes writes
 	devices map[string]models.Devices
 	db      *gorm.DB
 }
@@ -30,6 +32,12 @@ func NewDeviceStore(db *gorm.DB) *deviceStore {
 }
 
 func (d *deviceStore) GetDevices(manager string) (models.Devices, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.getDevices(manager)
+}
+
+func (d *deviceStore) getDevices(manager string) (models.Devices, error) {
 	if devices, ok := d.devices[manager]; ok {
 		return devices, nil
 	}
@@ -44,7 +52,13 @@ func (d *deviceStore) GetDevices(manager string) (models.Devices, error) {
 }
 
 func (d *deviceStore) GetDevice(manager, deviceId string) (*models.Device, error) {
-	devices, err := d.GetDevices(manager)
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.getDevice(manager, deviceId)
+}
+
+func (d *deviceStore) getDevice(manager, deviceId string) (*models.Device, error) {
+	devices, err := d.getDevices(manager)
 	if err != nil {
 		return nil, err
 	}
@@ -58,35 +72,37 @@ func (d *deviceStore) GetDevice(manager, deviceId string) (*models.Device, error
 }
 
 func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
-	tx := d.db.Begin()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	_, err := d.GetDevice(manager, dev.DeviceIdentifier)
-	if err == nil {
-		tx.Rollback()
+	if _, err := d.getDevice(manager, dev.DeviceIdentifier); err == nil {
 		return fmt.Errorf("device with the same id exists already")
 	}
 
-	if err := d.db.Create(&dev).Error; err != nil {
-		tx.Rollback()
+	if err := d.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&dev).Error; err != nil {
+			return err
+		}
+		if dev.ConnectionParameter != nil {
+			dev.ConnectionParameter.DeviceID = dev.ID
+			if err := tx.FirstOrCreate(&dev.ConnectionParameter).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 
-	if dev.ConnectionParameter != nil {
-		dev.ConnectionParameter.DeviceID = dev.ID
-		if err := d.db.FirstOrCreate(&dev.ConnectionParameter).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
 	d.devices[manager] = append(d.devices[manager], &dev)
-	tx.Commit()
 	return nil
 }
 
 func (d *deviceStore) Update(manager string, dev device.Device) error {
-	tx := db.Begin()
-	deviceData, err := d.GetDevice(manager, dev.DeviceID())
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	deviceData, err := d.getDevice(manager, dev.DeviceID())
 	if err != nil {
 		return err
 	}
@@ -137,17 +153,27 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 		statusUpdate = true
 	}
 
-	if needsUpdate || statusUpdate {
-		d.db.Updates(deviceData)
+	if !needsUpdate && !statusUpdate {
+		return nil
+	}
+
+	if err := d.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Updates(deviceData).Error; err != nil {
+			return err
+		}
+		if statusUpdate {
+			return tx.Create(&models.DeviceLog{
+				DeviceID: deviceData.ID,
+				Status:   dev.DeviceState(),
+				Payload:  "",
+			}).Error
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	if statusUpdate {
-		log := models.DeviceLog{
-			DeviceID: deviceData.ID,
-			Status:   dev.DeviceState(),
-			Payload:  "",
-		}
-		d.db.Create(&log)
 		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
 			DeviceID:    deviceData.ID,
 			DeviceState: uint(dev.DeviceState()),
@@ -160,6 +186,5 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 			}
 		}
 	}
-	tx.Commit()
 	return nil
 }

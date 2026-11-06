@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	device2 "github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
@@ -9,11 +10,38 @@ import (
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// projectDevices scopes device queries to the project's company. Devices that
+// are not assigned to a company (the default for auto-discovered devices) are
+// visible to every project.
+func (s *Service) projectDevices(project *models.Project) *gorm.DB {
+	return s.db.Where("company_id IN ?", []uint{0, project.CompanyID})
+}
+
+// findProjectDevice loads the device from the :device_id path parameter and
+// writes a 404 when it does not exist or is not visible to the project.
+func (s *Service) findProjectDevice(c *gin.Context, project *models.Project, preloads ...string) (*models.Device, bool) {
+	query := s.projectDevices(project)
+	for _, p := range preloads {
+		query = query.Preload(p)
+	}
+	var device models.Device
+	if err := query.First(&device, "id = ?", c.Param("device_id")).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.error(c, http.StatusNotFound, fmt.Errorf("device %s not found", c.Param("device_id")))
+		} else {
+			s.error(c, http.StatusInternalServerError, err)
+		}
+		return nil, false
+	}
+	return &device, true
+}
 
 func managerForPlatform(t models.PlatformType) string {
 	switch t {
@@ -41,7 +69,7 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 	p := c.Query("platform")
 
 	var devices []models.Device
-	query := s.db
+	query := s.projectDevices(project)
 	if p != "" {
 		platform, _ := strconv.ParseInt(p, 10, 64)
 		query = query.Where("platform_type = ?", models.PlatformType(platform))
@@ -74,15 +102,16 @@ func (s *Service) getDevices(c *gin.Context, project *models.Project) {
 }
 
 func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
-	deviceID := c.Param("device_id")
-	_ = deviceID
-	var device models.Device
-	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
+	device, ok := s.findProjectDevice(c, project, "ConnectionParameter", "DeviceParameter", "CustomParameter")
+	if !ok {
 		return
 	}
 
 	dev, _ := s.devicesManager.GetDevice(device.DeviceIdentifier)
+	if dev == nil {
+		s.error(c, http.StatusNotFound, fmt.Errorf("device %s is not connected", device.DeviceIdentifier))
+		return
+	}
 	if dev.IsLocked() {
 		err := dev.Unlock()
 		if err != nil {
@@ -94,13 +123,8 @@ func (s *Service) unlockDevice(c *gin.Context, project *models.Project) {
 }
 
 func (s *Service) getDevice(c *gin.Context, project *models.Project) {
-
-	deviceID := c.Param("device_id")
-	_ = deviceID
-	var device models.Device
-
-	if err := s.db.Preload("ConnectionParameter").Preload("DeviceParameter").Preload("CustomParameter").Find(&device, "id = ?", deviceID).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
+	device, ok := s.findProjectDevice(c, project, "ConnectionParameter", "DeviceParameter", "CustomParameter")
+	if !ok {
 		return
 	}
 
@@ -109,6 +133,7 @@ func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 	device.Status = device2.StateUnknown
 	if dev != nil {
 		device.Status = dev.DeviceState()
+		device.IsLocked = dev.IsLocked()
 		if dev.Connection() != nil {
 			device.Connection = dev.Connection().ConnectionParameter
 		}
@@ -118,14 +143,11 @@ func (s *Service) getDevice(c *gin.Context, project *models.Project) {
 }
 
 func (s *Service) deleteDevice(c *gin.Context, project *models.Project) {
-	deviceID := c.Param("device_id")
-
-	var device models.Device
-	if err := s.db.First(&device, deviceID).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+	device, ok := s.findProjectDevice(c, project)
+	if !ok {
 		return
 	}
-	if err := s.db.Delete(&device).Error; err != nil {
+	if err := s.db.Delete(device).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -134,18 +156,18 @@ func (s *Service) deleteDevice(c *gin.Context, project *models.Project) {
 }
 
 func (s *Service) updateDevice(c *gin.Context, project *models.Project) {
-	deviceID := c.Param("device_id")
-
 	var dev models.Device
 	if err := c.Bind(&dev); err != nil {
 		return
 	}
 
-	var device models.Device
-	if err := s.db.Preload("ConnectionParameter").Preload("CustomParameter").First(&device, deviceID).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+	device, ok := s.findProjectDevice(c, project, "ConnectionParameter", "CustomParameter")
+	if !ok {
 		return
 	}
+	// never let the body address a different device or move it to another company
+	dev.ID = device.ID
+	dev.CompanyID = device.CompanyID
 
 	var ids []uint
 	for i := range device.CustomParameter {
@@ -192,11 +214,8 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 		return
 	}
 
-	deviceID := c.Param("device_id")
-	_ = deviceID
-	var device models.Device
-	if err := s.db.Find(&device, "id = ?", deviceID).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
+	device, ok := s.findProjectDevice(c, project)
+	if !ok {
 		return
 	}
 
@@ -221,7 +240,7 @@ func (s *Service) deviceRunTests(c *gin.Context, project *models.Project) {
 	if false {
 		var testsAction action.TestsGet
 		s.devicesManager.SendAction(dev, &testsAction)
-		logrus.Info("tests %v", testsAction)
+		logrus.Infof("tests %v", testsAction)
 		time.Sleep(2 * time.Minute)
 		for _, test := range testsAction.Tests {
 			runTestAction := action.TestStart{

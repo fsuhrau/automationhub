@@ -166,8 +166,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 
 	tr.LogInfo("Stop apps")
 	for _, d := range connectedDevices {
-		if err := d.Device.StopApp(&tr.appParams); err != nil {
-			tr.LogError("Unable to start app: %v", err)
+		if err := base.StopAndClearApp(d.Device, &tr.appParams); err != nil {
+			tr.LogError("Unable to stop app: %v", err)
 		}
 	}
 }

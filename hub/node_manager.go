@@ -8,6 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -23,8 +24,8 @@ const (
 
 type NodeManager struct {
 	db    *gorm.DB
+	mu    sync.RWMutex
 	nodes map[manager.NodeIdentifier]Node
-	stop  bool
 	log   *logrus.Entry
 }
 
@@ -40,39 +41,60 @@ func NewNodeManager(logger *logrus.Logger, db *gorm.DB) *NodeManager {
 func (nm *NodeManager) Run(ctx context.Context) {
 	nm.log.Debugf("Start NodeManager")
 	go func() {
+		ticker := time.NewTicker(NodeHealthCheckInterval)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				nm.log.Infof("Stop NodeManager")
 				return
-			default:
+			case <-ticker.C:
+				nm.healthCheck()
 			}
-
-			for k, m := range nm.nodes {
-				if m.Handler != nil {
-					if err := m.Handler.Ping(); err != nil {
-						m.Status = NodeStatusDisconnected
-						m.Handler = nil
-						nm.nodes[k] = m
-					}
-				}
-			}
-			time.Sleep(NodeHealthCheckInterval)
 		}
 	}()
 }
 
+// healthCheck pings all connected nodes without holding the lock during the
+// RPC call and marks unreachable nodes as disconnected.
+func (nm *NodeManager) healthCheck() {
+	nm.mu.RLock()
+	handlers := make(map[manager.NodeIdentifier]manager.RPCClient, len(nm.nodes))
+	for k, n := range nm.nodes {
+		if n.Handler != nil {
+			handlers[k] = n.Handler
+		}
+	}
+	nm.mu.RUnlock()
+
+	for k, h := range handlers {
+		if err := h.Ping(); err != nil {
+			nm.mu.Lock()
+			// only mark disconnected if the node was not re-registered meanwhile
+			if n, ok := nm.nodes[k]; ok && n.Handler == h {
+				n.Status = NodeStatusDisconnected
+				n.Handler = nil
+				nm.nodes[k] = n
+			}
+			nm.mu.Unlock()
+		}
+	}
+}
+
 func (nm *NodeManager) GetNodes() []manager.NodeIdentifier {
+	nm.mu.RLock()
+	defer nm.mu.RUnlock()
 	var nodes []manager.NodeIdentifier
-	for k, _ := range nm.nodes {
+	for k := range nm.nodes {
 		nodes = append(nodes, k)
 	}
 	return nodes
 }
 
 func (nm *NodeManager) GetManagers(nodeIdentifier manager.NodeIdentifier) (map[string][]device.Device, error) {
-	if n, ok := nm.nodes[nodeIdentifier]; ok && n.Handler != nil {
-		managers, err := n.Handler.GetDevices()
+	handler, err := nm.getHandler(nodeIdentifier)
+	if err == nil {
+		managers, err := handler.GetDevices()
 		if err != nil {
 			nm.log.Errorf("fail to fetch managers from node '%s': %v", nodeIdentifier, err)
 			return nil, err
@@ -97,6 +119,8 @@ func (nm *NodeManager) RegisterNode(nodeIdentifier manager.NodeIdentifier, clien
 			fmt.Println(err)
 		}
 	*/
+	nm.mu.Lock()
+	defer nm.mu.Unlock()
 	nm.nodes[nodeIdentifier] = Node{
 		Identifier:      string(nodeIdentifier),
 		Hostname:        hostname,
@@ -111,6 +135,8 @@ func (nm *NodeManager) RegisterNode(nodeIdentifier manager.NodeIdentifier, clien
 }
 
 func (nm *NodeManager) getNode(nodeIdentifier manager.NodeIdentifier) (error, *Node) {
+	nm.mu.RLock()
+	defer nm.mu.RUnlock()
 	if v, ok := nm.nodes[nodeIdentifier]; ok {
 		return nil, &v
 	}
@@ -229,6 +255,15 @@ func (nm *NodeManager) StopApp(nodeIdentifier manager.NodeIdentifier, deviceId s
 	}
 
 	return handler.StopApp(deviceId, parameter)
+}
+
+func (nm *NodeManager) ClearAppData(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
+	handler, err := nm.getHandler(nodeIdentifier)
+	if err != nil {
+		return err
+	}
+
+	return handler.ClearAppData(deviceId, parameter)
 }
 
 func (nm *NodeManager) IsConnected(nodeIdentifier manager.NodeIdentifier, deviceId string) bool {

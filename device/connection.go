@@ -41,17 +41,17 @@ func (c *Connection) HandleMessages(ctx context.Context) {
 		}
 	}()
 
+	conn := c.Connection
+	if conn == nil {
+		return
+	}
 	for {
-		if err := c.Connection.SetReadDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
+		if err := conn.SetReadDeadline(time.Now().Add(DefaultSocketTimeout)); err != nil {
 			c.Logger.Errorf("SocketAccept SetDeadline: %v", err)
 			return
 		}
-		time.Sleep(50 * time.Millisecond)
-		if c.Connection == nil {
-			return
-		}
-		_, data, err := c.Connection.ReadMessage()
-		//fmt.Printf("data = %d - %v - %v\n", t, data, err)
+		// ReadMessage blocks until data arrives, no polling delay needed
+		_, data, err := conn.ReadMessage()
 		if err != nil {
 			c.handleReadError(err)
 			return

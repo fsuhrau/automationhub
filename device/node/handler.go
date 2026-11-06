@@ -16,6 +16,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"sync"
 	"time"
 )
 
@@ -26,6 +27,8 @@ const (
 
 type Handler struct {
 	log           *logrus.Entry
+	mu            sync.RWMutex // guards nodes
+	refreshMu     sync.Mutex   // serializes RefreshDevices
 	nodes         map[manager.NodeIdentifier]map[string][]device.Device
 	deviceStorage storage.Device
 	nodeManager   manager.Nodes
@@ -54,7 +57,9 @@ func (h *Handler) Run(ctx context.Context, runSocketListener bool) error {
 			continue
 		}
 
+		h.mu.Lock()
 		h.nodes[n] = managers
+		h.mu.Unlock()
 	}
 	return nil
 }
@@ -97,6 +102,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 		}
 		dev.SetConfig(devs[i])
 
+		h.mu.Lock()
 		managed := h.nodes[dev.nodeId]
 		if managed == nil {
 			managed = make(map[string][]device.Device)
@@ -105,6 +111,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 		devices = append(devices, dev)
 		managed[devs[i].Manager] = devices
 		h.nodes[dev.nodeId] = managed
+		h.mu.Unlock()
 	}
 	if err := h.RefreshDevices(true); err != nil {
 		return err
@@ -138,11 +145,13 @@ func managerToPlatformType(mng string) models.PlatformType {
 		return models.PlatformTypeWeb
 	}
 
-	panic("manager not handled")
-	return models.PlatformTypeLinux
+	panic("manager not handled: " + mng)
 }
 
 func (h *Handler) RefreshDevices(force bool) error {
+	h.refreshMu.Lock()
+	defer h.refreshMu.Unlock()
+
 	lastUpdate := time.Now().UTC()
 	if !force && h.lastUpdate.Add(UpdateInterval).After(lastUpdate) {
 		return nil
@@ -151,13 +160,19 @@ func (h *Handler) RefreshDevices(force bool) error {
 
 	nodes := h.nodeManager.GetNodes()
 
+	h.mu.Lock()
 	for _, n := range nodes {
 		if _, ok := h.nodes[n]; !ok {
 			h.nodes[n] = make(map[string][]device.Device)
 		}
 	}
+	knownNodes := make([]manager.NodeIdentifier, 0, len(h.nodes))
+	for n := range h.nodes {
+		knownNodes = append(knownNodes, n)
+	}
+	h.mu.Unlock()
 
-	for nodeIdentifier, managers := range h.nodes {
+	for _, nodeIdentifier := range knownNodes {
 		var no models.Node
 		if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
 			return err
@@ -174,6 +189,12 @@ func (h *Handler) RefreshDevices(force bool) error {
 			continue
 		}
 
+		// remote calls above are done without holding the lock
+		h.mu.Lock()
+		managers := h.nodes[nodeIdentifier]
+		if managers == nil {
+			managers = make(map[string][]device.Device)
+		}
 		var devices []device.Device
 		if d1, ok := managers[Manager]; ok {
 			devices = d1
@@ -241,14 +262,14 @@ func (h *Handler) RefreshDevices(force bool) error {
 		}
 		managers[Manager] = devices
 		h.nodes[nodeIdentifier] = managers
+		h.mu.Unlock()
 	}
 
-	for n, managers := range h.nodes {
-		_ = n
-		for m, devices := range managers {
-			_ = m
-			for d, dev := range devices {
-				_ = d
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, managers := range h.nodes {
+		for _, devices := range managers {
+			for _, dev := range devices {
 				nd, ok := dev.(*NodeDevice)
 				if ok && nd.lastUpdateAt != lastUpdate {
 					nd.SetDeviceState("StateNodeDisconnected")
@@ -273,6 +294,8 @@ func (h *Handler) Stop() error {
 }
 
 func (h *Handler) GetDevice(deviceID string) (error, manager.NodeIdentifier, device.Device) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	for node, mng := range h.nodes {
 		for _, devices := range mng {
 			for _, dev := range devices {
@@ -305,6 +328,8 @@ func (h *Handler) StopDevice(deviceID string) error {
 }
 
 func (h *Handler) GetDevices() ([]device.Device, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	var devices []device.Device
 	for _, mng := range h.nodes {
 		for _, devs := range mng {
