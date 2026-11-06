@@ -28,6 +28,7 @@ const (
 	defaultStreamFPS = 2
 	maxStreamFPS     = 5
 	streamBoundary   = "frame"
+	maxStreamBackoff = 10 * time.Second
 )
 
 // DeviceResolver resolves the device addressed by the request. It writes the
@@ -201,11 +202,15 @@ func (h *Handler) stream(c *gin.Context, dev device.Device) {
 	c.Status(http.StatusOK)
 
 	ctx := c.Request.Context()
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	// on errors (e.g. the device was unplugged) back off instead of retrying
+	// at the frame rate
+	wait := interval
 	for {
 		data, w, hgt, err := h.svc.Screenshot(dev)
-		if err == nil {
+		if err != nil {
+			wait = min(wait*2, maxStreamBackoff)
+		} else {
+			wait = interval
 			frame, err := toJPEG(data)
 			if err == nil {
 				_, err = fmt.Fprintf(c.Writer, "--%s\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\nX-Screen-Width: %d\r\nX-Screen-Height: %d\r\n\r\n", streamBoundary, len(frame), w, hgt)
@@ -221,7 +226,7 @@ func (h *Handler) stream(c *gin.Context, dev device.Device) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-time.After(wait):
 		}
 	}
 }

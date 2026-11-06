@@ -312,6 +312,10 @@ func (d *Device) IsAwake() (bool, error) {
 }
 
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
+	// don't run adb (and log its errors) for devices adb can't use right now
+	if state := d.DeviceState(); state != device.StateBooted {
+		return nil, 0, 0, fmt.Errorf("device %s is %s", d.DeviceID(), device.StateToString(state))
+	}
 	d.Log("device", "Get Native Screenshot")
 	start := time.Now()
 	data, err := d.screencapExecOut()
