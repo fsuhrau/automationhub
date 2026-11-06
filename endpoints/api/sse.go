@@ -17,6 +17,7 @@ func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterNewTestProtocolLogListener(s)
 	RegisterNewTestLogEntryListener(s)
 	RegisterEventTestRunFinishedListener(s)
+	RegisterNodeStatusListener(s)
 
 	sseApi := api.Group("/sse")
 	// with and without trailing slash, so clients don't get a redirect first

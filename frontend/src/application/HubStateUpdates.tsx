@@ -5,6 +5,7 @@ import {useProjectContext} from "../hooks/ProjectProvider";
 import {useHubState} from "../hooks/HubStateProvider";
 import {getAllDevices} from "../services/device.service";
 import {getAllApps} from "../services/app.service";
+import {getNodes} from "../services/settings.service";
 import {useError} from "../ErrorProvider";
 import {SSE_CONNECTED_EVENT} from "./sseSource";
 
@@ -45,12 +46,21 @@ const HubStateUpdates: React.FC<{ children: any }> = ({children}) => {
         return () => window.removeEventListener(SSE_CONNECTED_EVENT, onConnected);
     }, []);
 
+    // a node connected or disconnected: its status and its devices changed
+    const nodeEvents = useSSE<number, unknown>('nodes', 0, {stateReducer: (count) => count + 1});
+
     useEffect(() => {
-        if (reconnects === 0) return;
+        if (reconnects === 0 && nodeEvents === 0) return;
         getAllDevices(projectIdentifier).then(devices => {
             dispatch({type: HubStateActions.UpdateDevices, payload: devices})
         }).catch(() => undefined);
-    }, [reconnects, projectIdentifier, dispatch]);
+    }, [reconnects, nodeEvents, projectIdentifier, dispatch]);
+
+    useEffect(() => {
+        getNodes(projectIdentifier).then(nodes => {
+            dispatch({type: HubStateActions.NodesUpdate, payload: nodes})
+        }).catch(() => undefined);
+    }, [reconnects, nodeEvents, projectIdentifier, dispatch]);
 
     // devices and apps belong to the project; reload both when it changes
     useEffect(() => {

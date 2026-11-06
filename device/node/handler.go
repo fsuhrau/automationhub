@@ -79,6 +79,13 @@ func (l devicesChangedListener) Handle(events.NodeDevicesChangedPayload) {
 	_ = l.h.RefreshDevices(true)
 }
 
+// nodeDisconnectedListener marks the devices of a lost node right away.
+type nodeDisconnectedListener struct{ h *Handler }
+
+func (l nodeDisconnectedListener) Handle(events.NodeDisconnectedPayload) {
+	_ = l.h.RefreshDevices(true)
+}
+
 func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	h.init = true
 	defer func() {
@@ -87,6 +94,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 
 	events.NodeConnected.Register(h)
 	events.NodeDevicesChanged.Register(devicesChangedListener{h})
+	events.NodeDisconnected.Register(nodeDisconnectedListener{h})
 
 	devs, err := h.deviceStorage.GetDevices(Manager)
 	if err != nil {

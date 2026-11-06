@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
@@ -71,12 +72,18 @@ func (nm *NodeManager) healthCheck() {
 		if err := h.Ping(); err != nil {
 			nm.mu.Lock()
 			// only mark disconnected if the node was not re-registered meanwhile
+			disconnected := false
 			if n, ok := nm.nodes[k]; ok && n.Handler == h {
 				n.Status = NodeStatusDisconnected
 				n.Handler = nil
 				nm.nodes[k] = n
+				disconnected = true
 			}
 			nm.mu.Unlock()
+			if disconnected {
+				nm.log.Infof("node %s disconnected: %v", k, err)
+				events.NodeDisconnected.Trigger(events.NodeDisconnectedPayload{NodeIdentifier: k})
+			}
 		}
 	}
 }
