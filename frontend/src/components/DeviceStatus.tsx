@@ -2,6 +2,17 @@ import React from "react";
 import {Box, Stack, Tooltip, Typography} from "@mui/material";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import {deviceState, DeviceStateType} from "../types/deviceStateType";
+import {PlatformType} from "../types/platform.type.enum";
+
+const iosUnauthorized = <>
+    <b>This iPhone/iPad doesn't trust the computer yet, or is locked.</b>
+    <ol style={{margin: '4px 0', paddingLeft: 18}}>
+        <li>Unlock the device and tap "Trust" on "Trust This Computer?" (enter the passcode if asked).</li>
+        <li>No prompt? Unplug and replug the cable.</li>
+        <li>Still not trusted? On the device: Settings → General → Transfer or Reset → Reset → Reset Location &amp; Privacy, then reconnect.</li>
+    </ol>
+    The status updates shortly after.
+</>;
 
 // what a state means and how to get the device ready again
 const hints: Partial<Record<DeviceStateType, React.ReactNode>> = {
@@ -18,7 +29,8 @@ const hints: Partial<Record<DeviceStateType, React.ReactNode>> = {
         <b>The node doesn't see this device.</b>
         <ol style={{margin: '4px 0', paddingLeft: 18}}>
             <li>Check that the phone is plugged in and unlocked, or that the emulator/simulator is running.</li>
-            <li>Run <code>adb devices -l</code> (Android) on the node: the device should be listed as "device".</li>
+            <li>Android: run <code>adb devices -l</code> on the node; the device should be listed as "device".</li>
+            <li>iOS: the device should show up in Finder (or <code>idevice_id -l</code>) on the node.</li>
             <li>Network devices: check that the device is reachable from the node.</li>
         </ol>
     </>,
@@ -29,8 +41,9 @@ const hints: Partial<Record<DeviceStateType, React.ReactNode>> = {
     [DeviceStateType.Unknown]: <>The device state isn't known yet; it is updated with the next refresh.</>,
 };
 
-const DeviceStatus: React.FC<{ state: DeviceStateType }> = ({state}) => {
-    const hint = hints[state];
+const DeviceStatus: React.FC<{ state: DeviceStateType, platform?: PlatformType }> = ({state, platform}) => {
+    const isIOS = platform === PlatformType.iOS || platform === PlatformType.IOSSimulator;
+    const hint = state === DeviceStateType.Unauthorized && isIOS ? iosUnauthorized : hints[state];
     const label = deviceState(state);
     if (!hint) {
         return <>{label}</>;

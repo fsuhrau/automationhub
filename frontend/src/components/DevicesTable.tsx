@@ -86,7 +86,7 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             align: 'right',
             flex: 1,
             minWidth: 100,
-            renderCell: (params) => <DeviceStatus state={params.value}/>,
+            renderCell: (params) => <DeviceStatus state={params.value} platform={params.row.platformType}/>,
         },
         {
             field: 'session',

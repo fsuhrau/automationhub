@@ -85,13 +85,15 @@ func (d *Device) DeviceState() device.State {
 func (d *Device) SetDeviceState(state string) {
 	switch state {
 	case "StateBooted":
-		if d.webDriver != nil {
-			d.deviceState = device.StateBooted
-		} else {
-			d.deviceState = device.StateRemoteDisconnected
-		}
+		// attached and readable; WebDriverAgent is started on demand
+		// (StartDevice), so it doesn't decide whether the device is ready
+		d.deviceState = device.StateBooted
 	case "StateShutdown":
 		d.deviceState = device.StateShutdown
+	case "StateRemoteDisconnected":
+		d.deviceState = device.StateRemoteDisconnected
+	case "StateUnauthorized":
+		d.deviceState = device.StateUnauthorized
 	default:
 		d.deviceState = device.StateUnknown
 	}
@@ -296,7 +298,7 @@ func (d *Device) StopXCUITestRunner() error {
 	}
 	_ = testmanagerd.CloseXCUITestRunner()
 	d.webDriver = nil
-	d.deviceState = device.StateRemoteDisconnected
+	// the device stays attached; its state follows usbmuxd, not WebDriverAgent
 	return nil
 }
 
