@@ -28,6 +28,14 @@ func TestParseADBDeviceLine(t *testing.T) {
 	}
 }
 
+func TestParseADBDeviceLineReported(t *testing.T) {
+	// reported from a Galaxy S21 FE after authorization
+	entry, ok := parseADBDeviceLine("RZCTA1YRJ5W            device usb:0-1.3 product:r9q2xeea model:SM_G990B2 device:r9q transport_id:3")
+	if !ok || entry.Serial != "RZCTA1YRJ5W" || entry.State != adbStateDevice || entry.Fields["model"] != "SM_G990B2" || entry.Fields["transport_id"] != "3" {
+		t.Fatalf("unexpected entry %+v", entry)
+	}
+}
+
 func TestParseADBDeviceLineWithUSBPath(t *testing.T) {
 	// newer adb versions print the usb port as a path (the old regex rejected it)
 	entry, ok := parseADBDeviceLine("RZCTA1YRJ5W            device usb:0-1.3 product:a52qnsxx model:SM_A525F device:a52q transport_id:2")
