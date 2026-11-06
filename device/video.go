@@ -13,9 +13,17 @@ type VideoOptions struct {
 	BitRate int
 }
 
+// Codecs of VideoMeta.Codec.
+const (
+	// CodecH264 packets are H.264 in Annex B format.
+	CodecH264 = "h264"
+	// CodecMJPEG packets are complete JPEG images, each one a key frame.
+	CodecMJPEG = "mjpeg"
+)
+
 // VideoMeta describes a video stream.
 type VideoMeta struct {
-	// Codec is the codec of the packets, e.g. "h264".
+	// Codec is the codec of the packets, CodecH264 or CodecMJPEG.
 	Codec string `json:"codec"`
 	// Width and Height of the video at the start of the stream. Rotations
 	// change them; decoders take the size from the config packets.
@@ -27,6 +35,9 @@ type VideoMeta struct {
 	// the video orientation differs. Zero when unknown.
 	ScreenWidth  int `json:"screenWidth"`
 	ScreenHeight int `json:"screenHeight"`
+	// ViewOnly streams take no input (they don't implement VideoInput);
+	// clients use the control API (device.InputCapable) instead.
+	ViewOnly bool `json:"viewOnly,omitempty"`
 }
 
 // VideoPacket is one encoded unit of a video stream. For H.264 the data is in

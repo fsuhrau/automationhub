@@ -11,6 +11,7 @@ import (
 	"image/png"
 	"net"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/danielpaulus/go-ios/ios"
@@ -38,6 +39,7 @@ type Device struct {
 	deviceIP                net.IP
 	recordingSessionProcess *exec.Cmd
 	lastUpdateAt            time.Time
+	wdaMu                   sync.Mutex // serializes starting and stopping WebDriverAgent
 	webDriver               *webdriver.Client
 	screenScale             float64 // screenshot pixels per WDA point, 0 = unknown
 	deviceParameter         map[string]string
@@ -263,7 +265,34 @@ func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }
 
+// StartXCUITestRunner starts WebDriverAgent and creates a session. A runner
+// that is already up (e.g. started for the live video) is reused.
 func (d *Device) StartXCUITestRunner() error {
+	d.wdaMu.Lock()
+	defer d.wdaMu.Unlock()
+	return d.startWebDriver()
+}
+
+// ensureWebDriver starts WebDriverAgent unless it is up already.
+func (d *Device) ensureWebDriver() (*webdriver.Client, error) {
+	d.wdaMu.Lock()
+	defer d.wdaMu.Unlock()
+	if wd := d.webDriver; wd != nil && wd.Alive(3*time.Second) {
+		return wd, nil
+	}
+	if err := d.startWebDriver(); err != nil {
+		return nil, err
+	}
+	return d.webDriver, nil
+}
+
+func (d *Device) startWebDriver() error {
+	if wd := d.webDriver; wd != nil && wd.Alive(3*time.Second) {
+		if _, err := wd.CreateSession(); err != nil {
+			return fmt.Errorf("create WebDriverAgent session: %w", err)
+		}
+		return nil
+	}
 	device, err := ios.GetDevice(d.DeviceID())
 	if err != nil {
 		return err
@@ -293,6 +322,8 @@ func (d *Device) StartXCUITestRunner() error {
 }
 
 func (d *Device) StopXCUITestRunner() error {
+	d.wdaMu.Lock()
+	defer d.wdaMu.Unlock()
 	if d.webDriver != nil {
 		d.webDriver.CloseSession()
 	}

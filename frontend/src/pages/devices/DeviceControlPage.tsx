@@ -71,7 +71,7 @@ import {
     touchElement,
 } from '../../services/device.control.service';
 import {describeController} from "../../components/DeviceController";
-import {DeviceVideoPlayer, VIDEO_TEXT_MAX_BYTES, VideoMeta, videoDecodingAvailable, VideoStatus, videoUrl} from '../../services/device.video';
+import {DeviceVideoPlayer, VIDEO_TEXT_MAX_BYTES, VideoMeta, mjpegDecodingAvailable, videoDecodingAvailable, VideoStatus, videoUrl} from '../../services/device.video';
 import {useSelectedApp} from '../../hooks/useSelectedApp';
 import {formatDateTime} from '../../components/DateTime';
 import {defaultApp, elementAt, filterLogLines, keyForEvent, leaseNote, logLevel, runsOn, SceneElement} from './deviceControlModel';
@@ -230,7 +230,10 @@ const DeviceControlPage: React.FC = () => {
     const [lease, setLease] = useState<string | null>(() => loadLease(deviceId));
     const [busy, setBusy] = useState(false);
     const canDecodeVideo = useMemo(videoDecodingAvailable, []);
+    const canDecodeMjpeg = useMemo(mjpegDecodingAvailable, []);
     const [mode, setMode] = useState<ScreenMode>(canDecodeVideo ? 'video' : 'screenshots');
+    // the user picked the screen mode; no automatic switch after that
+    const modePicked = useRef(false);
     const [videoStatus, setVideoStatus] = useState<VideoStatus | null>(null);
     const [videoMeta, setVideoMeta] = useState<VideoMeta | null>(null);
     const [snapshot, setSnapshot] = useState(() => screenshotUrl(projectIdentifier, deviceId));
@@ -304,6 +307,15 @@ const DeviceControlPage: React.FC = () => {
         const timer = setInterval(refreshLock, 5000);
         return () => clearInterval(timer);
     }, [refreshLock]);
+
+    // iOS video is MJPEG, which plays without WebCodecs (e.g. over plain http)
+    const isIOS = device?.platformType === PlatformType.iOS;
+    const canVideo = isIOS ? canDecodeMjpeg : canDecodeVideo;
+    useEffect(() => {
+        if (!device || modePicked.current) return;
+        if (mode === 'screenshots' && canVideo && !canDecodeVideo) setMode('video');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [device]);
 
     useEffect(() => {
         if (mode !== 'video' || !canvasRef.current) return;
@@ -630,7 +642,7 @@ const DeviceControlPage: React.FC = () => {
         cursor: picking ? 'help' : lease ? 'crosshair' : 'default',
     };
     const screenHandlers = interactive ? {onPointerDown, onPointerMove, onPointerUp, onPointerCancel} : {};
-    const live = mode === 'video' && videoStatus?.state === 'playing' && !!lease;
+    const live = mode === 'video' && videoStatus?.state === 'playing' && !!lease && !videoMeta?.viewOnly;
     const visibleLogs = useMemo(() => logs ? filterLogLines(logs, logFilter, problemsOnly) : [], [logs, logFilter, problemsOnly]);
     const fittingApps = device ? apps.filter(a => runsOn(a.platform, device.platformType)) : apps;
     const otherApps = apps.filter(a => !fittingApps.includes(a));
@@ -678,13 +690,19 @@ const DeviceControlPage: React.FC = () => {
                     <CardContent sx={{p: 1.5, '&:last-child': {pb: 1.5}}}>
                         <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap" sx={{mb: 1}}>
                             <ToggleButtonGroup size="small" exclusive value={mode} aria-label="Screen"
-                                               onChange={(_, v: ScreenMode | null) => v && setMode(v)}
+                                               onChange={(_, v: ScreenMode | null) => {
+                                                   if (!v) return;
+                                                   modePicked.current = true;
+                                                   setMode(v);
+                                               }}
                                                // as tall as the icon buttons beside it; the theme's toggles are form-sized
                                                sx={{'& .MuiToggleButton-root': {py: 0.5, px: 1.25, height: 36, fontSize: 12, lineHeight: 1}}}>
-                                <Tooltip title={canDecodeVideo
-                                    ? 'Live video with fast input (Android)'
-                                    : 'Video needs a secure context: open the hub over HTTPS or localhost'}>
-                                    <span><ToggleButton value="video" disabled={!canDecodeVideo}>Video</ToggleButton></span>
+                                <Tooltip title={!canVideo
+                                    ? 'Video needs a secure context: open the hub over HTTPS or localhost'
+                                    : isIOS
+                                        ? 'Live video from WebDriverAgent (starts it when needed); taps and swipes go through the control API'
+                                        : 'Live video with fast input (Android)'}>
+                                    <span><ToggleButton value="video" disabled={!canVideo}>Video</ToggleButton></span>
                                 </Tooltip>
                                 <Tooltip title="A screenshot every half second; works on every device">
                                     <ToggleButton value="screenshots">Screenshots</ToggleButton>
@@ -704,7 +722,8 @@ const DeviceControlPage: React.FC = () => {
                             </Tooltip>
                             <Box sx={{flexGrow: 1}}/>
                             {busy && <CircularProgress size={18}/>}
-                            {mode === 'video' && videoStatus?.state === 'connecting' && <Chip size="small" label="Connecting…"/>}
+                            {mode === 'video' && videoStatus?.state === 'connecting' &&
+                                <Chip size="small" label={isIOS ? 'Connecting… (starting WebDriverAgent can take a minute)' : 'Connecting…'}/>}
                             {mode === 'video' && videoStatus?.state === 'error' && <Chip size="small" color="error" label={videoStatus.message ?? 'Video error'}/>}
                             {live && <Tooltip title="Touch, drag, scroll and keys go straight through the video connection">
                                 <Chip size="small" color="success" variant="outlined" label="Live"/>
