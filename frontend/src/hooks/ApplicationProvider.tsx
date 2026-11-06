@@ -2,6 +2,7 @@ import React, {ReactNode} from "react";
 import {Navigate, Outlet, useParams} from "react-router-dom";
 import {useProjectContext} from "./ProjectProvider";
 import {useHubState} from "./HubStateProvider";
+import PageLoader from "../components/PageLoader";
 
 interface ApplicationProviderProps {
     children: ReactNode;
@@ -31,18 +32,28 @@ const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => 
     const {state} = useHubState();
     const {appId: urlAppId} = useParams<{ appId: string }>();
 
+    if (state.apps === null || state.apps === undefined) {
+        // apps of the project are still loading
+        return <PageLoader/>;
+    }
     // redirect to project settings if there are no apps
-    if (state.apps === undefined || state.apps?.length === 0) {
+    if (state.apps.length === 0) {
         return (<Navigate to={`/project/${projectIdentifier}/settings`}/>);
     }
 
-    let appIdString
-    if (urlAppId) {
-        appIdString = urlAppId.replace("app:", "")
-    } else {
-        appIdString = localStorage.getItem('appId') || (state.apps !== null && state.apps.length > 0 ? state.apps![0].id : "");
+    const known = (id: number | null) => id !== null && !isNaN(id) && state.apps!.some(a => a.id === id);
+    let appId: number | null = urlAppId ? +urlAppId.replace("app:", "") : null;
+    if (!urlAppId) {
+        // the stored app may belong to another project
+        let stored: number | null = null;
+        try {
+            const value = localStorage.getItem('appId');
+            stored = value ? +value : null;
+        } catch {
+            stored = null;
+        }
+        appId = known(stored) ? stored : state.apps[0].id as number;
     }
-    const appId = appIdString !== "" ? +appIdString : null;
 
 
     return (

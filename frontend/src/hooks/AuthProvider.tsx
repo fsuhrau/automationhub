@@ -14,8 +14,13 @@ export interface LoginData {
     password: string,
 }
 
+// checking: session lookup in flight; anonymous: auth is enabled and nobody
+// is logged in; disabled: the master runs without authentication
+export type AuthState = 'checking' | 'authenticated' | 'anonymous' | 'disabled';
+
 type AuthContextProps = {
     user: IUser | null,
+    authState: AuthState,
     loginAction: (d: LoginData, onError: (error: string) => void) => {},
     registerAction: (d: RegisterData) => {},
     logOut: () => {},
@@ -28,6 +33,7 @@ interface AuthProviderProps {
 
 const AuthContext = createContext<AuthContextProps>({
     user: null,
+    authState: 'checking',
     loginAction: async () => {
     },
     registerAction: async () => {
@@ -39,6 +45,7 @@ const AuthContext = createContext<AuthContextProps>({
 export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
     const [user, setUser] = useState<IUser | null>(null);
+    const [authState, setAuthState] = useState<AuthState>('checking');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -48,12 +55,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                     method: "GET",
                     credentials: "include", // Include cookies in the request
                 });
+                if (response.status === 401) {
+                    setAuthState('anonymous');
+                    return;
+                }
+                const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
+                if (!response.ok || !isJson) {
+                    // no /auth routes: the master runs without authentication
+                    setAuthState('disabled');
+                    return;
+                }
                 const res = await response.json();
                 if (res.user) {
                     setUser(res.user);
+                    setAuthState('authenticated');
+                } else {
+                    setAuthState('anonymous');
                 }
             } catch (err) {
+                // network problem: don't lock the user out, API calls still get 401
                 console.error(err);
+                setAuthState('disabled');
             }
         };
 
@@ -75,6 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             const res = await response.json();
             if (res.user) {
                 setUser(res.user);
+                setAuthState('authenticated');
                 navigate("/");
                 return;
             }
@@ -97,6 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             const res = await response.json();
             if (res.user) {
                 setUser(res.user);
+                setAuthState('authenticated');
                 navigate("/");
                 return;
             }
@@ -112,6 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 credentials: "include", // Include cookies in the request
             });
             setUser(null);
+            setAuthState('anonymous');
             navigate("/login");
         } catch (err) {
             console.error(err);
@@ -120,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
     return (
         <AuthContext.Provider
-            value={{user: user, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
+            value={{user: user, authState: authState, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
             {children}
         </AuthContext.Provider>
     );

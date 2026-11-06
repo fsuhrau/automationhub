@@ -1,4 +1,4 @@
-import React, {FunctionComponent, ReactElement, useEffect, useState} from 'react';
+import React, {FunctionComponent, ReactElement, useEffect, useRef, useState} from 'react';
 import Paper from '@mui/material/Paper';
 import ITestRunData from '../../types/test.run';
 import {TestResultState} from '../../types/test.result.state.enum';
@@ -181,12 +181,22 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         history: [],
     })
 
-    const protocolEntry = useSSE<NewTestProtocolLogPayload | null>(`test_protocol_${protocol.id}_log`, null);
+    const liveEntries = useSSE<{ seq: number, items: { seq: number, entry: IProtocolEntryData }[] }, NewTestProtocolLogPayload | null>(
+        `test_protocol_${protocol.id}_log`, {seq: 0, items: []}, {
+            stateReducer: (s, action) => {
+                if (!action.data?.entry) return s;
+                const seq = s.seq + 1;
+                return {seq, items: [...s.items, {seq, entry: action.data.entry}].slice(-200)};
+            }
+        });
+    const appliedEntries = useRef(0);
     useEffect(() => {
-        if (protocolEntry === null)
-            return;
-        setState(prevState => ({...prevState, entries: [...prevState.entries, protocolEntry.entry]}))
-    }, [protocolEntry]);
+        const fresh = liveEntries.items.filter(i => i.seq > appliedEntries.current).map(i => i.entry);
+        appliedEntries.current = liveEntries.seq;
+        if (fresh.length > 0) {
+            setState(prevState => ({...prevState, entries: [...prevState.entries, ...fresh]}))
+        }
+    }, [liveEntries]);
 
     const updateStatusEntries = (): void => {
         const length = state.entries.length;
@@ -195,7 +205,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         let lastStep: IProtocolEntryData | null = null;
         let lastScreen: IProtocolEntryData | null = null;
         const screenEntries: IProtocolEntryData[] = [];
-        for (let i = length - 1; i > 0; i--) {
+        for (let i = length - 1; i >= 0; i--) {
             if (state.entries[i].source === 'screen') {
                 screenEntries.push(state.entries[i])
                 if (lastScreen === null) {
@@ -222,41 +232,29 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
         }))
     };
 
-    const getCheckpoints = (entries: IProtocolPerformanceEntryData[]) => {
+    // checkpoints with the time since the previous one; returns copies so the
+    // protocol from props is not mutated
+    const getCheckpoints = (entries: IProtocolPerformanceEntryData[] | null | undefined): IProtocolPerformanceEntryData[] => {
         if (entries == null) {
             return []
         }
-        return entries.filter(p => p.checkpoint !== "schedule").map((value1, index, array) => {
-            if (index !== 0) {
-                value1.executionTime = value1.runtime - array[index - 1].runtime
-            } else {
-                value1.executionTime = value1.runtime
-            }
-            return value1
-        })
+        return entries.filter(p => p.checkpoint !== "schedule").map((value, index, array) => ({
+            ...value,
+            executionTime: index !== 0 ? value.runtime - array[index - 1].runtime : value.runtime,
+        }))
     }
 
     const getHistoricalCheckpoints = (testProtocols: ITestProtocolData[] | null) => {
         if (testProtocols == null) {
             return []
         }
-        return testProtocols.slice(-2).map(p => {
-            p.performance = p.performance?.filter(p => p.checkpoint !== "schedule").map((value1, index, array) => {
-                if (index !== 0) {
-                    value1.executionTime = value1.runtime - array[index - 1].runtime
-                } else {
-                    value1.executionTime = value1.runtime
-                }
-                return value1
-            })
-            return p
-        })
+        return testProtocols.slice(-2).map(p => ({...p, performance: getCheckpoints(p.performance)}))
     }
 
     useEffect(() => {
         setState(prevState => ({
             ...prevState,
-            entries: protocol.entries,
+            entries: protocol.entries ?? [],
             performanceEntries: protocol.performance ? protocol.performance : [],
             checkpoints: getCheckpoints(protocol.performance),
             history: getHistoricalCheckpoints(protocol.testProtocolHistory)

@@ -1,43 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Typography } from '@mui/material';
-import IDeviceData from '../../types/device';
+import React from 'react';
+import {useParams} from 'react-router-dom';
 import DeviceEditPage from './DeviceEditPage';
-import { getDevice } from '../../services/device.service';
+import {getDevice} from '../../services/device.service';
 import DeviceShowPage from './DeviceShowPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
-import {useError} from "../../ErrorProvider";
+import {useLoader} from "../../hooks/useLoader";
+import PageLoader from "../../components/PageLoader";
 
 interface DevicePageProps {
     edit: boolean
 }
 
-const DevicePageLoader: React.FC<DevicePageProps> = (props) => {
+const DevicePageLoader: React.FC<DevicePageProps> = ({edit}) => {
+    const {projectIdentifier} = useProjectContext();
+    const {deviceId} = useParams();
 
-    const { projectIdentifier } = useProjectContext();
+    const {data: device, error, retry} = useLoader(
+        () => deviceId !== undefined ? getDevice(projectIdentifier, deviceId) : null,
+        [projectIdentifier, deviceId]);
 
-    const { deviceId } = useParams();
-    const {setError} = useError()
-
-    const { edit } = props;
-    const [device, setDevice] = useState<IDeviceData>();
-
-    useEffect(() => {
-        getDevice(projectIdentifier, deviceId === undefined ? "" : deviceId).then(device => {
-            setDevice(device);
-        }).catch(ex => {
-            setError(ex);
-        });
-    }, [projectIdentifier, deviceId]);
-
-    return (
-        <div>
-            { device
-                ? (edit ? <DeviceEditPage device={ device } /> : <DeviceShowPage device={ device } />)
-                : <Typography variant={ 'h1' }>Loading</Typography>
-            }
-        </div>
-    );
+    if (!device || error) {
+        return <PageLoader error={error} onRetry={retry}/>;
+    }
+    return edit ? <DeviceEditPage device={device}/> : <DeviceShowPage device={device}/>;
 };
 
 export default DevicePageLoader;

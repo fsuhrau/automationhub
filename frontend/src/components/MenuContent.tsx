@@ -35,10 +35,11 @@ export default function MenuContent() {
     }
 
     const mainListItems = [
-        { text: 'Home', ref: `/project/${projectIdentifier}/app:${appId}/home`, icon: <HomeRoundedIcon /> },
-        { text: 'Tests', ref: appId ? `/project/${projectIdentifier}/app:${appId}/tests` : `/project/${projectIdentifier}/tests`, icon: <AnalyticsRoundedIcon /> },
-        { text: 'Apps / Bundles', ref: appId ? `/project/${projectIdentifier}/app:${appId}/bundles` : `/project/${projectIdentifier}/bundles`, icon: <PeopleRoundedIcon /> },
-        { text: 'Device Pool', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon /> },
+        // app scoped pages only exist once an app is selected
+        { text: 'Home', ref: appId ? `/project/${projectIdentifier}/app:${appId}/home` : `/project/${projectIdentifier}`, icon: <HomeRoundedIcon />, disabled: false },
+        { text: 'Tests', ref: `/project/${projectIdentifier}/app:${appId}/tests`, icon: <AnalyticsRoundedIcon />, disabled: !appId },
+        { text: 'Apps / Bundles', ref: `/project/${projectIdentifier}/app:${appId}/bundles`, icon: <PeopleRoundedIcon />, disabled: !appId },
+        { text: 'Device Pool', ref: `/project/${projectIdentifier}/devices`, icon: <DevicesRoundedIcon />, disabled: false },
     ];
 
     const secondaryListItems = [
@@ -52,7 +53,7 @@ export default function MenuContent() {
       <List dense>
         {mainListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton selected={location.pathname.startsWith(item.ref)} onClick={event => {
+            <ListItemButton disabled={item.disabled} selected={location.pathname.startsWith(item.ref)} onClick={event => {
                 navigate(item.ref)
             }}>
               <ListItemIcon>{item.icon}</ListItemIcon>

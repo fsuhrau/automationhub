@@ -15,7 +15,6 @@ import TestRunPageLoader from "./pages/tests/TestRunPageLoader";
 import SettingsPage from "./pages/settings/SettingsPage";
 import DevicePageLoader from "./pages/devices/DevicePageLoader";
 import DeviceControlPage from "./pages/devices/DeviceControlPage";
-import DevicesManagerContent from "./pages/devices/devices.manager.content";
 import DevicesContent from "./pages/devices/DevicesPage";
 import ApplicationPage from "./hooks/ApplicationProvider";
 import {HubStateProvider} from "./hooks/HubStateProvider";
@@ -94,8 +93,6 @@ function App(props: any) {
                                                        element={<DevicePageLoader edit={true}/>}/>
                                                 <Route path={":project_identifier/device/:deviceId"}
                                                        element={<DevicePageLoader edit={false}/>}/>
-                                                <Route path={":project_identifier/devices/manager"}
-                                                       element={<DevicesManagerContent/>}/>
                                                 <Route path={":project_identifier/devices"}
                                                        element={<DevicesContent/>}/>
                                             </Route>

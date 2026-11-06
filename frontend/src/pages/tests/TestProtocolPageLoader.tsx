@@ -1,51 +1,31 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {getTestProtocol} from '../../services/test.run.service';
 import {useParams} from 'react-router-dom';
-import ITestProtocolData from '../../types/test.protocol';
 import TestProtocolPage from './TestProtocolPage';
-import ITestRunData from '../../types/test.run';
-import {Backdrop, CircularProgress} from '@mui/material';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
-import {useError} from "../../ErrorProvider";
+import {useLoader} from "../../hooks/useLoader";
+import PageLoader from "../../components/PageLoader";
 
 const TestProtocolPageLoader: React.FC = () => {
-
     const {projectIdentifier} = useProjectContext();
-
     const {testId, runId, protocolId} = useParams();
     const {appId} = useApplicationContext()
-    const {setError} = useError()
 
-    const [state, setState] = useState<{
-        loading: boolean,
-        run: ITestRunData | null,
-        protocol: ITestProtocolData | null
-    }>({loading: true, run: null, protocol: null})
+    const {data: run, error, retry} = useLoader(
+        () => protocolId !== undefined
+            ? getTestProtocol(projectIdentifier, appId as number, testId as string, runId as string, protocolId)
+            : null,
+        [projectIdentifier, testId, runId, protocolId, appId]);
 
-    useEffect(() => {
-        if (protocolId === undefined) {
-            return;
-        }
-
-        getTestProtocol(projectIdentifier, appId as number, testId as string, runId as string, protocolId as string).then(run => {
-            const protocol = run.protocols.find(p => p.id === +protocolId)
-            setState(prevState => ({
-                ...prevState,
-                loading: false,
-                run: run,
-                protocol: protocol === undefined ? null : protocol,
-            }));
-        }).catch(ex => {
-            setError(ex);
-        });
-    }, [testId, runId, protocolId, appId]);
-
-    if (state.loading) return (<Backdrop sx={{zIndex: 1}} open={true}>
-        <CircularProgress color="inherit"/>
-        </Backdrop>)
-
-    return (<TestProtocolPage run={state.run as ITestRunData} protocol={state.protocol as ITestProtocolData}/>);
+    if (!run || error) {
+        return <PageLoader error={error} onRetry={retry}/>;
+    }
+    const protocol = run.protocols.find(p => p.id === Number(protocolId));
+    if (!protocol) {
+        return <PageLoader error={new Error(`protocol ${protocolId} not found in run ${runId}`)}/>;
+    }
+    return <TestProtocolPage key={protocol.id} run={run} protocol={protocol}/>;
 };
 
 export default TestProtocolPageLoader;

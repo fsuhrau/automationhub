@@ -1,62 +1,28 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {getLastRun, getRun} from '../../services/test.run.service';
 import {useParams} from 'react-router-dom';
-import ITestRunData from '../../types/test.run';
 import TestRunPage from './TestRunPage';
-import {Backdrop, CircularProgress} from '@mui/material';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
-import {useError} from "../../ErrorProvider";
+import {useLoader} from "../../hooks/useLoader";
+import PageLoader from "../../components/PageLoader";
 
 const TestRunPageLoader: React.FC = () => {
-
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
-
     const {testId, runId} = useParams();
-    const {setError} = useError()
 
-    const [uiState, setUiState] = useState<{
-        testRun: ITestRunData | null,
-        prevRunId: number | null,
-        nextRunId: number | null
-    }>({
-        testRun: null,
-        prevRunId: null,
-        nextRunId: null,
-    })
+    const {data, error, retry} = useLoader(
+        () => runId !== undefined
+            ? getRun(projectIdentifier, appId as number, testId as string, runId)
+            : getLastRun(projectIdentifier, appId as number, testId as string),
+        [projectIdentifier, testId, appId, runId]);
 
-    useEffect(() => {
-        if (runId !== undefined) {
-            getRun(projectIdentifier, appId as number, testId as string, runId).then(run => {
-                setUiState(prevState => ({
-                    ...prevState,
-                    testRun: run.testRun,
-                    nextRunId: run.nextRunId,
-                    prevRunId: run.prevRunId
-                }))
-            }).catch(ex => {
-                setError(ex);
-            });
-        } else {
-            getLastRun(projectIdentifier, appId as number, testId as string).then(run => {
-                setUiState(prevState => ({
-                    ...prevState,
-                    testRun: run.testRun,
-                    nextRunId: run.nextRunId,
-                    prevRunId: run.prevRunId
-                }))
-            }).catch(ex => {
-                setError(ex);
-            });
-        }
-    }, [projectIdentifier, testId, appId, runId]);
-
-    return (
-        uiState.testRun
-            ? <TestRunPage key={uiState.testRun.id} testRun={uiState.testRun} nextRunId={uiState.nextRunId} prevRunId={uiState.prevRunId}/>
-            : <Backdrop sx={{zIndex: 1, color: '#fff'}} open={true}><CircularProgress color="inherit"/></Backdrop>
-    );
+    if (!data || error) {
+        return <PageLoader error={error} onRetry={retry}/>;
+    }
+    // key: a new run gets a fresh page (its state and SSE subscriptions)
+    return <TestRunPage key={data.testRun.id} testRun={data.testRun} nextRunId={data.nextRunId} prevRunId={data.prevRunId}/>;
 };
 
 export default TestRunPageLoader;

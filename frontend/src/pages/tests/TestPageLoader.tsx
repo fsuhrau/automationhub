@@ -1,44 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Backdrop, CircularProgress } from '@mui/material';
-import ITestData from '../../types/test';
+import React from 'react';
+import {useParams} from 'react-router-dom';
 import EditTestPage from './EditTestPage';
-import { getTest } from '../../services/test.service';
+import {getTest} from '../../services/test.service';
 import ShowTestPage from './ShowTestPage';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
-import {useError} from "../../ErrorProvider";
+import {useLoader} from "../../hooks/useLoader";
+import PageLoader from "../../components/PageLoader";
 
 interface TestPageProps {
     edit: boolean
 }
 
-const TestPageLoader: React.FC<TestPageProps> = (props) =>  {
-    const { edit } = props;
-
+const TestPageLoader: React.FC<TestPageProps> = ({edit}) => {
     const {projectIdentifier} = useProjectContext();
-    const {setError} = useError()
+    const {testId} = useParams();
+    const {appId} = useApplicationContext()
 
-    const { testId } = useParams();
-    const { appId } = useApplicationContext()
+    const {data: test, error, retry} = useLoader(
+        () => appId !== null && testId !== undefined ? getTest(projectIdentifier, appId, testId) : null,
+        [projectIdentifier, appId, testId]);
 
-    const [test, setTest] = useState<ITestData>();
-
-
-    useEffect(() => {
-        if (appId !== null && testId !== undefined) {
-            getTest(projectIdentifier, appId, testId).then(test => {
-                setTest(test);
-            }).catch(ex => {
-                setError(ex);
-            });
-        }
-    }, [projectIdentifier, appId, testId]);
-    return (
-        <div>
-            { test ? (edit ? (<EditTestPage test={ test }/>) : (<ShowTestPage test={ test }/>) ) : (<Backdrop open={true} ><CircularProgress color="inherit" /></Backdrop>) }
-        </div>
-    );
+    if (!test || error) {
+        return <PageLoader error={error} onRetry={retry}/>;
+    }
+    return edit ? <EditTestPage test={test}/> : <ShowTestPage test={test}/>;
 };
 
 export default TestPageLoader;

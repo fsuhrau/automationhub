@@ -1,11 +1,17 @@
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../hooks/AuthProvider";
+import {Navigate, Outlet} from "react-router-dom";
+import {Backdrop, CircularProgress} from "@mui/material";
+import {useAuth} from "../hooks/AuthProvider";
 
 const PrivateRoute = () => {
-    const user = useAuth();
-    if (!user) return <Navigate to="/login" />;
-    return <Outlet />;
+    const {authState} = useAuth();
+    if (authState === 'checking') {
+        return <Backdrop sx={{zIndex: 1, color: '#fff'}} open={true}><CircularProgress color="inherit"/></Backdrop>;
+    }
+    if (authState === 'anonymous') {
+        return <Navigate to="/login"/>;
+    }
+    return <Outlet/>;
 };
 
 export default PrivateRoute;

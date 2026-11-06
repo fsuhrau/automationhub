@@ -2,6 +2,7 @@ import React from "react";
 import {Navigate, useParams} from "react-router-dom";
 import IProject from "../project/project";
 import {useHubState} from "./HubStateProvider";
+import PageLoader from "../components/PageLoader";
 
 type ProjectContextType = {
     project: IProject
@@ -38,12 +39,13 @@ export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => 
         return <Navigate to="/"/>;
     }
 
-    const project = state.projects?.find(p => p.identifier === project_identifier)
+    if (state.projects === null) {
+        // projects are still loading
+        return <PageLoader/>;
+    }
+    const project = state.projects.find(p => p.identifier === project_identifier)
     if (project === undefined) {
-        return null;
-        /*
-        return <Navigate to="/"/>
-         */
+        return <Navigate to="/"/>;
     }
 
     return (
