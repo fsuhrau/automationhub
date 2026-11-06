@@ -15,7 +15,7 @@ import { Alert } from '@mui/material';
             if (error) {
                 const timer = setTimeout(() => {
                     setError(null);
-                }, 5000); // Adjust the duration as needed (5000ms = 5 seconds)
+                }, 8000);
 
                 return () => clearTimeout(timer);
             }
@@ -42,14 +42,17 @@ import { Alert } from '@mui/material';
                     <Alert
                         severity="error"
                         color="error"
+                        role="alert"
+                        onClose={() => setError(null)}
                         style={{
-                            position: 'absolute',
+                            // fixed, so it shows wherever the page is scrolled
+                            position: 'fixed',
+                            zIndex: 1500,
                             bottom: '5%',
                             left: '50%',
                             transform: 'translateX(-50%)',
                             width: '80%',
                             maxWidth: '600px',
-                            textAlign: 'center',
                         }}>
                         {getErrorMessage(error)}
                     </Alert>
