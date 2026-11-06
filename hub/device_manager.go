@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,6 +38,9 @@ type DeviceManager struct {
 	authToken      *string
 
 	refreshSignal chan struct{}
+
+	// pushes device changes to the master; nil on the master itself
+	notifier *node.DevicesNotifier
 }
 
 func NewDeviceManager(logger *logrus.Logger, service config.Service) *DeviceManager {
@@ -116,6 +120,7 @@ func (dm *DeviceManager) Devices() (map[string][]device.Device, error) {
 func (dm *DeviceManager) Start(dev device.Device) error {
 	for _, m := range dm.deviceHandlers {
 		if m.HasDevice(dev) {
+			defer dm.notifier.Notify()
 			return m.StartDevice(dev.DeviceID())
 		}
 	}
@@ -125,6 +130,7 @@ func (dm *DeviceManager) Start(dev device.Device) error {
 func (dm *DeviceManager) Stop(dev device.Device) error {
 	for _, m := range dm.deviceHandlers {
 		if m.HasDevice(dev) {
+			defer dm.notifier.Notify()
 			return m.StopDevice(dev.DeviceID())
 		}
 	}
@@ -175,10 +181,16 @@ func (dm *DeviceManager) RegisterDevice(data device.RegisterData) (device.Device
 func (dm *DeviceManager) Run(ctx context.Context, runSocketListener bool) error {
 	dm.log.Debug("Starting device manager")
 
+	dm.notifier = node.NewDevicesNotifier(dm.masterUrl, dm.nodeIdentifier, dm.authToken, dm.deviceSnapshot)
 	for _, v := range dm.deviceHandlers {
+		if n, ok := v.(device.ChangeNotifying); ok {
+			n.SetChangeNotifier(dm.notifier.Notify)
+		}
 		v.Init(dm.masterUrl, dm.nodeIdentifier, dm.authToken)
 		v.Start()
 	}
+	// the initial list, so the master is up to date without asking
+	dm.notifier.Notify()
 
 	refreshDevicesTicker := time.NewTicker(5 * time.Second)
 	//defer refreshDevicesTicker.Stop()
@@ -209,6 +221,15 @@ func (dm *DeviceManager) refreshDeviceList() {
 			// dm.log.Errorf("refresh devices failed for manager %s: %v", m.Name(), err)
 		}
 	}
+	// handlers without OS events (simulators, editors, ...) and state changes
+	// made by sessions only show up here; the notifier sends nothing when the
+	// list is unchanged
+	dm.notifier.Notify()
+}
+
+func (dm *DeviceManager) deviceSnapshot() []*node.DeviceResponse {
+	devices, _ := dm.Devices()
+	return node.ToDevicesResponse(devices)
 }
 
 func (dm *DeviceManager) TriggerRefresh() {

@@ -21,14 +21,17 @@ import (
 )
 
 const (
-	Manager        = "node"
-	UpdateInterval = 30 * time.Second
+	Manager = "node"
+	// UpdateInterval is the safety net: nodes push every change of their
+	// device list, so the master only asks them this often.
+	UpdateInterval = 5 * time.Minute
 )
 
 type Handler struct {
 	log           *logrus.Entry
-	mu            sync.RWMutex // guards nodes
-	refreshMu     sync.Mutex   // serializes RefreshDevices
+	mu            sync.RWMutex                     // guards nodes
+	refreshMu     sync.Mutex                       // serializes RefreshDevices and node pushes
+	lastPush      map[manager.NodeIdentifier]int64 // sentAt of the last applied push per node
 	nodes         map[manager.NodeIdentifier]map[string][]device.Device
 	deviceStorage storage.Device
 	nodeManager   manager.Nodes
@@ -40,8 +43,9 @@ type Handler struct {
 
 func NewHandler(log *logrus.Logger, ds storage.Device, nm manager.Nodes, db *gorm.DB) *Handler {
 	return &Handler{
-		log:   log.WithField("Handler", "Node"),
-		nodes: make(map[manager.NodeIdentifier]map[string][]device.Device),
+		log:      log.WithField("Handler", "Node"),
+		nodes:    make(map[manager.NodeIdentifier]map[string][]device.Device),
+		lastPush: make(map[manager.NodeIdentifier]int64),
 		//devices:       make(map[string]*NodeDevice),
 		nodeManager:   nm,
 		deviceStorage: ds,
@@ -68,21 +72,39 @@ func (h *Handler) Name() string {
 	return Manager
 }
 func (h *Handler) Handle(payload events.NodeConnectedPayload) {
+	h.forgetPushes(payload.NodeIdentifier)
 	_ = h.RefreshDevices(true)
 }
 
-// devicesChangedListener refreshes immediately when a node pushes a device
-// change (the periodic refresh is only a fallback).
+// forgetPushes resets the push order of a node that (re)connected or dropped,
+// so a node whose clock went back isn't ignored afterwards.
+func (h *Handler) forgetPushes(nodeIdentifier manager.NodeIdentifier) {
+	h.refreshMu.Lock()
+	delete(h.lastPush, nodeIdentifier)
+	h.refreshMu.Unlock()
+}
+
+// devicesChangedListener applies a device list a node pushed (the periodic
+// refresh is only a safety net).
 type devicesChangedListener struct{ h *Handler }
 
-func (l devicesChangedListener) Handle(events.NodeDevicesChangedPayload) {
-	_ = l.h.RefreshDevices(true)
+func (l devicesChangedListener) Handle(payload events.NodeDevicesChangedPayload) {
+	var err error
+	if payload.Devices != nil {
+		err = l.h.UpdateNodeDevices(payload.NodeIdentifier, payload.Devices, payload.SentAt)
+	} else {
+		err = l.h.refreshNode(payload.NodeIdentifier)
+	}
+	if err != nil {
+		l.h.log.Warnf("device update of node %s: %v", payload.NodeIdentifier, err)
+	}
 }
 
 // nodeDisconnectedListener marks the devices of a lost node right away.
 type nodeDisconnectedListener struct{ h *Handler }
 
-func (l nodeDisconnectedListener) Handle(events.NodeDisconnectedPayload) {
+func (l nodeDisconnectedListener) Handle(payload events.NodeDisconnectedPayload) {
+	l.h.forgetPushes(payload.NodeIdentifier)
 	_ = l.h.RefreshDevices(true)
 }
 
@@ -165,15 +187,18 @@ func managerToPlatformType(mng string) models.PlatformType {
 	panic("manager not handled: " + mng)
 }
 
+// RefreshDevices fetches the device lists of all nodes over RPC. Nodes push
+// their changes (UpdateNodeDevices), so this runs when the master starts, when
+// a node connects or drops, and every UpdateInterval as a safety net.
 func (h *Handler) RefreshDevices(force bool) error {
 	h.refreshMu.Lock()
 	defer h.refreshMu.Unlock()
 
-	lastUpdate := time.Now().UTC()
-	if !force && h.lastUpdate.Add(UpdateInterval).After(lastUpdate) {
+	now := time.Now().UTC()
+	if !force && h.lastUpdate.Add(UpdateInterval).After(now) {
 		return nil
 	}
-	h.lastUpdate = lastUpdate
+	h.lastUpdate = now
 
 	nodes := h.nodeManager.GetNodes()
 
@@ -189,124 +214,153 @@ func (h *Handler) RefreshDevices(force bool) error {
 	}
 	h.mu.Unlock()
 
-	// nodes whose device list was fetched in this refresh
-	refreshed := make(map[manager.NodeIdentifier]bool)
-
 	for _, nodeIdentifier := range knownNodes {
-		var no models.Node
-		if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
+		if err := h.syncNode(nodeIdentifier, h.fetchNodeDevices(nodeIdentifier), now); err != nil {
 			return err
 		}
+	}
+	return nil
+}
 
-		nodeStatus, _ := h.nodeManager.GetStatus(nodeIdentifier)
-		if nodeStatus == 0 {
-			continue
+// refreshNode fetches the device list of one node over RPC (a node that
+// announced a change without sending its list).
+func (h *Handler) refreshNode(nodeIdentifier manager.NodeIdentifier) error {
+	h.refreshMu.Lock()
+	defer h.refreshMu.Unlock()
+	return h.syncNode(nodeIdentifier, h.fetchNodeDevices(nodeIdentifier), time.Now().UTC())
+}
+
+// UpdateNodeDevices applies a device list a node pushed. Pushes older than
+// the last applied one (sentAt, node clock) are dropped, and so are pushes of
+// a node that isn't connected: it is refreshed completely when it connects.
+func (h *Handler) UpdateNodeDevices(nodeIdentifier manager.NodeIdentifier, managers map[string][]device.Device, sentAt int64) error {
+	h.refreshMu.Lock()
+	defer h.refreshMu.Unlock()
+
+	if status, _ := h.nodeManager.GetStatus(nodeIdentifier); status == 0 {
+		return nil
+	}
+	if sentAt != 0 {
+		if sentAt <= h.lastPush[nodeIdentifier] {
+			return nil
 		}
+		h.lastPush[nodeIdentifier] = sentAt
+	}
+	if managers == nil {
+		managers = make(map[string][]device.Device)
+	}
+	return h.syncNode(nodeIdentifier, managers, time.Now().UTC())
+}
 
-		nodeManagerManagers, err := h.nodeManager.GetManagers(nodeIdentifier)
-		if err != nil {
-			//h.log.Errorf("unable to get manager: %v", err)
-			continue
-		}
+// fetchNodeDevices asks a node for its devices; nil when the node is not
+// connected or doesn't answer.
+func (h *Handler) fetchNodeDevices(nodeIdentifier manager.NodeIdentifier) map[string][]device.Device {
+	if status, _ := h.nodeManager.GetStatus(nodeIdentifier); status == 0 {
+		return nil
+	}
+	managers, err := h.nodeManager.GetManagers(nodeIdentifier)
+	if err != nil {
+		return nil
+	}
+	if managers == nil {
+		managers = make(map[string][]device.Device)
+	}
+	return managers
+}
 
-		refreshed[nodeIdentifier] = true
-
-		// remote calls above are done without holding the lock
-		h.mu.Lock()
-		managers := h.nodes[nodeIdentifier]
-		if managers == nil {
-			managers = make(map[string][]device.Device)
-		}
-		var devices []device.Device
-		if d1, ok := managers[Manager]; ok {
-			devices = d1
-		}
-
-		for _, devs := range nodeManagerManagers {
-
-			for _, d := range devs {
-
-				deviceID := d.DeviceID()
-
-				index := -1
-				for i, d1 := range devices {
-					if d1.DeviceID() == deviceID {
-						index = i
-						break
-					}
-				}
-				if index < 0 {
-					nd := &NodeDevice{
-						nodeId:       nodeIdentifier,
-						nodeManager:  h.nodeManager,
-						deviceName:   d.DeviceName(),
-						deviceID:     deviceID,
-						deviceOSName: d.DeviceOSName(),
-						platformType: models.PlatformType(d.PlatformType()),
-						lastUpdateAt: lastUpdate,
-					}
-					nd.UpdateDeviceInfos(d.DeviceParameter())
-					nd.deviceState = d.DeviceState()
-					dev := models.Device{
-						NodeID:           no.ID,
-						DeviceIdentifier: deviceID,
-						DeviceType:       models.DeviceType(d.DeviceType()),
-						Name:             d.DeviceName(),
-						Manager:          Manager,
-						OS:               d.DeviceOSName(),
-						PlatformType:     models.PlatformType(d.PlatformType()),
-						OSVersion:        d.DeviceOSVersion(),
-						ConnectionType:   models.ConnectionTypeNode,
-					}
-					nd.SetConfig(&dev)
-					devices = append(devices, nd)
-					h.deviceStorage.NewDevice(h.Name(), dev)
-					h.deviceStorage.Update(h.Name(), nd)
-				} else {
-					nd := devices[index].(*NodeDevice)
-					nd.deviceType = d.DeviceType()
-					nd.deviceOSName = d.DeviceOSName()
-					nd.deviceOSVersion = d.DeviceOSVersion()
-					nd.deviceName = d.DeviceName()
-					nd.deviceID = deviceID
-					nd.lastUpdateAt = lastUpdate
-					nd.deviceState = d.DeviceState()
-					nd.platformType = models.PlatformType(d.PlatformType())
-					nd.UpdateDeviceInfos(d.DeviceParameter())
-					if nd.GetConfig() == nil {
-						config, _ := h.deviceStorage.GetDevice(Manager, deviceID)
-						nd.Config = config
-					}
-					devices[index] = nd
-					h.deviceStorage.Update(h.Name(), nd)
-				}
-			}
-		}
-		managers[Manager] = devices
-		h.nodes[nodeIdentifier] = managers
-		h.mu.Unlock()
+// syncNode applies the device list of one node. nodeDevices nil means the
+// node is offline: all its devices become NodeDisconnected. Otherwise devices
+// the node no longer reports (unplugged, stopped) become RemoteDisconnected.
+// The caller holds refreshMu.
+func (h *Handler) syncNode(nodeIdentifier manager.NodeIdentifier, nodeDevices map[string][]device.Device, now time.Time) error {
+	var no models.Node
+	if err := h.db.First(&no, "identifier = ?", string(nodeIdentifier)).Error; err != nil {
+		return err
 	}
 
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	// devices missing from this refresh: either their node is offline, or the
-	// node is connected but no longer reports the device (unplugged, stopped)
-	for nodeIdentifier, managers := range h.nodes {
-		state := device.StateNodeDisconnected
-		if refreshed[nodeIdentifier] {
-			state = device.StateRemoteDisconnected
-		}
-		for _, devices := range managers {
-			for _, dev := range devices {
-				nd, ok := dev.(*NodeDevice)
-				if ok && nd.lastUpdateAt != lastUpdate {
-					nd.deviceState = state
-					h.deviceStorage.Update(h.Name(), nd)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	managers := h.nodes[nodeIdentifier]
+	if managers == nil {
+		managers = make(map[string][]device.Device)
+	}
+	devices := managers[Manager]
+
+	for _, devs := range nodeDevices {
+		for _, d := range devs {
+			deviceID := d.DeviceID()
+
+			index := -1
+			for i, d1 := range devices {
+				if d1.DeviceID() == deviceID {
+					index = i
+					break
 				}
+			}
+			if index < 0 {
+				nd := &NodeDevice{
+					nodeId:       nodeIdentifier,
+					nodeManager:  h.nodeManager,
+					deviceName:   d.DeviceName(),
+					deviceID:     deviceID,
+					deviceOSName: d.DeviceOSName(),
+					platformType: models.PlatformType(d.PlatformType()),
+					lastUpdateAt: now,
+				}
+				nd.UpdateDeviceInfos(d.DeviceParameter())
+				nd.deviceState = d.DeviceState()
+				dev := models.Device{
+					NodeID:           no.ID,
+					DeviceIdentifier: deviceID,
+					DeviceType:       models.DeviceType(d.DeviceType()),
+					Name:             d.DeviceName(),
+					Manager:          Manager,
+					OS:               d.DeviceOSName(),
+					PlatformType:     models.PlatformType(d.PlatformType()),
+					OSVersion:        d.DeviceOSVersion(),
+					ConnectionType:   models.ConnectionTypeNode,
+				}
+				nd.SetConfig(&dev)
+				devices = append(devices, nd)
+				h.deviceStorage.NewDevice(h.Name(), dev)
+				h.deviceStorage.Update(h.Name(), nd)
+			} else {
+				nd := devices[index].(*NodeDevice)
+				nd.deviceType = d.DeviceType()
+				nd.deviceOSName = d.DeviceOSName()
+				nd.deviceOSVersion = d.DeviceOSVersion()
+				nd.deviceName = d.DeviceName()
+				nd.deviceID = deviceID
+				nd.lastUpdateAt = now
+				nd.deviceState = d.DeviceState()
+				nd.platformType = models.PlatformType(d.PlatformType())
+				nd.UpdateDeviceInfos(d.DeviceParameter())
+				if nd.GetConfig() == nil {
+					config, _ := h.deviceStorage.GetDevice(Manager, deviceID)
+					nd.Config = config
+				}
+				devices[index] = nd
+				h.deviceStorage.Update(h.Name(), nd)
 			}
 		}
 	}
+	managers[Manager] = devices
+	h.nodes[nodeIdentifier] = managers
 
+	state := device.StateRemoteDisconnected
+	if nodeDevices == nil {
+		state = device.StateNodeDisconnected
+	}
+	for _, devs := range managers {
+		for _, dev := range devs {
+			nd, ok := dev.(*NodeDevice)
+			if ok && !nd.lastUpdateAt.Equal(now) {
+				nd.deviceState = state
+				h.deviceStorage.Update(h.Name(), nd)
+			}
+		}
+	}
 	return nil
 }
 

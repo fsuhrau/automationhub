@@ -33,7 +33,7 @@ type Handler struct {
 	authToken      *string
 
 	adbServerAddr string
-	notifier      *node.DevicesNotifier
+	notifyChange  func()      // set by the device manager, may be nil
 	tracking      atomic.Bool // the adb track-devices stream is connected
 	lastPoll      time.Time
 	stopWatch     context.CancelFunc
@@ -47,6 +47,17 @@ func NewHandler(ds storage.Device) *Handler {
 	}
 }
 
+// SetChangeNotifier implements device.ChangeNotifying.
+func (m *Handler) SetChangeNotifier(notify func()) {
+	m.notifyChange = notify
+}
+
+func (m *Handler) changed() {
+	if m.notifyChange != nil {
+		m.notifyChange()
+	}
+}
+
 func (m *Handler) Name() string {
 	return Manager
 }
@@ -56,7 +67,6 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 	m.init = true
 	m.masterURL = masterUrl
 	m.nodeIdentifier = nodeIdentifier
-	m.notifier = node.NewDevicesNotifier(masterUrl, nodeIdentifier, authToken)
 	defer func() {
 		m.init = false
 	}()
@@ -120,7 +130,7 @@ func (m *Handler) Start() error {
 	m.mu.Unlock()
 	go watchADBDevices(ctx, m.adbServerAddr, startADBServer, func(entries []adbDeviceEntry) {
 		m.applyDeviceList(entries)
-		m.notifier.Notify()
+		m.changed()
 	}, m.tracking.Store)
 	return err
 }

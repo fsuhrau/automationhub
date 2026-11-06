@@ -111,12 +111,7 @@ func (s *RPCNode) GetDevices(req *Void, resp *DevicesResponse) error {
 		return err
 	}
 
-	for m, devs := range devices {
-		for _, d := range devs {
-			resp.Devices = append(resp.Devices, toDeviceResponse(m, d))
-		}
-	}
-
+	resp.Devices = ToDevicesResponse(devices)
 	return nil
 }
 

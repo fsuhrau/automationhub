@@ -51,14 +51,7 @@ func (rpc *RPCClient) GetDevices() (map[string][]device.Device, error) {
 		return nil, err
 	}
 
-	var deviceMap map[string][]device.Device
-	deviceMap = make(map[string][]device.Device)
-	for _, d := range resp.Devices {
-		deviceMap[d.Manager] = append(deviceMap[d.Manager], &RPCDevice{
-			Dev: d,
-		})
-	}
-	return deviceMap, nil
+	return FromDevicesResponse(resp.Devices), nil
 }
 
 func (rpc *RPCClient) StartDevice(deviceId string) error {

@@ -60,14 +60,25 @@ type Handler struct {
 	nodeIdentifier string
 	authToken      *string
 
-	notifier  *node.DevicesNotifier
-	tracking  atomic.Bool
-	lastPoll  time.Time
-	stopWatch context.CancelFunc
+	notifyChange func() // set by the device manager, may be nil
+	tracking     atomic.Bool
+	lastPoll     time.Time
+	stopWatch    context.CancelFunc
 }
 
 func NewHandler(ds storage.Device) *Handler {
 	return &Handler{devices: make(map[string]*Device), deviceStorage: ds}
+}
+
+// SetChangeNotifier implements device.ChangeNotifying.
+func (m *Handler) SetChangeNotifier(notify func()) {
+	m.notifyChange = notify
+}
+
+func (m *Handler) changed() {
+	if m.notifyChange != nil {
+		m.notifyChange()
+	}
 }
 
 func (m *Handler) Name() string {
@@ -78,7 +89,6 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 	m.masterURL = masterUrl
 	m.nodeIdentifier = nodeIdentifier
 	m.authToken = authToken
-	m.notifier = node.NewDevicesNotifier(masterUrl, nodeIdentifier, authToken)
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
 		return err
@@ -118,7 +128,7 @@ func (m *Handler) refreshAndNotify() {
 	if err := m.RefreshDevices(true); err != nil {
 		logrus.Debugf("ios device refresh: %v", err)
 	}
-	m.notifier.Notify()
+	m.changed()
 }
 
 func (m *Handler) Stop() error {

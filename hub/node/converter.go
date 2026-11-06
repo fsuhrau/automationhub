@@ -60,3 +60,27 @@ func toDeviceResponse(manager string, dev device2.Device) *DeviceResponse {
 		PlatformType:    int32(dev.PlatformType()),
 	}
 }
+
+// ToDevicesResponse flattens a node's devices (keyed by manager) into the
+// list sent to the master, both over RPC and with a device push.
+func ToDevicesResponse(devices map[string][]device2.Device) []*DeviceResponse {
+	list := make([]*DeviceResponse, 0)
+	for m, devs := range devices {
+		for _, d := range devs {
+			list = append(list, toDeviceResponse(m, d))
+		}
+	}
+	return list
+}
+
+// FromDevicesResponse is the master side of ToDevicesResponse.
+func FromDevicesResponse(list []*DeviceResponse) map[string][]device2.Device {
+	devices := make(map[string][]device2.Device)
+	for _, d := range list {
+		if d == nil {
+			continue
+		}
+		devices[d.Manager] = append(devices[d.Manager], &RPCDevice{Dev: d})
+	}
+	return devices
+}

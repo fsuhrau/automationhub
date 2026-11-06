@@ -95,6 +95,7 @@ func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
 	}
 
 	d.devices[manager] = append(d.devices[manager], &dev)
+	events.DeviceListChanged.Trigger(events.DeviceListChangedPayload{DeviceID: dev.ID, Added: true})
 	return nil
 }
 
@@ -173,6 +174,9 @@ func (d *deviceStore) Update(manager string, dev device.Device) error {
 		return err
 	}
 
+	if needsUpdate {
+		events.DeviceListChanged.Trigger(events.DeviceListChangedPayload{DeviceID: deviceData.ID})
+	}
 	if statusUpdate {
 		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
 			DeviceID:    deviceData.ID,

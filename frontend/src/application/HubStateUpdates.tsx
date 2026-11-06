@@ -23,6 +23,8 @@ interface DeviceChanges {
 
 const BACKLOG = 50;
 
+const DEVICE_RELOAD_DEBOUNCE_MS = 200;
+
 const HubStateUpdates: React.FC<{ children: any }> = ({children}) => {
 
     const {dispatch} = useHubState()
@@ -49,12 +51,26 @@ const HubStateUpdates: React.FC<{ children: any }> = ({children}) => {
     // a node connected or disconnected: its status and its devices changed
     const nodeEvents = useSSE<number, unknown>('nodes', 0, {stateReducer: (count) => count + 1});
 
+    // a device was added or its name, OS or parameters changed (status
+    // changes come on the "devices" channel and are applied in place)
+    const deviceListEvents = useSSE<number, unknown>('device_list', 0, {stateReducer: (count) => count + 1});
+
     useEffect(() => {
-        if (reconnects === 0 && nodeEvents === 0) return;
-        getAllDevices(projectIdentifier).then(devices => {
-            dispatch({type: HubStateActions.UpdateDevices, payload: devices})
-        }).catch(() => undefined);
-    }, [reconnects, nodeEvents, projectIdentifier, dispatch]);
+        if (reconnects === 0 && nodeEvents === 0 && deviceListEvents === 0) return;
+        // a plugged in phone produces a few events at once; load the list once
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            getAllDevices(projectIdentifier).then(devices => {
+                if (!cancelled) {
+                    dispatch({type: HubStateActions.UpdateDevices, payload: devices})
+                }
+            }).catch(() => undefined);
+        }, DEVICE_RELOAD_DEBOUNCE_MS);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [reconnects, nodeEvents, deviceListEvents, projectIdentifier, dispatch]);
 
     useEffect(() => {
         getNodes(projectIdentifier).then(nodes => {
