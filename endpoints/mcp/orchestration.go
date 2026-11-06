@@ -4,18 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/runs"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"gorm.io/gorm"
@@ -184,7 +180,8 @@ func (t *tools) registerOrchestration(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "get_device", Description: "Get one device with its parameters.", Annotations: readOnly}, t.getDevice)
 	mcp.AddTool(s, &mcp.Tool{Name: "list_apps", Description: "List the apps of the project.", Annotations: readOnly}, t.listApps)
 	mcp.AddTool(s, &mcp.Tool{Name: "list_bundles", Description: "List uploaded builds (bundles) of an app, newest first.", Annotations: readOnly}, t.listBundles)
-	mcp.AddTool(s, &mcp.Tool{Name: "upload_bundle", Description: "Download a build from a URL and add it as a bundle of the app.", Annotations: writeSafe}, t.uploadBundle)
+	mcp.AddTool(s, &mcp.Tool{Name: "upload_bundle", Description: "Download a build from an http(s) URL and add it as a bundle of the app. For a local file use begin_upload.", Annotations: writeSafe}, t.uploadBundle)
+	mcp.AddTool(s, &mcp.Tool{Name: "begin_upload", Description: "Start the upload of a local build file (any size). Returns a single-use uploadUrl, valid for 30 minutes: PUT the raw file to it, e.g. curl --fail-with-body -T <file> <uploadUrl>. The PUT response is the new bundle.", Annotations: writeSafe}, t.beginUpload)
 	mcp.AddTool(s, &mcp.Tool{Name: "list_tests", Description: "List the tests of an app with their type and last run.", Annotations: readOnly}, t.listTests)
 	mcp.AddTool(s, &mcp.Tool{Name: "run_test", Description: "Start a test run on the devices of its configuration. Returns the run id immediately; use wait_for_test_run and get_test_run.", Annotations: writeSafe}, t.runTest)
 	mcp.AddTool(s, &mcp.Tool{Name: "get_test_run", Description: "Status and summary of a test run: state, results per protocol (one per device and test), and the last run log lines.", Annotations: readOnly}, t.getTestRun)
@@ -289,8 +286,8 @@ func (t *tools) uploadBundle(ctx context.Context, req *mcp.CallToolRequest, in U
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, nil, fmt.Errorf("url must be http or https")
 	}
-	name := path.Base(u.Path)
-	if name == "" || name == "/" || name == "." {
+	name, err := uploadFileName(path.Base(u.Path))
+	if err != nil {
 		return nil, nil, fmt.Errorf("url has no file name")
 	}
 
@@ -309,32 +306,13 @@ func (t *tools) uploadBundle(ctx context.Context, req *mcp.CallToolRequest, in U
 		return nil, nil, fmt.Errorf("download failed: %s", resp.Status)
 	}
 
-	if err := os.MkdirAll(apps.AppStoragePath, os.ModePerm); err != nil {
-		return nil, nil, err
-	}
-	f, err := os.CreateTemp(apps.AppStoragePath, "upload-*-"+filepath.Base(name))
+	bundle, exists, err := t.storeUpload(application, name, resp.Body)
 	if err != nil {
 		return nil, nil, err
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return nil, nil, fmt.Errorf("download failed: %w", err)
-	}
-	f.Close()
-	target := filepath.Join(apps.AppStoragePath, filepath.Base(name))
-	if err := os.Rename(f.Name(), target); err != nil {
-		os.Remove(f.Name())
-		return nil, nil, err
-	}
-
-	bundle, err := t.Backend.StoreBundle(application, target)
-	if bundle != nil && err != nil {
+	if exists {
 		// identical build exists already; report it instead of failing
 		return jsonResult(map[string]any{"exists": true, "bundle": toBundleInfo(bundle)})
-	}
-	if err != nil {
-		return nil, nil, err
 	}
 	return jsonResult(toBundleInfo(bundle))
 }

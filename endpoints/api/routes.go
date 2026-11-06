@@ -102,6 +102,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 		projectApi.POST("/mcp", s.WithProject(s.serveMCP))
 		projectApi.GET("/mcp", s.WithProject(s.serveMCP))
 		projectApi.DELETE("/mcp", s.WithProject(s.serveMCP))
+		projectApi.PUT("/mcp/uploads/:upload_id", s.WithProject(s.serveMCPUpload))
 
 		projectApi.POST("/app", s.WithProject(s.createApp))
 		projectApi.GET("/apps", s.WithProject(s.getApps))

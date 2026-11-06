@@ -74,6 +74,14 @@ const mcpUrl = (project: string) => `${window.location.origin}/api/${encodeURICo
 const mcpCommand = (project: string, token: string) =>
     `claude mcp add --transport http hub \\\n  ${mcpUrl(project)} \\\n  --header "X-Auth-Token: ${token}"`;
 
+// Dev containers must not hold the token: it goes into the host's Keychain
+// and "automationhub mcp-proxy" adds it on the host (account = master host).
+const keychainCommand = () =>
+    `security add-generic-password -U -s automationhub -a ${window.location.host} -w`;
+
+const proxyCommand = (project: string) =>
+    `automationhub mcp-proxy --upstream ${window.location.origin} --project ${project}`;
+
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const auth = useAuth();
@@ -185,7 +193,19 @@ const ProfilePage: React.FC = () => {
                                             </Select>
                                         </FormControl>
                                     </Stack>
-                                    {project && <Code>{mcpCommand(project, created.token)}</Code>}
+                                    {project && <Stack spacing={1}>
+                                        <Typography variant="body2">
+                                            <b>Dev containers</b> must not hold the token. Keep it on the host: store it in the
+                                            Keychain (the command asks for the value), then run the proxy on the host. It adds
+                                            the token to MCP requests, and the container connects to the proxy instead.
+                                        </Typography>
+                                        <Code>{keychainCommand()}</Code>
+                                        <Code>{proxyCommand(project)}</Code>
+                                        <Typography variant="body2" sx={{pt: 1}}>
+                                            Claude Code running directly on your machine (no container):
+                                        </Typography>
+                                        <Code>{mcpCommand(project, created.token)}</Code>
+                                    </Stack>}
                                 </Box>}
                             </Alert>}
 

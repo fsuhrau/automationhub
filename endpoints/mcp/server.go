@@ -25,7 +25,8 @@ const instructions = `Automation Hub runs UI tests of games on Android, iOS and 
 Orchestration: list_apps -> list_bundles/list_tests -> run_test -> wait_for_test_run -> get_test_run -> get_protocol / get_protocol_logs.
 Live control: lock_device first, then screenshot / get_hierarchy / tap / swipe / type_text / press_key, and release_device when done.
 Coordinates for tap and swipe are in device screenshot pixels (see the size reported by screenshot).
-Elements of a connected Unity app can be addressed by XPath on the scene graph from get_hierarchy.`
+Elements of a connected Unity app can be addressed by XPath on the scene graph from get_hierarchy.
+Builds: upload_bundle fetches a build from an http(s) URL; for a local file call begin_upload and PUT the file to the returned uploadUrl (e.g. curl -T).`
 
 // Backend is the part of the REST service the tools share with it.
 type Backend interface {
@@ -55,13 +56,14 @@ type Handler struct {
 
 	mu       sync.Mutex
 	projects map[uint]*mcp.StreamableHTTPHandler
+	uploads  *uploadStore
 }
 
 func NewHandler(deps Deps) *Handler {
 	if deps.Version == "" {
 		deps.Version = "dev"
 	}
-	return &Handler{deps: deps, projects: make(map[uint]*mcp.StreamableHTTPHandler)}
+	return &Handler{deps: deps, projects: make(map[uint]*mcp.StreamableHTTPHandler), uploads: newUploadStore()}
 }
 
 type callerKey struct{}
@@ -70,6 +72,13 @@ type callerKey struct{}
 // authenticated user or access token and becomes part of the lease owner.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, project *models.Project, caller string) {
 	ctx := context.WithValue(r.Context(), callerKey{}, caller)
+	// the master's own address, for upload URLs when no proxy reports one
+	r.Header.Set(originalHostHeader, r.Host)
+	if r.TLS != nil {
+		r.Header.Set(originalTLSHeader, "1")
+	} else {
+		r.Header.Del(originalTLSHeader)
+	}
 	h.forProject(project).ServeHTTP(w, r.WithContext(ctx))
 }
 
@@ -96,10 +105,11 @@ type tools struct {
 	Deps
 	project *models.Project
 	caller  string
+	uploads *uploadStore
 }
 
 func (h *Handler) newServer(project *models.Project, caller string) *mcp.Server {
-	t := &tools{Deps: h.deps, project: project, caller: caller}
+	t := &tools{Deps: h.deps, project: project, caller: caller, uploads: h.uploads}
 	server := mcp.NewServer(&mcp.Implementation{Name: "automationhub", Version: h.deps.Version}, &mcp.ServerOptions{
 		Instructions: instructions,
 		InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
