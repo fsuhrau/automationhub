@@ -71,6 +71,14 @@ func (h *Handler) Handle(payload events.NodeConnectedPayload) {
 	_ = h.RefreshDevices(true)
 }
 
+// devicesChangedListener refreshes immediately when a node pushes a device
+// change (the periodic refresh is only a fallback).
+type devicesChangedListener struct{ h *Handler }
+
+func (l devicesChangedListener) Handle(events.NodeDevicesChangedPayload) {
+	_ = l.h.RefreshDevices(true)
+}
+
 func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
 	h.init = true
 	defer func() {
@@ -78,6 +86,7 @@ func (h *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 	}()
 
 	events.NodeConnected.Register(h)
+	events.NodeDevicesChanged.Register(devicesChangedListener{h})
 
 	devs, err := h.deviceStorage.GetDevices(Manager)
 	if err != nil {
