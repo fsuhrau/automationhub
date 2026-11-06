@@ -1,13 +1,16 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (s *Service) ResolveApp(context *gin.Context) {
@@ -44,13 +47,44 @@ func (s *Service) getApps(c *gin.Context, project *models.Project) {
 	c.JSON(http.StatusOK, apps)
 }
 
+// bundleListEntry is a bundle with how many test runs used it, so the
+// bundles page can warn before deleting one that runs point to
+type bundleListEntry struct {
+	models.AppBinary
+	RunCount int64 `json:"runCount"`
+}
+
+// getBinaries lists the bundles of an app, newest first
 func (s *Service) getBinaries(c *gin.Context, project *models.Project, application *models.App) {
-	var apps []models.AppBinary
-	if err := s.db.Where("app_id = ?", application.ID).Find(&apps).Error; err != nil {
+	var bundles []models.AppBinary
+	if err := s.db.Where("app_id = ?", application.ID).Order("id desc").Find(&bundles).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, apps)
+	ids := make([]uint, len(bundles))
+	for i := range bundles {
+		ids[i] = bundles[i].ID
+	}
+	var counts []struct {
+		AppBinaryID uint
+		Runs        int64
+	}
+	if len(ids) > 0 {
+		if err := s.db.Model(&models.TestRun{}).Select("app_binary_id, count(*) as runs").
+			Where("app_binary_id IN ?", ids).Group("app_binary_id").Scan(&counts).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+	runs := map[uint]int64{}
+	for _, n := range counts {
+		runs[n.AppBinaryID] = n.Runs
+	}
+	list := make([]bundleListEntry, len(bundles))
+	for i := range bundles {
+		list[i] = bundleListEntry{AppBinary: bundles[i], RunCount: runs[bundles[i].ID]}
+	}
+	c.JSON(http.StatusOK, list)
 }
 
 /*
@@ -65,17 +99,37 @@ func (s *Service) getApp(c *gin.Context) {
 }
 */
 
+// bundleFile is the stored file of a bundle, or "" when the bundle has none
+// or its path would leave the storage folder. An empty AppPath used to make
+// a delete remove the whole folder, with every bundle in it.
+func bundleFile(appPath string) string {
+	if appPath == "" {
+		return ""
+	}
+	root := filepath.Clean(apps.AppStoragePath)
+	file := filepath.Join(root, appPath)
+	if file == root || !strings.HasPrefix(file, root+string(filepath.Separator)) {
+		return ""
+	}
+	return file
+}
+
 func (s *Service) deleteBinary(c *gin.Context, project *models.Project, application *models.App) {
 	binaryId := c.Param("binary_id")
 	var binary models.AppBinary
 	if err := s.db.First(&binary, "app_id = ? and id = ?", application.ID, binaryId).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.error(c, http.StatusNotFound, fmt.Errorf("bundle %s not found", binaryId))
+		} else {
+			s.error(c, http.StatusInternalServerError, err)
+		}
 		return
 	}
-	appPath := filepath.Join(apps.AppStoragePath, binary.AppPath)
-	if err := os.RemoveAll(appPath); err != nil {
-		s.error(c, http.StatusInternalServerError, err)
-		return
+	if file := bundleFile(binary.AppPath); file != "" {
+		if err := os.RemoveAll(file); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	if err := s.db.Delete(&binary).Error; err != nil {
@@ -183,20 +237,43 @@ func (s *Service) updateAppParameter(c *gin.Context, project *models.Project, ap
 	c.JSON(http.StatusOK, application)
 }
 
+// normalizeTags trims the comma separated tags and drops empty and repeated ones
+func normalizeTags(tags string) string {
+	var out []string
+	seen := map[string]bool{}
+	for _, t := range strings.Split(tags, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" && !seen[t] {
+			seen[t] = true
+			out = append(out, t)
+		}
+	}
+	return strings.Join(out, ",")
+}
+
+// updateBinary changes the tags of a bundle; nothing else of a bundle is
+// editable
 func (s *Service) updateBinary(c *gin.Context, project *models.Project, application *models.App) {
-	binaryId := c.Param("binary_id")
-
-	var newApp models.AppBinary
-	c.Bind(&newApp)
-
-	var binary models.AppBinary
-	if err := s.db.Find(&binary, "app_id = ? and id = ?", application.ID, binaryId).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+	var req struct {
+		Tags string `json:"tags"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		s.error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	binary.Tags = newApp.Tags
-	if err := s.db.Save(&binary).Error; err != nil {
+	var binary models.AppBinary
+	if err := s.db.First(&binary, "app_id = ? and id = ?", application.ID, c.Param("binary_id")).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.error(c, http.StatusNotFound, fmt.Errorf("bundle %s not found", c.Param("binary_id")))
+		} else {
+			s.error(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	binary.Tags = normalizeTags(req.Tags)
+	if err := s.db.Model(&binary).Update("tags", binary.Tags).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

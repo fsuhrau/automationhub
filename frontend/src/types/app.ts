@@ -47,6 +47,8 @@ export interface IAppBinaryData {
     hash: string,
     size: number,
     tags: string,
+    // how many test runs used the bundle (in the bundle list)
+    runCount?: number,
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date,

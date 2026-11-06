@@ -30,8 +30,9 @@ export const removeAppParameter = (projectId: string, appId: number, id: number)
     return http.delete(`/${projectId}/app/${appId}/parameter/${id}`).then(resp => resp.data)
 };
 
-export const updateAppBundle = (projectId: string, appId: number, id: number, data: IAppBinaryData): Promise<IAppBinaryData> => {
-    return http.put(`/${projectId}/app/${appId}/bundle/${id}`, data).then(resp => resp.data)
+// updateBundleTags sets the comma separated tags of a bundle
+export const updateBundleTags = (projectId: string, appId: number, id: number, tags: string): Promise<IAppBinaryData> => {
+    return http.put(`/${projectId}/app/${appId}/bundle/${id}`, {tags}).then(resp => resp.data)
 };
 
 export const deleteAppBundle = (projectId: string, appId: number, id: number): Promise<void> => {
@@ -78,4 +79,17 @@ export const uploadNewApp = (file: File,
     }).catch(ex => {
         alert(ex)
     });
+};
+// uploadBundle uploads a build; onProgress gets 0..1 while the file is sent,
+// then the master reads the file before it answers with the bundle. An
+// identical file uploaded before is a 409.
+export const uploadBundle = (file: File, projectId: string, appId: number, onProgress: (sent: number) => void): Promise<IAppBinaryData> => {
+    const formData = new FormData();
+    formData.append('test_target', file);
+    return http.post(`/${projectId}/app/${appId}/upload`, formData, {
+        headers: {'Content-Type': 'multipart/form-data'},
+        onUploadProgress: e => {
+            if (e.total) onProgress(e.loaded / e.total);
+        },
+    }).then(resp => resp.data);
 };
