@@ -3,6 +3,7 @@ import {Navigate, useParams} from "react-router-dom";
 import IProject from "../project/project";
 import {useHubState} from "./HubStateProvider";
 import PageLoader from "../components/PageLoader";
+import {rememberProject} from "../project/projectsModel";
 
 type ProjectContextType = {
     project: IProject
@@ -47,6 +48,9 @@ export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => 
     if (project === undefined) {
         return <Navigate to="/"/>;
     }
+
+    // the projects page lists the last opened project first
+    rememberProject(project.identifier);
 
     return (
         <ProjectContext.Provider value={{

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/net/html"
+	"gorm.io/gorm"
 	"net/http"
 	"strings"
 )
@@ -36,38 +36,72 @@ func (s *Service) getProjects(c *gin.Context) {
 	c.JSON(http.StatusOK, projects)
 }
 
-func (s *Service) createProject(c *gin.Context) {
-	var request models.Project
+// projectSlug turns a name into an identifier that is safe in URLs: lower
+// case letters, digits and single dashes
+func projectSlug(name string) string {
+	var b strings.Builder
+	dash := false
+	for _, r := range strings.ToLower(name) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+			dash = false
+		case b.Len() > 0 && !dash:
+			b.WriteByte('-')
+			dash = true
+		}
+	}
+	slug := strings.TrimSuffix(b.String(), "-")
+	if len(slug) > 48 {
+		slug = strings.TrimSuffix(slug[:48], "-")
+	}
+	if slug == "" {
+		slug = "project"
+	}
+	return slug
+}
 
-	if err := c.Bind(&request); err != nil {
+// createProject creates a project from its name. Only the name is taken
+// from the request: binding the whole project let a request create access
+// tokens and apps along with it. The identifier is derived from the name
+// and made unique; deleted projects keep theirs, so old links don't lead
+// to a new project.
+func (s *Service) createProject(c *gin.Context) {
+	var request struct {
+		Name string `json:"name"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
-
-	request.Name = strings.TrimSpace(request.Name)
-
-	if len(request.Name) == 0 {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("missing name"))
+	name := strings.TrimSpace(request.Name)
+	if name == "" {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("the project needs a name"))
 		return
 	}
 
-	request.Identifier = html.EscapeString(strings.ToLower(strings.Replace(request.Name, " ", "-", -1)))
-
-	tx := s.db.Begin()
-	defer func() {
-		if tx.Error != nil {
-			tx.Rollback()
+	project := models.Project{Name: name}
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		base := projectSlug(name)
+		project.Identifier = base
+		for i := 2; ; i++ {
+			var taken int64
+			if err := tx.Unscoped().Model(&models.Project{}).Where("identifier = ?", project.Identifier).Count(&taken).Error; err != nil {
+				return err
+			}
+			if taken == 0 {
+				break
+			}
+			project.Identifier = fmt.Sprintf("%s-%d", base, i)
 		}
-	}()
-
-	if err := tx.Create(&request).Error; err != nil {
+		return tx.Create(&project).Error
+	})
+	if err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	tx.Commit()
-
-	c.JSON(http.StatusOK, request)
+	c.JSON(http.StatusCreated, project)
 }
 
 func (s *Service) updateProject(c *gin.Context) {
