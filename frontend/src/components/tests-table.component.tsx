@@ -4,17 +4,17 @@ import ITestData from '../types/test';
 import {executeTest, getAllTests} from '../services/test.service';
 import {
     Button,
-    ButtonGroup,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     MenuItem,
     Select,
+    Stack,
     TextField,
     Typography,
 } from '@mui/material';
-import {PlayArrow} from '@mui/icons-material';
+import {History, PlayArrow} from '@mui/icons-material';
 import BinarySelection from './binary-selection.component';
 import {useNavigate} from 'react-router-dom';
 import {PlatformType} from '../types/platform.type.enum';
@@ -91,17 +91,22 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
         navigate(route)
     }
 
+    const testUrl = (id: number) => `/project/${projectIdentifier}/app:${appId}/test/${id}`;
+
+    // the row opens the test; the buttons are the shortcuts from the list
     const renderActions = (id: number) => {
-        return <ButtonGroup variant={"text"} aria-label="text button group">
-            <Button size="small"
-                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}`)}>Show</Button>
-            <Button size="small"
-                    onClick={() => navigateAction(`/project/${projectIdentifier}/app:${appId}/test/${id}/runs/last`)}>Protocol</Button>
-            <Button size="small" endIcon={<PlayArrow/>} onClick={() => {
+        return <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center" sx={{height: '100%'}}>
+            <Button size="small" variant="text" startIcon={<History/>}
+                    onClick={e => {
+                        e.stopPropagation();
+                        navigateAction(`${testUrl(id)}/runs/last`);
+                    }}>Last run</Button>
+            <Button size="small" variant="outlined" startIcon={<PlayArrow/>} onClick={e => {
+                e.stopPropagation();
                 setTestRunState(prevState => ({...prevState, testId: id}))
                 handleRunClickOpen();
             }}>Run</Button>
-        </ButtonGroup>;
+        </Stack>;
     }
 
     const columns: GridColDef[] = [
@@ -109,7 +114,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             field: 'name',
             headerName: 'Name',
             flex: 1.5,
-            minWidth: 300
+            minWidth: 220
         },
         {
             field: 'type',
@@ -122,7 +127,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             field: 'execution',
             headerName: 'Execution',
             flex: 0.5,
-            minWidth: 90,
+            minWidth: 140,
             renderCell: (params) => renderChip(params.value as any),
         },
         {
@@ -146,8 +151,9 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             headerName: '',
             headerAlign: 'right',
             align: 'right',
+            sortable: false,
             flex: 1,
-            minWidth: 100,
+            minWidth: 200,
             renderCell: (params) => renderActions(params.value as any),
         },
     ];
@@ -273,7 +279,7 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                         <Grid size={12} container={true}>
                             {uiState.app !== null && uiState.app.parameter.map((p, i) => {
                                 if (p.type.type === 'string') return (
-                                    <>
+                                    <React.Fragment key={p.name}>
                                         <Grid size={4}>
                                             {p.name}
                                         </Grid>
@@ -283,10 +289,10 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                                        value={testRunState.envParams[i].value}
                                                        onChange={e => handleParameterChange(i, e.target.value)}/>
                                         </Grid>
-                                    </>
+                                    </React.Fragment>
                                 );
                                 if (p.type.type === 'option') return (
-                                    <>
+                                    <React.Fragment key={p.name}>
                                         <Grid size={4}>
                                             {p.name}
                                         </Grid>
@@ -298,11 +304,11 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
                                                 onChange={e => handleParameterChange(i, e.target.value)}>
                                                 {
                                                     (p.type as AppParameterOption).options.map(o => (
-                                                        <MenuItem value={o}>{o}</MenuItem>))
+                                                        <MenuItem key={o} value={o}>{o}</MenuItem>))
                                                 }
                                             </Select>
                                         </Grid>
-                                    </>);
+                                    </React.Fragment>);
                                 return null;
                             })}
                         </Grid>
@@ -322,6 +328,9 @@ const TestsTable: React.FC<TestTableProps> = (props: TestTableProps) => {
             </Dialog>
             <DataGrid
                 disableRowSelectionOnClick
+                onRowClick={params => navigateAction(testUrl(params.id as number))}
+                sx={{'& .MuiDataGrid-row': {cursor: 'pointer'}}}
+                localeText={{noRowsLabel: 'No tests yet. Create one with "New test".'}}
                 rows={gridData}
                 columns={columns}
                 getRowClassName={(params) =>

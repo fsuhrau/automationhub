@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import Chip from "@mui/material/Chip";
+import {useNavigate} from "react-router-dom";
 import {TestResultState} from "../types/test.result.state.enum";
 import {getTestStatusChipColor, getTestStatusText} from "../helper/TestStatusHelper";
 
@@ -11,9 +12,9 @@ function renderStatus(status: TestResultState) {
 export const columns: GridColDef[] = [
     {
         field: 'name',
-        headerName: 'test name',
+        headerName: 'Test',
         flex: 1.5,
-        minWidth: 300
+        minWidth: 220
         /*
                                                     <Link
                                                 href={`/project/${projectId}/app/${data.testRun.test.appId}/test/4/run/${data.testRunId}/${data.id}`}
@@ -23,6 +24,12 @@ export const columns: GridColDef[] = [
                                             {data.device && (data.device.alias.length > 0 ? data.device.alias : data.device.name)}
 
          */
+    },
+    {
+        field: 'device',
+        headerName: 'Device',
+        flex: 1,
+        minWidth: 140,
     },
     {
         field: 'result',
@@ -84,6 +91,9 @@ export interface ProjectDashboardTestResultsData {
     mem: string,
     cpu: string,
     time: string,
+    device: string,
+    // the protocol page of the result, if the test is known
+    link: string | null,
 }
 
 export type ProjectDashboardTestResultsDataGridProps = {
@@ -92,14 +102,19 @@ export type ProjectDashboardTestResultsDataGridProps = {
 
 export default function ProjectDashboardTestResultsDataGrid(props: ProjectDashboardTestResultsDataGridProps) {
     const {data} = props;
+    const navigate = useNavigate();
     return (
         <DataGrid
             autoHeight
+            disableRowSelectionOnClick
+            onRowClick={params => params.row.link && navigate(params.row.link)}
+            getRowClassName={(params) =>
+                `${params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'}${params.row.link ? ' linked' : ''}`
+            }
+            sx={{'& .MuiDataGrid-row.linked': {cursor: 'pointer'}}}
+            localeText={{noRowsLabel: 'No test runs yet. Start one from Tests.'}}
             rows={data}
             columns={columns}
-            getRowClassName={(params) =>
-                params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
-            }
             initialState={{
                 pagination: {paginationModel: {pageSize: 20}},
             }}

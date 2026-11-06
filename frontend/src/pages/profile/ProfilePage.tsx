@@ -26,12 +26,12 @@ import {
     Typography,
 } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import {ArrowBack, ContentCopy} from '@mui/icons-material';
+import {ContentCopy} from '@mui/icons-material';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import {LocalizationProvider, MobileDatePicker} from '@mui/x-date-pickers';
 import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, {Dayjs} from 'dayjs';
-import ColorModeSelect from '../../shared-theme/ColorModeSelect';
+import TopBar from '../../components/TopBar';
 import DateTime from '../../components/DateTime';
 import {useAuth} from '../../hooks/AuthProvider';
 import {useError} from '../../ErrorProvider';
@@ -146,12 +146,9 @@ const ProfilePage: React.FC = () => {
     return (
         <>
             <CssBaseline enableColorScheme/>
-            <ColorModeSelect sx={{position: 'fixed', top: '1rem', right: '1rem'}}/>
+            <TopBar/>
             <Box sx={{maxWidth: 1000, mx: 'auto', px: 2, py: 4}}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{mb: 3}}>
-                    <IconButton onClick={() => navigate(-1)} aria-label="back"><ArrowBack/></IconButton>
-                    <Typography variant="h5" component="h1">Profile</Typography>
-                </Stack>
+                <Typography variant="h5" component="h1" sx={{mb: 3}}>Profile</Typography>
 
                 {auth.authState === 'disabled' && <Alert severity="info">
                     This master runs without authentication, so there are no user accounts or personal tokens.
@@ -244,7 +241,7 @@ const ProfilePage: React.FC = () => {
                                                 <TableCell>{t.expiresAt ? <DateTime format="YYYY/MM/DD" value={t.expiresAt}/> : 'Never'}</TableCell>
                                                 <TableCell align="right">
                                                     <Tooltip title="Revoke">
-                                                        <IconButton size="small" color="secondary" onClick={() => setRevoke(t)}><DeleteForeverIcon/></IconButton>
+                                                        <Tooltip title="Revoke"><IconButton size="small" color="secondary" aria-label={`Revoke ${t.name}`} onClick={() => setRevoke(t)}><DeleteForeverIcon/></IconButton></Tooltip>
                                                     </Tooltip>
                                                 </TableCell>
                                             </TableRow>)}

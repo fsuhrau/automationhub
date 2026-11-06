@@ -9,9 +9,8 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    FormControlLabel,
+    Chip,
     Stack,
-    Switch,
     TextField,
     Typography,
 } from '@mui/material';
@@ -24,25 +23,7 @@ import DevicesTable from "./DevicesTable";
 import {useHubState} from "../hooks/HubStateProvider";
 import {HubStateActions} from "../application/HubState";
 import {getPlatformName, PlatformType} from "../types/platform.type.enum";
-
-// device platforms an app of the given platform runs on
-const devicePlatformsFor = (appPlatform: PlatformType): PlatformType[] => {
-    switch (appPlatform) {
-        case PlatformType.iOS:
-            return [PlatformType.iOS, PlatformType.IOSSimulator];
-        default:
-            return [appPlatform];
-    }
-};
-
-const selectedAppId = (): number | null => {
-    try {
-        const value = localStorage.getItem('appId');
-        return value ? Number(value) : null;
-    } catch {
-        return null;
-    }
-};
+import PlatformTypeIcon from "./PlatformTypeIcon";
 
 const NodeDevices: React.FC = () => {
 
@@ -57,12 +38,14 @@ const NodeDevices: React.FC = () => {
     const [envParameter, setEnvParameter] = useState<string>('');
 
     const [open, setOpen] = useState(false);
-    const [showAll, setShowAll] = useState(false);
 
-    // only devices matching the selected app's platform, unless "all" is on
-    const selectedApp = state.apps?.find(a => a.id === selectedAppId());
-    const platforms = selectedApp ? devicePlatformsFor(selectedApp.platform) : null;
-    const devices = (state.devices ?? []).filter(d => showAll || platforms === null || platforms.includes(d.platformType));
+    // the device pool belongs to the project, not to an app, so the filter is
+    // on the page and visible instead of following the app picked in the menu
+    const [platform, setPlatform] = useState<PlatformType | 'all'>('all');
+    const allDevices = state.devices ?? [];
+    const platformCounts = _.countBy(allDevices, d => d.platformType);
+    const platforms = Object.keys(platformCounts).map(Number).sort((a, b) => a - b) as PlatformType[];
+    const devices = allDevices.filter(d => platform === 'all' || d.platformType === platform);
     const handleClickOpen = (): void => {
         setOpen(true);
     };
@@ -164,14 +147,24 @@ const NodeDevices: React.FC = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-            {selectedApp && <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={2} sx={{px: 1}}>
-                <Typography variant="body2" color="text.secondary">
-                    {showAll ? 'All devices' : `${getPlatformName(selectedApp.platform)} devices for ${selectedApp.name}`}
-                </Typography>
-                <FormControlLabel control={<Switch size="small" checked={showAll} onChange={(_, v) => setShowAll(v)}/>}
-                                  label="All platforms"/>
+            {platforms.length > 1 && <Stack direction="row" alignItems="center" spacing={1} useFlexGap
+                                           sx={{flexWrap: 'wrap'}} role="group" aria-label="Filter by platform">
+                <Chip label={`All (${allDevices.length})`} size="small"
+                      color={platform === 'all' ? 'primary' : 'default'}
+                      variant={platform === 'all' ? 'filled' : 'outlined'}
+                      onClick={() => setPlatform('all')}/>
+                {platforms.map(p => <Chip key={p} size="small"
+                                          icon={<PlatformTypeIcon platformType={p} fontSize="small"/>}
+                                          label={`${getPlatformName(p)} (${platformCounts[p]})`}
+                                          color={platform === p ? 'primary' : 'default'}
+                                          variant={platform === p ? 'filled' : 'outlined'}
+                                          onClick={() => setPlatform(p)}/>)}
             </Stack>}
-            {devices.length === 0 && <Typography variant="body2" sx={{p: 2}}>No matching devices.</Typography>}
+            {state.devices !== null && allDevices.length === 0 &&
+                <Typography variant="body2" color="text.secondary" sx={{p: 2}}>
+                    No devices yet. Devices show up here when a node or the master detects them
+                    (for example an Android phone connected over USB).
+                </Typography>}
             {
                 getSortedGroups(getGroups(devices)).map(([group, items]) => {
                     return (

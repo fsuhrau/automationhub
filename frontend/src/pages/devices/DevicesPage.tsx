@@ -1,8 +1,6 @@
 import React, {useEffect} from 'react';
 import DeviceTableComponent from '../../components/NodeDevices';
-import {useNavigate} from 'react-router-dom';
 import {Box} from "@mui/system";
-import Grid from "@mui/material/Grid";
 import {TitleCard} from "../../components/title.card.component";
 import {getNodes} from "../../services/settings.service";
 import {HubStateActions} from "../../application/HubState";
@@ -11,7 +9,6 @@ import {useHubState} from "../../hooks/HubStateProvider";
 import {useError} from "../../ErrorProvider";
 
 const DevicesPage: React.FC = () => {
-    const navigate = useNavigate();
     const {dispatch} = useHubState()
     const {setError} = useError()
     const {projectIdentifier} = useProjectContext()
@@ -29,20 +26,9 @@ const DevicesPage: React.FC = () => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={'Nodes'}>
-                <Grid container={true}>
-                    <Grid size={{xs: 6}} container={true} sx={{
-                        padding: 2,
-                    }}>
-                    </Grid>
-                    <Grid size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
-                        padding: 1,
-                    }}>
-                    </Grid>
-                    <Grid size={{xs: 12}}>
-                        <DeviceTableComponent/>
-                    </Grid>
-                </Grid>
+            <TitleCard title={'Device Pool'}
+                       subtitle={'All devices of the project, grouped by the node they are connected to. Open a device for its details, or take live control of it.'}>
+                <DeviceTableComponent/>
             </TitleCard>
         </Box>
     );

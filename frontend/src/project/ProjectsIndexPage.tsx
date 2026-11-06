@@ -8,7 +8,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import {styled} from "@mui/material/styles";
 import MuiCard from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
-import ColorModeSelect from "../shared-theme/ColorModeSelect";
+import TopBar from "../components/TopBar";
 import {HubStateActions} from "../application/HubState";
 import {Box} from "@mui/system";
 import PlatformTypeIcon from "../components/PlatformTypeIcon";
@@ -33,8 +33,6 @@ const Card = styled(MuiCard)(({theme}) => ({
 }));
 
 const ProjectContainer = styled(Stack)(({theme}) => ({
-    height: 'calc((1 - var(--template-frame-height, 0)) * 100dvh)',
-    minHeight: '100%',
     padding: theme.spacing(2),
     [theme.breakpoints.up('sm')]: {
         padding: theme.spacing(4),
@@ -90,14 +88,16 @@ const ProjectsIndexPage: React.FC = (props: any) => {
     return (
         <>
             <CssBaseline enableColorScheme/>
-            <ColorModeSelect sx={{position: 'fixed', top: '1rem', right: '1rem'}}>
-            </ColorModeSelect>
+            <TopBar/>
             <ProjectContainer justifyContent="space-between">
-                <Grid size={12} container={true} spacing={2}>
+                <Grid size={12} container={true} spacing={2} alignContent="flex-start" sx={{width: '100%', maxWidth: 1700, mx: 'auto'}}>
                     <Grid size={12}>
                         <Typography variant={"h5"} component="h1">Your Projects</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Pick a project to see its apps, tests and devices.
+                        </Typography>
                     </Grid>
-                    <Grid container={true} size={12} alignItems={"center"} justifyContent={"center"} sx={{height: '100%'}}>
+                    <Grid container={true} size={12} spacing={2} alignItems={"stretch"} justifyContent={"flex-start"}>
                         <Grid size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                             <Card variant="outlined" onClick={handleCreateNewProject}>
                                 <ButtonBase sx={{width: '100%', padding: 2, minHeight: 140, display: 'block', textAlign: 'left'}}>

@@ -37,7 +37,7 @@ export default function OptionsMenu() {
     return (
         <React.Fragment>
             <MenuButton
-                aria-label="Open menu"
+                aria-label="Account menu"
                 onClick={handleClick}
                 sx={{borderColor: 'transparent'}}
             >
@@ -63,11 +63,8 @@ export default function OptionsMenu() {
                     },
                 }}
             >
-                <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
-                <MenuItem onClick={handleClose}>My account</MenuItem>
-                {auth.user?.role === "admin" && <Divider/> }
-                {auth.user?.role === "admin" && <MenuItem onClick={handleClose}>Add another account</MenuItem> }
-                {auth.user?.role === "admin" && <MenuItem onClick={handleClose}>Settings</MenuItem>}
+                <MenuItem onClick={() => navigate('/profile')}>Profile and access tokens</MenuItem>
+                <MenuItem onClick={() => navigate('/')}>All projects</MenuItem>
                 <Divider/>
                 <MenuItem
                     onClick={handleLogout}

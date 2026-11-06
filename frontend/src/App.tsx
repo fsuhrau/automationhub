@@ -1,4 +1,4 @@
-import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
+import {BrowserRouter as Router, Navigate, Route, Routes} from "react-router-dom";
 import SignIn from "./pages/sign-in/SignIn";
 import PrivateRoute from "./router/PrivateRoute";
 import SignUp from "./pages/sign-up/SignUp";
@@ -62,8 +62,9 @@ function App(props: any) {
                                                    element={<HubMainLayout/>}>
                                                 <Route path={":project_identifier"}
                                                        element={<ProjectDashboard/>}/>
+                                                {/* the overview is a project page; old app links lead there */}
                                                 <Route path={":project_identifier/:appId/home"}
-                                                       element={<ProjectDashboard/>}/>
+                                                       element={<Navigate to={"../.."} relative={"path"} replace/>}/>
                                                 <Route path={":project_identifier/:appId"}
                                                        element={<ApplicationPage/>}>
                                                     <Route path={'bundles'}

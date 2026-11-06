@@ -65,12 +65,12 @@ export default function AppNavbar() {
             sx={{ justifyContent: 'center', mr: 'auto' }}
           >
             <CustomIcon />
-            <Typography variant="h4" component="h1" sx={{ color: 'text.primary' }}>
-              Dashboard
+            <Typography variant="h4" component="div" sx={{ color: 'text.primary' }}>
+              Automation Hub
             </Typography>
           </Stack>
           <ColorModeIconDropdown />
-          <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
+          <MenuButton aria-label="Open navigation" onClick={toggleDrawer(true)}>
             <MenuRoundedIcon />
           </MenuButton>
           <SideMenuMobile open={open} toggleDrawer={toggleDrawer} />

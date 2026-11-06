@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import Grid from '@mui/material/Grid';
+import CardActionArea from '@mui/material/CardActionArea';
+import {useNavigate} from 'react-router-dom';
 import {Box} from '@mui/system';
 import {getHubStats} from '../../services/hub.stats.service';
 import {useProjectContext} from "../../hooks/ProjectProvider";
@@ -15,9 +17,11 @@ import {byteFormat} from "../tests/value_formatter";
 const ProjectDashboard: React.FC = () => {
 
     const {projectIdentifier} = useProjectContext();
+    const navigate = useNavigate();
+    const base = `/project/${projectIdentifier}`;
     const {setError} = useError()
 
-    const [stats, setStats] = useState<StatCardProps[]>([]);
+    const [stats, setStats] = useState<(StatCardProps & { to?: string })[]>([]);
     const [resultData, setResultData] = useState<ProjectDashboardTestResultsData[]>([]);
 
     useEffect(() => {
@@ -26,15 +30,18 @@ const ProjectDashboard: React.FC = () => {
                 setStats([{
                     title: 'Apps',
                     value: state.appsCount.toString(),
+                    to: `${base}/settings`,
                 }, {
                     title: 'App Storage',
                     value: byteFormat(state.appsStorageSize),
                 }, {
                     title: 'Devices',
                     value: state.deviceCount.toString(),
+                    to: `${base}/devices`,
                 }, {
                     title: 'Booted',
                     value: state.deviceBooted.toString(),
+                    to: `${base}/devices`,
                 },
                 ]);
                 setResultData(state.testsLastProtocols.map(d => {
@@ -47,6 +54,10 @@ const ProjectDashboard: React.FC = () => {
                         mem: (+d.avgMem).toFixed(0),
                         cpu: (+d.avgCpu).toFixed(0),
                         time: duration(d.createdAt, d.endedAt),
+                        device: d.device ? (d.device.alias?.length > 0 ? d.device.alias : d.device.name) : '',
+                        link: d.testRun?.test
+                            ? `${base}/app:${d.testRun.test.appId}/test/${d.testRun.testId}/run/${d.testRunId}/${d.id}`
+                            : null,
                     }
                 }));
             }).catch(e => {
@@ -57,16 +68,21 @@ const ProjectDashboard: React.FC = () => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={'Overview'}>
+            <TitleCard title={'Overview'} subtitle={'The project at a glance. Pick an app in the menu for its tests and bundles.'}>
                 <Grid
                     container
                     spacing={2}
                     columns={12}
                     sx={{mb: (theme) => theme.spacing(2)}}
                 >
-                    {stats.map((card, index) => (
+                    {stats.map(({to, ...card}, index) => (
                         <Grid key={index} size={{xs: 12, sm: 6, lg: 3}}>
-                            <StatCard {...card} />
+                            {to
+                                ? <CardActionArea onClick={() => navigate(to)} sx={{borderRadius: 1, height: '100%'}}
+                                                  aria-label={`${card.title}: open`}>
+                                    <StatCard {...card} />
+                                </CardActionArea>
+                                : <StatCard {...card} />}
                         </Grid>
                     ))}
                     {/*
@@ -83,9 +99,9 @@ const ProjectDashboard: React.FC = () => {
                 </Grid>
             </TitleCard>
 
-            <TitleCard title={'Details'}>
+            <TitleCard title={'Latest test results'} subtitle={'Open a result for its protocol.'}>
                 <Grid container spacing={2} columns={12}>
-                    <Grid size={{xs: 12, lg: 9}}>
+                    <Grid size={{xs: 12}}>
                         <ProjectDashboardTestResultsDataGrid data={resultData}/>
                     </Grid>
                 </Grid>

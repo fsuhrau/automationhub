@@ -1,5 +1,5 @@
 import React from 'react';
-import {Button, ButtonGroup, Stack,} from '@mui/material';
+import {Button, IconButton, Stack, Tooltip} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import IDeviceData from '../types/device';
 import Grid from '@mui/system/Grid';
@@ -23,34 +23,42 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
     const navigate = useNavigate();
     const {projectIdentifier} = useProjectContext();
 
+    // every action is labelled; the row itself opens the device details
+    const stop = (e: React.MouseEvent, action: () => void) => {
+        e.stopPropagation();
+        action();
+    };
     const renderActions = (device: any) => {
-        return <ButtonGroup variant={"text"} aria-label="text button group">
+        return <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center" sx={{height: '100%'}}>
             {device.dev && (
-                <Button color="primary" size="small" title="Live control"
-                        onClick={() => navigate(`/project/${projectIdentifier}/device/${device.id}/control`)}>
-                    <ScreenShare/>
-                </Button>)
+                <Tooltip title="Live control: see the screen and use the device">
+                    <IconButton size="small" color="primary" aria-label="Live control"
+                                onClick={e => stop(e, () => navigate(`/project/${projectIdentifier}/device/${device.id}/control`))}>
+                        <ScreenShare fontSize="small"/>
+                    </IconButton>
+                </Tooltip>)
             }
             {device.isLocked && (
-                <Button color="primary" size="small" variant="outlined"
-                        endIcon={<LockOpen/>}
-                        onClick={(e) => onUnlockDevice(device.id)}>
-                </Button>)
+                <Tooltip title="Unlock: end the test run or control session that holds the device">
+                    <IconButton size="small" color="warning" aria-label="Unlock device"
+                                onClick={e => stop(e, () => onUnlockDevice(device.id))}>
+                        <LockOpen fontSize="small"/>
+                    </IconButton>
+                </Tooltip>)
             }
             {device.connection && (
-                <Button color="primary" size="small" variant="outlined"
-                        endIcon={<PlayArrow/>}
-                        onClick={(e) => onSelectForRun(device.id)}>
+                <Button color="primary" size="small" variant="outlined" startIcon={<PlayArrow/>}
+                        onClick={e => stop(e, () => onSelectForRun(device.id))}>
                     Run
                 </Button>)
             }
-            <Button color="primary" size={'small'}
-                    onClick={(e) => {
-                        onOpenDeviceDetails(device.id);
-                    }}>
-                <ArrowForward/>
-            </Button>
-        </ButtonGroup>
+            <Tooltip title="Details">
+                <IconButton size="small" aria-label="Device details"
+                            onClick={e => stop(e, () => onOpenDeviceDetails(device.id))}>
+                    <ArrowForward fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+        </Stack>
     }
 
     const columns: GridColDef[] = [
@@ -95,20 +103,13 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
                 </Stack>),
         },
         {
-            field: 'session',
-            headerName: 'Session',
-            headerAlign: 'right',
-            align: 'right',
-            flex: 0.5,
-            minWidth: 90,
-        },
-        {
             field: 'actions',
             headerName: '',
             headerAlign: 'right',
             align: 'right',
+            sortable: false,
             flex: 1,
-            minWidth: 100,
+            minWidth: 160,
             renderCell: (params) => renderActions(params.row),
         },
     ];
@@ -116,6 +117,8 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
     return (
         <DataGrid
             disableRowSelectionOnClick
+            onRowClick={params => onOpenDeviceDetails(params.id as number)}
+            sx={{'& .MuiDataGrid-row': {cursor: 'pointer'}}}
             rows={devices}
             columns={columns}
             getRowClassName={(params) =>

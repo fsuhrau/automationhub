@@ -1,53 +1,32 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import TestsTable from '../../components/tests-table.component';
 import {useNavigate} from 'react-router-dom';
 import {useProjectContext} from "../../hooks/ProjectProvider";
 import {TitleCard} from "../../components/title.card.component";
 import {useApplicationContext} from "../../hooks/ApplicationProvider";
 import {Box} from "@mui/system";
-import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
+import {AddRounded} from "@mui/icons-material";
 import {useHubState} from "../../hooks/HubStateProvider";
 
 const TestsIndexPage: React.FC = () => {
 
-    const {project, projectIdentifier} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
     const {state} = useHubState();
-
     const {appId} = useApplicationContext();
-
     const navigate = useNavigate();
 
-    function newTestClick(): void {
-        navigate(`/project/${projectIdentifier}/app:${appId}/test/new`)
-    }
-
-    useEffect(() => {
-        if (appId === 0) {
-            const value = state.apps === undefined ? null : state.apps?.length === 0 ? null : state.apps![0].id;
-            if (value !== null) {
-                navigate(`/project/${projectIdentifier}/app:${appId}/tests`)
-            }
-        }
-    }, [state.apps, appId])
+    const app = state.apps?.find(a => a.id === appId);
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={'Tests'}>
-                <Grid container={true}>
-                    <Grid size={{xs: 6}} container={true} sx={{
-                        padding: 2,
-                    }}>
-                    </Grid>
-                    <Grid size={{xs: 6}} container={true} justifyContent={"flex-end"} sx={{
-                        padding: 1,
-                    }}>
-                        <Button variant={"contained"} size={'small'} onClick={newTestClick}>Add new Test</Button>
-                    </Grid>
-                    <Grid size={{xs: 12}}>
-                        <TestsTable appId={appId}/>
-                    </Grid>
-                </Grid>
+            <TitleCard title={'Tests'}
+                       subtitle={`Test configurations of ${app?.name ?? 'this app'}. Open one for its details and runs, or start a run.`}
+                       actions={<Button variant={"contained"} size={'small'} startIcon={<AddRounded/>}
+                                        onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/new`)}>
+                           New test
+                       </Button>}>
+                <TestsTable appId={appId}/>
             </TitleCard>
         </Box>
     );
