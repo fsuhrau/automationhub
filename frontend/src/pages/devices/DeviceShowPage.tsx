@@ -89,6 +89,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                     <ButtonGroup variant="contained" aria-label="text button group">
                         <Button variant="contained" color="error" size={'small'} onClick={handleClickOpen}> Delete</Button>
                         <Button variant="contained" size={'small'} onClick={() => navigate('edit')}>Edit</Button>
+                        <Button variant="contained" size={'small'} onClick={() => navigate('control')}>Control</Button>
                     </ButtonGroup>
                 </Box>}>
                 <Grid container={true} spacing={2}>

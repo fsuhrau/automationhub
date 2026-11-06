@@ -3,7 +3,9 @@ import {Button, ButtonGroup,} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import IDeviceData from '../types/device';
 import Grid from '@mui/system/Grid';
-import {ArrowForward, PlayArrow, LockOpen} from "@mui/icons-material";
+import {ArrowForward, PlayArrow, LockOpen, ScreenShare} from "@mui/icons-material";
+import {useNavigate} from "react-router-dom";
+import {useProjectContext} from "../hooks/ProjectProvider";
 import {deviceState} from "../types/deviceStateType";
 
 interface DevicesTableProps {
@@ -17,8 +19,17 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
 
     const {devices, onSelectForRun, onOpenDeviceDetails, onUnlockDevice} = props;
 
+    const navigate = useNavigate();
+    const {projectIdentifier} = useProjectContext();
+
     const renderActions = (device: any) => {
         return <ButtonGroup variant={"text"} aria-label="text button group">
+            {device.dev && (
+                <Button color="primary" size="small" title="Live control"
+                        onClick={() => navigate(`/project/${projectIdentifier}/device/${device.id}/control`)}>
+                    <ScreenShare/>
+                </Button>)
+            }
             {device.isLocked && (
                 <Button color="primary" size="small" variant="outlined"
                         endIcon={<LockOpen/>}
@@ -47,7 +58,7 @@ const DevicesTable: React.FC<DevicesTableProps> = (props: DevicesTableProps) => 
             headerName: 'ID',
         },
         {
-            field: 'mame',
+            field: 'name',
             headerName: 'Name/Identifier',
             flex: 1,
             minWidth: 90,

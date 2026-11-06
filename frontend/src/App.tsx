@@ -14,6 +14,7 @@ import TestProtocolPageLoader from "./pages/tests/TestProtocolPageLoader";
 import TestRunPageLoader from "./pages/tests/TestRunPageLoader";
 import SettingsPage from "./pages/settings/SettingsPage";
 import DevicePageLoader from "./pages/devices/DevicePageLoader";
+import DeviceControlPage from "./pages/devices/DeviceControlPage";
 import DevicesManagerContent from "./pages/devices/devices.manager.content";
 import DevicesContent from "./pages/devices/DevicesPage";
 import ApplicationPage from "./hooks/ApplicationProvider";
@@ -87,6 +88,8 @@ function App(props: any) {
                                                        element={<SettingsPage/>}/>
                                                 <Route path={":project_identifier/users"}/>
 
+                                                <Route path={":project_identifier/device/:deviceId/control"}
+                                                       element={<DeviceControlPage/>}/>
                                                 <Route path={":project_identifier/device/:deviceId/edit"}
                                                        element={<DevicePageLoader edit={true}/>}/>
                                                 <Route path={":project_identifier/device/:deviceId"}

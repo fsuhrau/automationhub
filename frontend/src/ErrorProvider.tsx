@@ -24,6 +24,11 @@ import { Alert } from '@mui/material';
         const getErrorMessage = (error: string | object): string => {
             if (typeof error === 'string') {
                 return error;
+            }
+            // axios errors: prefer the message the server sent
+            const serverMessage = (error as { response?: { data?: { message?: unknown } } }).response?.data?.message;
+            if (typeof serverMessage === 'string' && serverMessage.length > 0) {
+                return serverMessage;
             } else if (error && typeof error === 'object' && 'message' in error) {
                 return (error as { message: string }).message;
             }
