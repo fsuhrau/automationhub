@@ -722,7 +722,8 @@ const DeviceControlPage: React.FC = () => {
                                      }}
                                      aria-label="Device screen"
                                      sx={{
-                                         position: 'relative', display: 'inline-block', lineHeight: 0, borderRadius: 1, outline: 'none',
+                                         // clip the video, screenshot and overlay to the rounded corners
+                                         position: 'relative', display: 'inline-block', lineHeight: 0, borderRadius: 1, outline: 'none', overflow: 'hidden',
                                          boxShadow: screenFocused ? (t => `0 0 0 2px ${(t.vars ?? t).palette.primary.main}`) : undefined,
                                      }}>
                                     {mode === 'video'
