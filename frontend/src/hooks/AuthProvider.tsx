@@ -70,7 +70,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                     setUser(res.user);
                     setAuthState('authenticated');
                 } else {
-                    setAuthState('anonymous');
+                    // a master without authentication answers {"status": "ok"};
+                    // logged out sessions get a 401 (handled above)
+                    setAuthState('disabled');
                 }
             } catch (err) {
                 // network problem: don't lock the user out, API calls still get 401
@@ -94,6 +96,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 body: JSON.stringify(data),
                 credentials: "include", // Include cookies in the request
             });
+            const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
+            if (!isJson) {
+                // /auth/login only exists when the master uses password authentication
+                onError("Sign in with email and password is not enabled on this master (check auth.password in its config).");
+                return;
+            }
             const res = await response.json();
             if (res.user) {
                 setUser(res.user);
@@ -121,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
             if (!isJson) {
                 // without password auth the master has no /auth routes
-                onError("Registration is not available: the master is not configured for password authentication.");
+                onError("Registration is not available: the master is not configured for password authentication (auth.password in its config).");
                 return;
             }
             const res = await response.json();
