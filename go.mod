@@ -20,6 +20,7 @@ require (
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/matishsiao/goInfo v0.0.0-20210923090445-da2e3fa8d45f
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.4.0
 	github.com/r3labs/sse/v2 v2.7.4
@@ -84,7 +85,6 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/miekg/dns v1.1.27 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
