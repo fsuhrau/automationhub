@@ -75,6 +75,17 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 				return nil
 			},
 		},
+		{
+			ID: "AddPersonalAccessTokens",
+			Migrate: func(g *gorm.DB) error {
+				type AccessToken struct {
+					UserID     *uint `gorm:"default:NULL;index"`
+					Hint       string
+					LastUsedAt *time.Time
+				}
+				return g.AutoMigrate(&AccessToken{})
+			},
+		},
 	})
 	m.InitSchema(migrations.InitSchema)
 

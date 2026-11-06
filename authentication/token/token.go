@@ -21,13 +21,23 @@ func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
 		xauth := ctx.GetHeader("X-Auth-Token")
 		if xauth != "" {
 
-			if err := db.First(&token, "token = ?", xauth).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := lookup(db, xauth, &token); errors.Is(err, gorm.ErrRecordNotFound) {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 				return
 			}
 
 			if token.ExpiresAt != nil && token.ExpiresAt.Before(time.Now()) {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized token expired"})
+				return
+			}
+
+			// a personal token acts as its user, in every project
+			if token.UserID != nil {
+				if !authenticatePersonal(db, ctx, &token) {
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+					return
+				}
+				ctx.Next()
 				return
 			}
 
@@ -59,6 +69,7 @@ func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
 			}
 
 			ctx.Set(authentication.UserKey, token.Name)
+			ctx.Set(AuthTokenKey, token.ID)
 			ctx.Next()
 			return
 		}

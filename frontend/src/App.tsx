@@ -16,6 +16,7 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import DevicePageLoader from "./pages/devices/DevicePageLoader";
 import DeviceControlPage from "./pages/devices/DeviceControlPage";
 import DevicesContent from "./pages/devices/DevicesPage";
+import ProfilePage from "./pages/profile/ProfilePage";
 import ApplicationPage from "./hooks/ApplicationProvider";
 import {HubStateProvider} from "./hooks/HubStateProvider";
 import {AuthProvider} from "./hooks/AuthProvider";
@@ -56,6 +57,7 @@ function App(props: any) {
                                     <Route element={<PrivateRoute/>}>
                                         <Route path={"/"}>
                                             <Route index={true} element={<ProjectsIndexPage/>}/>
+                                            <Route path={"profile"} element={<ProfilePage/>}/>
                                             <Route path={"project"}
                                                    element={<HubMainLayout/>}>
                                                 <Route path={":project_identifier"}

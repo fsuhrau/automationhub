@@ -68,6 +68,7 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	go s.control.Run(context.Background())
 
 	api.GET("/stats", s.getStats)
+	s.registerProfile(api)
 
 	api.GET("/:project_id/settings/users", s.getUsers)
 

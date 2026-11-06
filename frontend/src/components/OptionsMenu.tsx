@@ -11,6 +11,7 @@ import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import MenuButton from './MenuButton';
 import {useAuth} from "../hooks/AuthProvider";
+import {useNavigate} from "react-router-dom";
 
 const MenuItem = styled(MuiMenuItem)({
     margin: '2px 0',
@@ -18,6 +19,7 @@ const MenuItem = styled(MuiMenuItem)({
 
 export default function OptionsMenu() {
     const auth = useAuth();
+    const navigate = useNavigate();
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -61,7 +63,7 @@ export default function OptionsMenu() {
                     },
                 }}
             >
-                <MenuItem onClick={handleClose}>Profile</MenuItem>
+                <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
                 <MenuItem onClick={handleClose}>My account</MenuItem>
                 {auth.user?.role === "admin" && <Divider/> }
                 {auth.user?.role === "admin" && <MenuItem onClick={handleClose}>Add another account</MenuItem> }
