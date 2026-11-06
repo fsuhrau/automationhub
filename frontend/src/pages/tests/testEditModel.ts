@@ -38,6 +38,18 @@ export const formOf = (test: TestLike): TestForm => ({
     functions: (test.testConfig.unity?.testFunctions ?? []).map(f => ({assembly: f.assembly, class: f.class, method: f.method})),
 });
 
+// newForm is where a new test starts: all Unity tests, on all devices,
+// spread over the free ones
+export const newForm = (): TestForm => ({
+    name: '',
+    executionType: TestExecutionType.Concurrent,
+    allDevices: true,
+    devices: [],
+    mode: UnityTestCategory.RunAllTests,
+    categories: [],
+    functions: [],
+});
+
 export const functionKey = (f: IAppFunctionData): string => `${f.assembly}|${f.class}|${f.method}`;
 
 // addFunctions adds functions that aren't picked yet, keeping the order

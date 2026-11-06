@@ -1,7 +1,7 @@
 import http from '../http-common';
 import IAppFunctionData from '../types/app.function';
 import ITestData from '../types/test';
-import ICreateTestData from '../types/request.create.test';
+import {TestType} from '../types/test.type.enum';
 import ITestRunData from '../types/test.run';
 import { TestExecutionType } from "../types/test.execution.type.enum";
 import IUnityTestFunctionData from "../types/unity.test.function";
@@ -15,7 +15,8 @@ export const getTest = (projectId: string, appId: number | null, id: string): Pr
     return http.get(`/${projectId}/app/${appId}/test/${id}`).then(resp => resp.data)
 };
 
-export const createTest = (projectId: string, appId: number | null, data: ICreateTestData): Promise<ITestData> => {
+// createTest creates a test from the edit page's settings and its type
+export const createTest = (projectId: string, appId: number | null, data: { type: TestType } & UpdateTestData): Promise<ITestData> => {
     return http.post(`/${projectId}/app/${appId}/test`, data).then(resp => resp.data)
 };
 

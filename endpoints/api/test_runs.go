@@ -28,6 +28,16 @@ func notFound(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrNotFound, fmt.Sprintf(format, args...))
 }
 
+// invalidRequest is a request the master refuses; its message is meant for
+// the person who sent it
+type invalidRequest struct{ message string }
+
+func (e invalidRequest) Error() string { return e.message }
+
+func badRequest(format string, args ...any) error {
+	return invalidRequest{fmt.Sprintf(format, args...)}
+}
+
 // ProjectDevices lists the devices visible to the project.
 func (s *Service) ProjectDevices(project *models.Project) ([]models.Device, error) {
 	var devices []models.Device

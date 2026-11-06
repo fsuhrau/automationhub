@@ -128,3 +128,56 @@ func TestUpdateTest(t *testing.T) {
 		t.Errorf("a refused update changed the test: %s -> %s", before, after)
 	}
 }
+
+// Creating a test follows the edit page's rules and stores everything or
+// nothing.
+func TestNewTest(t *testing.T) {
+	_, db, _, _, devices := testUpdateSetup(t)
+	var project models.Project
+	db.First(&project)
+	var app models.App
+	db.Where("name = ?", "game").First(&app)
+	s := &Service{db: db}
+	r := gin.New()
+	r.POST("/test", func(c *gin.Context) { s.newTest(c, &project, &app) })
+	count := func() int64 {
+		var n int64
+		db.Model(&models.Test{}).Count(&n)
+		return n
+	}
+	before := count()
+
+	body := fmt.Sprintf(`{"type":0,"name":" Nightly ","executionType":1,"allDevices":false,"devices":[%d,%d],
+		"unityTestCategoryType":1,"categories":"smoke, ui,smoke"}`, devices[0].ID, devices[0].ID)
+	w := send(r, "POST", "/test", body)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	var created models.Test
+	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil || created.ID == 0 || created.AppID != app.ID {
+		t.Fatalf("response %s", w.Body)
+	}
+	head, devs, unity := savedTest(t, db, created.ID)
+	if head != "Nightly exec=1 all=false" || devs != fmt.Sprint(devices[0].ID) || unity != `mode=1 cats="smoke,ui" fns=` {
+		t.Errorf("created %s | %s | %s", head, devs, unity)
+	}
+
+	for name, bad := range map[string]string{
+		"no name":        `{"type":0,"name":"","allDevices":true}`,
+		"no devices":     `{"type":0,"name":"x","allDevices":false}`,
+		"no tests":       `{"type":0,"name":"x","allDevices":true,"unityTestCategoryType":2}`,
+		"unknown device": `{"type":0,"name":"x","allDevices":false,"devices":[999]}`,
+		"scenario":       `{"type":3,"name":"x","allDevices":true}`,
+		"not JSON":       `name=x`,
+	} {
+		if w := send(r, "POST", "/test", bad); w.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d %s", name, w.Code, w.Body)
+		}
+	}
+	if w := send(r, "POST", "/test", `{"type":0,"name":"x","allDevices":false,"devices":[999]}`); !strings.Contains(w.Body.String(), "picked devices don't exist") {
+		t.Errorf("unknown device message: %s", w.Body)
+	}
+	if n := count(); n != before+1 {
+		t.Errorf("%d tests, want %d: a refused create stored something", n, before+1)
+	}
+}

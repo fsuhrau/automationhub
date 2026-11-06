@@ -9,7 +9,7 @@ import ProjectDashboard from "./pages/main/ProjectDashboard";
 import TestsIndexPage from "./pages/tests/TestsIndexPage";
 import AppBundlesPage from "./pages/apps/AppBundlesPage";
 import TestPageLoader from "./pages/tests/TestPageLoader";
-import AddTestPage from "./pages/tests/add.test.content";
+import EditTestPage from "./pages/tests/EditTestPage";
 import TestProtocolPageLoader from "./pages/tests/TestProtocolPageLoader";
 import TestRunPageLoader from "./pages/tests/TestRunPageLoader";
 import SettingsPage from "./pages/settings/SettingsPage";
@@ -73,7 +73,7 @@ function App(props: any) {
                                                            element={<TestsIndexPage/>}/>
                                                     <Route path={'test/:testId'}
                                                            element={<TestPageLoader edit={false}/>}/>
-                                                    <Route path={'test/new'} element={<AddTestPage/>}/>
+                                                    <Route path={'test/new'} element={<EditTestPage/>}/>
                                                     <Route path={'test/:testId/edit'}
                                                            element={<TestPageLoader edit={true}/>}/>
                                                     <Route path={'test/:testId/run/:runId/:protocolId'}

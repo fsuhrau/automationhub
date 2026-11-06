@@ -159,122 +159,81 @@ func (s *Service) getTests(c *gin.Context, project *models.Project, application 
 	c.JSON(http.StatusOK, list)
 }
 
+// testCreate is what the new test page sends: the test type and the same
+// settings the edit page saves
+type testCreate struct {
+	Type models.TestType `json:"type"`
+	testUpdate
+}
+
+// newTest creates a test with the edit page's rules; only Unity tests can be
+// created here
 func (s *Service) newTest(c *gin.Context, project *models.Project, application *models.App) {
-
-	type TestFunc struct {
-		Assembly string `json:"assembly"`
-		Class    string `json:"class"`
-		Method   string `json:"method"`
-	}
-	type Request struct {
-		Name                  string                       `json:"name"`
-		TestType              models.TestType              `json:"type"`
-		ExecutionType         models.ExecutionType         `json:"executionType"`
-		PlatformType          models.PlatformType          `json:"platformType"`
-		UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
-		UnitySelectedTests    []TestFunc                   `json:"unitySelectedTests"`
-		AllDevices            bool                         `json:"allDevices"`
-		SelectedDevices       []uint                       `json:"selectedDevices"`
-		Categories            []string                     `json:"categories"`
-	}
-
-	var request Request
-	if err := c.Bind(&request); err != nil {
+	var req testCreate
+	if err := c.ShouldBindJSON(&req); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
-
-	name := strings.TrimSpace(request.Name)
-	if len(name) == 0 {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("missing name"))
+	if req.Type != models.TestTypeUnity {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("only Unity tests can be created here"))
+		return
+	}
+	if err := req.validate(true); err != nil {
+		s.error(c, http.StatusBadRequest, err)
+		return
+	}
+	if err := s.checkProjectDevices(project, req.Devices); err != nil {
+		s.error(c, statusForError(err), err)
 		return
 	}
 
-	switch request.TestType {
-	case models.TestTypeUnity:
-		if request.UnityTestCategoryType == models.SelectedTestsOnly && len(request.UnitySelectedTests) == 0 {
-			s.error(c, http.StatusBadRequest, fmt.Errorf("missing tests"))
-			return
+	test := models.Test{AppID: application.ID, Name: req.Name}
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&test).Error; err != nil {
+			return err
 		}
-		if request.UnityTestCategoryType == models.AllOfCategory && len(request.Categories) == 0 {
-			s.error(c, http.StatusBadRequest, fmt.Errorf("missing categories"))
-			return
+		config := models.TestConfig{TestID: test.ID, Type: req.Type, AllDevices: req.AllDevices, ExecutionType: req.ExecutionType}
+		if err := tx.Create(&config).Error; err != nil {
+			return err
 		}
-	default:
-		s.error(c, http.StatusBadRequest, fmt.Errorf("unsupported Test Type"))
-		return
-	}
-
-	if request.AllDevices == false && len(request.SelectedDevices) == 0 {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("unsupported Test Type"))
-		return
-	}
-
-	tx := s.db.Begin()
-	defer func() {
-		tx.Rollback()
-	}()
-	test := models.Test{
-		AppID: application.ID,
-		Name:  request.Name,
-	}
-	if err := tx.Create(&test).Error; err != nil {
+		for _, d := range req.Devices {
+			if err := tx.Create(&models.TestConfigDevice{TestConfigID: config.ID, DeviceID: d}).Error; err != nil {
+				return err
+			}
+		}
+		unity := models.TestConfigUnity{TestConfigID: config.ID, UnityTestCategoryType: req.UnityTestCategoryType, Categories: req.Categories}
+		if err := tx.Create(&unity).Error; err != nil {
+			return err
+		}
+		for _, f := range req.TestFunctions {
+			f.TestConfigUnityID = unity.ID
+			if err := tx.Create(&f).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
-
-	config := models.TestConfig{
-		TestID:        test.ID,
-		Type:          request.TestType,
-		AllDevices:    request.AllDevices,
-		ExecutionType: request.ExecutionType,
-	}
-	if err := tx.Create(&config).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, err)
-		return
-	}
-
-	switch request.TestType {
-	case models.TestTypeUnity:
-		unityConfig := models.TestConfigUnity{
-			TestConfigID:          config.ID,
-			UnityTestCategoryType: request.UnityTestCategoryType,
-		}
-		if len(request.Categories) > 0 {
-			unityConfig.Categories = strings.Join(request.Categories, ",")
-		}
-		if err := tx.Create(&unityConfig).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
-		for _, r := range request.UnitySelectedTests {
-
-			function := models.UnityTestFunction{
-				TestConfigUnityID: unityConfig.ID,
-				Assembly:          r.Assembly,
-				Class:             r.Class,
-				Method:            r.Method,
-			}
-			if err := tx.Create(&function).Error; err != nil {
-				s.error(c, http.StatusInternalServerError, err)
-				return
-			}
-		}
-	}
-
-	for _, d := range request.SelectedDevices {
-		dev := models.TestConfigDevice{
-			TestConfigID: config.ID,
-			DeviceID:     d,
-		}
-		if err := tx.Create(&dev).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
-	}
-	tx.Commit()
-
 	c.JSON(http.StatusCreated, test)
+}
+
+// checkProjectDevices makes sure every device exists and is visible to the
+// project
+func (s *Service) checkProjectDevices(project *models.Project, ids []uint) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	var visible int64
+	if err := s.projectDevices(project).Model(&models.Device{}).Where("id IN ?", ids).Count(&visible).Error; err != nil {
+		return err
+	}
+	if int(visible) != len(ids) {
+		return badRequest("some of the picked devices don't exist")
+	}
+	return nil
 }
 
 func (s *Service) getTest(c *gin.Context, project *models.Project, application *models.App) {
@@ -387,16 +346,9 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
-	if len(req.Devices) > 0 {
-		var visible int64
-		if err := s.projectDevices(project).Model(&models.Device{}).Where("id IN ?", req.Devices).Count(&visible).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err)
-			return
-		}
-		if int(visible) != len(req.Devices) {
-			s.error(c, http.StatusBadRequest, fmt.Errorf("some of the picked devices don't exist"))
-			return
-		}
+	if err := s.checkProjectDevices(project, req.Devices); err != nil {
+		s.error(c, statusForError(err), err)
+		return
 	}
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
@@ -505,6 +457,8 @@ func statusForError(err error) int {
 		return http.StatusNotFound
 	case errors.Is(err, ErrBundleExists):
 		return http.StatusConflict
+	case errors.As(err, new(invalidRequest)):
+		return http.StatusBadRequest
 	}
 	return http.StatusInternalServerError
 }

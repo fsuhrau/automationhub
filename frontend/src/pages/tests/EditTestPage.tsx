@@ -31,7 +31,7 @@ import IDeviceData from '../../types/device';
 import {TestType} from '../../types/test.type.enum';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
-import {updateTest} from '../../services/test.service';
+import {createTest, updateTest} from '../../services/test.service';
 import {getAllDevices} from '../../services/device.service';
 import {getTestFunctions} from '../../services/unity.service';
 import {useProjectContext} from '../../hooks/ProjectProvider';
@@ -46,6 +46,7 @@ import {
     groupByClass,
     isDirty,
     matchesFunction,
+    newForm,
     parsePastedTests,
     shortClass,
     shortMethod,
@@ -56,7 +57,8 @@ import {
 } from './testEditModel';
 
 interface TestContentProps {
-    test: ITestData
+    // the test to edit; without one the page creates a new Unity test
+    test?: ITestData
 }
 
 const messageOf = (e: unknown): string => {
@@ -198,18 +200,21 @@ const TestPicker: React.FC<{ picked: IAppFunctionData[], onChange: (f: IAppFunct
     </Stack>;
 };
 
-// EditTestPage changes a test: its name, what it runs and where
+// EditTestPage creates or changes a test: its name, what it runs and where
 const EditTestPage: React.FC<TestContentProps> = ({test}) => {
+    const creating = !test;
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
     const {state} = useHubState();
     const {setError} = useError();
     const navigate = useNavigate();
     const app = state.apps?.find(a => a.id === appId);
-    const unity = test.testConfig.type === TestType.Unity && !!test.testConfig.unity;
-    const testUrl = `/project/${projectIdentifier}/app:${appId}/test/${test.id}`;
+    const unity = creating || (test.testConfig.type === TestType.Unity && !!test.testConfig.unity);
+    const appBase = `/project/${projectIdentifier}/app:${appId}`;
+    // where Cancel leads: the test, or the list for a new one
+    const backUrl = test ? `${appBase}/test/${test.id}` : `${appBase}/tests`;
 
-    const initial = useMemo(() => formOf(test), [test]);
+    const initial = useMemo(() => test ? formOf(test) : newForm(), [test]);
     const [form, setForm] = useState<TestForm>(initial);
     const [category, setCategory] = useState('');
     const [devices, setDevices] = useState<IDeviceData[] | null>(null);
@@ -242,9 +247,12 @@ const EditTestPage: React.FC<TestContentProps> = ({test}) => {
 
     const save = () => {
         setTried(true);
-        if (!valid || !dirty || appId === null) return;
+        if (!valid || (!creating && !dirty) || appId === null) return;
         setSaving(true);
-        updateTest(projectIdentifier, appId, test.id, toRequest(form)).then(() => navigate(testUrl))
+        const done = test
+            ? updateTest(projectIdentifier, appId, test.id, toRequest(form)).then(() => test.id)
+            : createTest(projectIdentifier, appId, {type: TestType.Unity, ...toRequest(form)}).then(created => created.id);
+        done.then(id => navigate(`${appBase}/test/${id}`))
             .catch(e => {
                 setError(messageOf(e));
                 setSaving(false);
@@ -268,16 +276,23 @@ const EditTestPage: React.FC<TestContentProps> = ({test}) => {
              }}>
             <Stack direction={{xs: 'column', sm: 'row'}} spacing={2} useFlexGap alignItems={{sm: 'center'}} sx={{mb: 2}}>
                 <Box sx={{minWidth: 0}}>
-                    <Typography component="h1" variant="h5" sx={{wordBreak: 'break-word'}}>Edit {test.name}</Typography>
+                    <Typography component="h1" variant="h5" sx={{wordBreak: 'break-word'}}>
+                        {test ? `Edit ${test.name}` : 'New test'}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {TestType[test.testConfig.type]} test · {dirty ? 'unsaved changes' : 'no changes yet'}
+                        {test
+                            ? <>{TestType[test.testConfig.type]} test · {dirty ? 'unsaved changes' : 'no changes yet'}</>
+                            : <>A Unity test of {app?.name ?? 'this app'}: name it, pick what it runs and where.</>}
                     </Typography>
                 </Box>
                 <Stack direction="row" spacing={1} sx={{ml: {sm: 'auto'}}}>
-                    <Button onClick={() => dirty ? setLeaving(true) : navigate(testUrl)} disabled={saving}>Cancel</Button>
-                    <Tooltip title={!dirty ? 'Nothing to save yet' : !valid ? 'Fix the marked fields first' : 'Save (⌘S / Ctrl+S)'}>
-                        <span><Button type="submit" variant="contained" disabled={!dirty || saving || (tried && !valid)}
-                                      startIcon={saving ? <CircularProgress size={16} color="inherit"/> : undefined}>Save</Button></span>
+                    <Button onClick={() => dirty ? setLeaving(true) : navigate(backUrl)} disabled={saving}>Cancel</Button>
+                    <Tooltip title={!creating && !dirty ? 'Nothing to save yet' : tried && !valid ? 'Fix the marked fields first'
+                        : `${creating ? 'Create' : 'Save'} (⌘S / Ctrl+S)`}>
+                        <span><Button type="submit" variant="contained" disabled={(!creating && !dirty) || saving || (tried && !valid)}
+                                      startIcon={saving ? <CircularProgress size={16} color="inherit"/> : undefined}>
+                            {creating ? 'Create test' : 'Save'}
+                        </Button></span>
                     </Tooltip>
                 </Stack>
             </Stack>
@@ -288,7 +303,10 @@ const EditTestPage: React.FC<TestContentProps> = ({test}) => {
 
             <Stack spacing={2}>
                 <Section title="Name">
-                    <TextField size="small" fullWidth required label="Name" value={form.name} onChange={e => set({name: e.target.value})}
+                    <TextField size="small" fullWidth required value={form.name} onChange={e => set({name: e.target.value})}
+                               // the section title names the field
+                               slotProps={{htmlInput: {'aria-label': 'Name'}}}
+                               autoFocus={creating} placeholder={creating ? 'e.g. Smoke tests' : undefined}
                                error={tried && !!errors.name} helperText={tried ? errors.name : undefined}/>
                 </Section>
 
@@ -366,11 +384,11 @@ const EditTestPage: React.FC<TestContentProps> = ({test}) => {
             <Dialog open={leaving} onClose={() => setLeaving(false)} aria-labelledby="discard-test-title">
                 <DialogTitle id="discard-test-title">Discard your changes?</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>The changes to {test.name} aren't saved yet.</DialogContentText>
+                    <DialogContentText>{test ? `The changes to ${test.name} aren't saved yet.` : "The new test isn't created yet."}</DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setLeaving(false)}>Keep editing</Button>
-                    <Button color="warning" onClick={() => navigate(testUrl)}>Discard</Button>
+                    <Button color="warning" onClick={() => navigate(backUrl)}>Discard</Button>
                 </DialogActions>
             </Dialog>
         </Box>
