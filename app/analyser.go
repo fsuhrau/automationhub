@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
+	"github.com/fsuhrau/automationhub/tools/androidsdk"
 	"github.com/fsuhrau/automationhub/tools/exec"
 	"howett.net/plist"
 	"io"
@@ -209,7 +210,11 @@ func (a *analyser) analyseZIP() error {
 func (a *analyser) analyseAPK() error {
 	// android app
 	a.parameter.Platform = "android"
-	cmd := exec.NewCommand("aapt", "dump", "badging", a.appPath)
+	aapt, err := androidsdk.AAPT()
+	if err != nil {
+		return err
+	}
+	cmd := exec.NewCommand(aapt, "dump", "badging", a.appPath)
 	output, err := cmd.Output()
 	if err != nil {
 		return err
