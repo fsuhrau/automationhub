@@ -134,7 +134,8 @@ func validateSessionRoute(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	// the sign in page links to the URL that starts the OAuth2 sign in
+	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "not signed in", "method": "oauth2", "url": "/auth/oauth2"})
 }
 
 func logoutRoute(ctx *gin.Context) {

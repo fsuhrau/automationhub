@@ -127,7 +127,8 @@ func validateSessionRoute(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	// the sign in page links to the URL that starts the GitHub sign in
+	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "not signed in", "method": "github", "url": "/auth/oauth2"})
 }
 
 func logoutRoute(ctx *gin.Context) {

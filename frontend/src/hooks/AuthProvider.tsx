@@ -18,10 +18,20 @@ export interface LoginData {
 // is logged in; disabled: the master runs without authentication
 export type AuthState = 'checking' | 'authenticated' | 'anonymous' | 'disabled';
 
+// how people sign in to this master: an email and password form, or a
+// provider whose sign in starts at url
+export interface SignInMethod {
+    method: 'password' | 'github' | 'oauth2',
+    url?: string,
+}
+
 type AuthContextProps = {
     user: IUser | null,
     authState: AuthState,
-    loginAction: (d: LoginData, onError: (error: string) => void) => {},
+    // known once a signed out session was checked; older masters don't say
+    signIn: SignInMethod | null,
+    // signs in and opens `to` (the page that asked for it) or the project list
+    loginAction: (d: LoginData, onError: (error: string) => void, to?: string) => {},
     registerAction: (d: RegisterData, onError: (error: string) => void) => {},
     logOut: () => {},
 };
@@ -34,6 +44,7 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextProps>({
     user: null,
     authState: 'checking',
+    signIn: null,
     loginAction: async () => {
     },
     registerAction: async () => {
@@ -46,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
     const [user, setUser] = useState<IUser | null>(null);
     const [authState, setAuthState] = useState<AuthState>('checking');
+    const [signIn, setSignIn] = useState<SignInMethod | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -56,6 +68,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                     credentials: "include", // Include cookies in the request
                 });
                 if (response.status === 401) {
+                    const body = await response.json().catch(() => ({}));
+                    if (body.method === 'password' || body.method === 'github' || body.method === 'oauth2') {
+                        setSignIn({method: body.method, url: body.url});
+                    }
                     setAuthState('anonymous');
                     return;
                 }
@@ -86,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
         }
     }, [user, navigate]);
 
-    const loginAction = async (data: LoginData, onError: (error: string) => void) => {
+    const loginAction = async (data: LoginData, onError: (error: string) => void, to: string = "/") => {
         try {
             const response = await fetch("/auth/login", {
                 method: "POST",
@@ -106,7 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
             if (res.user) {
                 setUser(res.user);
                 setAuthState('authenticated');
-                navigate("/");
+                navigate(to, {replace: true});
                 return;
             }
             onError(res.error ?? "Invalid email or password");
@@ -162,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
     return (
         <AuthContext.Provider
-            value={{user: user, authState: authState, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
+            value={{user: user, authState: authState, signIn: signIn, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
             {children}
         </AuthContext.Provider>
     );

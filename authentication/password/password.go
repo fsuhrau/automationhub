@@ -98,7 +98,8 @@ func ValidateSessionRoute(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	// the sign in page shows the email and password form for this method
+	ctx.JSON(http.StatusUnauthorized, gin.H{"error": "not signed in", "method": "password"})
 }
 
 func LogoutRoute(ctx *gin.Context) {

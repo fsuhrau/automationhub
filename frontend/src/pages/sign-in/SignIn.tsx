@@ -1,244 +1,135 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
+import {Link as RouterLink, Navigate, useLocation} from 'react-router-dom';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CircularProgress,
+    IconButton,
+    InputAdornment,
+    Link,
+    Stack,
+    TextField,
+    Typography,
+} from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Divider from '@mui/material/Divider';
-import FormLabel from '@mui/material/FormLabel';
-import FormControl from '@mui/material/FormControl';
-import Link from '@mui/material/Link';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
-import MuiCard from '@mui/material/Card';
-import {styled} from '@mui/material/styles';
-import ForgotPassword from './ForgotPassword';
-import {AutomationHubIcon, FacebookIcon, GoogleIcon} from './CustomIcons';
+import {GitHub, LoginRounded, VisibilityOffRounded, VisibilityRounded} from '@mui/icons-material';
+import {CustomIcon} from '../../components/AppNavbar';
 import ColorModeSelect from '../../shared-theme/ColorModeSelect';
-import {useAuth} from "../../hooks/AuthProvider";
-import {useError} from "../../ErrorProvider";
+import {useAuth} from '../../hooks/AuthProvider';
 
-const Card = styled(MuiCard)(({theme}) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'center',
-    width: '100%',
-    padding: theme.spacing(4),
-    gap: theme.spacing(2),
-    margin: 'auto',
-    [theme.breakpoints.up('sm')]: {
-        maxWidth: '450px',
-    },
-    boxShadow:
-        'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
-    ...theme.applyStyles('dark', {
-        boxShadow:
-            'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
-    }),
-}));
+// AuthPage is the frame of the sign in and sign up pages: the product, a
+// card in the middle, the color mode in the corner
+export const AuthPage: React.FC<{ title: string, subtitle?: React.ReactNode, children: React.ReactNode }> = ({title, subtitle, children}) =>
+    <>
+        <CssBaseline enableColorScheme/>
+        <ColorModeSelect size="small" sx={{position: 'fixed', top: '1rem', right: '1rem'}} inputProps={{'aria-label': 'Color mode'}}/>
+        <Box sx={theme => ({
+            minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2,
+            backgroundImage: 'radial-gradient(ellipse at 50% 30%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+            ...theme.applyStyles('dark', {backgroundImage: 'radial-gradient(at 50% 30%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))'}),
+        })}>
+            <Card variant="outlined" sx={{width: '100%', maxWidth: 420, p: {xs: 3, sm: 4}}}>
+                <Stack spacing={1} sx={{mb: 3}}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 1}}>
+                        <CustomIcon/>
+                        <Typography variant="subtitle1" sx={{fontWeight: 600}}>Automation Hub</Typography>
+                    </Stack>
+                    <Typography component="h1" variant="h5">{title}</Typography>
+                    {subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}
+                </Stack>
+                {children}
+            </Card>
+        </Box>
+    </>;
 
-const SignInContainer = styled(Stack)(({theme}) => ({
-    height: 'calc((1 - var(--template-frame-height, 0)) * 100dvh)',
-    minHeight: '100%',
-    padding: theme.spacing(2),
-    [theme.breakpoints.up('sm')]: {
-        padding: theme.spacing(4),
-    },
-    '&::before': {
-        content: '""',
-        display: 'block',
-        position: 'absolute',
-        zIndex: -1,
-        inset: 0,
-        backgroundImage:
-            'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
-        backgroundRepeat: 'no-repeat',
-        ...theme.applyStyles('dark', {
-            backgroundImage:
-                'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
-        }),
-    },
-}));
+const isEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 
-export default function SignIn(props: { disableCustomTheme?: boolean }) {
-
+// SignIn offers the way this master signs people in: the email and password
+// form, or the provider's sign in. Afterwards it returns to the page that
+// asked for it.
+export default function SignIn() {
     const auth = useAuth();
-    const {error, setError} = useError();
+    const location = useLocation();
+    const from = (location.state as { from?: string } | null)?.from ?? '/';
 
-    const [uiState, setUiState] = React.useState<{
-        emailError: boolean,
-        emailErrorMessage: string,
-        passwordError: boolean,
-        passwordErrorMessage: string,
-        open: boolean
-    }>({
-        emailError: false,
-        emailErrorMessage: '',
-        passwordError: false,
-        passwordErrorMessage: '',
-        open: false
-    })
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [tried, setTried] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [busy, setBusy] = React.useState(false);
 
+    if (auth.authState === 'checking') {
+        return <AuthPage title="Sign in"><Stack alignItems="center"><CircularProgress/></Stack></AuthPage>;
+    }
+    if (auth.authState === 'authenticated') {
+        return <Navigate to={from} replace/>;
+    }
+    if (auth.authState === 'disabled') {
+        return <AuthPage title="No sign in needed" subtitle="This hub runs without accounts: everyone who reaches it can use it.">
+            <Button fullWidth variant="contained" component={RouterLink} to={from}>Continue</Button>
+        </AuthPage>;
+    }
 
-    const handleClickOpen = () => {
-        setUiState(prevState => ({...prevState, open: true}));
-    };
+    const method = auth.signIn?.method;
+    if ((method === 'github' || method === 'oauth2') && auth.signIn?.url) {
+        return <AuthPage title="Sign in" subtitle="Run UI tests of your games on real devices.">
+            <Button fullWidth size="large" variant="contained" href={auth.signIn.url}
+                    startIcon={method === 'github' ? <GitHub/> : <LoginRounded/>}>
+                {method === 'github' ? 'Sign in with GitHub' : 'Sign in with your company account'}
+            </Button>
+            <Typography variant="caption" color="text.secondary" component="p" sx={{mt: 2, textAlign: 'center'}}>
+                Your account is created the first time you sign in.
+            </Typography>
+        </AuthPage>;
+    }
 
-    const handleClose = () => {
-        setUiState(prevState => ({...prevState, open: false}));
-    };
+    const emailError = tried && !isEmail(email) ? 'Enter the email address of your account.' : undefined;
+    const passwordError = tried && !password ? 'Enter your password.' : undefined;
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setTried(true);
         setError(null);
-
-        event.preventDefault();
-        if (uiState.emailError || uiState.passwordError) {
-            return;
-        }
-
-        const data = new FormData(event.currentTarget);
-        auth.loginAction({email: data.get('email') as string, password: data.get('password') as string}, error => {
-            setError(error);
-        })
+        if (!isEmail(email) || !password) return;
+        setBusy(true);
+        auth.loginAction({email: email.trim(), password}, message => {
+            setError(message);
+            setBusy(false);
+        }, from);
     };
 
-    const validateInputs = () => {
-        const email = document.getElementById('email') as HTMLInputElement;
-        const password = document.getElementById('password') as HTMLInputElement;
-
-        let isValid = true;
-
-        if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-            setUiState(prevState => ({...prevState, emailError: true, emailErrorMessage: 'Please enter a valid email address.'}));
-            isValid = false;
-        } else {
-            setUiState(prevState => ({...prevState, emailError: false, emailErrorMessage: ''}));
-        }
-
-        if (!password.value || password.value.length < 6) {
-            setUiState(prevState => ({...prevState, passwordError: true, passwordErrorMessage: 'Password must be at least 6 characters long.'}));
-            isValid = false;
-        } else {
-            setUiState(prevState => ({...prevState, passwordError: false, passwordErrorMessage: ''}));
-        }
-
-        return isValid;
-    };
-
-    return (
-        <>
-            <CssBaseline enableColorScheme/>
-            <SignInContainer direction="column" justifyContent="space-between">
-                <ColorModeSelect sx={{position: 'fixed', top: '1rem', right: '1rem'}}/>
-                <Card variant="outlined">
-                    <AutomationHubIcon/>
-                    <Typography
-                        component="h1"
-                        variant="h4"
-                        sx={{width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)'}}
-                    >
-                        Sign in
-                    </Typography>
-                    <Box
-                        component="form"
-                        onSubmit={handleSubmit}
-                        noValidate
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: '100%',
-                            gap: 2,
-                        }}
-                    >
-                        <FormControl>
-                            <FormLabel htmlFor="email">Email</FormLabel>
-                            <TextField
-                                error={uiState.emailError}
-                                helperText={uiState.emailErrorMessage}
-                                id="email"
-                                type="email"
-                                name="email"
-                                placeholder="your@email.com"
-                                autoComplete="email"
-                                autoFocus
-                                required
-                                fullWidth
-                                variant="outlined"
-                                color={uiState.emailError ? 'error' : 'primary'}
-                            />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel htmlFor="password">Password</FormLabel>
-                            <TextField
-                                error={uiState.passwordError}
-                                helperText={uiState.passwordErrorMessage}
-                                name="password"
-                                placeholder="••••••"
-                                type="password"
-                                id="password"
-                                autoComplete="current-password"
-                                autoFocus
-                                required
-                                fullWidth
-                                variant="outlined"
-                                color={uiState.passwordError ? 'error' : 'primary'}
-                            />
-                        </FormControl>
-                        <FormControlLabel
-                            control={<Checkbox value="remember" color="primary"/>}
-                            label="Remember me"
-                        />
-                        <ForgotPassword open={uiState.open} handleClose={handleClose}/>
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            onClick={validateInputs}
-                        >
-                            Sign in
-                        </Button>
-                        <Link
-                            component="button"
-                            type="button"
-                            onClick={handleClickOpen}
-                            variant="body2"
-                            sx={{alignSelf: 'center'}}
-                        >
-                            Forgot your password?
-                        </Link>
-                    </Box>
-                    <Divider>or</Divider>
-                    <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            onClick={() => alert('Sign in with Google')}
-                            startIcon={<GoogleIcon/>}
-                        >
-                            Sign in with Google
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            onClick={() => alert('Sign in with Facebook')}
-                            startIcon={<FacebookIcon/>}
-                        >
-                            Sign in with Facebook
-                        </Button>
-                        <Typography sx={{textAlign: 'center'}}>
-                            Don&apos;t have an account?{' '}
-                            <Link
-                                href="/signup"
-                                variant="body2"
-                                sx={{alignSelf: 'center'}}
-                            >
-                                Sign up
-                            </Link>
-                        </Typography>
-                    </Box>
-                </Card>
-            </SignInContainer>
-        </>
-    );
+    return <AuthPage title="Sign in" subtitle="Run UI tests of your games on real devices.">
+        <Box component="form" noValidate onSubmit={submit}>
+            <Stack spacing={2}>
+                {error && <Alert severity="error">{error}</Alert>}
+                <TextField label="Email" type="email" name="email" autoComplete="email" autoFocus fullWidth
+                           value={email} onChange={e => setEmail(e.target.value)} error={!!emailError} helperText={emailError}/>
+                <TextField label="Password" type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password" fullWidth
+                           value={password} onChange={e => setPassword(e.target.value)} error={!!passwordError} helperText={passwordError}
+                           slotProps={{
+                               input: {
+                                   endAdornment: <InputAdornment position="end">
+                                       <IconButton size="small" edge="end" aria-label={showPassword ? 'Hide the password' : 'Show the password'}
+                                                   onClick={() => setShowPassword(v => !v)}>
+                                           {showPassword ? <VisibilityOffRounded fontSize="small"/> : <VisibilityRounded fontSize="small"/>}
+                                       </IconButton>
+                                   </InputAdornment>,
+                               },
+                           }}/>
+                <Button type="submit" fullWidth size="large" variant="contained" disabled={busy}
+                        startIcon={busy ? <CircularProgress size={16} color="inherit"/> : undefined}>
+                    Sign in
+                </Button>
+                <Typography variant="caption" color="text.secondary" sx={{textAlign: 'center'}}>
+                    Forgot your password? It can't be reset here; ask whoever runs this hub.
+                </Typography>
+            </Stack>
+        </Box>
+        <Typography variant="body2" sx={{textAlign: 'center', mt: 3}}>
+            No account yet? <Link component={RouterLink} to="/signup" state={location.state}>Create one</Link>
+        </Typography>
+    </AuthPage>;
 }

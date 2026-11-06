@@ -239,6 +239,12 @@ export const inputsCustomizations: Components<Theme> = {
   MuiIconButton: {
     styleOverrides: {
       root: ({ theme }) => ({
+        // inside a text field (show password, clear) an icon button is just an icon
+        '.MuiInputAdornment-root &': {
+          border: 'none',
+          backgroundColor: 'transparent',
+          '&:hover': { backgroundColor: (theme.vars || theme).palette.action.hover },
+        },
         boxShadow: 'none',
         borderRadius: (theme.vars || theme).shape.borderRadius,
         textTransform: 'none',
@@ -447,6 +453,45 @@ export const inputsCustomizations: Components<Theme> = {
           color: (theme.vars || theme).palette.grey[400],
         }),
       }),
+    },
+  },
+  // This theme draws the input's border itself and hides MUI's notched
+  // outline, so a floating label had no gap to sit in and covered the
+  // border. A field with a label makes room at its top instead, and the
+  // label floats into that room.
+  MuiFormControl: {
+    styleOverrides: {
+      root: {
+        '&:has(> .MuiInputLabel-outlined) > .MuiOutlinedInput-root': {
+          paddingTop: 20,
+          paddingBottom: 6,
+          // adornments are centered; move them back to the middle of the box
+          '& .MuiInputAdornment-root': { marginTop: -14 },
+        },
+        // small fields are 36px high: the text sits right under the label
+        '&:has(> .MuiInputLabel-sizeSmall) > .MuiOutlinedInput-root': {
+          paddingTop: 14,
+          paddingBottom: 0,
+          '& .MuiInputAdornment-root': { marginTop: -14 },
+        },
+      },
+    },
+  },
+  MuiInputLabel: {
+    styleOverrides: {
+      outlined: {
+        // resting, the label is centered like a placeholder
+        transform: 'translate(13px, 10px) scale(1)',
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(13px, 5px) scale(0.75)',
+        },
+        '&.MuiInputLabel-sizeSmall': {
+          transform: 'translate(13px, 8px) scale(1)',
+          '&.MuiInputLabel-shrink': {
+            transform: 'translate(13px, 1px) scale(0.75)',
+          },
+        },
+      },
     },
   },
   MuiFormLabel: {
