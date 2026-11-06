@@ -7,7 +7,7 @@ import {IAppBinaryData} from "../../types/app";
 import {deleteAppBundle, getAppBundles} from "../../services/app.service";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import Moment from "react-moment";
+import DateTime from "../../components/DateTime";
 import {byteFormat} from "../tests/value_formatter";
 import {useHubState} from "../../hooks/HubStateProvider";
 
@@ -52,8 +52,7 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
             headerName: 'Created',
             flex: 1,
             minWidth: 90,
-            renderCell: (params) => (<Moment
-                format="YYYY/MM/DD HH:mm:ss">{params.value}</Moment>)
+            renderCell: (params) => (<DateTime format="YYYY/MM/DD HH:mm:ss" value={params.value}/>)
         },
         {
             field: 'name',

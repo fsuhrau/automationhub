@@ -9,7 +9,6 @@ import {
     InputBase,
     Popover
 } from '@mui/material';
-import { makeStyles } from '@mui/styles';
 import IProtocolEntryData from '../types/protocol.entry';
 import {
     DataGrid,
@@ -27,7 +26,7 @@ import {ClearIcon} from "@mui/x-date-pickers";
 import Paper from "@mui/material/Paper";
 import MenuIcon from '@mui/icons-material/Menu';
 
-const useStyles = makeStyles({
+const logStyles = {
     dataGrid: {
         '& .MuiDataGrid-cell': {
             whiteSpace: 'normal !important',
@@ -87,14 +86,13 @@ const useStyles = makeStyles({
             },
         },
     },
-});
+};
 
 interface TestProtocolContentProps {
     entries: IProtocolEntryData[]
 }
 
 const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestProtocolContentProps) => {
-    const classes = useStyles();
     const {entries} = props;
 
     const timeFrom = (value: number): string => {
@@ -273,7 +271,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
                         inputProps={{ 'aria-label': 'Filter log' }}
                         value={source.Content}
                         autoFocus={true}
-                        onChange={(e) => setSource(prevState => ({...prevState, Content: e.currentTarget.value}))}
+                        onChange={(e) => setSource(prevState => ({...prevState, Content: e.target.value}))}
                     />
                     <IconButton type="button" sx={{ p: '10px' }} aria-label="search"
                     >
@@ -296,7 +294,7 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
     }
 
     return (
-        <Grid container={true} size={12} className={classes.chip}>
+        <Grid container={true} size={12} sx={logStyles.chip}>
             <DataGrid
                 density={"compact"}
                 getRowId={(row) => row.id}
@@ -306,12 +304,11 @@ const ProtocolLogComponent: React.FC<TestProtocolContentProps> = (props: TestPro
                 disableRowSelectionOnClick={true}
                 disableColumnFilter={true}
                 getRowHeight={() => 'auto'}
-                className={classes.dataGrid}
-                sx={{
+                sx={[logStyles.dataGrid, {
                     [`& .${gridClasses.cell}`]: {
                         py: 1,
                     },
-                }}
+                }]}
                 slots={{
                     toolbar: CustomToolbar
                 }}

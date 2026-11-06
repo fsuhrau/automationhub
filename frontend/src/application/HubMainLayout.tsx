@@ -1,7 +1,6 @@
 import React, {useEffect} from 'react';
 import {Outlet} from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
-import Moment from 'react-moment';
 import {SSEProvider, useSSE} from 'react-hooks-sse';
 import {Box} from '@mui/system';
 import {HubStateActions} from "./HubState";
@@ -14,7 +13,6 @@ import {useHubState} from "../hooks/HubStateProvider";
 import {getProjects} from "../project/project.service";
 import HubStateUpdates from './HubStateUpdates';
 
-Moment.globalLocale = 'de';
 
 const HubMainLayout: React.FC = () => {
 

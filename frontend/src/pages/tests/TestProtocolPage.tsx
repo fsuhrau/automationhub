@@ -6,7 +6,7 @@ import ITestProtocolData, {duration} from '../../types/test.protocol';
 import Typography from '@mui/material/Typography';
 import {AvTimer, DateRange, PhoneAndroid, Speed} from '@mui/icons-material';
 import {Button, Card, CardMedia, Divider, Popover, Tab, Tabs} from '@mui/material';
-import moment from 'moment';
+import {formatDateTime} from "../../components/DateTime";
 import IProtocolEntryData from '../../types/protocol.entry';
 import TestStatusIconComponent from '../../components/test-status-icon.component';
 import {useSSE} from 'react-hooks-sse';
@@ -288,7 +288,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                         <DateRange sx={{display: 'block'}} color="inherit"/>
                     </Grid>
                     <Grid>
-                        {moment(protocol.startedAt).format('YYYY/MM/DD HH:mm:ss')}
+                        {formatDateTime(protocol.startedAt)}
                     </Grid>
 
                     <Grid>
@@ -344,7 +344,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                 <Grid container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
-                                                            variant={"body2"}>{moment(state.lastStep.createdAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
+                                                            variant={"body2"}>{formatDateTime(state.lastStep.createdAt)}</Typography>
                                                     </Grid>
                                                     <Grid size={{xs: 12, md: 10}}>
                                                         <Typography
@@ -359,7 +359,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                                 (<Grid key={`last_error_${index}`} container={true} size={12}>
                                                     <Grid size={{xs: 12, md: 2}}>
                                                         <Typography
-                                                            variant={"body2"}>{moment(lastError.createdAt).format('YYYY/MM/DD HH:mm:ss')}</Typography>
+                                                            variant={"body2"}>{formatDateTime(lastError.createdAt)}</Typography>
                                                     </Grid>
                                                     <Grid size={{xs: 12, md: 10}}>
                                                         <Typography

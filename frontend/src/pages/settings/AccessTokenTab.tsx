@@ -18,7 +18,7 @@ import Grid from "@mui/material/Grid";
 import CopyToClipboard from "../../components/copy.clipboard.component";
 import IconButton from "@mui/material/IconButton";
 import {ContentCopy} from "@mui/icons-material";
-import Moment from "react-moment";
+import DateTime from "../../components/DateTime";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import {LocalizationProvider, MobileDatePicker} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
@@ -117,8 +117,7 @@ const AccessTokenTab: React.FC = () => {
                                         </Grid>
                                     </TableCell>
                                     <TableCell align="right">{accessToken.expiresAt !== null ? (
-                                        <Moment
-                                            format="YYYY/MM/DD HH:mm:ss">{accessToken.expiresAt}</Moment>) : ('Unlimited')}</TableCell>
+                                        <DateTime format="YYYY/MM/DD HH:mm:ss" value={accessToken.expiresAt}/>) : ('Unlimited')}</TableCell>
                                     <TableCell>
                                         <IconButton color="secondary" size="small" onClick={() => {
                                             handleDeleteAccessToken(accessToken.id as number);

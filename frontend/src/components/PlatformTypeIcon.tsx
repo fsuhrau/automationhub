@@ -3,12 +3,12 @@ import {
     Public
 } from "@mui/icons-material";
 import React from "react";
-import {ReactComponent as UnityIcon} from "../icons/unity-svgrepo-com.svg";
-import {ReactComponent as MacOSIcon} from "../icons/macos-svgrepo-com-2.svg";
-import {ReactComponent as IOSIcon} from "../icons/ios-svgrepo-com.svg";
-import {ReactComponent as AndroidIcon} from "../icons/android-svgrepo-com.svg";
-import {ReactComponent as LinuxIcon} from "../icons/linux-svgrepo-com.svg";
-import {ReactComponent as WindowsIcon} from "../icons/windows-174-svgrepo-com.svg";
+import UnityIcon from "../icons/unity-svgrepo-com.svg?react";
+import MacOSIcon from "../icons/macos-svgrepo-com-2.svg?react";
+import IOSIcon from "../icons/ios-svgrepo-com.svg?react";
+import AndroidIcon from "../icons/android-svgrepo-com.svg?react";
+import LinuxIcon from "../icons/linux-svgrepo-com.svg?react";
+import WindowsIcon from "../icons/windows-174-svgrepo-com.svg?react";
 
 import {useTheme} from "@mui/material/styles";
 

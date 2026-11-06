@@ -13,10 +13,9 @@ import {
     TableRow,
     Typography,
 } from '@mui/material';
-import {makeStyles} from '@mui/styles';
 import ITestRunData from '../../types/test.run';
 import {TestResultState} from '../../types/test.result.state.enum';
-import Moment from 'react-moment';
+import DateTime from "../../components/DateTime";
 import {useSSE} from 'react-hooks-sse';
 import ITesRunLogEntryData from '../../types/test.run.log.entry';
 import ITestProtocolData from '../../types/test.protocol';
@@ -53,7 +52,7 @@ interface NewTestRunPayload {
     entry: ITesRunLogEntryData,
 }
 
-const useStyles = makeStyles(theme => ({
+const runStyles = {
     chip: {
         '& .chip--error': {
             backgroundColor: 'red',
@@ -86,15 +85,15 @@ const useStyles = makeStyles(theme => ({
             margin: '5px',
         },
     },
-}));
+};
 
 const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
-    const classes = useStyles();
 
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
 
     const {testRun, nextRunId, prevRunId} = props;
+
     const {setError} = useError()
 
     const testContext = useContext(TestContext);
@@ -104,6 +103,9 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
 
     const [state, setState] = useState<{
         currentRunID: number,
+        currentTestRun: ITestRunData;
+        nextRunId: number | null;
+        prevRunId: number | null;
         log: ITesRunLogEntryData[],
         protocols: ITestProtocolData[],
         runsOpen: number,
@@ -111,42 +113,57 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         runsSuccess: number
     }>({
         currentRunID: testRun.id as number,
+        currentTestRun: testRun,
+        nextRunId: nextRunId,
+        prevRunId: prevRunId,
         log: [],
-        protocols: testRun.protocols === undefined ? [] : testRun.protocols,
+        protocols: testRun.protocols ? testRun.protocols : [],
         runsOpen: 0,
         runsSuccess: 0,
         runsFailed: 0
     })
 
-    const patchProtocols = (protocols: ITestProtocolData[], protocol: ITestProtocolData): ITestProtocolData[] => {
+    const patchProtocols = (parentId: null | number, protocols: ITestProtocolData[], protocol: ITestProtocolData): ITestProtocolData[] => {
+        if (parentId !== null) {
+            return protocols.map(p => p.id === protocol.parentTestProtocolId ? {
+                ...p,
+                childProtocols: patchProtocols(null, p.childProtocols, protocol)
+            } : p);
+        }
         if (protocols.findIndex(p => p.id === protocol.id) >= 0)
             return protocols.map(p => p.id === protocol.id ? protocol : p);
         return [...protocols, protocol]
     }
 
+    console.log(`listen to protocol test_run_${state.currentRunID}_protocol`)
     const testProtocolEntry = useSSE<ITestProtocolData | null>(`test_run_${state.currentRunID}_protocol`, null)
     useEffect(() => {
+        console.log("Received new protocol entry: " + JSON.stringify(testProtocolEntry))
         if (testProtocolEntry === null) return;
-        console.log("Received new protocol entry: " + testProtocolEntry.id)
         setState(prevState => ({
             ...prevState,
-            protocols: patchProtocols(prevState.protocols, testProtocolEntry),
+            protocols: [...patchProtocols(testProtocolEntry.parentTestProtocolId, prevState.protocols, testProtocolEntry)],
         }));
     }, [testProtocolEntry]);
 
     useEffect(() => {
-        console.log("testRun changed to: " + testRun.id)
-        setState(prevState => ({...prevState, currentRunID: testRun.id as number}));
-    }, [testRun.id]);
+        if (state.currentTestRun == null) {
+            return;
+        }
 
-    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${testRun.id}_log`, null);
+        console.log("testRun changed to: " + state.currentTestRun.id)
+        setState(prevState => ({...prevState, currentRunID: state.currentTestRun.id as number}));
+    }, [state.currentTestRun.id]);
+
+    /*
+    const testRunEntry = useSSE<NewTestRunPayload | null>(`test_run_${state.currentTestRun.id}_log`, null);
     useEffect(() => {
         if (testRunEntry === null || testRunEntry.entry == null)
             return;
         console.log("Received test Run log:  " + testRunEntry.entry.id)
         setState(prevState => ({...prevState, log: [...prevState.log, testRunEntry.entry]}))
     }, [testRunEntry]);
-
+*/
     type FilterType = {
         Success: boolean,
         Failed: boolean,
@@ -159,7 +176,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         Pending: true,
     });
 
-    const rebuildStatistics = (run: ITestRunData): { ro: number, rf: number, rs: number } => {
+    const rebuildStatistics = (protocols: ITestProtocolData[]): { ro: number, rf: number, rs: number } => {
         let ro: number;
         let rf: number;
         let rs: number;
@@ -167,7 +184,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         rf = 0;
         rs = 0;
 
-        run.protocols.forEach(value => {
+        protocols.forEach(value => {
             switch (value.testResult) {
                 case TestResultState.TestResultOpen:
                     ro++;
@@ -184,39 +201,39 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     }
 
     useEffect(() => {
-        let {ro, rf, rs} = rebuildStatistics(testRun);
+        let {ro, rf, rs} = rebuildStatistics(state.protocols);
         setState(prevState => ({
             ...prevState,
-            log: testRun.log,
+            log: state.currentTestRun.log,
             runsOpen: ro,
             runsFailed: rf,
             runsSuccess: rs,
-            protocols: testRun.protocols
+            // protocols: state.protocols
         }))
-    }, [testRun]);
+    }, [state.protocols]);
 
     const onTestRerun = (): void => {
-        executeTest(projectIdentifier, appId, testRun.testId, {
-            appBinaryId: testRun.appBinaryId,
-            params: testRun.parameter,
-            startUrl: testRun.startUrl,
+        executeTest(projectIdentifier, appId, state.currentTestRun.testId, {
+            appBinaryId: state.currentTestRun.appBinaryId,
+            params: state.currentTestRun.parameter,
+            startUrl: state.currentTestRun.startUrl,
         }).then(test => {
             //navigate(          `/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${test.id}`);
-            window.location.href = `/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${test.id}`;
+            window.location.href = `/project/${projectIdentifier}/app:${appId}/test/${state.currentTestRun.testId}/run/${test.id}`;
         }).catch(error => {
             setError(error);
         });
     };
 
     const onCancelTestRun = (): void => {
-        cancelTestRun(projectIdentifier, appId, testRun.testId, testRun.id!).then(response => {
+        cancelTestRun(projectIdentifier, appId, state.currentTestRun.testId, state.currentTestRun.id!).then(response => {
             console.log("test run cancelled", response);
         }).catch(error => {
             setError(error);
         });
     };
 
-    const startupTimes = testRun.deviceStatus.map(item => {
+    const startupTimes = state.currentTestRun.deviceStatus.map(item => {
             return {
                 Name: item.device && (item.device.alias.length > 0 ? item.device.alias : item.device.name),
                 StartupTime: item.startupTime
@@ -224,12 +241,13 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         }
     )
 
-    const environmentParameters = testRun?.parameter.split(";");
+    const environmentParameters = state.currentTestRun?.parameter.split(";");
 
     const applyProtocolFilter = (value: ITestProtocolData): boolean => {
         return (filter.Success && value.testResult === TestResultState.TestResultSuccess)
             || (filter.Failed && value.testResult === TestResultState.TestResultFailed)
-            || (filter.Pending && value.testResult === TestResultState.TestResultOpen);
+            || (filter.Pending && value.testResult === TestResultState.TestResultOpen)
+            || value.testResult === TestResultState.TestResultUnstable;
     }
 
     const groupProtocols = (protocols: ITestProtocolData[]): ITestProtocolData[] => {
@@ -267,7 +285,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                     </TableCell>
                     <TableCell component="th" scope="row">
                         <Link
-                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${testRun.id}/${row.id}`)}
+                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.currentTestRun.testId}/run/${state.currentTestRun.id}/${row.id}`)}
                             underline="none">
                             {testName}
                         </Link>
@@ -298,7 +316,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {row.childProtocols.map((historyRow) => {
+                                        {row.childProtocols?.map((historyRow) => {
                                             const historyTestName = historyRow.testName.split("/");
 
                                             return (
@@ -307,7 +325,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link
-                                                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${testRun.id}/${historyRow.id}`)}
+                                                            onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.currentTestRun.testId}/run/${state.currentTestRun.id}/${historyRow.id}`)}
                                                             underline="none">
                                                             {historyTestName.length > 1 ? historyTestName[1] : historyTestName[0]}
                                                         </Link>
@@ -339,16 +357,16 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}}}>
-            <TitleCard title={`Test: ${testRun.test.name} Run: ${testRun.id}`}>
+            <TitleCard title={`Test: ${state.currentTestRun.test.name} Run: ${state.currentTestRun.id}`}>
                 { /*test Previous and Next Navigation*/}
                 <Grid container={true} spacing={2}>
                     <Grid size={{xs: 6}} container={true} sx={{
                         padding: 2,
                         borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
-                        {prevRunId !== null && prevRunId > 0 &&
+                        {state.prevRunId !== null && state.prevRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${prevRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.currentTestRun.testId}/run/${state.prevRunId}`)}>
                                 <KeyboardArrowLeft/> Prev
                             </Button>
                         }
@@ -357,9 +375,9 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                         padding: 1,
                         borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                     }}>
-                        {nextRunId !== null && nextRunId > 0 &&
+                        {state.nextRunId !== null && state.nextRunId > 0 &&
                             <Button variant="contained" color="primary" size="small"
-                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${testRun.testId}/run/${nextRunId}`)}>
+                                    onClick={() => navigate(`/project/${projectIdentifier}/app:${appId}/test/${state.currentTestRun.testId}/run/${state.nextRunId}`)}>
                                 Next <KeyboardArrowRight/>
                             </Button>
                         }
@@ -379,7 +397,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                 <Grid sx={{flexGrow: 1}}></Grid>
             </TitleCard>
             {
-                testRun?.appBinary &&
+                state.currentTestRun?.appBinary &&
                 <TitleCard title={"App Bundle"}>
                     <Box sx={{p: 1, m: 1}}>
                         <Grid container={true}>
@@ -387,49 +405,48 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                 Name:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.name}
+                                {state.currentTestRun?.appBinary?.name}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Identifier:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.identifier}
+                                {state.currentTestRun?.appBinary?.identifier}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Platform:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.platform}
+                                {state.currentTestRun?.appBinary?.platform}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Version:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.version}
+                                {state.currentTestRun?.appBinary?.version}
                             </Grid>
                             <Grid size={{xs: 12, md: 2}}>
                                 Hash:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.hash}
+                                {state.currentTestRun?.appBinary?.hash}
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Created:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                <Moment
-                                    format="YYYY/MM/DD HH:mm:ss">{testRun?.appBinary?.createdAt}</Moment>
+                                <DateTime format="YYYY/MM/DD HH:mm:ss" value={state.currentTestRun?.appBinary?.createdAt}/>
                             </Grid>
 
                             <Grid size={{xs: 12, md: 2}}>
                                 Addons:
                             </Grid>
                             <Grid size={{xs: 12, md: 10}}>
-                                {testRun?.appBinary?.additional}
+                                {state.currentTestRun?.appBinary?.additional}
                             </Grid>
                         </Grid>
                     </Box>
@@ -493,7 +510,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                 </Grid>
             </TitleCard>
             <TitleCard title={"Test Functions"}>
-                <Grid container justifyContent="flex-end" className={classes.chip} padding={1}>
+                <Grid container justifyContent="flex-end" sx={runStyles.chip} padding={1}>
                     <CheckCircle htmlColor={filter.Success ? 'green' : 'lightgray'}
                                  onClick={() => setFilter(prevState => ({
                                      ...prevState,
@@ -522,8 +539,8 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {groupProtocols(state.protocols.filter(applyProtocolFilter)).map((protocol) => (
-                                    <TestProtocolRow row={protocol}/>
+                                {state.protocols.map((protocol) => (
+                                    <TestProtocolRow key={`protocol_${protocol.id}`} row={protocol}/>
                                 ))}
                             </TableBody>
                         </Table>
@@ -560,7 +577,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                         <TableBody>
                             {state.log.map((entry) => <TableRow key={entry.id}>
                                 <TableCell component="th" scope="row" style={{whiteSpace: 'nowrap'}}>
-                                    <Moment format="YYYY/MM/DD HH:mm:ss">{entry.createdAt}</Moment>
+                                    <DateTime format="YYYY/MM/DD HH:mm:ss" value={entry.createdAt}/>
                                 </TableCell>
                                 <TableCell>{entry.level}</TableCell>
                                 <TableCell>{entry.log}</TableCell>
