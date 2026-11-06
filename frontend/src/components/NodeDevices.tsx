@@ -9,6 +9,9 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
+    FormControlLabel,
+    Stack,
+    Switch,
     TextField,
     Typography,
 } from '@mui/material';
@@ -20,6 +23,26 @@ import {useError} from "../ErrorProvider";
 import DevicesTable from "./DevicesTable";
 import {useHubState} from "../hooks/HubStateProvider";
 import {HubStateActions} from "../application/HubState";
+import {getPlatformName, PlatformType} from "../types/platform.type.enum";
+
+// device platforms an app of the given platform runs on
+const devicePlatformsFor = (appPlatform: PlatformType): PlatformType[] => {
+    switch (appPlatform) {
+        case PlatformType.iOS:
+            return [PlatformType.iOS, PlatformType.IOSSimulator];
+        default:
+            return [appPlatform];
+    }
+};
+
+const selectedAppId = (): number | null => {
+    try {
+        const value = localStorage.getItem('appId');
+        return value ? Number(value) : null;
+    } catch {
+        return null;
+    }
+};
 
 const NodeDevices: React.FC = () => {
 
@@ -34,6 +57,12 @@ const NodeDevices: React.FC = () => {
     const [envParameter, setEnvParameter] = useState<string>('');
 
     const [open, setOpen] = useState(false);
+    const [showAll, setShowAll] = useState(false);
+
+    // only devices matching the selected app's platform, unless "all" is on
+    const selectedApp = state.apps?.find(a => a.id === selectedAppId());
+    const platforms = selectedApp ? devicePlatformsFor(selectedApp.platform) : null;
+    const devices = (state.devices ?? []).filter(d => showAll || platforms === null || platforms.includes(d.platformType));
     const handleClickOpen = (): void => {
         setOpen(true);
     };
@@ -135,8 +164,16 @@ const NodeDevices: React.FC = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            {selectedApp && <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={2} sx={{px: 1}}>
+                <Typography variant="body2" color="text.secondary">
+                    {showAll ? 'All devices' : `${getPlatformName(selectedApp.platform)} devices for ${selectedApp.name}`}
+                </Typography>
+                <FormControlLabel control={<Switch size="small" checked={showAll} onChange={(_, v) => setShowAll(v)}/>}
+                                  label="All platforms"/>
+            </Stack>}
+            {devices.length === 0 && <Typography variant="body2" sx={{p: 2}}>No matching devices.</Typography>}
             {
-                getSortedGroups(getGroups(state.devices ? state.devices : [])).map(([group, items]) => {
+                getSortedGroups(getGroups(devices)).map(([group, items]) => {
                     return (
                         <TitleCard key={`device_table_group_${group}`}
                                    title={`Node: ${group === "null" ? "Master" : group}`}>

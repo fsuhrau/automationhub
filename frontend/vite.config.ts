@@ -8,7 +8,20 @@ import svgr from 'vite-plugin-svgr';
 const backend = process.env.HUB_BACKEND ?? 'http://localhost:8002';
 
 export default defineConfig({
-    plugins: [react(), svgr()],
+    plugins: [react(), svgr({
+        svgrOptions: {
+            // the platform icons hard-code black; let them follow the text color
+            replaceAttrValues: {'#000000': 'currentColor', '#000': 'currentColor'},
+        },
+    })],
+    // pre-bundle the shared UI libraries so the first dev start doesn't
+    // re-optimize mid-load (which briefly loads @emotion/react twice)
+    optimizeDeps: {
+        include: ['@emotion/react', '@emotion/styled', '@mui/material', '@mui/icons-material', '@mui/x-data-grid', '@mui/x-tree-view'],
+    },
+    resolve: {
+        dedupe: ['react', 'react-dom', '@emotion/react', '@emotion/styled'],
+    },
     server: {
         port: 3000,
         proxy: {

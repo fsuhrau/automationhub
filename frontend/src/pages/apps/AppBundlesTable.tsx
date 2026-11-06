@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Button, ButtonGroup, Typography,} from '@mui/material';
+import {IconButton} from '@mui/material';
 import {DataGrid, GridColDef} from "@mui/x-data-grid";
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useError} from "../../ErrorProvider";
@@ -26,77 +26,75 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
     const [bundles, setBundles] = useState<IAppBinaryData[]>([]);
 
     const renderActions = (bundle: any) => {
-        return <ButtonGroup variant={"text"} aria-label="text button group">
-            <Button size="small" startIcon={<DownloadIcon/>} href={`/upload/${bundle?.AppPath}`}></Button>
-            <Button size="small" startIcon={<DeleteForeverIcon/>} onClick={() => {
-                handleDeleteApp(bundle?.id as number);
-            }}></Button>
-        </ButtonGroup>
+        return <>
+            <IconButton size="small" title="Download" href={`/upload/${bundle?.appPath}`}>
+                <DownloadIcon fontSize="small"/>
+            </IconButton>
+            <IconButton size="small" title="Delete" onClick={() => handleDeleteApp(bundle?.id as number)}>
+                <DeleteForeverIcon fontSize="small"/>
+            </IconButton>
+        </>
     }
 
+    // fixed widths for short values; the name takes the remaining space
     const columns: GridColDef[] = [
         {
             field: 'id',
             headerName: 'ID',
-            flex: 0.5,
-            minWidth: 1
-        },
-        {
-            field: 'version',
-            headerName: 'Version',
-            flex: 0.5,
-            minWidth: 90,
-        },
-        {
-            field: 'createdAt',
-            headerName: 'Created',
-            flex: 1,
-            minWidth: 90,
-            renderCell: (params) => (<DateTime format="YYYY/MM/DD HH:mm:ss" value={params.value}/>)
+            width: 70,
         },
         {
             field: 'name',
             headerName: 'Name',
-            flex: 0.5,
-            minWidth: 90,
+            flex: 2,
+            minWidth: 200,
+            renderCell: (params) => <span title={params.value}>{params.value}</span>,
+        },
+        {
+            field: 'version',
+            headerName: 'Version',
+            flex: 2,
+            minWidth: 200,
+            renderCell: (params) => <span title={params.value}>{params.value}</span>,
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Created',
+            width: 170,
+            renderCell: (params) => (<DateTime format="YYYY/MM/DD HH:mm:ss" value={params.value}/>)
         },
         {
             field: 'size',
             headerName: 'Size',
             headerAlign: 'right',
             align: 'right',
-            flex: 1,
-            minWidth: 100,
-            renderCell: (params) => (<Typography variant={'caption'}>{byteFormat(params.value)}</Typography>)
+            width: 100,
+            valueFormatter: (value) => byteFormat(value as number),
         },
         {
             field: 'tags',
             headerName: 'Tags',
-            headerAlign: 'right',
-            align: 'right',
             flex: 0.5,
-            minWidth: 90,
+            minWidth: 80,
         },
         {
             field: 'actions',
             headerName: '',
             headerAlign: 'right',
             align: 'right',
-            flex: 1,
-            minWidth: 100,
+            width: 96,
+            sortable: false,
             renderCell: (params) => renderActions(params.row),
         },
     ];
 
     useEffect(() => {
         if (projectIdentifier !== null && appId != null) {
-            if (bundles.length == 0) {
-                getAppBundles(projectIdentifier, appId as number).then(appBundles => {
-                    setBundles(appBundles);
-                }).catch(ex => {
-                    setError(ex);
-                });
-            }
+            getAppBundles(projectIdentifier, appId as number).then(appBundles => {
+                setBundles(appBundles);
+            }).catch(ex => {
+                setError(ex);
+            });
         }
     }, [projectIdentifier, appId]);
 
@@ -127,7 +125,6 @@ const AppBundlesTable: React.FC<AppBundlesTableProps> = (props: AppBundlesTableP
                 pagination: {paginationModel: {pageSize: 20}},
             }}
             pageSizeOptions={[10, 20, 50]}
-            disableColumnResize
             density="compact"
             slotProps={{
                 filterPanel: {

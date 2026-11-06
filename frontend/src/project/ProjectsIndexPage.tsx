@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
-import {ButtonBase, CardContent, IconButton, Typography} from '@mui/material';
+import {ButtonBase, CardContent, Tooltip, Typography} from '@mui/material';
 import CreateProjectDialog from "./create.project.dialog";
 import IProject from "./project";
 import {createProject, getProjects} from "./project.service";
@@ -13,6 +13,7 @@ import {HubStateActions} from "../application/HubState";
 import {Box} from "@mui/system";
 import PlatformTypeIcon from "../components/PlatformTypeIcon";
 import {useHubState} from "../hooks/HubStateProvider";
+import {useError} from "../ErrorProvider";
 import Grid from "@mui/material/Grid";
 
 const Card = styled(MuiCard)(({theme}) => ({
@@ -60,6 +61,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
 
     const navigate = useNavigate();
     const location = useLocation()
+    const {setError} = useError()
 
     const [openNewProjectDialog, setOpenNewProjectDialog] = useState<boolean>(false);
 
@@ -71,7 +73,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
         createProject(project).then(project => {
             navigate(`/project/${project.identifier}`)
         }).catch(ex => {
-            console.log(ex)
+            setError(ex)
         })
     };
 
@@ -79,6 +81,8 @@ const ProjectsIndexPage: React.FC = (props: any) => {
         if (state.projects === null) {
             getProjects().then(projects => {
                 dispatch({type: HubStateActions.ProjectsUpdate, payload: projects})
+            }).catch(ex => {
+                setError(ex)
             })
         }
     }, [state.projects])
@@ -91,17 +95,13 @@ const ProjectsIndexPage: React.FC = (props: any) => {
             <ProjectContainer justifyContent="space-between">
                 <Grid size={12} container={true} spacing={2}>
                     <Grid size={12}>
-                        <Typography variant={"h3"}>Your Projects:</Typography>
+                        <Typography variant={"h5"} component="h1">Your Projects</Typography>
                     </Grid>
                     <Grid container={true} size={12} alignItems={"center"} justifyContent={"center"} sx={{height: '100%'}}>
-                        <Grid size={3}>
+                        <Grid size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                             <Card variant="outlined" onClick={handleCreateNewProject}>
-                                <ButtonBase sx={{width: '100%', padding: 2, height: 200, display: 'block'}}>
-                                    <Typography
-                                        component="h3"
-                                        variant="h3"
-                                        sx={{width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)'}}
-                                    >
+                                <ButtonBase sx={{width: '100%', padding: 2, minHeight: 140, display: 'block', textAlign: 'left'}}>
+                                    <Typography component="h2" variant="h6">
                                         Create new Project
                                     </Typography>
                                     <Box
@@ -111,11 +111,7 @@ const ProjectsIndexPage: React.FC = (props: any) => {
                                                              onClose={() => setOpenNewProjectDialog(false)}
                                                              onSubmit={onCreateNewProject}/>
                                         <CardContent>
-                                            <Typography
-                                                component="h3"
-                                                variant="h3"
-                                                sx={{width: '100%', fontSize: 'clamp(1rem, 10vw, 1.15rem)'}}
-                                            >
+                                            <Typography variant="h4" component="span" color="text.secondary">
                                                 +
                                             </Typography>
                                         </CardContent>
@@ -126,22 +122,14 @@ const ProjectsIndexPage: React.FC = (props: any) => {
 
                         {
                             state.projects?.map(project => (
-                                <Grid key={`projects_${project.id}`} size={3}>
+                                <Grid key={`projects_${project.id}`} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                                     <Card variant="outlined" key={`project_${project.identifier}`}
                                           onClick={() => navigate(`/project/${project.identifier}`)}>
-                                        <ButtonBase sx={{width: '100%', padding: 2, height: 200, display: 'block'}}>
-                                            <Typography
-                                                component="h3"
-                                                variant="h3"
-                                                sx={{width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)'}}
-                                            >
+                                        <ButtonBase sx={{width: '100%', padding: 2, minHeight: 140, display: 'block', textAlign: 'left'}}>
+                                            <Typography component="h2" variant="h6" noWrap>
                                                 {project.name}
                                             </Typography>
-                                            <Typography
-                                                component="h3"
-                                                variant="h3"
-                                                sx={{width: '100%', fontSize: 'clamp(1rem, 10vw, 1.15rem)'}}
-                                            >
+                                            <Typography variant="body2" color="text.secondary" noWrap sx={{mb: 1}}>
                                                 {project.identifier}
                                             </Typography>
                                             <Box
@@ -149,9 +137,11 @@ const ProjectsIndexPage: React.FC = (props: any) => {
                                             >
                                                 {
                                                     project.apps.map(app => (
-                                                        <IconButton key={`project_app_${app.id}`}>
-                                                            <PlatformTypeIcon platformType={app.platform}/>
-                                                        </IconButton>
+                                                        <Tooltip key={`project_app_${app.id}`} title={app.name}>
+                                                            <Box component="span" sx={{display: 'inline-flex'}}>
+                                                                <PlatformTypeIcon platformType={app.platform} color="action"/>
+                                                            </Box>
+                                                        </Tooltip>
                                                     ))
                                                 }
                                             </Box>
