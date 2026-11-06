@@ -21,6 +21,7 @@ enum DeviceState {
   RemoteDisconnected = 3;
   Booted = 4;
   Locked = 5;
+  Unauthorized = 6;
 }
 
 enum DeviceConnectionType {

@@ -19,6 +19,8 @@ func fromDeviceState(state device2.State) DeviceState {
 		return DeviceState_Booted
 	case device2.StateLocked:
 		return DeviceState_Locked
+	case device2.StateUnauthorized:
+		return DeviceState_Unauthorized
 	}
 	return DeviceState_Unknown
 }
@@ -37,6 +39,8 @@ func toDeviceState(state DeviceState) device2.State {
 		return device2.StateBooted
 	case DeviceState_Locked:
 		return device2.StateLocked
+	case DeviceState_Unauthorized:
+		return device2.StateUnauthorized
 	}
 	return device2.StateUnknown
 }

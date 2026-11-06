@@ -10,6 +10,8 @@ const (
 	StateBooted
 	StateLocked
 	StateNodeDisconnected
+	// StateUnauthorized: connected, but USB debugging isn't accepted on the device yet
+	StateUnauthorized
 )
 
 func StateToString(state State) string {
@@ -26,6 +28,8 @@ func StateToString(state State) string {
 		return "locked"
 	case StateNodeDisconnected:
 		return "node disconnected"
+	case StateUnauthorized:
+		return "unauthorized"
 	}
 	return ""
 }

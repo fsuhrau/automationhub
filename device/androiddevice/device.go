@@ -100,6 +100,8 @@ func (d *Device) SetDeviceState(state string) {
 		d.deviceState = device.StateShutdown
 	case "StateRemoteDisconnected":
 		d.deviceState = device.StateRemoteDisconnected
+	case "StateUnauthorized":
+		d.deviceState = device.StateUnauthorized
 	case "StateUnknown":
 		d.deviceState = device.StateUnknown
 	default:

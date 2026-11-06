@@ -170,6 +170,59 @@ func (m *Handler) GetDevices() ([]device.Device, error) {
 	return devices, nil
 }
 
+// registerNewDevice stores a newly seen device and wires its remote logging.
+func (m *Handler) registerNewDevice(d *Device) {
+	dev := models.Device{
+		DeviceIdentifier: d.deviceID,
+		DeviceType:       models.DeviceTypePhone,
+		Name:             d.deviceName,
+		Manager:          Manager,
+		OS:               "android",
+		PlatformType:     models.PlatformTypeAndroid,
+		OSVersion:        d.deviceOSVersion,
+		ConnectionParameter: &models.ConnectionParameter{
+			ConnectionType: models.ConnectionTypeUSB,
+		},
+	}
+
+	d.SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, d.deviceID, m.authToken))
+	d.AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, d.deviceID, m.authToken))
+
+	m.deviceStorage.NewDevice(m.Name(), dev)
+	m.deviceStorage.Update(m.Name(), d)
+	d.SetConfig(&dev)
+}
+
+// updateUnavailableDevice handles adb entries that are listed but not usable,
+// e.g. "unauthorized" (USB debugging not accepted on the phone) or "offline".
+func (m *Handler) updateUnavailableDevice(entry adbDeviceEntry, lastUpdate time.Time) {
+	state := "StateRemoteDisconnected"
+	if entry.State == adbStateUnauthorized {
+		state = "StateUnauthorized"
+	}
+	if d, ok := m.devices[entry.Serial]; ok {
+		d.lastUpdateAt = lastUpdate
+		d.SetDeviceState(state)
+		m.deviceStorage.Update(m.Name(), d)
+		return
+	}
+	if entry.State != adbStateUnauthorized {
+		return
+	}
+	// a new phone waiting for authorization: list it, but its properties can
+	// only be read once it is authorized (deviceParameter stays nil until then)
+	d := &Device{
+		deviceID:      entry.Serial,
+		deviceName:    entry.Serial,
+		deviceOSName:  "android",
+		lastUpdateAt:  lastUpdate,
+		installedApps: make(map[string]string),
+	}
+	d.SetDeviceState(state)
+	m.devices[entry.Serial] = d
+	m.registerNewDevice(d)
+}
+
 func (m *Handler) RefreshDevices(force bool) error {
 	lastUpdate := time.Now().UTC()
 	cmd := exec.NewCommand("adb", "devices", "-l")
@@ -181,6 +234,14 @@ func (m *Handler) RefreshDevices(force bool) error {
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
+		entry, ok := parseADBDeviceLine(line)
+		if !ok {
+			continue
+		}
+		if entry.State != adbStateDevice {
+			m.updateUnavailableDevice(entry, lastUpdate)
+			continue
+		}
 		matches := DeviceListRegex.FindAllStringSubmatch(line, -1)
 		if len(matches) < 1 {
 			continue
@@ -189,8 +250,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 			continue
 		}
 		deviceID := matches[0][1]
-		if _, ok := m.devices[deviceID]; ok {
-			dev := m.devices[deviceID]
+		if dev, ok := m.devices[deviceID]; ok && dev.deviceParameter != nil {
 			if dev.GetConfig() == nil {
 				for _, d := range devs {
 					if d.DeviceIdentifier == dev.deviceID {
@@ -203,6 +263,12 @@ func (m *Handler) RefreshDevices(force bool) error {
 			dev.SetDeviceState("StateBooted")
 			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.deviceStorage.Update(m.Name(), dev)
+		} else if ok {
+			// known from an unauthorized state: now readable, load its infos
+			dev.lastUpdateAt = lastUpdate
+			dev.UpdateDeviceInfos(matches[0])
+			dev.SetDeviceState("StateBooted")
+			m.deviceStorage.Update(m.Name(), dev)
 		} else {
 			m.devices[deviceID] = &Device{
 				deviceID:      deviceID,
@@ -212,25 +278,7 @@ func (m *Handler) RefreshDevices(force bool) error {
 			}
 			m.devices[deviceID].UpdateDeviceInfos(matches[0])
 			m.devices[deviceID].SetDeviceState("StateBooted")
-			dev := models.Device{
-				DeviceIdentifier: deviceID,
-				DeviceType:       models.DeviceTypePhone,
-				Name:             m.devices[deviceID].deviceName,
-				Manager:          Manager,
-				OS:               "android",
-				PlatformType:     models.PlatformTypeAndroid,
-				OSVersion:        m.devices[deviceID].deviceOSVersion,
-				ConnectionParameter: &models.ConnectionParameter{
-					ConnectionType: models.ConnectionTypeUSB,
-				},
-			}
-
-			m.devices[deviceID].SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
-			m.devices[deviceID].AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, deviceID, m.authToken))
-
-			m.deviceStorage.NewDevice(m.Name(), dev)
-			m.deviceStorage.Update(m.Name(), m.devices[deviceID])
-			m.devices[deviceID].SetConfig(&dev)
+			m.registerNewDevice(m.devices[deviceID])
 		}
 	}
 

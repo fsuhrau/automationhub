@@ -85,6 +85,8 @@ func (d *NodeDevice) SetDeviceState(state string) {
 		d.deviceState = device.StateRemoteDisconnected
 	case "StateNodeDisconnected":
 		d.deviceState = device.StateNodeDisconnected
+	case "StateUnauthorized":
+		d.deviceState = device.StateUnauthorized
 	default:
 		d.deviceState = device.StateUnknown
 	}

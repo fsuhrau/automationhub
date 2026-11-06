@@ -6,6 +6,7 @@ export enum DeviceStateType {
     Booted,
     Locked,
     NodeDisconnected,
+    Unauthorized,
 }
 
 export const deviceState = (state: DeviceStateType): string => {
@@ -25,6 +26,8 @@ export const deviceState = (state: DeviceStateType): string => {
             return 'Locked';
         case DeviceStateType.NodeDisconnected:
             return 'Node Disconnected';
+        case DeviceStateType.Unauthorized:
+            return 'Unauthorized';
     }
     return '';
 };
