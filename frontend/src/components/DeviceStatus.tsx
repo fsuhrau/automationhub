@@ -41,10 +41,12 @@ const hints: Partial<Record<DeviceStateType, React.ReactNode>> = {
     [DeviceStateType.Unknown]: <>The device state isn't known yet; it is updated with the next refresh.</>,
 };
 
-const DeviceStatus: React.FC<{ state: DeviceStateType, platform?: PlatformType }> = ({state, platform}) => {
+// DeviceStatus shows a state with a tooltip on how to fix it; label replaces
+// the state's name (e.g. "How to fix" next to a sentence that names it)
+const DeviceStatus: React.FC<{ state: DeviceStateType, platform?: PlatformType, label?: string }> = ({state, platform, label: text}) => {
     const isIOS = platform === PlatformType.iOS || platform === PlatformType.IOSSimulator;
     const hint = state === DeviceStateType.Unauthorized && isIOS ? iosUnauthorized : hints[state];
-    const label = deviceState(state);
+    const label = text ?? deviceState(state);
     if (!hint) {
         return <>{label}</>;
     }

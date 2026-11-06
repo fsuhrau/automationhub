@@ -1,6 +1,7 @@
 import http from '../http-common';
 import IDeviceData from '../types/device';
 import ITestRunData from '../types/test.run';
+import ITestProtocolData from '../types/test.protocol';
 import {PlatformType} from "../types/platform.type.enum";
 
 export const getAllDevices = (projectId: string, platform?: PlatformType): Promise<IDeviceData[]> => {
@@ -40,4 +41,13 @@ export const findByNameFoo = (projectId: string, filter?: DeviceFilter): Promise
 
 export const runTest = (projectId: string, id: number | null | undefined, testName: string, env: string): Promise<ITestRunData> => {
     return http.post(`/${projectId}/device/${id}/tests`, {testName: testName, env: env}).then(resp => resp.data)
+};
+
+// the latest test results on the device, newest first (tests of this project)
+export const getDeviceProtocols = (projectId: string, id: number, limit: number = 10): Promise<ITestProtocolData[]> => {
+    return http.get(`/${projectId}/device/${id}/protocols`, {params: {limit}}).then(resp => {
+        // older masters don't have the route and answer with something else
+        if (!Array.isArray(resp.data)) throw new Error('the master has no device test history');
+        return resp.data;
+    })
 };
