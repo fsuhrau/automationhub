@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
@@ -117,7 +118,7 @@ func (w *LogWriter) Log(source, format string, params ...interface{}) {
 
 func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	msg := fmt.Sprintf(format, params...)
-	w.errs = append(w.errs, fmt.Errorf(msg))
+	w.errs = append(w.errs, errors.New(msg))
 	w.write(source, "error", msg, "")
 }
 

@@ -40,7 +40,7 @@ func (s *Service) createAccessToken(c *gin.Context) {
 	projectId := c.Param("project_id")
 	var project models.Project
 	if err := s.db.First(&project, "identifier = ?", projectId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-		s.error(c, http.StatusNotFound, fmt.Errorf("project "+projectId+" not found"))
+		s.error(c, http.StatusNotFound, fmt.Errorf("project %s not found", projectId))
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s *Service) getAccessTokens(c *gin.Context) {
 	projectId := c.Param("project_id")
 	var project models.Project
 	if err := s.db.First(&project, "identifier = ?", projectId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-		s.error(c, http.StatusNotFound, fmt.Errorf("project "+projectId+" not found"))
+		s.error(c, http.StatusNotFound, fmt.Errorf("project %s not found", projectId))
 		return
 	}
 

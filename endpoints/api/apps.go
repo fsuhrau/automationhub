@@ -2,15 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func (s *Service) ResolveApp(context *gin.Context) {
@@ -209,79 +206,25 @@ func (s *Service) updateBinary(c *gin.Context, project *models.Project, applicat
 
 func (s *Service) uploadBinary(c *gin.Context, project *models.Project, application *models.App) {
 	file, err := c.FormFile("test_target")
-
 	if err != nil {
 		s.error(c, http.StatusBadRequest, fmt.Errorf("get form err: %s", err.Error()))
 		return
 	}
 
-	filename := filepath.Base(file.Filename)
-	filePath := filepath.Join(apps.AppStoragePath, filename)
-
-	os.MkdirAll("upload", os.ModePerm)
-
+	if err := os.MkdirAll(apps.AppStoragePath, os.ModePerm); err != nil {
+		s.error(c, http.StatusInternalServerError, err)
+		return
+	}
+	filePath := filepath.Join(apps.AppStoragePath, filepath.Base(file.Filename))
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		s.error(c, http.StatusInternalServerError, fmt.Errorf("upload file err: %s", err.Error()))
 		return
 	}
 
-	analyser := app.NewAnalyser(filePath)
-	if err := analyser.AnalyseFile(); err != nil {
-		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to analyse app err: %s", err.Error()))
+	bundle, err := s.StoreBundle(application, filePath)
+	if err != nil {
+		s.error(c, statusForError(err), err)
 		return
 	}
-	params := analyser.GetParameter()
-
-	ext := filepath.Ext(filename)
-	newFileName := strings.TrimSuffix(filename, ext)
-	params.App.AppPath = fmt.Sprintf("%s_%s%s", newFileName, params.App.Hash, ext)
-	newFilePath := filepath.Join(apps.AppStoragePath, params.App.AppPath)
-	if err := os.Rename(filePath, newFilePath); err != nil {
-		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to store file err: %s", err.Error()))
-		return
-	}
-
-	a := models.AppBinary{}
-	result := s.db.First(&a, "hash = '%s'", params.App.Hash)
-	if result.RowsAffected > 0 {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("app exists already "))
-		return
-	}
-	if err != nil && err == gorm.ErrRecordNotFound {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("app exists already err: %v", err))
-		return
-	}
-
-	var launchActivity string
-	if params.App.Android != nil {
-		launchActivity = params.App.Android.LaunchActivity
-	}
-	var executable string
-	if params.App.Executable != nil {
-		executable = params.App.Executable.Executable
-	}
-
-	appDto := models.AppBinary{
-		AppPath:    params.App.AppPath,
-		Hash:       params.App.Hash,
-		Name:       params.Name,
-		Identifier: params.Identifier,
-		AppID:      application.ID,
-		Version:    params.Version,
-		Android: models.Android{
-			LaunchActivity: launchActivity,
-		},
-		Executable: models.Executable{
-			Executable: executable,
-		},
-		Platform:   params.Platform,
-		Additional: params.App.Additional,
-		Size:       params.App.Size,
-	}
-	if err := s.db.Create(&appDto).Error; err != nil {
-		s.error(c, http.StatusInternalServerError, fmt.Errorf("unable to create app err: %s", err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusCreated, appDto)
+	c.JSON(http.StatusCreated, bundle)
 }

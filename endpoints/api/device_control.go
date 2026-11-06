@@ -65,6 +65,10 @@ func (s *Service) resolveControlApp(c *gin.Context, binaryID uint) (*app.Paramet
 	return &params, nil
 }
 
+func (s *Service) serveMCP(c *gin.Context, project *models.Project) {
+	s.mcp.ServeHTTP(c.Writer, c.Request, project, requestOwner(c))
+}
+
 // requestOwner names the authenticated caller for device leases.
 func requestOwner(c *gin.Context) string {
 	value, _ := c.Get(authentication.UserKey)

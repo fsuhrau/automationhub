@@ -71,7 +71,7 @@ func (rpc *RPCClient) StartDevice(deviceId string) error {
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (rpc *RPCClient) StopDevice(deviceId string) error {
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }
@@ -144,7 +144,7 @@ func (rpc *RPCClient) IsAppInstalled(deviceId string, parameter *app.Parameter) 
 		return false, err
 	}
 	if resp.ErrorCode != 0 {
-		return false, fmt.Errorf(resp.ErrorMessage)
+		return false, errors.New(resp.ErrorMessage)
 	}
 	return resp.Value, nil
 }
@@ -157,7 +157,7 @@ func (rpc *RPCClient) IsAppUploaded(parameter *app.Parameter) (bool, error) {
 		return false, err
 	}
 	if resp.ErrorCode != 0 {
-		return false, fmt.Errorf(resp.ErrorMessage)
+		return false, errors.New(resp.ErrorMessage)
 	}
 	return resp.Value, nil
 }
@@ -184,7 +184,7 @@ func (rpc *RPCClient) UploadApp(ctx context.Context, parameter *app.Parameter) e
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 
 	ticker := time.NewTicker(time.Second)
@@ -230,7 +230,7 @@ func (rpc *RPCClient) InstallApp(deviceId string, parameter *app.Parameter) erro
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }
@@ -242,7 +242,7 @@ func (rpc *RPCClient) UninstallApp(deviceId string, parameter *app.Parameter) er
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }
@@ -275,7 +275,7 @@ func (rpc *RPCClient) StartApp(deviceId string, config *device.DeviceConfig, par
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }
@@ -288,7 +288,7 @@ func (rpc *RPCClient) StopApp(deviceId string, parameter *app.Parameter) error {
 		return err
 	}
 	if resp.ErrorCode != 0 {
-		return fmt.Errorf(resp.ErrorMessage)
+		return errors.New(resp.ErrorMessage)
 	}
 	return nil
 }

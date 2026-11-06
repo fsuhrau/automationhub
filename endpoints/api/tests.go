@@ -1,16 +1,15 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/fsuhrau/automationhub/tester"
-	"github.com/fsuhrau/automationhub/tester/scenario"
-	"github.com/fsuhrau/automationhub/tester/unity"
 	"github.com/gin-gonic/gin"
 	"math"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -315,109 +314,46 @@ type RunTestRequest struct {
 }
 
 func (s *Service) runTest(c *gin.Context, project *models.Project, application *models.App) {
-
-	testId := c.Param("test_id")
+	testID, err := strconv.ParseUint(c.Param("test_id"), 10, 64)
+	if err != nil {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("invalid test id"))
+		return
+	}
 	var req RunTestRequest
 	if err := c.Bind(&req); err != nil {
 		s.error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	environmentParams := extractParams(req.Params)
-
-	var test models.Test
-	if err := s.db.Preload("App").Preload("TestConfig").Preload("TestConfig.Devices").First(&test, testId).Error; err != nil {
-		s.error(c, http.StatusNotFound, err)
-		return
-	}
-
-	var binary *models.AppBinary
-	if test.App.Platform != models.PlatformTypeEditor && test.App.Platform != models.PlatformTypeWeb {
-		binary = &models.AppBinary{}
-		if err := s.db.Preload("App").First(binary, req.AppBinaryID).Error; err != nil {
-			s.error(c, http.StatusNotFound, err)
-			return
-		}
-	}
-
-	var devices []models.Device
-	if test.TestConfig.AllDevices {
-		if err := s.db.Find(&devices).Error; err != nil {
-			s.error(c, http.StatusNotFound, err)
-			return
-		}
-	} else {
-		if err := s.db.Find(&devices, test.TestConfig.GetDeviceIds()).Error; err != nil {
-			s.error(c, http.StatusNotFound, err)
-			return
-		}
-	}
-
-	for i := range devices {
-		devices[i].Dev, _ = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
-	}
-
-	var run *models.TestRun
-	var testRunner tester.Interface
-
-	switch test.TestConfig.Type {
-	case models.TestTypeUnity:
-		testRunner = unity.New(s.db, s.nodeUrl, s.devicesManager, s, project.Identifier, application.ID)
-		if err := s.db.Preload("UnityTestFunctions").Where("test_config_id = ?", test.TestConfig.ID).First(&test.TestConfig.Unity).Error; err != nil {
-			s.error(c, http.StatusInternalServerError, err) // Todo status code
-			return
-		}
-		break
-	case models.TestTypeScenario:
-		testRunner = scenario.New(s.db, s.nodeUrl, s.devicesManager, s, project.Identifier, application.ID)
-		break
-	default:
-		s.error(c, http.StatusInternalServerError, fmt.Errorf("invalid test config type")) // Todo status code
-		return
-	}
-
-	if err := testRunner.Initialize(test, environmentParams); err != nil {
-		s.error(c, http.StatusInternalServerError, err) // Todo status code
-		return
-	}
-
-	s.runnersMutex.Lock()
-	s.runners[testId] = testRunner
-	s.runnersMutex.Unlock()
-
-	var err error
-	run, err = testRunner.Run(devices, binary, req.StartURL)
+	run, err := s.StartTestRun(project, uint(testID), uint(req.AppBinaryID), req.StartURL, req.Params)
 	if err != nil {
-		s.error(c, http.StatusInternalServerError, err) // Todo status code
+		s.error(c, statusForError(err), err)
 		return
 	}
-
 	c.JSON(http.StatusOK, run)
 }
 
 func (s *Service) cancelTestRun(c *gin.Context, project *models.Project, application *models.App) {
-	testId := c.Param("test_id")
-	runId := c.Param("run_id")
-
-	s.runnersMutex.Lock()
-	testRunner, exists := s.runners[testId]
-	s.runnersMutex.Unlock()
-
-	if !exists {
-		s.error(c, http.StatusNotFound, fmt.Errorf("test runner not found"))
+	runID, err := strconv.ParseUint(c.Param("run_id"), 10, 64)
+	if err != nil {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("invalid run id"))
 		return
 	}
-
-	if err := testRunner.Cancel(runId); err != nil {
-		s.error(c, http.StatusInternalServerError, err)
+	if err := s.CancelTestRun(project, uint(runID)); err != nil {
+		s.error(c, statusForError(err), err)
 		return
 	}
-
-	s.runnersMutex.Lock()
-	delete(s.runners, testId)
-	s.runnersMutex.Unlock()
-
 	c.JSON(http.StatusOK, gin.H{"status": "cancelled"})
+}
+
+func statusForError(err error) int {
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, ErrBundleExists):
+		return http.StatusConflict
+	}
+	return http.StatusInternalServerError
 }
 
 func (s *Service) getTestRuns(c *gin.Context, project *models.Project, application *models.App) {

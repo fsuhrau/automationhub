@@ -3,8 +3,11 @@ package api
 import (
 	"context"
 	"github.com/fsuhrau/automationhub/config"
+	hubmcp "github.com/fsuhrau/automationhub/endpoints/mcp"
+	"github.com/fsuhrau/automationhub/events"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/runs"
 	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/gin-gonic/gin"
@@ -26,11 +29,13 @@ type Service struct {
 	runners      map[string]tester.Interface
 	runnersMutex sync.Mutex
 
-	control *hubcontrol.Service
+	control    *hubcontrol.Service
+	runTracker *runs.Tracker
+	mcp        *hubmcp.Handler
 }
 
 func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices, sm manager.Sessions, config config.Service, nodeManager manager.Nodes) *Service {
-	return &Service{
+	svc := &Service{
 		logger:          logger.WithField("Service", "Api"),
 		nodeUrl:         nodeUrl,
 		db:              db,
@@ -42,6 +47,17 @@ func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices,
 		runners:         make(map[string]tester.Interface),
 		control:         hubcontrol.New(dm),
 	}
+	svc.runTracker = runs.NewTracker(svc.onRunFinished)
+	events.TestRunFinished.Register(svc.runTracker)
+	svc.mcp = hubmcp.NewHandler(hubmcp.Deps{
+		DB:      db,
+		Backend: svc,
+		Devices: dm,
+		Control: svc.control,
+		Runs:    svc.runTracker,
+		NodeURL: nodeUrl,
+	})
+	return svc
 }
 
 func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
@@ -80,6 +96,10 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 		projectApi.POST("/device/:device_id/tests", s.WithProject(s.deviceRunTests))
 		projectApi.GET("/devices", s.WithProject(s.getDevices))
 		s.registerDeviceControl(projectApi)
+		// MCP (streamable HTTP): POST for messages, GET for the event stream, DELETE ends a session
+		projectApi.POST("/mcp", s.WithProject(s.serveMCP))
+		projectApi.GET("/mcp", s.WithProject(s.serveMCP))
+		projectApi.DELETE("/mcp", s.WithProject(s.serveMCP))
 
 		projectApi.POST("/app", s.WithProject(s.createApp))
 		projectApi.GET("/apps", s.WithProject(s.getApps))

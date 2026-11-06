@@ -16,7 +16,7 @@ func (c *Client) postJSON(path string, body any) (int, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	req, err := http.NewRequest(http.MethodPost, c.getSessionUrl(path), bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, c.getSessionUrl("%s", path), bytes.NewReader(payload))
 	if err != nil {
 		return 0, nil, err
 	}
