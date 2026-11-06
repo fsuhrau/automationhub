@@ -109,6 +109,21 @@ export const inputsCustomizations: Components<Theme> = {
             },
           },
           {
+            // the gradients above stay on disabled buttons and hide the
+            // disabled label (white on a light gradient in dark mode); let
+            // the default disabled colors show instead
+            props: {
+              variant: 'contained',
+            },
+            style: {
+              '&.Mui-disabled': {
+                backgroundImage: 'none',
+                boxShadow: 'none',
+                borderColor: 'transparent',
+              },
+            },
+          },
+          {
             props: {
               variant: 'outlined',
             },
