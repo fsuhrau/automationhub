@@ -1,6 +1,24 @@
-VERSION := $(shell git describe --tags --abbrev=0)
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null)
+LDFLAGS := -X github.com/fsuhrau/automationhub/hub.version=$(VERSION)
 SRC_DIR=./proto
 DST_DIR=./out
+
+.PHONY: help
+help:
+	@echo "Build:"
+	@echo "  make frontend         Build the web UI into endpoints/web/data (embedded by the master)"
+	@echo "  make buildMac         Frontend + master/node and cli binaries for macOS (bin/macos)"
+	@echo "  make buildLinux       Frontend + binaries for linux/amd64 (bin/linux)"
+	@echo "  make buildWindows     Frontend + binaries for windows/amd64 (bin/windows)"
+	@echo "  make proto            Generate the node protobuf code"
+	@echo "Run:"
+	@echo "  make server           Run the master (automationhub.yaml)"
+	@echo "  make node             Run a node (automationhub_slave.yaml)"
+	@echo "  make run              Run the web UI dev server (proxies /api to :8002)"
+	@echo "  make lint             Lint and fix the frontend"
+	@echo "DevContainer:"
+	@echo "  make dev-bootstrap    Fetch/install devcontainer base layer (first time setup)"
+	@echo "  make dev-help         Show all devcontainer commands"
 
 .PHONY: proto
 proto:
@@ -21,22 +39,24 @@ lint:
 # run frontend build
 .PHONY: frontend
 frontend:
-	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../
+	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build
 
-# run build for frontend and backend
+# build frontend and backend; GOOS/GOARCH go on the go build commands, so
+# the Linux and Windows targets really cross-compile
 .PHONY: buildMac
-buildMac:
-	cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/macos/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/macos/cli
+buildMac: frontend
+	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/macos/automationhub .
+	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/macos/cli ./cli
 
-# run build for frontend and backend for Windows
 .PHONY: buildWindows
-buildWindows:
-	GOOS=windows GOARCH=amd64 cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/windows/automationhub.exe && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/windows/cli.exe
+buildWindows: frontend
+	GOOS=windows GOARCH=amd64 go build -trimpath -ldflags '$(LDFLAGS)' -o bin/windows/automationhub.exe .
+	GOOS=windows GOARCH=amd64 go build -trimpath -ldflags '$(LDFLAGS)' -o bin/windows/cli.exe ./cli
 
-# run build for frontend and backend for linux
 .PHONY: buildLinux
-buildLinux:
-	GOOS=linux GOARCH=amd64 cd frontend && BUILD_PATH=../endpoints/web/data/ yarn build && cd ../ && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o bin/linux/automationhub && cd cli && go build -trimpath -ldflags '-X github.com/fsuhrau/automationhub/hub.version=$(VERSION)' -o ../bin/linux/cli
+buildLinux: frontend
+	GOOS=linux GOARCH=amd64 go build -trimpath -ldflags '$(LDFLAGS)' -o bin/linux/automationhub .
+	GOOS=linux GOARCH=amd64 go build -trimpath -ldflags '$(LDFLAGS)' -o bin/linux/cli ./cli
 
 .PHONY: server
 server:
@@ -45,3 +65,25 @@ server:
 .PHONY: node
 node:
 	go run main.go node --config automationhub_slave.yaml
+
+# Bootstrap target — always available even before base/ exists
+.PHONY: dev-bootstrap
+dev-bootstrap:
+	@bash .devcontainer/innoclaude ensure
+
+# dev-help stub: shows bootstrap instructions when base/ is not yet installed.
+# Once base/ exists, the real dev-help from dev-container.mk takes over via -include.
+ifneq ($(wildcard .devcontainer/base/mk/dev-container.mk),)
+else
+.PHONY: dev-help
+dev-help:
+	@echo ""
+	@echo "  The base layer is not installed yet."
+	@echo ""
+	@echo "  make dev-bootstrap    Fetch and install the base layer"
+	@echo ""
+endif
+
+# DevContainer targets (wildcard picks up all base .mk files)
+-include .devcontainer/base/mk/dev-*.mk
+-include .devcontainer/base/mk/features/dev-*.mk
