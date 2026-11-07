@@ -8,7 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/modules/webdriver"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"image"
-	"image/color"
+	"image/draw"
 	"image/png"
 	"net"
 	"os/exec"
@@ -20,7 +20,6 @@ import (
 	"github.com/danielpaulus/go-ios/ios/screenshotr"
 	"github.com/danielpaulus/go-ios/ios/testmanagerd"
 	"github.com/danielpaulus/go-ios/ios/zipconduit"
-	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -247,13 +246,30 @@ func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 		return nil, width, height, fmt.Errorf("decode screenshot: %w", err)
 	}
 
-	uploadedImage := imaging.Rotate(srcImage, -90, color.Gray{})
+	uploadedImage := rotateClockwise(srcImage)
 	width = uploadedImage.Bounds().Dx()
 	height = uploadedImage.Bounds().Dy()
 	var data []byte
 	writer := bytes.NewBuffer(data)
 	err = png.Encode(writer, uploadedImage)
 	return writer.Bytes(), width, height, err
+}
+
+// rotateClockwise turns src by 90 degrees clockwise.
+func rotateClockwise(src image.Image) *image.NRGBA {
+	b := src.Bounds()
+	in := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(in, in.Bounds(), src, b.Min, draw.Src)
+	w, h := b.Dx(), b.Dy()
+	out := image.NewNRGBA(image.Rect(0, 0, h, w))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			si := in.PixOffset(x, y)
+			di := out.PixOffset(h-1-y, x)
+			copy(out.Pix[di:di+4], in.Pix[si:si+4])
+		}
+	}
+	return out
 }
 
 func (d *Device) HasFeature(string) bool {

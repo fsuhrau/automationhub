@@ -7,7 +7,6 @@ toolchain go1.27.3
 require (
 	github.com/antchfx/xmlquery v1.5.2
 	github.com/danielpaulus/go-ios v1.0.46
-	github.com/disintegration/imaging v1.6.2
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/gin-contrib/cors v1.7.10
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
@@ -33,6 +32,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	golang.org/x/crypto v0.58.0
+	golang.org/x/image v0.47.0
 	golang.org/x/net v0.62.0
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sys v0.49.0
@@ -112,7 +112,6 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.8.0 // indirect
 	golang.org/x/arch v0.29.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/image v0.47.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect

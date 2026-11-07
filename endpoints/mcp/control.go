@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/antchfx/xmlquery"
-	"github.com/disintegration/imaging"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
@@ -19,6 +18,7 @@ import (
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"golang.org/x/image/draw"
 )
 
 const (
@@ -172,8 +172,11 @@ func (t *tools) screenshot(ctx context.Context, req *mcp.CallToolRequest, in Scr
 		maxWidth = defaultScreenshotWidth
 	}
 	scaled := img
-	if img.Bounds().Dx() > maxWidth {
-		scaled = imaging.Resize(img, maxWidth, 0, imaging.Lanczos)
+	if b := img.Bounds(); b.Dx() > maxWidth {
+		h := max(1, (b.Dy()*maxWidth+b.Dx()/2)/b.Dx())
+		dst := image.NewRGBA(image.Rect(0, 0, maxWidth, h))
+		draw.CatmullRom.Scale(dst, dst.Bounds(), img, b, draw.Src, nil)
+		scaled = dst
 	}
 	var buf bytes.Buffer
 	if err := jpeg.Encode(&buf, scaled, &jpeg.Options{Quality: 80}); err != nil {
