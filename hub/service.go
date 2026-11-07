@@ -17,7 +17,6 @@ import (
 	"gorm.io/gorm"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -50,14 +49,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 	logger.Formatter = new(prefixed.TextFormatter)
 	router := newRouter(logger)
 
-	router.Use(cors.New(cors.Config{
-		AllowCredentials: true,
-		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
-		AllowOrigins:     cfg.Cors,
-		AllowHeaders:     []string{"Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With", "X-Auth-Token"},
-		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Access-Control-Allow-Origin"},
-		MaxAge:           12 * time.Hour,
-	}))
+	router.Use(cors.New(corsConfig(cfg.Cors)))
 
 	var (
 		sessionFunc    gin.HandlerFunc
