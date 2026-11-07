@@ -34,7 +34,6 @@ func getDialect(database config.Database) gorm.Dialector {
 	}
 
 	panic(errors.New("database not found in config"))
-	return nil
 }
 
 // newLogger is gorm's default logger without two kinds of noise: a lookup
