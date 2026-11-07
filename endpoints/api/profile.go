@@ -118,10 +118,17 @@ func (s *Service) getPersonalTokens(c *gin.Context) {
 // can't create new ones or revoke the owner's.
 func (s *Service) sessionOnly(c *gin.Context) bool {
 	if _, viaToken := c.Get(token.AuthTokenKey); viaToken {
-		s.error(c, http.StatusForbidden, fmt.Errorf("personal tokens can only be managed from a browser session"))
+		s.error(c, http.StatusForbidden, fmt.Errorf("tokens can only be managed from a browser session"))
 		return false
 	}
 	return true
+}
+
+// requireSession is sessionOnly as middleware, for whole route groups.
+func (s *Service) requireSession(c *gin.Context) {
+	if s.sessionOnly(c) {
+		c.Next()
+	}
 }
 
 func (s *Service) createPersonalToken(c *gin.Context) {

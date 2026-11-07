@@ -7,8 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 	"time"
 )
+
+// NodeRoute tells whether a node token may be used for the path: the node
+// endpoints of the master (/node/...) and the bundles it installs (/upload/...).
+func NodeRoute(path string) bool {
+	return strings.HasPrefix(path, "/node/") || strings.HasPrefix(path, "/upload/")
+}
 
 func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -64,6 +71,14 @@ func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
 				}
 			}
 			if token.NodeID != nil {
+				// a node token is the node's credential, not an API key: it
+				// only reaches the node endpoints and the bundle downloads
+				// FullPath is the matched route pattern, so ".." or doubled
+				// slashes in the request path can't sneak past the check
+				if !NodeRoute(ctx.FullPath()) {
+					ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "node tokens only work for node endpoints"})
+					return
+				}
 				var node models.Node
 
 				if err := db.First(&node, "id = ?", token.NodeID).Error; errors.Is(err, gorm.ErrRecordNotFound) {

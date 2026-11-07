@@ -19,7 +19,7 @@ func testDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.UserAuth{}, &models.Project{}, &models.AccessToken{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.UserAuth{}, &models.Project{}, &models.AccessToken{}, &models.Node{}); err != nil {
 		t.Fatal(err)
 	}
 	return db
@@ -41,6 +41,9 @@ func server(db *gorm.DB) *gin.Engine {
 		}
 	}
 	g.GET("/api/:project_id/x", handler)
+	g.GET("/api/projects", handler)
+	g.POST("/node/devices", handler)
+	g.GET("/upload/*filepath", handler)
 	return r
 }
 
@@ -151,5 +154,35 @@ func TestLookupErrorFailsClosed(t *testing.T) {
 	w := get(server(db), "/api/game/x", "1235123")
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500, got %d %q", w.Code, w.Body.String())
+	}
+}
+
+// A node token is the node's credential: it reaches the node endpoints and
+// bundle downloads, not the API of any project.
+func TestNodeTokenOnlyForNodeRoutes(t *testing.T) {
+	db := testDB(t)
+	db.Create(&models.Project{Name: "Game", Identifier: "game"})
+	node := models.Node{Identifier: "n1", Name: "node"}
+	db.Create(&node)
+	db.Create(&models.AccessToken{NodeID: &node.ID, Name: "node", Token: "node-token"})
+	r := server(db)
+
+	send := func(method, path string) int {
+		req := httptest.NewRequest(method, path, nil)
+		req.Header.Set("X-Auth-Token", "node-token")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w.Code
+	}
+	if c := send("POST", "/node/devices"); c != http.StatusOK {
+		t.Fatalf("node endpoint: expected 200, got %d", c)
+	}
+	if c := send("GET", "/upload/game.apk"); c != http.StatusOK {
+		t.Fatalf("bundle download: expected 200, got %d", c)
+	}
+	for _, path := range []string{"/api/game/x", "/api/projects", "/node/../api/projects"} {
+		if c := send("GET", path); c == http.StatusOK {
+			t.Fatalf("%s: node token got through", path)
+		}
 	}
 }
