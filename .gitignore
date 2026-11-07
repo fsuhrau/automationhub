@@ -34,3 +34,11 @@ dist/
 /github.json
 /automationhub_slave.yaml
 /out
+
+# MCP Manager Connect: host-written artifacts (do not commit)
+mcp-manager-artifact-ca.pem
+mcp-manager-artifact-trust-state.json
+.mcp-artifacts/
+
+# local environment, may hold secrets
+/.env
