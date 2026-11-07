@@ -839,7 +839,7 @@ const DeviceControlPage: React.FC = () => {
                             <FormControl size="small" fullWidth>
                                 <InputLabel id="control-app">App</InputLabel>
                                 <Select labelId="control-app" label="App" value={appId}
-                                        onChange={e => setAppId(e.target.value === '' ? '' : Number(e.target.value))}>
+                                        onChange={e => setAppId(String(e.target.value) === '' ? '' : Number(e.target.value))}>
                                     {fittingApps.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
                                     {otherApps.length > 0 && <Divider/>}
                                     {otherApps.map(a => <MenuItem key={a.id} value={a.id}>
@@ -854,7 +854,7 @@ const DeviceControlPage: React.FC = () => {
                                             const b = bundles.find(x => x.id === id);
                                             return b ? `${b.version || b.name} (#${b.id})` : '';
                                         }}
-                                        onChange={e => setBundleId(e.target.value === '' ? '' : Number(e.target.value))}>
+                                        onChange={e => setBundleId(String(e.target.value) === '' ? '' : Number(e.target.value))}>
                                     {bundles.map((b, i) => <MenuItem key={b.id} value={b.id}>
                                         <ListItemText primary={`${b.version || b.name}${i === 0 ? ' (newest)' : ''}`}
                                                       secondary={`#${b.id} · uploaded ${formatDateTime(b.createdAt, 'YYYY/MM/DD HH:mm')}`}/>

@@ -121,7 +121,7 @@ const RunTestDialog: React.FC<RunTestDialogProps> = ({projectIdentifier, app, te
                                 <FormControl size="small" fullWidth disabled={bundles === null || bundles.length === 0}>
                                     <InputLabel id="run-bundle">Bundle</InputLabel>
                                     <Select labelId="run-bundle" label="Bundle" value={bundleId}
-                                            onChange={e => setBundleId(e.target.value === '' ? '' : Number(e.target.value))}
+                                            onChange={e => setBundleId(String(e.target.value) === '' ? '' : Number(e.target.value))}
                                             renderValue={id => {
                                                 const b = bundles?.find(x => x.id === id);
                                                 return b ? `${b.version || b.name} (#${b.id})` : '';
