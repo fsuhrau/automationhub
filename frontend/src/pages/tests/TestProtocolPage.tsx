@@ -29,9 +29,9 @@ import {
     Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {useTheme} from '@mui/material/styles';
+import {useColorScheme, useTheme} from '@mui/material/styles';
 // error text needs the lighter red of the ramp to read on the dark surface
-import {red} from '../../shared-theme/themePrimitives';
+import {gray, red} from '../../shared-theme/themePrimitives';
 import {LineChart} from '@mui/x-charts/LineChart';
 import {
     ArrowBackRounded,
@@ -42,6 +42,7 @@ import {
     ChevronLeftRounded,
     ChevronRightRounded,
     CloseRounded,
+    CompareArrowsRounded,
     DownloadRounded,
     ErrorRounded,
     HourglassEmptyRounded,
@@ -59,8 +60,15 @@ import {TestResultState} from '../../types/test.result.state.enum';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {formatDateTime} from '../../components/DateTime';
+import {useLoader} from '../../hooks/useLoader';
+import {getBaseline, IBaseline, IBaselineCandidate} from '../../services/test.run.service';
+import IProtocolPerformanceEntryData from '../../types/protocol.performance.entry';
+import {parseTags} from '../apps/bundlesModel';
+import BaselinePicker from './BaselinePicker';
 import {between, buildRows, formatDuration, leaves, mergeProtocol, splitTestName} from './testRunModel';
 import {
+    averageOf,
+    bundleLabel,
     checkpointRows,
     compare,
     earlierRuns,
@@ -186,28 +194,76 @@ const Message: React.FC<{ text: string, error?: boolean, open?: boolean }> = ({t
     </Box>;
 };
 
-const VerdictNote: React.FC<{ verdict: Verdict, text: string }> = ({verdict, text}) => {
+const VerdictNote: React.FC<{ verdict: Verdict, text: string, same: string }> = ({verdict, text, same}) => {
     if (verdict === null) return null;
     const color = verdict === 'better' ? 'success.main' : verdict === 'worse' ? 'warning.main' : 'text.secondary';
     return <Typography variant="caption" sx={{color}}>
-        {verdict === 'same' ? 'as usual' : verdict} · {text}
+        {verdict === 'same' ? same : verdict} · {text}
     </Typography>;
 };
 
+// Comparison is what the performance of the protocol is held against: the
+// latest earlier run on the device, or a run the user picked
+interface Comparison {
+    runId: number,
+    performance: IProtocolPerformanceEntryData[],
+    // the run's averages; without them the usual averages of earlier runs
+    averages: IBaseline | null,
+}
+
 // MetricTiles compares only with real earlier runs: older masters averaged
 // in the protocol itself and its runner
-const MetricTiles: React.FC<{ protocol: ITestProtocolData, metrics: Metric[], compared: boolean }> = ({protocol, metrics, compared}) =>
+const MetricTiles: React.FC<{ protocol: ITestProtocolData, metrics: Metric[], against: Comparison | null }> = ({protocol, metrics, against}) =>
     <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 1.5}}>
         {metrics.map(m => {
             const value = m.avg(protocol);
-            const usual = compared ? m.usual(protocol) : null;
+            const picked = against?.averages ?? null;
+            const usual = picked ? averageOf(picked, m.key) : against ? m.usual(protocol) : null;
             return <Box key={m.key} sx={{p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1}}>
                 <Typography variant="caption" color="text.secondary">{m.label} (average)</Typography>
                 <Typography variant="h6" component="div">{value ? m.format(value) : '–'}</Typography>
-                <VerdictNote verdict={compare(value, usual, m.higherIsBetter)} text={usual ? `usually ${m.format(usual)}` : ''}/>
+                <VerdictNote verdict={compare(value, usual, m.higherIsBetter)}
+                             same={picked ? 'same' : 'as usual'}
+                             text={usual ? (picked ? `run ${against!.runId}: ${m.format(usual)}` : `usually ${m.format(usual)}`) : ''}/>
             </Box>;
         })}
     </Box>;
+
+// CompareBar says what the performance is compared with and offers to pick
+// another run
+const CompareBar: React.FC<{ baseline: IBaseline | null, loading: boolean, failed: boolean, earlierRunId: number | null,
+    onChange: () => void, onReset: (() => void) | null }> = ({baseline, loading, failed, earlierRunId, onChange, onReset}) =>
+    <Card variant="outlined">
+        <CardContent sx={{py: 1.5, '&:last-child': {pb: 1.5}}}>
+            <Stack direction={{xs: 'column', sm: 'row'}} spacing={1.5} alignItems={{sm: 'center'}} useFlexGap>
+                <CompareArrowsRounded color="action" sx={{display: {xs: 'none', sm: 'block'}}}/>
+                <Box sx={{minWidth: 0}}>
+                    {failed
+                        ? <Typography variant="body2" color="error">The picked run could not be loaded.</Typography>
+                        : onReset && (loading || !baseline)
+                            ? <Typography variant="body2" color="text.secondary">Loading the picked run…</Typography>
+                            : baseline
+                                ? <>
+                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                        <Typography variant="body2">Compared with <b>run {baseline.testRunId}</b></Typography>
+                                        {baseline.bundle && <Typography variant="body2">{bundleLabel(baseline.bundle)}</Typography>}
+                                        {parseTags(baseline.bundle?.tags).map(t => <Chip key={t} size="small" variant="outlined" label={t}/>)}
+                                    </Stack>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {formatDateTime(baseline.startedAt, 'YYYY/MM/DD HH:mm')}{baseline.device && ` · ${baseline.device}`}
+                                    </Typography>
+                                </>
+                                : earlierRunId
+                                    ? <Typography variant="body2">Compared with <b>run {earlierRunId}</b>, the latest earlier run on this device</Typography>
+                                    : <Typography variant="body2" color="text.secondary">No earlier run on this device to compare with</Typography>}
+                </Box>
+                <Stack direction="row" spacing={1} sx={{ml: {sm: 'auto'}, flexShrink: 0}}>
+                    {onReset && <Button size="small" onClick={onReset}>Latest earlier run</Button>}
+                    <Button size="small" variant="outlined" onClick={onChange}>Compare with…</Button>
+                </Stack>
+            </Stack>
+        </CardContent>
+    </Card>;
 
 // TestProtocolPage shows one test of a run: why it failed, what it did, and
 // how it performed. The loader mounts it with key={protocol.id}.
@@ -251,10 +307,41 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const lastStep = summary.steps.length > 0 ? summary.steps[summary.steps.length - 1] : null;
     const metrics = METRICS.filter(m => measured(protocol.performance, m.key));
     const earlier = earlierRuns(protocol).find(h => (h.performance ?? []).length > 0) ?? null;
-    const checkpoints = checkpointRows(protocol.performance, earlier?.performance);
+
+    // the run to compare with: picked by the user (?vs=<run>, and
+    // &vsDevice=<device> for a run on another device), or the latest earlier
+    // one. It's chosen by run so it stays while moving through the tests.
+    const vs = query.get('vs');
+    const vsDevice = query.get('vsDevice');
+    const {data: loadedBaseline, error: baselineError, loading: baselineLoading} = useLoader(
+        () => vs ? getBaseline(projectIdentifier, appId as number, run.testId, run.id as number, protocol.id as number, vs, vsDevice) : null,
+        [projectIdentifier, appId, run.testId, run.id, protocol.id, vs, vsDevice]);
+    const baseline = vs && loadedBaseline && String(loadedBaseline.testRunId) === vs ? loadedBaseline : null;
+    const comparison: Comparison | null = vs
+        ? (baseline ? {runId: baseline.testRunId, performance: baseline.performance ?? [], averages: baseline} : null)
+        : (earlier ? {runId: earlier.testRunId, performance: earlier.performance ?? [], averages: null} : null);
+    const [picking, setPicking] = useState(false);
+    const setBaseline = (c: IBaselineCandidate | null) => setQuery(q => {
+        const next = new URLSearchParams(q);
+        next.delete('vs');
+        next.delete('vsDevice');
+        if (c) {
+            next.set('vs', String(c.testRunId));
+            if (c.deviceId !== protocol.deviceId && c.deviceId) next.set('vsDevice', String(c.deviceId));
+        }
+        return next;
+    });
+    const checkpoints = checkpointRows(protocol.performance, comparison?.performance);
 
     const base = `/project/${projectIdentifier}/app:${appId}/test/${run.testId}/run/${run.id}`;
-    const openTest = (p: ITestProtocolData) => navigate(`${base}/${p.id}${tab !== 'overview' ? `?t=${tab}` : ''}`);
+    const openTest = (p: ITestProtocolData) => {
+        const keep = new URLSearchParams();
+        if (tab !== 'overview') keep.set('t', tab);
+        if (vs) keep.set('vs', vs);
+        if (vsDevice) keep.set('vsDevice', vsDevice);
+        const q = keep.toString();
+        navigate(`${base}/${p.id}${q ? `?${q}` : ''}`);
+    };
     const {name, suite} = splitTestName(protocol.testName);
     // the runner times a test as the run does; the test's own start is when
     // the app connected
@@ -428,7 +515,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
 
                         {metrics.length > 0 && <Section title="Performance" action={
                             <Button size="small" onClick={() => setTab('performance')}>Charts and checkpoints</Button>}>
-                            <MetricTiles protocol={protocol} metrics={metrics} compared={earlier !== null}/>
+                            <MetricTiles protocol={protocol} metrics={metrics} against={comparison}/>
                         </Section>}
                     </Stack>
                 </Grid>
@@ -522,18 +609,29 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
             </Box>}
 
             {tab === 'performance' && <Stack spacing={2}>
+                <CompareBar baseline={baseline} loading={baselineLoading} failed={!!vs && !!baselineError}
+                            earlierRunId={earlier?.testRunId ?? null}
+                            onChange={() => setPicking(true)} onReset={vs ? () => setBaseline(null) : null}/>
+                <BaselinePicker open={picking} onClose={() => setPicking(false)}
+                                onPick={c => {
+                                    setPicking(false);
+                                    setBaseline(c);
+                                }}
+                                projectIdentifier={projectIdentifier} appId={appId as number} testId={run.testId}
+                                runId={run.id as number} protocolId={protocol.id as number} deviceId={protocol.deviceId}
+                                selectedRunId={comparison?.runId ?? null} metrics={metrics}/>
                 {metrics.length > 0 && <Section title="Averages">
-                    <MetricTiles protocol={protocol} metrics={metrics} compared={earlier !== null}/>
+                    <MetricTiles protocol={protocol} metrics={metrics} against={comparison}/>
                 </Section>}
                 <Grid container spacing={2}>
                     {metrics.map(m => <Grid key={m.key} size={{xs: 12, md: 6}}>
                         <Section title={`${m.label}${m.unit ? ` (${m.unit})` : ''}`}>
-                            <MetricChart metric={m} protocol={protocol} earlier={earlier}/>
+                            <MetricChart metric={m} protocol={protocol} earlier={comparison}/>
                         </Section>
                     </Grid>)}
                 </Grid>
-                {checkpoints.length > 0 && <Section title="Checkpoints" action={earlier &&
-                    <Typography variant="body2" color="text.secondary">compared with run {earlier.testRunId}</Typography>}>
+                {checkpoints.length > 0 && <Section title="Checkpoints" action={comparison &&
+                    <Typography variant="body2" color="text.secondary">compared with run {comparison.runId}</Typography>}>
                     <TableContainer>
                         <Table size="small" aria-label="Checkpoints">
                             <TableHead>
@@ -541,7 +639,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                     <TableCell>Checkpoint</TableCell>
                                     <TableCell align="right">Reached at</TableCell>
                                     <TableCell align="right">Took</TableCell>
-                                    {earlier && <TableCell align="right">Earlier run</TableCell>}
+                                    {comparison && <TableCell align="right">Run {comparison.runId}</TableCell>}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -552,10 +650,10 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <TableCell align="right" sx={{fontFamily: 'monospace'}}>{formatRuntime(c.at)}</TableCell>
                                         <TableCell align="right" sx={{fontFamily: 'monospace', whiteSpace: 'nowrap'}}>
                                             {c.took.toFixed(2)} s
-                                            {verdict === 'worse' && <Tooltip title="Slower than the earlier run"><NorthRounded fontSize="inherit" color="warning" sx={{ml: 0.5}}/></Tooltip>}
-                                            {verdict === 'better' && <Tooltip title="Faster than the earlier run"><SouthRounded fontSize="inherit" color="success" sx={{ml: 0.5}}/></Tooltip>}
+                                            {verdict === 'worse' && <Tooltip title={`Slower than run ${comparison?.runId}`}><NorthRounded fontSize="inherit" color="warning" sx={{ml: 0.5}}/></Tooltip>}
+                                            {verdict === 'better' && <Tooltip title={`Faster than run ${comparison?.runId}`}><SouthRounded fontSize="inherit" color="success" sx={{ml: 0.5}}/></Tooltip>}
                                         </TableCell>
-                                        {earlier && <TableCell align="right" sx={{fontFamily: 'monospace', color: 'text.secondary'}}>
+                                        {comparison && <TableCell align="right" sx={{fontFamily: 'monospace', color: 'text.secondary'}}>
                                             {c.earlierTook === null ? '–' : `${c.earlierTook.toFixed(2)} s`}
                                         </TableCell>}
                                     </TableRow>;
@@ -590,9 +688,13 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
 };
 
 // MetricChart plots one metric over the checkpoints of the test, with the
-// earlier run as a dashed reference line where it reached the same checkpoint
-const MetricChart: React.FC<{ metric: Metric, protocol: ITestProtocolData, earlier: ITestProtocolData | null }> = ({metric, protocol, earlier}) => {
+// compared run as a dashed reference line where it reached the same checkpoint
+const MetricChart: React.FC<{ metric: Metric, protocol: ITestProtocolData, earlier: Comparison | null }> = ({metric, protocol, earlier}) => {
     const theme = useTheme();
+    // the theme uses CSS variables, so theme.palette always holds the light
+    // scheme; the compared run's grey has to follow the active scheme itself
+    const {mode, systemMode} = useColorScheme();
+    const dark = (mode === 'system' ? systemMode : mode) === 'dark';
     const perf = (protocol.performance ?? []).filter(p => p.checkpoint !== 'schedule');
     const before = new Map<string, number>();
     (earlier?.performance ?? []).forEach(p => {
@@ -604,7 +706,7 @@ const MetricChart: React.FC<{ metric: Metric, protocol: ITestProtocolData, earli
     const series = [
         {id: 'current', data: perf.map(p => p[metric.key] ?? null), label: 'This run', color: theme.palette.primary.main,
             showMark: perf.length <= 20, valueFormatter: format, curve: 'linear' as const},
-        ...(hasEarlier ? [{id: 'earlier', data: earlierData, label: `Run ${earlier!.testRunId}`, color: theme.palette.text.disabled,
+        ...(hasEarlier ? [{id: 'earlier', data: earlierData, label: `Run ${earlier!.runId}`, color: dark ? gray[300] : gray[500],
             showMark: false, valueFormatter: format, connectNulls: true, curve: 'linear' as const}] : []),
     ];
     return <Box>

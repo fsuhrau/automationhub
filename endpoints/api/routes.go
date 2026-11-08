@@ -120,6 +120,8 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 			appApi.GET("/test/:test_id/run/:run_id", s.WithApp(s.getTestRun))
 			appApi.POST("/test/:test_id/run/:run_id/cancel", s.WithApp(s.cancelTestRun))
 			appApi.GET("/test/:test_id/run/:run_id/:protocol_id", s.WithApp(s.getTestRunProtocol))
+			appApi.GET("/test/:test_id/run/:run_id/:protocol_id/baselines", s.WithApp(s.getProtocolBaselines))
+			appApi.GET("/test/:test_id/run/:run_id/:protocol_id/baseline/:baseline_run_id", s.WithApp(s.getProtocolBaseline))
 			appApi.GET("/tests", s.WithApp(s.getTests))
 		}
 	}

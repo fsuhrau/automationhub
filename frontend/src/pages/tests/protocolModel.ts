@@ -174,3 +174,22 @@ export const METRICS: Metric[] = [
 // or missing in every sample (CPU on some platforms) isn't shown
 export const measured = (perf: IProtocolPerformanceEntryData[] | null | undefined, key: Metric['key']): boolean =>
     (perf ?? []).some(p => typeof p[key] === 'number' && p[key] !== 0);
+
+// Averages of a run picked to compare with, by metric
+export interface Averages {
+    avgFps: number,
+    avgMem: number,
+    avgCpu: number,
+    avgVertexCount: number,
+    avgTriangles: number,
+}
+
+const AVERAGE: Record<Metric['key'], keyof Averages> = {
+    fps: 'avgFps', mem: 'avgMem', cpu: 'avgCpu', vertexCount: 'avgVertexCount', triangles: 'avgTriangles',
+};
+
+export const averageOf = (a: Averages, key: Metric['key']): number => a[AVERAGE[key]];
+
+// bundleLabel names the bundle a run used, by its name and version
+export const bundleLabel = (b: { name: string, version: string } | null | undefined): string =>
+    b ? [b.name, b.version].filter(s => s && s.length > 0).join(' ') : '';
