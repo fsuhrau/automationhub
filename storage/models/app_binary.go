@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/events"
 	"gorm.io/gorm"
 )
@@ -27,6 +28,9 @@ type AppBinary struct {
 	Tags       string     `json:"tags"`
 	Android    Android    `json:"android" db:"android" gorm:"embedded"`
 	Executable Executable `json:"executable" db:"executable" gorm:"embedded"`
+	// Info is all the master read from the file; nil for bundles uploaded
+	// before it did
+	Info *app.BundleInfo `json:"info,omitempty" gorm:"serializer:json"`
 }
 
 func (a *AppBinary) AfterCreate(tx *gorm.DB) (err error) {

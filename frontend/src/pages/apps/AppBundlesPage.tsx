@@ -14,6 +14,7 @@ import {
     IconButton,
     InputAdornment,
     LinearProgress,
+    Link,
     ListItemIcon,
     ListItemText,
     Menu,
@@ -35,17 +36,19 @@ import {
     DeleteOutlineRounded,
     DownloadRounded,
     EditRounded,
+    InfoOutlined,
     MoreVertRounded,
     SearchRounded,
 } from '@mui/icons-material';
 import {useDropzone} from 'react-dropzone';
+import {Link as RouterLink} from 'react-router-dom';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useHubState} from '../../hooks/HubStateProvider';
 import {useError} from '../../ErrorProvider';
 import {IAppBinaryData} from '../../types/app';
 import {getPlatformName, PlatformType} from '../../types/platform.type.enum';
-import {deleteAppBundle, getAppBundles, updateBundleTags, uploadBundle} from '../../services/app.service';
+import {bundleIconUrl, deleteAppBundle, getAppBundles, updateBundleTags, uploadBundle} from '../../services/app.service';
 import PlatformTypeIcon from '../../components/PlatformTypeIcon';
 import {formatDateTime} from '../../components/DateTime';
 import {byteFormat} from '../tests/value_formatter';
@@ -90,6 +93,14 @@ const UploadRow: React.FC<{ upload: Upload, onDismiss: () => void }> = ({upload,
         {busy && <LinearProgress sx={{mt: 1, height: 6}} variant={state.phase === 'sending' ? 'determinate' : 'indeterminate'}
                                  value={state.phase === 'sending' ? state.sent * 100 : undefined}/>}
     </Alert>;
+};
+
+// BundleThumb is the app icon of a bundle, or an empty frame
+const BundleThumb: React.FC<{ url?: string }> = ({url}) => {
+    const [failed, setFailed] = useState(false);
+    return <Box sx={{width: 32, height: 32, flex: '0 0 32px', borderRadius: 1.5, border: 1, borderColor: 'divider', overflow: 'hidden', bgcolor: 'action.hover'}}>
+        {url && !failed && <img src={url} alt="" width={32} height={32} loading="lazy" onError={() => setFailed(true)} style={{display: 'block'}}/>}
+    </Box>;
 };
 
 // AppBundlesPage lists the builds of the app picked in the menu and takes
@@ -267,12 +278,23 @@ const AppBundlesPage: React.FC = () => {
                                                         const tags = parseTags(b.tags);
                                                         return <TableRow key={b.id} selected={b.id === fresh}>
                                                             <TableCell sx={{pl: 2, maxWidth: 420}}>
-                                                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                                    <Typography variant="body2" sx={{fontWeight: 600, wordBreak: 'break-all'}}>{b.version || '–'}</Typography>
-                                                                    {b.id === bundles[0].id && <Chip size="small" variant="outlined" label="newest"/>}
-                                                                    {b.id === fresh && <Chip size="small" color="success" label="just uploaded"/>}
+                                                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                                                    <BundleThumb url={b.info?.icon && appId !== null ? bundleIconUrl(projectIdentifier, appId, b.id) : undefined}/>
+                                                                    <Box sx={{minWidth: 0}}>
+                                                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                                            <Link component={RouterLink} to={`../bundle/${b.id}`} relative="path" underline="hover"
+                                                                                  variant="body2" sx={{fontWeight: 600, wordBreak: 'break-all'}}>{b.version || '–'}</Link>
+                                                                            {b.info?.build && b.info.build !== b.version &&
+                                                                                <Typography variant="caption" color="text.secondary">build {b.info.build}</Typography>}
+                                                                            {b.id === bundles[0].id && <Chip size="small" variant="outlined" label="newest"/>}
+                                                                            {b.id === fresh && <Chip size="small" color="success" label="just uploaded"/>}
+                                                                        </Stack>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {b.info?.displayName || b.name} · #{b.id}
+                                                                            {b.info?.engine && ` · ${[b.info.engine.name, b.info.engine.version].filter(Boolean).join(' ')}`}
+                                                                        </Typography>
+                                                                    </Box>
                                                                 </Stack>
-                                                                <Typography variant="caption" color="text.secondary">{b.name} · #{b.id}</Typography>
                                                             </TableCell>
                                                             <TableCell>
                                                                 <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -319,6 +341,10 @@ const AppBundlesPage: React.FC = () => {
             </Card>
 
             <Menu anchorEl={menu?.anchor} open={!!menu} onClose={() => setMenu(null)}>
+                <MenuItem component={RouterLink} to={`../bundle/${menu?.bundle.id}`} relative="path">
+                    <ListItemIcon><InfoOutlined fontSize="small"/></ListItemIcon>
+                    <ListItemText primary="Details"/>
+                </MenuItem>
                 <MenuItem disabled={!menu?.bundle.hash} onClick={() => {
                     navigator.clipboard.writeText(menu!.bundle.hash).catch(() => undefined);
                     setMenu(null);

@@ -29,4 +29,6 @@ type Parameter struct {
 	Version    string
 	App        *AppParams
 	Web        *WebParams
+	// Info is everything read from the file, for the bundle details
+	Info *BundleInfo
 }

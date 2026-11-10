@@ -1,6 +1,7 @@
 package api
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	hubapp "github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/hub/runs"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
@@ -23,7 +26,7 @@ func bundlesSetup(t *testing.T) (*gin.Engine, *gorm.DB, models.App, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&models.App{}, &models.AppBinary{}, &models.TestRun{}); err != nil {
+	if err := db.AutoMigrate(&models.App{}, &models.AppBinary{}, &models.TestRun{}, &models.Test{}, &models.TestProtocol{}, &models.TestRunLogEntry{}); err != nil {
 		t.Fatal(err)
 	}
 	store := t.TempDir()
@@ -35,8 +38,11 @@ func bundlesSetup(t *testing.T) (*gin.Engine, *gorm.DB, models.App, string) {
 	db.Create(&app)
 
 	gin.SetMode(gin.TestMode)
-	s := &Service{db: db}
+	s := &Service{db: db, runTracker: runs.NewTracker(nil)}
 	r := gin.New()
+	r.GET("/bundle/:binary_id", func(c *gin.Context) { s.getBinary(c, nil, &app) })
+	r.GET("/bundle/:binary_id/icon", func(c *gin.Context) { s.getBinaryIcon(c, nil, &app) })
+	r.POST("/bundle/:binary_id/read", func(c *gin.Context) { s.readBinaryAgain(c, nil, &app) })
 	r.GET("/bundles", func(c *gin.Context) { s.getBinaries(c, nil, &app) })
 	r.PUT("/bundle/:binary_id", func(c *gin.Context) { s.updateBinary(c, nil, &app) })
 	r.DELETE("/bundle/:binary_id", func(c *gin.Context) { s.deleteBinary(c, nil, &app) })
@@ -148,5 +154,102 @@ func TestBundleDelete(t *testing.T) {
 	}
 	if w := send(r, "DELETE", "/bundle/999", ""); w.Code != http.StatusNotFound {
 		t.Errorf("missing bundle: %d", w.Code)
+	}
+}
+
+// writeIPA stores a minimal ipa in the bundle storage
+func writeIPA(t *testing.T, store, name string) {
+	t.Helper()
+	f, err := os.Create(filepath.Join(store, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	w := zip.NewWriter(f)
+	plist, _ := w.Create("Payload/Game.app/Info.plist")
+	plist.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>com.example.game</string>
+<key>CFBundleShortVersionString</key><string>1.2.3</string>
+<key>CFBundleVersion</key><string>45</string>
+<key>CFBundleDisplayName</key><string>Game</string>
+<key>MinimumOSVersion</key><string>15.0</string>
+<key>CFBundleIconFiles</key><array><string>Icon</string></array>
+</dict></plist>`))
+	icon, _ := w.Create("Payload/Game.app/Icon@2x.png")
+	icon.Write([]byte("\x89PNG\r\n\x1a\nnot crushed"))
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The bundle page gets the bundle with its info and the runs that used it;
+// the list only gets a summary of the info.
+func TestBundleDetail(t *testing.T) {
+	r, db, app, _ := bundlesSetup(t)
+	test := models.Test{AppID: app.ID, Name: "smoke"}
+	db.Create(&test)
+	bundle := models.AppBinary{AppID: app.ID, Version: "1", Info: &hubapp.BundleInfo{
+		Format: "apk", Identifier: "com.example", Android: &hubapp.AndroidInfo{MinSdk: "24"},
+	}}
+	db.Create(&bundle)
+	db.Create(&models.TestRun{AppBinaryID: bundle.ID, TestID: test.ID})
+
+	w := send(r, "GET", fmt.Sprintf("/bundle/%d", bundle.ID), "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	var detail bundleDetail
+	if err := json.Unmarshal(w.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	if detail.Info == nil || detail.Info.Android == nil || detail.Info.Android.MinSdk != "24" {
+		t.Errorf("info %+v", detail.Info)
+	}
+	if detail.RunCount != 1 || len(detail.Runs) != 1 || detail.Runs[0].TestName != "smoke" || detail.Runs[0].Status != "empty" {
+		t.Errorf("runs %d %+v", detail.RunCount, detail.Runs)
+	}
+	if w := send(r, "GET", "/bundle/999", ""); w.Code != http.StatusNotFound {
+		t.Errorf("missing bundle: %d", w.Code)
+	}
+
+	w = send(r, "GET", "/bundles", "")
+	if !strings.Contains(w.Body.String(), `"identifier":"com.example"`) || strings.Contains(w.Body.String(), `"minSdk"`) {
+		t.Errorf("list info: %s", w.Body)
+	}
+}
+
+// A bundle uploaded before the master read everything is read again from
+// its file; the hash and tags stay.
+func TestBundleReadAgain(t *testing.T) {
+	r, db, app, store := bundlesSetup(t)
+	writeIPA(t, store, "game_abc.ipa")
+	bundle := models.AppBinary{AppID: app.ID, AppPath: "game_abc.ipa", Hash: "abc", Tags: "rc1"}
+	db.Create(&bundle)
+
+	if w := send(r, "GET", fmt.Sprintf("/bundle/%d/icon", bundle.ID), ""); w.Code != http.StatusNotFound {
+		t.Errorf("icon before reading: %d", w.Code)
+	}
+	w := send(r, "POST", fmt.Sprintf("/bundle/%d/read", bundle.ID), "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	var stored models.AppBinary
+	db.First(&stored, bundle.ID)
+	if stored.Identifier != "com.example.game" || stored.Version != "45" || stored.Platform != "ios" || stored.Name != "Game" {
+		t.Errorf("stored %+v", stored)
+	}
+	if stored.Hash != "abc" || stored.Tags != "rc1" || stored.Info == nil || stored.Info.Version != "1.2.3" {
+		t.Errorf("hash %q tags %q info %+v", stored.Hash, stored.Tags, stored.Info)
+	}
+	w = send(r, "GET", fmt.Sprintf("/bundle/%d/icon", bundle.ID), "")
+	if w.Code != http.StatusOK || w.Header().Get("Content-Type") != "image/png" {
+		t.Errorf("icon: %d %s", w.Code, w.Header().Get("Content-Type"))
+	}
+
+	missing := models.AppBinary{AppID: app.ID, AppPath: ""}
+	db.Create(&missing)
+	if w := send(r, "POST", fmt.Sprintf("/bundle/%d/read", missing.ID), ""); w.Code != http.StatusConflict {
+		t.Errorf("bundle without file: %d", w.Code)
 	}
 }

@@ -8,6 +8,7 @@ import ProjectsIndexPage from "./project/ProjectsIndexPage";
 import ProjectDashboard from "./pages/main/ProjectDashboard";
 import TestsIndexPage from "./pages/tests/TestsIndexPage";
 import AppBundlesPage from "./pages/apps/AppBundlesPage";
+import AppBundlePage from "./pages/apps/AppBundlePage";
 import TestPageLoader from "./pages/tests/TestPageLoader";
 import EditTestPage from "./pages/tests/EditTestPage";
 import TestProtocolPageLoader from "./pages/tests/TestProtocolPageLoader";
@@ -69,6 +70,8 @@ function App(props: any) {
                                                        element={<ApplicationPage/>}>
                                                     <Route path={'bundles'}
                                                            element={<AppBundlesPage/>}/>
+                                                    <Route path={'bundle/:bundleId'}
+                                                           element={<AppBundlePage/>}/>
                                                     <Route path={"tests"}
                                                            element={<TestsIndexPage/>}/>
                                                     <Route path={'test/:testId'}

@@ -84,6 +84,7 @@ func (s *Service) getBinaries(c *gin.Context, project *models.Project, applicati
 	list := make([]bundleListEntry, len(bundles))
 	for i := range bundles {
 		list[i] = bundleListEntry{AppBinary: bundles[i], RunCount: runs[bundles[i].ID]}
+		list[i].Info = summaryInfo(bundles[i].Info)
 	}
 	c.JSON(http.StatusOK, list)
 }

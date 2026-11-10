@@ -1,5 +1,5 @@
 import http from '../http-common';
-import {AppParameter, AppParameterType, IAppBinaryData, IAppData, Parameter} from "../types/app";
+import {AppParameter, AppParameterType, IAppBinaryData, IAppBundleDetail, IAppData, Parameter} from "../types/app";
 
 export const getAllApps = (projectId: string): Promise<IAppData[]> => {
     return http.get(`/${projectId}/apps`).then(resp => resp.data)
@@ -41,6 +41,20 @@ export const deleteAppBundle = (projectId: string, appId: number, id: number): P
 export const getAppBundles = (projectId: string, appId: number): Promise<IAppBinaryData[]> => {
     return http.get(`/${projectId}/app/${appId}/bundles`).then(resp => resp.data)
 };
+
+// getAppBundle is one bundle with everything read from its file and the
+// latest runs that used it
+export const getAppBundle = (projectId: string, appId: number, id: number): Promise<IAppBundleDetail> => {
+    return http.get(`/${projectId}/app/${appId}/bundle/${id}`).then(resp => resp.data)
+};
+
+// readAppBundleAgain has the master read a stored bundle file again
+export const readAppBundleAgain = (projectId: string, appId: number, id: number): Promise<IAppBundleDetail> => {
+    return http.post(`/${projectId}/app/${appId}/bundle/${id}/read`).then(resp => resp.data)
+};
+
+export const bundleIconUrl = (projectId: string, appId: number, id: number): string =>
+    `/api/${encodeURIComponent(projectId)}/app/${appId}/bundle/${id}/icon`;
 
 export type AppFilter = {
     name?: string;

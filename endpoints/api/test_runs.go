@@ -211,6 +211,7 @@ func (s *Service) StoreBundle(application *models.App, filePath string) (*models
 		Platform:   params.Platform,
 		Additional: params.App.Additional,
 		Size:       params.App.Size,
+		Info:       params.Info,
 	}
 	if err := s.db.Create(&bundle).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app bundle: %w", err)

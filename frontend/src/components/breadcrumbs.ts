@@ -56,6 +56,9 @@ export const buildCrumbs = (pathname: string, names: CrumbNames): Crumb[] => {
         const section = rest[1];
         if (section === 'bundles') {
             push('Bundles', `${appBase}/bundles`);
+        } else if (section === 'bundle' && rest[2]) {
+            push('Bundles', `${appBase}/bundles`);
+            push(`Bundle #${rest[2]}`, `${appBase}/bundle/${rest[2]}`);
         } else if (section === 'tests' || section === 'test') {
             push('Tests', `${appBase}/tests`);
         }

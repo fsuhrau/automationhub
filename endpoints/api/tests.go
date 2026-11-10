@@ -510,7 +510,7 @@ func (s *Service) getTestRuns(c *gin.Context, project *models.Project, applicati
 		query = query.Where("id < ?", before)
 	}
 	var testRuns []models.TestRun
-	if err := query.Preload("AppBinary").Order("id desc").Limit(limit + 1).Find(&testRuns).Error; err != nil {
+	if err := query.Preload("AppBinary", func(db *gorm.DB) *gorm.DB { return db.Omit("info") }).Order("id desc").Limit(limit + 1).Find(&testRuns).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

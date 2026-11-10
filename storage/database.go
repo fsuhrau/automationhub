@@ -104,6 +104,18 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 				return g.AutoMigrate(&AccessToken{})
 			},
 		},
+		{
+			ID: "AddBundleInfo",
+			Migrate: func(g *gorm.DB) error {
+				type AppBinary struct {
+					Info string
+				}
+				if !g.Migrator().HasTable(&AppBinary{}) || g.Migrator().HasColumn(&AppBinary{}, "Info") {
+					return nil
+				}
+				return g.Migrator().AddColumn(&AppBinary{}, "Info")
+			},
+		},
 	})
 	m.InitSchema(migrations.InitSchema)
 
