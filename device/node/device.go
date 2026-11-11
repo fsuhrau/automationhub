@@ -192,6 +192,12 @@ func (d *NodeDevice) ReadLogs(lines int) ([]string, error) {
 	return resp.Lines, err
 }
 
+// ReadLogsSince implements device.LogFollower by forwarding to the node.
+func (d *NodeDevice) ReadLogsSince(since string, lines int) ([]string, error) {
+	resp, err := d.control(device.ControlRequest{Op: device.ControlReadLogs, Lines: lines, Since: since})
+	return resp.Lines, err
+}
+
 // videoConnectTimeout bounds how long the master waits for the node to
 // connect the stream back. iOS devices may start WebDriverAgent first
 // (iosdevice.XcodebuildStartTimeout).

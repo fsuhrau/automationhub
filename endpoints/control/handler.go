@@ -5,6 +5,7 @@ package control
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -88,6 +89,7 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 	d.GET("/video", h.withDevice(h.video))
 	d.GET("/hierarchy", h.withDevice(h.hierarchy))
 	d.GET("/logs", h.withDevice(h.logs))
+	d.GET("/logs/stream", h.withDevice(h.logStream))
 
 	d.POST("/tap", h.withDevice(h.tap))
 	d.POST("/swipe", h.withDevice(h.swipe))
@@ -373,6 +375,55 @@ func (h *Handler) logs(c *gin.Context, dev device.Device) {
 		result = []string{}
 	}
 	c.JSON(http.StatusOK, gin.H{"lines": result})
+}
+
+// logStream follows the device log as server-sent events: "lines" carries a
+// JSON array of new lines, "failure" a read error (following goes on).
+// Watching needs no lease, so it works while a test run holds the device.
+func (h *Handler) logStream(c *gin.Context, dev device.Device) {
+	backlog, _ := strconv.Atoi(c.DefaultQuery("lines", "200"))
+	if backlog <= 0 || backlog > 5000 {
+		backlog = 200
+	}
+	if _, ok := dev.(device.LogReader); !ok {
+		failErr(c, device.ErrUnsupported)
+		return
+	}
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-store")
+	// keep reverse proxies from buffering the stream
+	c.Header("X-Accel-Buffering", "no")
+	c.Status(http.StatusOK)
+	c.Writer.Flush()
+
+	send := func(event string, payload any) error {
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", event, data); err != nil {
+			return err
+		}
+		c.Writer.Flush()
+		return nil
+	}
+	lastFailure := ""
+	err := h.svc.FollowLogs(c.Request.Context(), dev, backlog,
+		func(lines []string) error {
+			lastFailure = ""
+			return send("lines", lines)
+		},
+		func(err error) error {
+			// say each failure once, not every second
+			if err.Error() == lastFailure {
+				return nil
+			}
+			lastFailure = err.Error()
+			return send("failure", gin.H{"message": err.Error()})
+		})
+	if err != nil {
+		logrus.Debugf("log stream of %s ended: %v", dev.DeviceID(), err)
+	}
 }
 
 // --- control ---

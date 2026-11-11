@@ -25,6 +25,13 @@ type LogReader interface {
 	ReadLogs(lines int) ([]string, error)
 }
 
+// LogFollower is implemented by devices that can return the log lines since
+// a time, to follow the log. since is a logcat time, "MM-DD hh:mm:ss.mmm";
+// the lines at that time are included again.
+type LogFollower interface {
+	ReadLogsSince(since string, lines int) ([]string, error)
+}
+
 // Control operations, used to forward native control calls to node devices.
 const (
 	ControlTap      = "tap"
@@ -44,6 +51,9 @@ type ControlRequest struct {
 	Text       string
 	Key        string
 	Lines      int
+	// Since asks ControlReadLogs for the lines since this logcat time;
+	// older nodes ignore it and return the most recent lines
+	Since string
 }
 
 type ControlResponse struct {
@@ -70,6 +80,11 @@ func ApplyControl(dev Device, req ControlRequest) (ControlResponse, error) {
 			return resp, input.PressKey(req.Key)
 		}
 	case ControlReadLogs:
+		if follower, ok := dev.(LogFollower); ok && req.Since != "" {
+			lines, err := follower.ReadLogsSince(req.Since, req.Lines)
+			resp.Lines = lines
+			return resp, err
+		}
 		reader, ok := dev.(LogReader)
 		if !ok {
 			return resp, ErrUnsupported

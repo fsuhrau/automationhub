@@ -48,7 +48,9 @@ import {deleteDevice, getDeviceProtocols, postUnlockDevice} from '../../services
 import {screenshotUrl} from '../../services/device.control.service';
 import {DeviceType} from '../../types/device.type.enum';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
-import {getPlatformName} from '../../types/platform.type.enum';
+import {getPlatformName, PlatformType} from '../../types/platform.type.enum';
+import {DeviceStateType} from '../../types/deviceStateType';
+import DeviceLogStream from '../../components/DeviceLogStream';
 import {TestResultState} from '../../types/test.result.state.enum';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useHubState} from '../../hooks/HubStateProvider';
@@ -166,6 +168,10 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
             setConfirm(null);
         });
     };
+
+    // logcat works whenever the phone is up, also while a test run holds it
+    const showLog = device.platformType === PlatformType.Android
+        && (device.status === DeviceStateType.Booted || device.status === DeviceStateType.Locked);
 
     const deviceParameter = device.deviceParameter ?? [];
     const customParameter = device.customParameter ?? [];
@@ -286,6 +292,10 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = (props: DeviceShowPageProp
                                             </TableBody>
                                         </Table>}
                         </Section>
+
+                        {showLog && <Section title="Device log">
+                            <DeviceLogStream projectId={projectIdentifier} deviceId={device.id}/>
+                        </Section>}
 
                         <Grid container spacing={2}>
                             <Grid size={{xs: 12, lg: 6}}>

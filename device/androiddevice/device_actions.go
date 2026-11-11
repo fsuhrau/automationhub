@@ -2,6 +2,7 @@ package androiddevice
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -94,6 +95,33 @@ func (d *Device) ReadLogs(lines int) ([]string, error) {
 	result := strings.Split(strings.TrimRight(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n"), "\n")
 	if len(result) == 1 && result[0] == "" {
 		return nil, nil
+	}
+	return result, nil
+}
+
+// logcatTime is the time format of "logcat -v time" and of "logcat -T".
+var logcatTime = regexp.MustCompile(`^\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$`)
+
+// ReadLogsSince implements device.LogFollower: the log lines since a time,
+// at most the last lines of them.
+func (d *Device) ReadLogsSince(since string, lines int) ([]string, error) {
+	if !logcatTime.MatchString(since) {
+		return nil, fmt.Errorf("invalid log time %q", since)
+	}
+	if lines <= 0 {
+		lines = 2000
+	}
+	// adb quotes each logcat argument for the device shell
+	out, err := exec.NewCommand("adb", "-s", d.DeviceID(), "logcat", "-d", "-v", "time", "-T", since).Output()
+	if err != nil {
+		return nil, err
+	}
+	result := strings.Split(strings.TrimRight(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n"), "\n")
+	if len(result) == 1 && result[0] == "" {
+		return nil, nil
+	}
+	if len(result) > lines {
+		result = result[len(result)-lines:]
 	}
 	return result, nil
 }

@@ -1,6 +1,7 @@
 package control
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"image/png"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -375,5 +377,76 @@ func TestVideoRejectsCrossOrigin(t *testing.T) {
 	}
 	if _, _, err := dialVideo(t, srv, "/api/p/device/1/video", http.Header{"Origin": {srv.URL}}); err != nil {
 		t.Fatalf("same origin rejected: %v", err)
+	}
+}
+
+// logDevice returns a growing log, like logcat does.
+type logDevice struct {
+	*fakeDevice
+	lines []string
+}
+
+func (d *logDevice) add(line string) { d.mu.Lock(); d.lines = append(d.lines, line); d.mu.Unlock() }
+func (d *logDevice) ReadLogs(n int) ([]string, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if len(d.lines) > n {
+		return slices.Clone(d.lines[len(d.lines)-n:]), nil
+	}
+	return slices.Clone(d.lines), nil
+}
+
+func TestLogStream(t *testing.T) {
+	r, devices := setup(t)
+	dev := &logDevice{fakeDevice: &fakeDevice{id: "log-3"}, lines: []string{
+		"11-09 12:00:00.100 I/A( 1): one",
+		"11-09 12:00:00.200 I/A( 1): two",
+	}}
+	devices["3"] = dev
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/p/device/3/logs/stream?lines=10", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if ct := resp.Header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Fatalf("content type %q", ct)
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	readLines := func() []string {
+		event := ""
+		for scanner.Scan() {
+			line := scanner.Text()
+			if v, ok := strings.CutPrefix(line, "event: "); ok {
+				event = v
+			} else if v, ok := strings.CutPrefix(line, "data: "); ok && event == "lines" {
+				var lines []string
+				if err := json.Unmarshal([]byte(v), &lines); err != nil {
+					t.Fatal(err)
+				}
+				return lines
+			}
+		}
+		t.Fatalf("stream ended: %v", scanner.Err())
+		return nil
+	}
+
+	if got := readLines(); len(got) != 2 {
+		t.Fatalf("backlog %q", got)
+	}
+	dev.add("11-09 12:00:01.000 E/B( 2): three")
+	if got := readLines(); !slices.Equal(got, []string{"11-09 12:00:01.000 E/B( 2): three"}) {
+		t.Fatalf("follow %q", got)
+	}
+
+	// a device without a log can't be followed
+	if w := do(r, http.MethodGet, "/api/p/device/2/logs/stream", "", "", ""); w.Code == http.StatusOK {
+		t.Fatalf("plain device: %d", w.Code)
 	}
 }

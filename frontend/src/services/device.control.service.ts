@@ -23,6 +23,10 @@ const withLease = (token: string) => ({headers: {[LEASE_HEADER]: token}});
 export const streamUrl = (projectId: string, deviceId: number | string, fps: number = 2): string =>
     `/api${base(projectId, deviceId)}/stream?fps=${fps}`;
 
+// server-sent events: "lines" (JSON array of new log lines) and "failure"
+export const logStreamUrl = (projectId: string, deviceId: number | string, lines: number = 300): string =>
+    `/api${base(projectId, deviceId)}/logs/stream?lines=${lines}`;
+
 export const screenshotUrl = (projectId: string, deviceId: number | string): string =>
     `/api${base(projectId, deviceId)}/screenshot?t=${Date.now()}`;
 
