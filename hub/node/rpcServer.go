@@ -394,18 +394,20 @@ func (s *RPCNode) StartApp(req *StartAppRequest, resp *BoolResponse) error {
 
 func (s *RPCNode) StopApp(req *AppParameterRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: StopApp")
-	device, _ := s.dm.GetDevice(req.DeviceID)
-	if device == nil {
+	dev, _ := s.dm.GetDevice(req.DeviceID)
+	if dev == nil {
 		return fmt.Errorf("device with id %v not found", req.DeviceID)
 	}
 
-	err := device.StopApp(getAppParameter(req, nil))
+	err := dev.StopApp(getAppParameter(req, nil))
 
 	if err != nil {
 		resp.ErrorMessage = err.Error()
 		resp.ErrorCode = 1
 		return err
 	}
+	// the master asks IsConnected next; the stopped app must not count
+	device.DropAppConnection(dev)
 	resp.Value = true
 	return nil
 }
@@ -425,6 +427,8 @@ func (s *RPCNode) ClearAppData(req *AppParameterRequest, resp *BoolResponse) err
 		resp.ErrorCode = 1
 		return err
 	}
+	// clearing the data kills the app as well
+	device.DropAppConnection(dev)
 	resp.Value = true
 	return nil
 }

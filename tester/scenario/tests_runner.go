@@ -13,6 +13,7 @@ import (
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 type workerChannel chan action.TestStart
@@ -50,12 +51,20 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
+// cancelTimeout bounds how long a cancel waits for the run to stop its apps
+// and release its devices
+const cancelTimeout = 30 * time.Second
+
 func (tr *testsRunner) Cancel(runId string) error {
 	tr.cancelFunc()
+	if !tr.WaitFinished(cancelTimeout) {
+		tr.LogError("run still stopping %s after the cancel", cancelTimeout)
+	}
 	return nil
 }
 
 func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
+	defer tr.Finished()
 	defer tr.TestSessionFinished()
 
 	// lock devices

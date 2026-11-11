@@ -101,3 +101,20 @@ func (c *Connection) Send(content []byte) error {
 	}
 	return nil
 }
+
+// DropAppConnection forgets the app connection of a device whose app was
+// just stopped. A killed app does not always close its socket: through "adb
+// reverse" the close can stay unnoticed until DefaultSocketTimeout, and a run
+// started meanwhile took the dead connection for its new app and sent the
+// tests into it. Closing the socket ends the connection's goroutines; a newer
+// connection that replaces this one is left alone.
+func DropAppConnection(d Device) {
+	con := d.Connection()
+	if con == nil {
+		return
+	}
+	d.SetConnection(nil)
+	if ws := con.Connection; ws != nil {
+		_ = ws.Close()
+	}
+}

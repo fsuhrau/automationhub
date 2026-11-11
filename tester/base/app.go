@@ -142,6 +142,8 @@ func StopAndClearApp(d device.Device, params *app.Parameter) error {
 	if err := d.StopApp(params); err != nil {
 		return err
 	}
+	// the stopped app's connection is dead, even if its socket looks open
+	device.DropAppConnection(d)
 	if clearer, ok := d.(device.AppDataClearer); ok {
 		if err := clearer.ClearAppData(params); err != nil && !errors.Is(err, device.ErrUnsupported) {
 			return err

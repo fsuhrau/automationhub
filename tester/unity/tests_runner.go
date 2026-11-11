@@ -63,12 +63,23 @@ func (tr *testsRunner) Initialize(test models.Test, env map[string]string) error
 	return nil
 }
 
+// cancelTimeout bounds how long a cancel waits for the run to stop its apps
+// and release its devices
+const cancelTimeout = 30 * time.Second
+
 func (tr *testsRunner) Cancel(runId string) error {
 	tr.cancelFunc()
+	if !tr.WaitFinished(cancelTimeout) {
+		tr.LogError("run still stopping %s after the cancel", cancelTimeout)
+	}
 	return nil
 }
 
 func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
+	defer tr.Finished()
+	// a run without devices finishes as well; it used to stay running
+	defer tr.TestSessionFinished()
+
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
@@ -81,7 +92,6 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 			tr.LogError("text execution failed recovered: %v", err)
 		}
 		tr.UnlockDevices(devices)
-		tr.TestSessionFinished()
 	}()
 
 	tr.LogInfo("Starting devices")
