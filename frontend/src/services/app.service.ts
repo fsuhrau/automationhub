@@ -53,6 +53,16 @@ export const readAppBundleAgain = (projectId: string, appId: number, id: number)
     return http.post(`/${projectId}/app/${appId}/bundle/${id}/read`).then(resp => resp.data)
 };
 
+// archiveAppBundle removes the file of a bundle and keeps its details, so
+// runs with it stay comparable; uploading the same file again brings it back
+export const archiveAppBundle = (projectId: string, appId: number, id: number): Promise<IAppBundleDetail> => {
+    return http.post(`/${projectId}/app/${appId}/bundle/${id}/archive`).then(resp => resp.data)
+};
+
+// usableBundles are the bundles that still have their file, newest first
+export const usableBundles = (list: IAppBinaryData[]): IAppBinaryData[] =>
+    list.filter(b => !b.archivedAt).sort((a, b) => b.id - a.id);
+
 export const bundleIconUrl = (projectId: string, appId: number, id: number): string =>
     `/api/${encodeURIComponent(projectId)}/app/${appId}/bundle/${id}/icon`;
 

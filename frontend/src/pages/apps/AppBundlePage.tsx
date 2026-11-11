@@ -27,8 +27,10 @@ import {
     Typography,
 } from '@mui/material';
 import {
+    ArchiveOutlined,
     ArrowBackRounded,
     CheckCircleRounded,
+    CompareArrowsRounded,
     ContentCopyRounded,
     DeleteOutlineRounded,
     DownloadRounded,
@@ -44,7 +46,7 @@ import {useError} from '../../ErrorProvider';
 import {IAppBundleDetail} from '../../types/app';
 import {AndroidInfo, AppleInfo, BundleInfo, Certificate, Contents, ProvisioningProfile} from '../../types/bundle.info';
 import IDeviceData from '../../types/device';
-import {bundleIconUrl, deleteAppBundle, getAppBundle, readAppBundleAgain} from '../../services/app.service';
+import {archiveAppBundle, bundleIconUrl, deleteAppBundle, getAppBundle, readAppBundleAgain} from '../../services/app.service';
 import {getAllDevices} from '../../services/device.service';
 import PlatformTypeIcon from '../../components/PlatformTypeIcon';
 import {formatDateTime} from '../../components/DateTime';
@@ -424,6 +426,7 @@ const AppBundlePage: React.FC = () => {
     const [devices, setDevices] = useState<IDeviceData[] | null>(null);
     const [reading, setReading] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [archiving, setArchiving] = useState(false);
     const [busy, setBusy] = useState(false);
     const now = Date.now();
 
@@ -450,6 +453,15 @@ const AppBundlePage: React.FC = () => {
         setReading(true);
         readAppBundleAgain(projectIdentifier, appId, id).then(setDetail)
             .catch(e => setError(messageOf(e))).finally(() => setReading(false));
+    };
+
+    const onArchive = () => {
+        if (appId === null) return;
+        setBusy(true);
+        archiveAppBundle(projectIdentifier, appId, id).then(d => {
+            setDetail(d);
+            setArchiving(false);
+        }).catch(e => setError(messageOf(e))).finally(() => setBusy(false));
     };
 
     const onDelete = () => {
@@ -496,17 +508,23 @@ const AppBundlePage: React.FC = () => {
                             {android?.debuggable && <Chip size="small" color="warning" label="debuggable"/>}
                             {certificates.some(c => c.debug) && <Chip size="small" color="warning" label="debug signed"/>}
                             {apple?.profile && <Chip size="small" variant="outlined" label={PROFILE_KINDS[apple.profile.kind] ?? apple.profile.kind}/>}
+                            {detail.archivedAt && <Chip size="small" variant="outlined" icon={<ArchiveOutlined/>} label="archived"/>}
                             {tags.map(t => <Chip key={t} size="small" label={t}/>)}
                         </Stack>
                     </Box>
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ml: {md: 'auto'}}}>
                     <Button startIcon={<ArrowBackRounded/>} component={RouterLink} to={`${appBase}/bundles`}>All bundles</Button>
-                    <Button variant="outlined" startIcon={<RefreshRounded/>} disabled={reading || !detail.appPath} onClick={readAgain}>
+                    <Button variant="outlined" startIcon={<CompareArrowsRounded/>} component={RouterLink}
+                            to={`${appBase}/bundles/compare?b=${detail.id}`}>Compare</Button>
+                    <Button variant="outlined" startIcon={<RefreshRounded/>} disabled={reading || !detail.appPath || !!detail.archivedAt} onClick={readAgain}>
                         {reading ? 'Reading…' : 'Read again'}
                     </Button>
-                    <Button variant="contained" startIcon={<DownloadRounded/>} disabled={!detail.appPath}
+                    <Button variant="contained" startIcon={<DownloadRounded/>} disabled={!detail.appPath || !!detail.archivedAt}
                             href={`/upload/${encodeURIComponent(detail.appPath)}`} download>Download</Button>
+                    {!detail.archivedAt && <Tooltip title="Archive: remove the file, keep the details">
+                        <IconButton aria-label="Archive bundle" onClick={() => setArchiving(true)}><ArchiveOutlined/></IconButton>
+                    </Tooltip>}
                     <Tooltip title="Delete bundle">
                         <IconButton color="error" aria-label="Delete bundle" onClick={() => setDeleting(true)}><DeleteOutlineRounded/></IconButton>
                     </Tooltip>
@@ -514,9 +532,15 @@ const AppBundlePage: React.FC = () => {
             </Stack>
 
             {reading && <LinearProgress sx={{mb: 2}}/>}
-            {!info && <Alert severity="info" sx={{mb: 2}} action={detail.appPath &&
+            {detail.archivedAt && <Alert severity="info" icon={<ArchiveOutlined/>} sx={{mb: 2}}>
+                Archived {formatDateTime(detail.archivedAt)}. The file is gone; the details and test runs stay for comparison.
+                The bundle can't be installed or run anymore. Upload the same file again to bring it back.
+            </Alert>}
+            {!info && <Alert severity="info" sx={{mb: 2}} action={detail.appPath && !detail.archivedAt &&
                 <Button color="inherit" size="small" disabled={reading} onClick={readAgain}>Read now</Button>}>
-                This bundle was uploaded before the master read all details from the file. Read it again to see them.
+                {detail.archivedAt
+                    ? 'This bundle was uploaded before the master read all details from the file, and its file is archived.'
+                    : 'This bundle was uploaded before the master read all details from the file. Read it again to see them.'}
             </Alert>}
             {info?.warnings?.map(w => <Alert key={w} severity="warning" sx={{mb: 2}}>{w}</Alert>)}
 
@@ -557,6 +581,21 @@ const AppBundlePage: React.FC = () => {
                 {info?.contents && <Grid size={12}><ContentsSection contents={info.contents}/></Grid>}
                 <Grid size={12}><RunsSection detail={detail} appBase={appBase} now={now}/></Grid>
             </Grid>
+
+            <Dialog open={archiving} onClose={() => setArchiving(false)} aria-labelledby="archive-bundle-title">
+                <DialogTitle id="archive-bundle-title">Archive version {version || detail.name}?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        The file{detail.size ? ` (${byteFormat(detail.size)})` : ''} is removed from the master. Everything on this page,
+                        and the results of {detail.runCount === 1 ? 'its test run' : `its ${detail.runCount} test runs`}, stay for comparison.
+                        It can't be installed or run anymore; uploading the same file again brings it back.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setArchiving(false)}>Cancel</Button>
+                    <Button variant="contained" disabled={busy} onClick={onArchive}>Archive bundle</Button>
+                </DialogActions>
+            </Dialog>
 
             <Dialog open={deleting} onClose={() => setDeleting(false)} aria-labelledby="delete-bundle-title">
                 <DialogTitle id="delete-bundle-title">Delete version {version || detail.name}?</DialogTitle>

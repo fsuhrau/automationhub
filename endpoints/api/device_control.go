@@ -61,6 +61,9 @@ func (s *Service) resolveControlApp(c *gin.Context, binaryID uint) (*app.Paramet
 	if err != nil {
 		return nil, err
 	}
+	if binary.Archived() {
+		return nil, fmt.Errorf("app bundle %d is archived; upload its file again to install it", binaryID)
+	}
 	params := base.GetParams(&binary, "")
 	return &params, nil
 }

@@ -52,7 +52,7 @@ import {useError} from '../../ErrorProvider';
 import IDeviceData from '../../types/device';
 import {IAppBinaryData, IAppData} from '../../types/app';
 import {getDevice} from '../../services/device.service';
-import {getAllApps, getAppBundles} from '../../services/app.service';
+import {getAllApps, getAppBundles, usableBundles} from '../../services/app.service';
 import {
     appAction,
     AppAction,
@@ -375,7 +375,7 @@ const DeviceControlPage: React.FC = () => {
         }
         setBundleId('');
         getAppBundles(projectIdentifier, appId).then(list => {
-            const sorted = [...list].sort((a, b) => b.id - a.id);
+            const sorted = usableBundles(list);
             setBundles(sorted);
             // the newest bundle is the usual choice
             if (sorted.length > 0) setBundleId(sorted[0].id);

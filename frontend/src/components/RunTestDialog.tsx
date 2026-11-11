@@ -21,7 +21,7 @@ import {CloudUploadRounded, PlayArrowRounded} from '@mui/icons-material';
 import {useNavigate} from 'react-router-dom';
 import {AppParameterOption, IAppBinaryData, IAppData} from '../types/app';
 import {PlatformType} from '../types/platform.type.enum';
-import {getAppBundles, uploadBundle} from '../services/app.service';
+import {getAppBundles, uploadBundle, usableBundles} from '../services/app.service';
 import {executeTest} from '../services/test.service';
 import {formatDateTime} from './DateTime';
 import {acceptFor, accepts} from '../pages/apps/bundlesModel';
@@ -65,7 +65,7 @@ const RunTestDialog: React.FC<RunTestDialogProps> = ({projectIdentifier, app, te
         if (!needsBundle) return;
         setBundles(null);
         getAppBundles(projectIdentifier, app.id).then(list => {
-            const sorted = [...list].sort((a, b) => b.id - a.id);
+            const sorted = usableBundles(list);
             setBundles(sorted);
             setBundleId(sorted.length > 0 ? sorted[0].id : '');
         }).catch(e => setError(messageOf(e)));

@@ -31,7 +31,9 @@ import {
     Typography,
 } from '@mui/material';
 import {
+    ArchiveOutlined,
     CloudUploadRounded,
+    CompareArrowsRounded,
     ContentCopyRounded,
     DeleteOutlineRounded,
     DownloadRounded,
@@ -48,7 +50,7 @@ import {useHubState} from '../../hooks/HubStateProvider';
 import {useError} from '../../ErrorProvider';
 import {IAppBinaryData} from '../../types/app';
 import {getPlatformName, PlatformType} from '../../types/platform.type.enum';
-import {bundleIconUrl, deleteAppBundle, getAppBundles, updateBundleTags, uploadBundle} from '../../services/app.service';
+import {archiveAppBundle, bundleIconUrl, deleteAppBundle, getAppBundles, updateBundleTags, uploadBundle} from '../../services/app.service';
 import PlatformTypeIcon from '../../components/PlatformTypeIcon';
 import {formatDateTime} from '../../components/DateTime';
 import {byteFormat} from '../tests/value_formatter';
@@ -120,6 +122,7 @@ const AppBundlesPage: React.FC = () => {
     const [fresh, setFresh] = useState<number | null>(null);
     const [menu, setMenu] = useState<{ anchor: HTMLElement, bundle: IAppBinaryData } | null>(null);
     const [deleting, setDeleting] = useState<IAppBinaryData | null>(null);
+    const [archiving, setArchiving] = useState<IAppBinaryData | null>(null);
     const [tagging, setTagging] = useState<{ bundle: IAppBinaryData, text: string } | null>(null);
     const [busy, setBusy] = useState(false);
     const now = Date.now();
@@ -172,6 +175,15 @@ const AppBundlesPage: React.FC = () => {
         }).catch(e => setError(messageOf(e))).finally(() => setBusy(false));
     };
 
+    const onArchive = () => {
+        if (!archiving || appId === null) return;
+        setBusy(true);
+        archiveAppBundle(projectIdentifier, appId, archiving.id).then(saved => {
+            setBundles(list => list ? list.map(b => b.id === saved.id ? {...b, archivedAt: saved.archivedAt} : b) : list);
+            setArchiving(null);
+        }).catch(e => setError(messageOf(e))).finally(() => setBusy(false));
+    };
+
     const onSaveTags = () => {
         if (!tagging || appId === null) return;
         setBusy(true);
@@ -216,6 +228,8 @@ const AppBundlesPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary" sx={{display: {xs: 'none', lg: 'block'}}}>
                         or drop {accept.label} files on the page
                     </Typography>
+                    {bundles && bundles.length >= 2 &&
+                        <Button variant="outlined" startIcon={<CompareArrowsRounded/>} component={RouterLink} to="compare">Compare</Button>}
                     <Button variant="contained" startIcon={<CloudUploadRounded/>} onClick={open}>Upload bundle</Button>
                 </Stack>
             </Stack>
@@ -288,6 +302,9 @@ const AppBundlesPage: React.FC = () => {
                                                                                 <Typography variant="caption" color="text.secondary">build {b.info.build}</Typography>}
                                                                             {b.id === bundles[0].id && <Chip size="small" variant="outlined" label="newest"/>}
                                                                             {b.id === fresh && <Chip size="small" color="success" label="just uploaded"/>}
+                                                                            {b.archivedAt && <Tooltip title={`Archived ${formatDateTime(b.archivedAt)}: the file is gone, the details stay for comparing runs`}>
+                                                                                <Chip size="small" variant="outlined" icon={<ArchiveOutlined/>} label="archived"/>
+                                                                            </Tooltip>}
                                                                         </Stack>
                                                                         <Typography variant="caption" color="text.secondary">
                                                                             {b.info?.displayName || b.name} · #{b.id}
@@ -320,8 +337,8 @@ const AppBundlesPage: React.FC = () => {
                                                                 {b.runCount === undefined ? '–' : b.runCount}
                                                             </TableCell>
                                                             <TableCell align="right" sx={{whiteSpace: 'nowrap', pr: 1}}>
-                                                                <Tooltip title="Download">
-                                                                    <span><IconButton size="small" aria-label={`Download #${b.id}`} disabled={!b.appPath}
+                                                                <Tooltip title={b.archivedAt ? 'Archived: the file is gone' : 'Download'}>
+                                                                    <span><IconButton size="small" aria-label={`Download #${b.id}`} disabled={!b.appPath || !!b.archivedAt}
                                                                                       href={`/upload/${encodeURIComponent(b.appPath)}`} download>
                                                                         <DownloadRounded fontSize="small"/>
                                                                     </IconButton></span>
@@ -345,12 +362,25 @@ const AppBundlesPage: React.FC = () => {
                     <ListItemIcon><InfoOutlined fontSize="small"/></ListItemIcon>
                     <ListItemText primary="Details"/>
                 </MenuItem>
+                <MenuItem component={RouterLink} to={`compare?b=${menu?.bundle.id}`}
+                          disabled={!bundles?.some(b => menu && b.id < menu.bundle.id)}>
+                    <ListItemIcon><CompareArrowsRounded fontSize="small"/></ListItemIcon>
+                    <ListItemText primary="Compare with previous"/>
+                </MenuItem>
                 <MenuItem disabled={!menu?.bundle.hash} onClick={() => {
                     navigator.clipboard.writeText(menu!.bundle.hash).catch(() => undefined);
                     setMenu(null);
                 }}>
                     <ListItemIcon><ContentCopyRounded fontSize="small"/></ListItemIcon>
                     <ListItemText primary="Copy hash" secondary={menu?.bundle.hash ? `${menu.bundle.hash.slice(0, 12)}…` : undefined}/>
+                </MenuItem>
+                <MenuItem disabled={!!menu?.bundle.archivedAt} onClick={() => {
+                    setArchiving(menu!.bundle);
+                    setMenu(null);
+                }}>
+                    <ListItemIcon><ArchiveOutlined fontSize="small"/></ListItemIcon>
+                    <ListItemText primary={menu?.bundle.archivedAt ? 'Archived' : 'Archive bundle'}
+                                  secondary={menu?.bundle.archivedAt ? undefined : 'Remove the file, keep the details'}/>
                 </MenuItem>
                 <MenuItem onClick={() => {
                     setDeleting(menu!.bundle);
@@ -375,6 +405,21 @@ const AppBundlesPage: React.FC = () => {
                 <DialogActions>
                     <Button onClick={() => setDeleting(null)}>Keep it</Button>
                     <Button color="error" variant="contained" disabled={busy} onClick={onDelete}>Delete bundle</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={!!archiving} onClose={() => setArchiving(null)} aria-labelledby="archive-bundle-title">
+                <DialogTitle id="archive-bundle-title">Archive version {archiving?.version || archiving?.name}?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        The file{archiving?.size ? ` (${byteFormat(archiving.size)})` : ''} is removed from the master. Everything read from it,
+                        its tags and the results of its test runs stay, so runs with it can still be compared.
+                        It can't be installed or run anymore; uploading the same file again brings it back.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setArchiving(null)}>Cancel</Button>
+                    <Button variant="contained" disabled={busy} onClick={onArchive}>Archive bundle</Button>
                 </DialogActions>
             </Dialog>
 

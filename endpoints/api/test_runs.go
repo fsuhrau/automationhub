@@ -80,6 +80,9 @@ func (s *Service) StartTestRun(project *models.Project, testID, binaryID uint, s
 		if err != nil {
 			return nil, err
 		}
+		if binary.Archived() {
+			return nil, badRequest("app bundle %d is archived; upload its file again to run tests with it", binaryID)
+		}
 	}
 
 	var devices []models.Device
@@ -166,6 +169,25 @@ func (s *Service) projectTestRun(project *models.Project, runID uint) (*models.T
 	return &run, err
 }
 
+// restoreBundle puts the file of an archived bundle back, from an upload of
+// the same file; the bundle keeps its id, tags and runs.
+func (s *Service) restoreBundle(bundle *models.AppBinary, filePath string) (*models.AppBinary, error) {
+	target := bundleFile(bundle.AppPath)
+	if target == "" {
+		_ = os.Remove(filePath)
+		return nil, fmt.Errorf("archived bundle %d has no file path to restore to", bundle.ID)
+	}
+	if err := os.Rename(filePath, target); err != nil {
+		return nil, fmt.Errorf("unable to store file: %w", err)
+	}
+	if err := s.db.Model(bundle).Update("archived_at", nil).Error; err != nil {
+		return nil, err
+	}
+	bundle.ArchivedAt = nil
+	_ = os.Remove(archivedIconFile(bundle.AppPath))
+	return bundle, nil
+}
+
 // StoreBundle analyses an uploaded app file, moves it into the app storage and
 // creates the bundle entry. filePath must be inside apps.AppStoragePath.
 func (s *Service) StoreBundle(application *models.App, filePath string) (*models.AppBinary, error) {
@@ -178,6 +200,9 @@ func (s *Service) StoreBundle(application *models.App, filePath string) (*models
 
 	var existing models.AppBinary
 	if err := s.db.First(&existing, "hash = ? AND app_id = ?", params.App.Hash, application.ID).Error; err == nil {
+		if existing.Archived() {
+			return s.restoreBundle(&existing, filePath)
+		}
 		_ = os.Remove(filePath)
 		return &existing, ErrBundleExists
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {

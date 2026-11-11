@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/hub/runs"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -90,10 +93,36 @@ func (s *Service) getBinary(c *gin.Context, project *models.Project, application
 	c.JSON(http.StatusOK, detail)
 }
 
-// getBinaryIcon serves the app icon out of the bundle file
+// archivedIconFile is where the icon of an archived bundle is kept, next to
+// where its file was; "" when the bundle has no file path
+func archivedIconFile(appPath string) string {
+	file := bundleFile(appPath)
+	if file == "" {
+		return ""
+	}
+	return file + ".icon"
+}
+
+// getBinaryIcon serves the app icon out of the bundle file, or the copy kept
+// when the bundle was archived
 func (s *Service) getBinaryIcon(c *gin.Context, project *models.Project, application *models.App) {
 	binary, ok := s.findBinary(c, application)
 	if !ok {
+		return
+	}
+	if binary.Archived() {
+		iconFile := archivedIconFile(binary.AppPath)
+		data, err := os.ReadFile(iconFile)
+		if iconFile == "" || errors.Is(err, os.ErrNotExist) {
+			s.error(c, http.StatusNotFound, app.ErrNoIcon)
+			return
+		}
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		c.Header("Cache-Control", "private, max-age=86400")
+		c.Data(http.StatusOK, http.DetectContentType(data), data)
 		return
 	}
 	file := bundleFile(binary.AppPath)
@@ -121,6 +150,10 @@ func (s *Service) getBinaryIcon(c *gin.Context, project *models.Project, applica
 func (s *Service) readBinaryAgain(c *gin.Context, project *models.Project, application *models.App) {
 	binary, ok := s.findBinary(c, application)
 	if !ok {
+		return
+	}
+	if binary.Archived() {
+		s.error(c, http.StatusConflict, fmt.Errorf("bundle %d is archived; its file is gone", binary.ID))
 		return
 	}
 	file := bundleFile(binary.AppPath)
@@ -155,6 +188,67 @@ func (s *Service) readBinaryAgain(c *gin.Context, project *models.Project, appli
 	if err := s.db.Model(binary).Select(columns).Updates(binary).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
+	}
+	s.getBinary(c, project, application)
+}
+
+// bundleInUse says whether a test run of this master runs with the bundle
+func (s *Service) bundleInUse(binaryID uint) (bool, error) {
+	var ids []uint
+	// a running run is one of the latest that used the bundle
+	if err := s.db.Model(&models.TestRun{}).Where("app_binary_id = ?", binaryID).
+		Order("id desc").Limit(100).Pluck("id", &ids).Error; err != nil {
+		return false, err
+	}
+	for _, id := range ids {
+		if s.runState(id) == runs.RunRunning {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// archiveBinary removes the file of a bundle and keeps everything read from
+// it, so the runs with it stay comparable. An archived bundle can't be
+// installed or run anymore; uploading the same file again brings it back.
+// Archiving twice removes what is left of the file.
+func (s *Service) archiveBinary(c *gin.Context, project *models.Project, application *models.App) {
+	binary, ok := s.findBinary(c, application)
+	if !ok {
+		return
+	}
+	if !binary.Archived() {
+		inUse, err := s.bundleInUse(binary.ID)
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+		if inUse {
+			s.error(c, http.StatusConflict, fmt.Errorf("a test run uses bundle %d; archive it when the run is over", binary.ID))
+			return
+		}
+	}
+	file := bundleFile(binary.AppPath)
+	if file != "" && !binary.Archived() && binary.Info != nil && binary.Info.Icon != "" {
+		// the icon is read out of the file, so keep a copy for the bundle pages
+		if data, _, err := app.Icon(file, binary.Info.Icon); err == nil {
+			_ = os.WriteFile(archivedIconFile(binary.AppPath), data, 0o644)
+		}
+	}
+	if !binary.Archived() {
+		// archived first, so no run or install starts with a file being removed
+		now := time.Now()
+		binary.ArchivedAt = &now
+		if err := s.db.Model(binary).Update("archived_at", binary.ArchivedAt).Error; err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+	}
+	if file != "" {
+		if err := os.RemoveAll(file); err != nil {
+			s.error(c, http.StatusInternalServerError, fmt.Errorf("bundle %d is archived, but its file stays: %w", binary.ID, err))
+			return
+		}
 	}
 	s.getBinary(c, project, application)
 }

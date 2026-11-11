@@ -116,6 +116,18 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 				return g.Migrator().AddColumn(&AppBinary{}, "Info")
 			},
 		},
+		{
+			ID: "AddBundleArchivedAt",
+			Migrate: func(g *gorm.DB) error {
+				type AppBinary struct {
+					ArchivedAt *time.Time
+				}
+				if !g.Migrator().HasTable(&AppBinary{}) || g.Migrator().HasColumn(&AppBinary{}, "ArchivedAt") {
+					return nil
+				}
+				return g.Migrator().AddColumn(&AppBinary{}, "ArchivedAt")
+			},
+		},
 	})
 	m.InitSchema(migrations.InitSchema)
 

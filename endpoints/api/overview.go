@@ -43,7 +43,7 @@ func (s *Service) getOverview(c *gin.Context, project *models.Project) {
 		N    int64
 		Size int64
 	}
-	if err := s.db.Model(&models.AppBinary{}).Select("count(*) as n, coalesce(sum(size), 0) as size").
+	if err := s.db.Model(&models.AppBinary{}).Select("count(*) as n, coalesce(sum(case when archived_at is null then size else 0 end), 0) as size").
 		Where("app_id IN (?)", appsOfProject).Scan(&storage).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return

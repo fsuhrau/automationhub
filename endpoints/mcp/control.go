@@ -295,6 +295,9 @@ func (t *tools) bundleParams(bundleID uint) (*app.Parameter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: app bundle %d", errNotFound, bundleID)
 	}
+	if binary.Archived() {
+		return nil, fmt.Errorf("app bundle %d is archived; upload its file again to install it", bundleID)
+	}
 	params := base.GetParams(&binary, "")
 	return &params, nil
 }

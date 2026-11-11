@@ -39,7 +39,9 @@ func bundlesSetup(t *testing.T) (*gin.Engine, *gorm.DB, models.App, string) {
 
 	gin.SetMode(gin.TestMode)
 	s := &Service{db: db, runTracker: runs.NewTracker(nil)}
+	testService = s
 	r := gin.New()
+	r.POST("/bundle/:binary_id/archive", func(c *gin.Context) { s.archiveBinary(c, nil, &app) })
 	r.GET("/bundle/:binary_id", func(c *gin.Context) { s.getBinary(c, nil, &app) })
 	r.GET("/bundle/:binary_id/icon", func(c *gin.Context) { s.getBinaryIcon(c, nil, &app) })
 	r.POST("/bundle/:binary_id/read", func(c *gin.Context) { s.readBinaryAgain(c, nil, &app) })
@@ -48,6 +50,9 @@ func bundlesSetup(t *testing.T) (*gin.Engine, *gorm.DB, models.App, string) {
 	r.DELETE("/bundle/:binary_id", func(c *gin.Context) { s.deleteBinary(c, nil, &app) })
 	return r, db, app, store
 }
+
+// testService is the service of the last bundlesSetup
+var testService *Service
 
 func send(r http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
@@ -251,5 +256,70 @@ func TestBundleReadAgain(t *testing.T) {
 	db.Create(&missing)
 	if w := send(r, "POST", fmt.Sprintf("/bundle/%d/read", missing.ID), ""); w.Code != http.StatusConflict {
 		t.Errorf("bundle without file: %d", w.Code)
+	}
+}
+
+// Archiving removes the file but keeps the bundle, its info and its icon;
+// it can't be read again, and uploading the same file brings it back.
+func TestBundleArchive(t *testing.T) {
+	r, db, app, store := bundlesSetup(t)
+	writeIPA(t, store, "upload.ipa")
+	bundle, err := testService.StoreBundle(&app, filepath.Join(store, "upload.ipa"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(store, bundle.AppPath)
+
+	running := models.TestRun{AppBinaryID: bundle.ID}
+	db.Create(&running)
+	testService.runTracker.Started(running.ID)
+	if w := send(r, "POST", fmt.Sprintf("/bundle/%d/archive", bundle.ID), ""); w.Code != http.StatusConflict {
+		t.Errorf("archive while a run uses it: %d", w.Code)
+	}
+	testService.runTracker.Finished(running.ID, runs.RunResult{})
+
+	w := send(r, "POST", fmt.Sprintf("/bundle/%d/archive", bundle.ID), "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	if !strings.Contains(w.Body.String(), `"archivedAt"`) || !strings.Contains(w.Body.String(), `"runCount":1`) {
+		t.Errorf("archived detail: %s", w.Body)
+	}
+	if _, err := os.Stat(file); !os.IsNotExist(err) {
+		t.Errorf("file stays: %v", err)
+	}
+	var stored models.AppBinary
+	db.First(&stored, bundle.ID)
+	if !stored.Archived() || stored.Info == nil || stored.Info.Identifier != "com.example.game" || stored.Hash != bundle.Hash {
+		t.Errorf("stored %+v", stored)
+	}
+	if w := send(r, "GET", fmt.Sprintf("/bundle/%d/icon", bundle.ID), ""); w.Code != http.StatusOK || w.Header().Get("Content-Type") != "image/png" {
+		t.Errorf("icon of archived bundle: %d %s", w.Code, w.Header().Get("Content-Type"))
+	}
+	if w := send(r, "POST", fmt.Sprintf("/bundle/%d/read", bundle.ID), ""); w.Code != http.StatusConflict {
+		t.Errorf("read archived bundle: %d", w.Code)
+	}
+	if w := send(r, "POST", fmt.Sprintf("/bundle/%d/archive", bundle.ID), ""); w.Code != http.StatusOK {
+		t.Errorf("archive twice: %d", w.Code)
+	}
+
+	writeIPA(t, store, "again.ipa")
+	restored, err := testService.StoreBundle(&app, filepath.Join(store, "again.ipa"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if restored.ID != bundle.ID || restored.Archived() {
+		t.Errorf("restored %d archived %v, want bundle %d back", restored.ID, restored.Archived(), bundle.ID)
+	}
+	if _, err := os.Stat(file); err != nil {
+		t.Errorf("file not back: %v", err)
+	}
+	if _, err := os.Stat(file + ".icon"); !os.IsNotExist(err) {
+		t.Errorf("icon copy stays: %v", err)
+	}
+	var count int64
+	db.Model(&models.AppBinary{}).Count(&count)
+	if count != 1 {
+		t.Errorf("%d bundles, want 1", count)
 	}
 }

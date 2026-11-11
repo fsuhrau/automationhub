@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/events"
 	"gorm.io/gorm"
@@ -31,6 +33,15 @@ type AppBinary struct {
 	// Info is all the master read from the file; nil for bundles uploaded
 	// before it did
 	Info *app.BundleInfo `json:"info,omitempty" gorm:"serializer:json"`
+	// ArchivedAt is when the file of the bundle was removed. An archived
+	// bundle keeps all read from its file, so its runs stay comparable, but
+	// it can't be installed or run anymore.
+	ArchivedAt *time.Time `json:"archivedAt,omitempty"`
+}
+
+// Archived says whether the file of the bundle is gone
+func (a *AppBinary) Archived() bool {
+	return a.ArchivedAt != nil
 }
 
 func (a *AppBinary) AfterCreate(tx *gorm.DB) (err error) {

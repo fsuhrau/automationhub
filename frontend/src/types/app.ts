@@ -56,6 +56,9 @@ export interface IAppBinaryData {
     // all read from the file; absent for bundles uploaded before the master
     // read it, and only a summary in the bundle list
     info?: BundleInfo,
+    // when the file was removed; an archived bundle keeps its details for
+    // comparing runs, but can't be installed or run anymore
+    archivedAt?: string,
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date,

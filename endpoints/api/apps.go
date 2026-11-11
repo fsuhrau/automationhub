@@ -132,6 +132,7 @@ func (s *Service) deleteBinary(c *gin.Context, project *models.Project, applicat
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}
+		_ = os.Remove(archivedIconFile(binary.AppPath))
 	}
 
 	if err := s.db.Delete(&binary).Error; err != nil {

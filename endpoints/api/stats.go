@@ -40,7 +40,9 @@ func (s *Service) getAppStats() (int, int) {
 	count := len(apps)
 	size := 0
 	for i := range apps {
-		size += apps[i].Size
+		if !apps[i].Archived() {
+			size += apps[i].Size
+		}
 	}
 
 	return count, size

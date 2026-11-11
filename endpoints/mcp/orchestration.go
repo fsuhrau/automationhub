@@ -253,10 +253,12 @@ type bundleInfo struct {
 	Size       int       `json:"size"`
 	Tags       string    `json:"tags,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
+	// Archived bundles have no file: they can't be installed or run
+	Archived bool `json:"archived,omitempty"`
 }
 
 func toBundleInfo(b *models.AppBinary) bundleInfo {
-	return bundleInfo{b.ID, b.Name, b.Version, b.Identifier, b.Platform, b.Size, b.Tags, b.CreatedAt}
+	return bundleInfo{b.ID, b.Name, b.Version, b.Identifier, b.Platform, b.Size, b.Tags, b.CreatedAt, b.Archived()}
 }
 
 func (t *tools) listBundles(ctx context.Context, req *mcp.CallToolRequest, in ListBundlesArgs) (*mcp.CallToolResult, any, error) {

@@ -9,6 +9,7 @@ import ProjectDashboard from "./pages/main/ProjectDashboard";
 import TestsIndexPage from "./pages/tests/TestsIndexPage";
 import AppBundlesPage from "./pages/apps/AppBundlesPage";
 import AppBundlePage from "./pages/apps/AppBundlePage";
+import AppBundleComparePage from "./pages/apps/AppBundleComparePage";
 import TestPageLoader from "./pages/tests/TestPageLoader";
 import EditTestPage from "./pages/tests/EditTestPage";
 import TestProtocolPageLoader from "./pages/tests/TestProtocolPageLoader";
@@ -70,6 +71,8 @@ function App(props: any) {
                                                        element={<ApplicationPage/>}>
                                                     <Route path={'bundles'}
                                                            element={<AppBundlesPage/>}/>
+                                                    <Route path={'bundles/compare'}
+                                                           element={<AppBundleComparePage/>}/>
                                                     <Route path={'bundle/:bundleId'}
                                                            element={<AppBundlePage/>}/>
                                                     <Route path={"tests"}
