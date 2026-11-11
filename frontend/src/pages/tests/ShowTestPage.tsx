@@ -30,6 +30,7 @@ import {getRunsPage, ITestRunListEntry} from '../../services/test.run.service';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useHubState} from '../../hooks/HubStateProvider';
+import {useTestRunChanges} from '../../hooks/useTestRunChanges';
 import {formatDateTime} from '../../components/DateTime';
 import RunTestDialog from '../../components/RunTestDialog';
 import {ago} from '../apps/bundlesModel';
@@ -95,6 +96,8 @@ const ShowTestPage: React.FC<TestContentProps> = ({test}) => {
         }).catch(e => setError(messageOf(e))).finally(() => setLoading(false));
     }, [projectIdentifier, appId, test.id]);
     useEffect(() => load(), [load]);
+    // a run of this app started or finished, e.g. from MCP or the CLI
+    useTestRunChanges(projectIdentifier, appId, () => load());
 
     const stats = useMemo(() => runStats(runs ?? []), [runs]);
     const summarized = !!runs && runs.some(r => r.status !== undefined);

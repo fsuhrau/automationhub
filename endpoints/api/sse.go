@@ -19,6 +19,7 @@ func (s *Service) initSSE(api *gin.RouterGroup) {
 	RegisterNewTestProtocolLogListener(s)
 	RegisterNewTestLogEntryListener(s)
 	RegisterEventTestRunFinishedListener(s)
+	RegisterEventTestRunChangedListener(s)
 	RegisterNodeStatusListener(s)
 
 	sseApi := api.Group("/sse")

@@ -22,6 +22,7 @@ import {AddRounded, CheckCircleRounded} from '@mui/icons-material';
 import {Link as RouterLink, useNavigate} from 'react-router-dom';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useHubState} from '../../hooks/HubStateProvider';
+import {useTestRunChanges} from '../../hooks/useTestRunChanges';
 import {getOverview, IOverviewRun, IProjectOverview, OverviewMissing} from '../../services/overview.service';
 import {formatDateTime} from '../../components/DateTime';
 import PlatformTypeIcon from '../../components/PlatformTypeIcon';
@@ -103,6 +104,8 @@ const ProjectDashboard: React.FC = () => {
         getOverview(projectIdentifier).then(setOverview).catch(e => e instanceof OverviewMissing ? setOutdated(true) : setError(messageOf(e)));
     }, [projectIdentifier]);
     useEffect(load, [load]);
+    // a run started or finished, e.g. from MCP or the CLI
+    useTestRunChanges(projectIdentifier, null, load);
     // runs change while the page is open; refresh while something runs
     useEffect(() => {
         if (!overview || overview.running.length === 0) return;

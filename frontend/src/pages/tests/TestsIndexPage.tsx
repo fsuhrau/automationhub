@@ -29,6 +29,7 @@ import {getAllTests} from '../../services/test.service';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useHubState} from '../../hooks/HubStateProvider';
+import {useTestRunChanges} from '../../hooks/useTestRunChanges';
 import {formatDateTime} from '../../components/DateTime';
 import RunTestDialog from '../../components/RunTestDialog';
 import {ago} from '../apps/bundlesModel';
@@ -89,6 +90,8 @@ const TestsIndexPage: React.FC = () => {
         getAllTests(projectIdentifier, appId).then(setTests).catch(e => setError(messageOf(e)));
     }, [projectIdentifier, appId]);
     useEffect(load, [load]);
+    // a run of this app started or finished, e.g. from MCP or the CLI
+    useTestRunChanges(projectIdentifier, appId, load);
 
     const counts = useMemo(() => countHealth(tests ?? []), [tests]);
     // older masters don't send the latest runs; then nothing is known about them

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fsuhrau/automationhub/app"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
@@ -123,6 +124,12 @@ func (s *Service) StartTestRun(project *models.Project, testID, binaryID uint, s
 	s.runners[runKey(run.ID)] = testRunner
 	s.runnersMutex.Unlock()
 	s.runTracker.Started(run.ID)
+	events.TestRunStarted.Trigger(events.TestRunStartedPayload{
+		ProjectID: project.Identifier,
+		AppID:     test.AppID,
+		TestID:    test.ID,
+		TestRunID: run.ID,
+	})
 	return run, nil
 }
 
