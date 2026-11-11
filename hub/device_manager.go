@@ -291,7 +291,11 @@ func (dm *DeviceManager) handleConnection(conn *websocket.Conn) {
 		dev.SetConnection(connection)
 		go connection.HandleMessages(ctx)
 		go dm.handleActions(dev, ctx)
+		return
 	}
+	// without this the app waits and the test run times out with no hint
+	dm.log.Warnf("WebSocketAccept: %v sent a handshake for unknown device %q (session %q); closing", remoteAddress, resp.Payload.Connect.DeviceID, resp.Payload.Connect.SessionID)
+	_ = conn.Close()
 }
 
 func (dm *DeviceManager) StopObserver() {

@@ -11,6 +11,7 @@ import (
 	"image"
 	_ "image/png"
 	"net"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -236,8 +237,54 @@ func (d *Device) StartApp(deviceConfig *device.DeviceConfig, appParams *app.Para
 	if err := d.unlockScreen(deviceConfig); err != nil {
 		return err
 	}
+	if err := d.reverseNodePort(nodeUrl); err != nil {
+		return err
+	}
 	cmd := exec2.NewCommand("adb", "-s", d.DeviceID(), "shell", "am", "start", "-n", fmt.Sprintf("%s/%s", appParams.Identifier, appParams.App.Android.LaunchActivity), "-e", "SESSION_ID", sessionId, "-e", "NODE_URL", nodeUrl, "-e", "DEVICE_ID", d.deviceID)
 	return cmd.Run()
+}
+
+// reverseNodePort makes a loopback node URL work on the phone. On the device,
+// localhost is the device itself, so "adb reverse" forwards the node port from
+// the device back to this machine. Other hosts are left alone.
+func (d *Device) reverseNodePort(nodeUrl string) error {
+	port, ok := loopbackPort(nodeUrl)
+	if !ok {
+		return nil
+	}
+	d.Log("device", "Reverse tcp:%s to the node", port)
+	spec := "tcp:" + port
+	if err := exec2.NewCommand("adb", "-s", d.DeviceID(), "reverse", spec, spec).Run(); err != nil {
+		return fmt.Errorf("adb reverse %s for node url %s: %w", spec, nodeUrl, err)
+	}
+	return nil
+}
+
+// loopbackPort returns the port of nodeUrl when its host is a loopback address.
+func loopbackPort(nodeUrl string) (string, bool) {
+	u, err := url.Parse(nodeUrl)
+	if err != nil {
+		return "", false
+	}
+	host := u.Hostname()
+	if host != "localhost" {
+		ip := net.ParseIP(host)
+		if ip == nil || !ip.IsLoopback() {
+			return "", false
+		}
+	}
+	port := u.Port()
+	if port == "" {
+		switch u.Scheme {
+		case "ws", "http":
+			port = "80"
+		case "wss", "https":
+			port = "443"
+		default:
+			return "", false
+		}
+	}
+	return port, true
 }
 
 func (d *Device) StopApp(params *app.Parameter) error {
