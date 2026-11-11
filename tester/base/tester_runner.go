@@ -29,6 +29,9 @@ type TestRunner struct {
 	ProjectId string
 	AppId     uint
 
+	lockedMu sync.Mutex
+	locked   []uint
+
 	// closed once the run stopped its apps and released its devices
 	finished     chan struct{}
 	finishedOnce sync.Once

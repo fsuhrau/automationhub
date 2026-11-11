@@ -565,6 +565,9 @@ type Response struct {
 	// of its own: "running" and "finished" come from the run tracker, and
 	// "not_running" is a run this master didn't start (e.g. before a restart).
 	State runs.RunState `json:"state"`
+	// Devices are the IDs of the devices a running run holds now; empty
+	// once the run is over.
+	Devices []uint `json:"devices"`
 }
 
 func (s *Service) runState(runID uint) runs.RunState {
@@ -573,6 +576,17 @@ func (s *Service) runState(runID uint) runs.RunState {
 	}
 	state, _ := s.runTracker.Status(runID)
 	return state
+}
+
+// runDevices returns the devices an active run of this master holds.
+func (s *Service) runDevices(runID uint) []uint {
+	s.runnersMutex.Lock()
+	runner, ok := s.runners[runKey(runID)]
+	s.runnersMutex.Unlock()
+	if !ok {
+		return []uint{}
+	}
+	return runner.LockedDevices()
 }
 
 func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
@@ -595,6 +609,7 @@ func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, applic
 		defaultNaN(&resp.TestRun.Protocols[i])
 	}
 	resp.State = s.runState(resp.TestRun.ID)
+	resp.Devices = s.runDevices(resp.TestRun.ID)
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -633,6 +648,7 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 	// get next
 	s.db.Table("test_runs").Where("test_id = ? and id > ?", testId, runId).Order("created_at asc").Limit(1).Select("id").Scan(&resp.NextRunId)
 	resp.State = s.runState(resp.TestRun.ID)
+	resp.Devices = s.runDevices(resp.TestRun.ID)
 
 	c.JSON(http.StatusOK, resp)
 }

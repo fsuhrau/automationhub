@@ -8,6 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/utils/sync"
 	"github.com/sirupsen/logrus"
+	"slices"
 )
 
 func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
@@ -23,6 +24,9 @@ func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
 				Device: dev,
 				Model:  d,
 			})
+			tr.lockedMu.Lock()
+			tr.locked = append(tr.locked, d.ID)
+			tr.lockedMu.Unlock()
 		} else {
 			tr.LogError("locking device %s failed: %v", dev.DeviceID(), err)
 		}
@@ -34,7 +38,18 @@ func (tr *TestRunner) UnlockDevices(devices []DeviceMap) {
 	for i := range devices {
 		tr.DeviceManager.Stop(devices[i].Device)
 		_ = events.UnlockDevice(devices[i].Device)
+		tr.lockedMu.Lock()
+		tr.locked = slices.DeleteFunc(tr.locked, func(id uint) bool { return id == devices[i].Model.ID })
+		tr.lockedMu.Unlock()
 	}
+}
+
+// LockedDevices returns the IDs of the devices the run holds right now, so
+// the run page can show their screens.
+func (tr *TestRunner) LockedDevices() []uint {
+	tr.lockedMu.Lock()
+	defer tr.lockedMu.Unlock()
+	return slices.Clone(tr.locked)
 }
 
 func (tr *TestRunner) StartDevices(ctx context.Context, devices []DeviceMap) error {

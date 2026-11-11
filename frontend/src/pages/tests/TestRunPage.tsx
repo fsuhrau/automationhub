@@ -39,6 +39,7 @@ import {
     ReplayRounded,
     SearchRounded,
     StopCircleRounded,
+    TouchAppRounded,
 } from '@mui/icons-material';
 import {useSSE} from 'react-hooks-sse';
 import {Link as RouterLink, useNavigate} from 'react-router-dom';
@@ -51,6 +52,12 @@ import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useError} from '../../ErrorProvider';
 import {formatDateTime} from '../../components/DateTime';
+import DeviceLiveScreen from '../../components/DeviceLiveScreen';
+import DeviceLogStream from '../../components/DeviceLogStream';
+import {PlatformType} from '../../types/platform.type.enum';
+import {useHubState} from '../../hooks/HubStateProvider';
+import {getRun} from '../../services/test.run.service';
+import IDeviceData from '../../types/device';
 import {
     between,
     buildRows,
@@ -73,6 +80,8 @@ interface TestRunPageProps {
     nextRunId: number | null
     prevRunId: number | null
     state?: RunLifecycle
+    // devices the run holds when the page loaded; undefined on older masters
+    devices?: number[]
 }
 
 interface NewTestRunPayload {
@@ -350,6 +359,36 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         if (box && running && atEnd.current) box.scrollTop = box.scrollHeight;
     }, [log.length, running]);
 
+    // the screens of the devices the run holds, while it runs
+    const {state: hub} = useHubState();
+    const [held, setHeld] = useState<number[] | undefined>(props.devices);
+    const [watched, setWatched] = useState<number | null>(null);
+    const knowsHeld = props.devices !== undefined;
+    useEffect(() => {
+        // a run that just started may not hold its devices yet: ask again
+        if (!running || !knowsHeld || (held && held.length > 0)) return;
+        const timer = setInterval(() => {
+            getRun(projectIdentifier, appId as number, String(testRun.testId), String(testRun.id))
+                .then(r => setHeld(r.devices ?? [])).catch(() => undefined);
+        }, 3000);
+        return () => clearInterval(timer);
+    }, [running, knowsHeld, held, projectIdentifier, appId, testRun.testId, testRun.id]);
+    const liveDevices: IDeviceData[] = useMemo(() => {
+        if (!running) return [];
+        const known = new Map<number, IDeviceData>();
+        testRun.deviceStatus.forEach(d => d.device && known.set(d.deviceId, d.device));
+        protocols.forEach(p => p.device && p.deviceId && known.set(p.deviceId as number, p.device));
+        hub.devices?.forEach(d => known.set(d.id, d));
+        // older masters don't say which devices a run holds: use the ones
+        // that started the app or ran a test
+        const ids = knowsHeld ? (held ?? []) : [...new Set([
+            ...testRun.deviceStatus.map(d => d.deviceId),
+            ...protocols.map(p => p.deviceId as number).filter(id => id),
+        ])];
+        return ids.map(id => known.get(id)).filter((d): d is IDeviceData => !!d);
+    }, [running, knowsHeld, held, protocols, testRun.deviceStatus, hub.devices]);
+    const watchedDevice = liveDevices.find(d => d.id === watched) ?? liveDevices[0];
+
     const statusInfo = STATUS[status];
     const done = total - counts[TestResultState.TestResultOpen];
 
@@ -511,11 +550,44 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                     })}
                                 </Box>}
                         </Section>
+
+                        {running && watchedDevice?.platformType === PlatformType.Android &&
+                            <Section title={`Device log · ${watchedDevice.alias || watchedDevice.name}`}>
+                                <DeviceLogStream key={watchedDevice.id} projectId={projectIdentifier} deviceId={watchedDevice.id}/>
+                            </Section>}
                     </Stack>
                 </Grid>
 
                 <Grid size={{xs: 12, lg: 4}}>
                     <Stack spacing={2}>
+                        {running && <Section title="Live screen" action={watchedDevice &&
+                            <Tooltip title="Open the device's live control page. You can watch it there; control is possible once the run is over.">
+                                <Button size="small" startIcon={<TouchAppRounded/>} component={RouterLink}
+                                        to={`/project/${projectIdentifier}/device/${watchedDevice.id}/control`}>
+                                    Open
+                                </Button>
+                            </Tooltip>}>
+                            {!watchedDevice
+                                ? <Typography variant="body2" color="text.secondary">
+                                    {knowsHeld ? 'Waiting for the run to take a device…' : 'The screen shows once a device has started the app.'}
+                                </Typography>
+                                : <>
+                                    {liveDevices.length > 1 && <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{mb: 1.5}}
+                                                                      role="group" aria-label="Device to watch">
+                                        {liveDevices.map(d => <Chip key={d.id} size="small" label={d.alias || d.name}
+                                                                    color={d.id === watchedDevice.id ? 'primary' : 'default'}
+                                                                    variant={d.id === watchedDevice.id ? 'filled' : 'outlined'}
+                                                                    onClick={() => setWatched(d.id)}/>)}
+                                    </Stack>}
+                                    <DeviceLiveScreen projectId={projectIdentifier} deviceId={watchedDevice.id}
+                                                      platformType={watchedDevice.platformType}
+                                                      label={watchedDevice.alias || watchedDevice.name}/>
+                                    {liveDevices.length === 1 && <Typography variant="caption" color="text.secondary" component="div" sx={{mt: 1}}>
+                                        {watchedDevice.alias || watchedDevice.name} · {watchedDevice.os} {watchedDevice.osVersion}
+                                    </Typography>}
+                                </>}
+                        </Section>}
+
                         <Section title="Devices">
                             {testRun.deviceStatus.length === 0
                                 ? <Typography variant="body2" color="text.secondary">

@@ -7,4 +7,6 @@ export default interface ITestRunResponseData {
     testRun: ITestRunData,
     // whether the run still executes; missing on older masters
     state?: RunLifecycle,
+    // devices a running run holds now; missing on older masters
+    devices?: number[],
 }

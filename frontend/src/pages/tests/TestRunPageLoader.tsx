@@ -23,7 +23,7 @@ const TestRunPageLoader: React.FC = () => {
     }
     // key: a new run gets a fresh page (its state and SSE subscriptions)
     return <TestRunPage key={data.testRun.id} testRun={data.testRun} nextRunId={data.nextRunId} prevRunId={data.prevRunId}
-                        state={data.state}/>;
+                        state={data.state} devices={data.devices}/>;
 };
 
 export default TestRunPageLoader;
