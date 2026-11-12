@@ -234,7 +234,7 @@ const TestRows: React.FC<{
                     </Box>
                 </Stack>
             </TableCell>
-            <TableCell sx={{display: {xs: 'none', md: 'table-cell'}}}>
+            <TableCell sx={{display: {xs: 'none', md: 'table-cell', lg: 'none', xl: 'table-cell'}}}>
                 <Typography variant="body2">{device}</Typography>
                 {row.protocol.device && <Typography variant="caption" color="text.secondary">
                     {row.protocol.device.os} {row.protocol.device.osVersion}
@@ -443,8 +443,10 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                 </Stack>
             </Stack>
 
+            {/* three columns on wide screens: the tests, what the run logs, and
+                the devices with the run's details */}
             <Grid container spacing={2}>
-                <Grid size={{xs: 12, lg: 8}}>
+                <Grid size={{xs: 12, lg: 4}}>
                     <Stack spacing={2}>
                         <Section title="Tests" action={total > 0 && <Typography variant="body2" color="text.secondary">
                             {running ? `${done} of ${total} done` : `${total} ${total === 1 ? 'test' : 'tests'}`}
@@ -501,7 +503,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                 <TableRow>
                                                     <TableCell sx={{pl: 2}}><Box component="span" sx={visuallyHidden}>Result</Box></TableCell>
                                                     <TableCell>Test</TableCell>
-                                                    <TableCell sx={{display: {xs: 'none', md: 'table-cell'}}}>Device</TableCell>
+                                                    <TableCell sx={{display: {xs: 'none', md: 'table-cell', lg: 'none', xl: 'table-cell'}}}>Device</TableCell>
                                                     <TableCell align="right">Duration</TableCell>
                                                     <TableCell><Box component="span" sx={visuallyHidden}>Actions</Box></TableCell>
                                                 </TableRow>
@@ -515,7 +517,11 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                         </Table>
                                     </TableContainer>}
                         </Section>
+                    </Stack>
+                </Grid>
 
+                <Grid size={{xs: 12, lg: 5}}>
+                    <Stack spacing={2}>
                         <Section title={`Execution log`} action={errorCount > 0 &&
                             <Chip size="small" color={errorsOnly ? 'error' : 'default'} variant={errorsOnly ? 'filled' : 'outlined'}
                                   label={`Errors only ${errorCount}`} onClick={() => setErrorsOnly(v => !v)}/>}>
@@ -524,7 +530,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                 : <Box ref={logBox} onScroll={e => {
                                     const box = e.currentTarget;
                                     atEnd.current = box.scrollHeight - box.scrollTop - box.clientHeight < 24;
-                                }} sx={{maxHeight: 420, overflowY: 'auto', mx: -2, px: 2}}
+                                }} sx={{maxHeight: {xs: 420, lg: running ? '45vh' : '75vh'}, overflowY: 'auto', mx: -2, px: 2}}
                                        role="log" aria-label="Execution log">
                                     {visibleLog.map(entry => {
                                         const isError = entry.level === 'error';
@@ -553,12 +559,12 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
 
                         {running && watchedDevice?.platformType === PlatformType.Android &&
                             <Section title={`Device log · ${watchedDevice.alias || watchedDevice.name}`}>
-                                <DeviceLogStream key={watchedDevice.id} projectId={projectIdentifier} deviceId={watchedDevice.id}/>
+                                <DeviceLogStream key={watchedDevice.id} projectId={projectIdentifier} deviceId={watchedDevice.id} maxHeight="45vh"/>
                             </Section>}
                     </Stack>
                 </Grid>
 
-                <Grid size={{xs: 12, lg: 4}}>
+                <Grid size={{xs: 12, lg: 3}}>
                     <Stack spacing={2}>
                         {running && <Section title="Live screen" action={watchedDevice &&
                             <Tooltip title="Open the device's live control page. You can watch it there; control is possible once the run is over.">

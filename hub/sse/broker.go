@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"sync"
@@ -139,9 +140,26 @@ func (b *Broker) ServeHTTP() gin.HandlerFunc {
 				if !ok {
 					return
 				}
-				c.SSEvent(msg.Channel, msg.Content)
+				data, err := encode(msg.Content)
+				if err != nil {
+					// an event that can't be encoded would reach the
+					// client as an empty message and be lost silently
+					log.Printf("SSE event %s dropped: %v", msg.Channel, err)
+					continue
+				}
+				c.SSEvent(msg.Channel, data)
 				c.Writer.Flush()
 			}
 		}
 	}
+}
+
+// encode turns the event content into the data line: text as it is, anything
+// else as JSON.
+func encode(content any) (any, error) {
+	switch v := content.(type) {
+	case string, []byte:
+		return v, nil
+	}
+	return json.Marshal(content)
 }
