@@ -81,6 +81,10 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 		return
 	}
 
+	// stops before the devices are unlocked, so the files are complete when
+	// the run finishes
+	defer tr.RecordSessions(devices)()
+
 	tr.appParams = base.GetParams(appData, startupUrl)
 
 	// stop app

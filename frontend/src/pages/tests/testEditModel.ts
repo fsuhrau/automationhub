@@ -13,6 +13,7 @@ export interface TestForm {
     mode: UnityTestCategory,
     categories: string[],
     functions: IAppFunctionData[],
+    recordSession: boolean,
 }
 
 export interface TestLike {
@@ -20,6 +21,7 @@ export interface TestLike {
     testConfig: {
         executionType: TestExecutionType,
         allDevices: boolean,
+        recordSession?: boolean,
         devices?: { deviceId: number }[] | null,
         unity?: { testCategoryType: UnityTestCategory, categories?: string, testFunctions?: IAppFunctionData[] | null } | null,
     },
@@ -36,6 +38,7 @@ export const formOf = (test: TestLike): TestForm => ({
     mode: test.testConfig.unity?.testCategoryType ?? UnityTestCategory.RunAllTests,
     categories: splitCategories(test.testConfig.unity?.categories),
     functions: (test.testConfig.unity?.testFunctions ?? []).map(f => ({assembly: f.assembly, class: f.class, method: f.method})),
+    recordSession: test.testConfig.recordSession ?? false,
 });
 
 // newForm is where a new test starts: all Unity tests, on all devices,
@@ -48,6 +51,7 @@ export const newForm = (): TestForm => ({
     mode: UnityTestCategory.RunAllTests,
     categories: [],
     functions: [],
+    recordSession: false,
 });
 
 export const functionKey = (f: IAppFunctionData): string => `${f.assembly}|${f.class}|${f.method}`;
@@ -83,7 +87,7 @@ export const validate = (f: TestForm, unity: boolean): FormErrors => {
 
 const comparable = (f: TestForm) => JSON.stringify([
     f.name.trim(), f.executionType, f.allDevices, f.allDevices ? [] : [...f.devices].sort((a, b) => a - b),
-    f.mode, [...f.categories].sort(), f.functions.map(functionKey).sort(),
+    f.mode, [...f.categories].sort(), f.functions.map(functionKey).sort(), f.recordSession,
 ]);
 
 export const isDirty = (a: TestForm, b: TestForm): boolean => comparable(a) !== comparable(b);
@@ -96,6 +100,7 @@ export const toRequest = (f: TestForm) => ({
     unityTestCategoryType: f.mode,
     categories: f.categories.join(','),
     testFunctions: f.functions,
+    recordSession: f.recordSession,
 });
 
 // shortClass and shortMethod make Unity names readable: the class without

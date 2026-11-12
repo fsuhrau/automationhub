@@ -192,7 +192,7 @@ func (s *Service) newTest(c *gin.Context, project *models.Project, application *
 		if err := tx.Create(&test).Error; err != nil {
 			return err
 		}
-		config := models.TestConfig{TestID: test.ID, Type: req.Type, AllDevices: req.AllDevices, ExecutionType: req.ExecutionType}
+		config := models.TestConfig{TestID: test.ID, Type: req.Type, AllDevices: req.AllDevices, ExecutionType: req.ExecutionType, RecordSession: req.RecordSession}
 		if err := tx.Create(&config).Error; err != nil {
 			return err
 		}
@@ -258,6 +258,7 @@ type testUpdate struct {
 	UnityTestCategoryType models.UnityTestCategoryType `json:"unityTestCategoryType"`
 	Categories            string                       `json:"categories"`
 	TestFunctions         []models.UnityTestFunction   `json:"testFunctions"`
+	RecordSession         bool                         `json:"recordSession"`
 }
 
 // validate tidies the update (trimmed name and categories, no repeated
@@ -356,7 +357,7 @@ func (s *Service) updateTest(c *gin.Context, project *models.Project, applicatio
 			return err
 		}
 		if err := tx.Model(&models.TestConfig{}).Where("id = ?", test.TestConfig.ID).
-			Updates(map[string]interface{}{"execution_type": req.ExecutionType, "all_devices": req.AllDevices}).Error; err != nil {
+			Updates(map[string]interface{}{"execution_type": req.ExecutionType, "all_devices": req.AllDevices, "record_session": req.RecordSession}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("test_config_id = ?", test.TestConfig.ID).Delete(&models.TestConfigDevice{}).Error; err != nil {
@@ -624,7 +625,7 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 	runId := c.Param("run_id")
 
 	var resp Response
-	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").First(&resp.TestRun, runId).Error; err != nil {
+	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Recordings", func(db *gorm.DB) *gorm.DB { return db.Order("started_at") }).First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/migrations"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/glebarez/sqlite"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/pkg/errors"
@@ -126,6 +127,20 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 					return nil
 				}
 				return g.Migrator().AddColumn(&AppBinary{}, "ArchivedAt")
+			},
+		},
+		{
+			ID: "AddSessionRecording",
+			Migrate: func(g *gorm.DB) error {
+				type TestConfig struct {
+					RecordSession bool
+				}
+				if g.Migrator().HasTable(&TestConfig{}) && !g.Migrator().HasColumn(&TestConfig{}, "RecordSession") {
+					if err := g.Migrator().AddColumn(&TestConfig{}, "RecordSession"); err != nil {
+						return err
+					}
+				}
+				return g.AutoMigrate(&models.TestRunRecording{})
 			},
 		},
 	})

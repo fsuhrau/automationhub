@@ -64,7 +64,7 @@ func savedTest(t *testing.T, db *gorm.DB, id uint) (string, string, string) {
 	}
 	sort.Strings(devices)
 	sort.Strings(functions)
-	return fmt.Sprintf("%s exec=%d all=%v", test.Name, test.TestConfig.ExecutionType, test.TestConfig.AllDevices),
+	return fmt.Sprintf("%s exec=%d all=%v rec=%v", test.Name, test.TestConfig.ExecutionType, test.TestConfig.AllDevices, test.TestConfig.RecordSession),
 		strings.Join(devices, ","),
 		fmt.Sprintf("mode=%d cats=%q fns=%s", test.TestConfig.Unity.UnityTestCategoryType, test.TestConfig.Unity.Categories, strings.Join(functions, ","))
 }
@@ -75,7 +75,7 @@ func TestUpdateTest(t *testing.T) {
 	r, db, test, foreign, devices := testUpdateSetup(t)
 	path := fmt.Sprintf("/test/%d", test.ID)
 
-	body := fmt.Sprintf(`{"name":" Smoke 2 ","executionType":1,"allDevices":false,"devices":[%d,%d,%d],
+	body := fmt.Sprintf(`{"name":" Smoke 2 ","executionType":1,"allDevices":false,"recordSession":true,"devices":[%d,%d,%d],
 		"unityTestCategoryType":2,"categories":" a, ,a ","testFunctions":[
 		{"assembly":"A","class":"S","method":"New"},{"assembly":"A","class":"S","method":"New"},{"assembly":"A","class":"T","method":"Other"},{"method":" "}]}`,
 		devices[1].ID, devices[0].ID, devices[1].ID)
@@ -84,7 +84,7 @@ func TestUpdateTest(t *testing.T) {
 		t.Fatalf("%d %s", w.Code, w.Body)
 	}
 	head, devs, unity := savedTest(t, db, test.ID)
-	if head != "Smoke 2 exec=1 all=false" || devs != fmt.Sprintf("%d,%d", devices[0].ID, devices[1].ID) ||
+	if head != "Smoke 2 exec=1 all=false rec=true" || devs != fmt.Sprintf("%d,%d", devices[0].ID, devices[1].ID) ||
 		unity != `mode=2 cats="a" fns=S/New,T/Other` {
 		t.Errorf("saved %s | %s | %s", head, devs, unity)
 	}
@@ -97,7 +97,7 @@ func TestUpdateTest(t *testing.T) {
 	if w := send(r, "PUT", path, `{"name":"Smoke 2","executionType":0,"allDevices":true,"devices":[1],"unityTestCategoryType":0}`); w.Code != http.StatusOK {
 		t.Fatalf("all devices: %d %s", w.Code, w.Body)
 	}
-	if head, devs, unity := savedTest(t, db, test.ID); head != "Smoke 2 exec=0 all=true" || devs != "" || unity != `mode=0 cats="" fns=` {
+	if head, devs, unity := savedTest(t, db, test.ID); head != "Smoke 2 exec=0 all=true rec=false" || devs != "" || unity != `mode=0 cats="" fns=` {
 		t.Errorf("all devices saved %s | %s | %s", head, devs, unity)
 	}
 
@@ -147,7 +147,7 @@ func TestNewTest(t *testing.T) {
 	}
 	before := count()
 
-	body := fmt.Sprintf(`{"type":0,"name":" Nightly ","executionType":1,"allDevices":false,"devices":[%d,%d],
+	body := fmt.Sprintf(`{"type":0,"name":" Nightly ","executionType":1,"allDevices":false,"recordSession":true,"devices":[%d,%d],
 		"unityTestCategoryType":1,"categories":"smoke, ui,smoke"}`, devices[0].ID, devices[0].ID)
 	w := send(r, "POST", "/test", body)
 	if w.Code != http.StatusCreated {
@@ -158,7 +158,7 @@ func TestNewTest(t *testing.T) {
 		t.Fatalf("response %s", w.Body)
 	}
 	head, devs, unity := savedTest(t, db, created.ID)
-	if head != "Nightly exec=1 all=false" || devs != fmt.Sprint(devices[0].ID) || unity != `mode=1 cats="smoke,ui" fns=` {
+	if head != "Nightly exec=1 all=false rec=true" || devs != fmt.Sprint(devices[0].ID) || unity != `mode=1 cats="smoke,ui" fns=` {
 		t.Errorf("created %s | %s | %s", head, devs, unity)
 	}
 

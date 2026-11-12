@@ -106,3 +106,42 @@ func TestMigrateAddsBundleInfo(t *testing.T) {
 		t.Fatalf("info = %+v", read.Info)
 	}
 }
+
+// Existing hubs get the record option on their tests (off) and the table of
+// recordings.
+func TestMigrateAddsSessionRecording(t *testing.T) {
+	db = nil
+	t.Cleanup(func() { db = nil })
+	path := filepath.Join(t.TempDir(), "hub.db")
+	old, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type TestConfig struct {
+		models.Model
+		TestID     uint
+		AllDevices bool
+	}
+	if err := old.AutoMigrate(&TestConfig{}); err != nil {
+		t.Fatal(err)
+	}
+	old.Create(&TestConfig{TestID: 1, AllDevices: true})
+	if err := old.Exec("CREATE TABLE migrations (id VARCHAR(255) PRIMARY KEY)").Error; err != nil {
+		t.Fatal(err)
+	}
+	old.Exec("INSERT INTO migrations (id) VALUES ('SCHEMA_INIT'), ('AddAppParameter'), ('AddPersonalAccessTokens'), ('AddBundleInfo'), ('AddBundleArchivedAt')")
+	sqlDB, _ := old.DB()
+	_ = sqlDB.Close()
+
+	conn, err := GetDB(config.Database{SQLite: &config.SQLite{Path: path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var existing models.TestConfig
+	if err := conn.Select("id", "record_session").First(&existing).Error; err != nil || existing.RecordSession {
+		t.Fatalf("old config: %+v %v", existing, err)
+	}
+	if !conn.Migrator().HasTable(&models.TestRunRecording{}) {
+		t.Fatal("recordings table missing")
+	}
+}

@@ -4,6 +4,7 @@ import { TestResultState } from './test.result.state.enum';
 import ITestData from './test';
 import { IAppBinaryData } from "./app";
 import ITesRunDeviceStatusData from "./test.run.device.status";
+import ITestRunRecordingData from "./test.run.recording";
 
 export default interface ITestRunData {
     id?: number,
@@ -18,6 +19,8 @@ export default interface ITestRunData {
     protocols: ITestProtocolData[],
     log: ITesRunLogEntryData[],
     deviceStatus: ITesRunDeviceStatusData[],
+    // screen recordings, when the test records its sessions
+    recordings?: ITestRunRecordingData[],
     createdAt: Date,
     updatedAt: Date,
     deletedAt: Date,

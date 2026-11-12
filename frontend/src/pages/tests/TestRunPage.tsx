@@ -34,10 +34,12 @@ import {
     ErrorRounded,
     ExpandLessRounded,
     ExpandMoreRounded,
+    FiberManualRecordRounded,
     HourglassEmptyRounded,
     ListAltRounded,
     ReplayRounded,
     SearchRounded,
+    SlowMotionVideoRounded,
     StopCircleRounded,
     TouchAppRounded,
 } from '@mui/icons-material';
@@ -206,8 +208,10 @@ const TestRows: React.FC<{
     expanded: boolean,
     onToggle: () => void,
     onOpen: (protocolId: number) => void,
+    // opens the replay where the test started; only for recorded runs
+    onReplay?: (row: TestRow) => void,
     nested?: boolean,
-}> = ({row, running, expanded, onToggle, onOpen, nested}) => {
+}> = ({row, running, expanded, onToggle, onOpen, onReplay, nested}) => {
     const hasChildren = row.children.length > 0;
     const ms = between(row.startedAt, row.endedAt);
     const open = () => hasChildren ? onToggle() : onOpen(row.protocol.id as number);
@@ -245,7 +249,16 @@ const TestRows: React.FC<{
                     {ms === null ? (running ? 'running' : '–') : formatDuration(ms)}
                 </Typography>
             </TableCell>
-            <TableCell align="right" sx={{width: 88, whiteSpace: 'nowrap', pr: 1}}>
+            <TableCell align="right" sx={{width: onReplay ? 120 : 88, whiteSpace: 'nowrap', pr: 1}}>
+                {onReplay && !hasChildren && <Tooltip title="Replay this test">
+                    <IconButton size="small" aria-label={`Replay ${row.name}`}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    onReplay(row);
+                                }}>
+                        <SlowMotionVideoRounded fontSize="small"/>
+                    </IconButton>
+                </Tooltip>}
                 {row.runner && <Tooltip title="Runner protocol: how the hub started and ended this test">
                     <IconButton size="small" aria-label={`Runner protocol of ${row.name}`}
                                 onClick={e => {
@@ -268,7 +281,7 @@ const TestRows: React.FC<{
         </TableRow>
         {hasChildren && expanded && row.children.map(child =>
             <TestRows key={child.key} row={child} running={running} expanded={false} onToggle={() => undefined}
-                      onOpen={onOpen} nested/>)}
+                      onOpen={onOpen} onReplay={onReplay} nested/>)}
     </>;
 };
 
@@ -323,6 +336,20 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
     const base = `/project/${projectIdentifier}/app:${appId}`;
     const runUrl = (runId: number | null | undefined) => `${base}/test/${testRun.testId}/run/${runId}`;
     const openProtocol = (protocolId: number) => navigate(`${runUrl(testRun.id)}/${protocolId}`);
+
+    // the replay needs the recordings, which the page only has when it was
+    // opened after the run; a run that finished while open was recorded when
+    // its test records sessions
+    const recording = !!testRun.test?.testConfig?.recordSession;
+    const hasReplay = !running && ((testRun.recordings?.length ?? 0) > 0 || (!!finished && recording));
+    const replayUrl = (time?: Date, deviceId?: number | null) => {
+        const params = new URLSearchParams();
+        if (time) params.set('t', String(new Date(time).valueOf()));
+        if (deviceId) params.set('device', String(deviceId));
+        const query = params.toString();
+        return `${runUrl(testRun.id)}/replay${query ? `?${query}` : ''}`;
+    };
+    const replayTest = hasReplay ? (row: TestRow) => navigate(replayUrl(row.startedAt, row.protocol.deviceId)) : undefined;
 
     const onRerun = (): void => {
         executeTest(projectIdentifier, appId, testRun.testId, {
@@ -435,6 +462,16 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                         disabled={cancelling} onClick={onCancel}>
                         {cancelling ? 'Cancelling…' : 'Cancel run'}
                     </Button>}
+                    {running && recording && <Tooltip title="The screens of the devices are recorded for the replay">
+                        <Chip size="small" color="error" variant="outlined" label="Recording"
+                              icon={<FiberManualRecordRounded sx={{fontSize: 12}}/>}/>
+                    </Tooltip>}
+                    {hasReplay && <Tooltip title="Watch the recording next to the log and the test steps">
+                        <Button size="small" variant="outlined" startIcon={<SlowMotionVideoRounded/>}
+                                component={RouterLink} to={replayUrl()}>
+                            Replay
+                        </Button>
+                    </Tooltip>}
                     <Tooltip title="Start this test again with the same bundle and parameters">
                         <Button size="small" variant="contained" startIcon={<ReplayRounded/>} onClick={onRerun}>
                             Run again
@@ -512,7 +549,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                                 {visibleRows.map(row =>
                                                     <TestRows key={row.key} row={row} running={running}
                                                               expanded={filtering || expanded.has(row.key)}
-                                                              onToggle={() => toggle(row.key)} onOpen={openProtocol}/>)}
+                                                              onToggle={() => toggle(row.key)} onOpen={openProtocol} onReplay={replayTest}/>)}
                                             </TableBody>
                                         </Table>
                                     </TableContainer>}

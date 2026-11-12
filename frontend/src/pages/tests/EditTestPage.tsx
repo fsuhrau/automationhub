@@ -19,6 +19,7 @@ import {
     Radio,
     RadioGroup,
     Stack,
+    Switch,
     TextField,
     Tooltip,
     Typography,
@@ -378,6 +379,17 @@ const EditTestPage: React.FC<TestContentProps> = ({test}) => {
                         <Choice value={String(TestExecutionType.Simultaneously)} label="Every test on every device"
                                 hint="Each test runs on all devices. Shows differences between devices."/>
                     </RadioGroup>
+
+                    <Typography variant="body2" sx={{fontWeight: 600, mt: 1}}>Recording</Typography>
+                    <FormControlLabel sx={{alignItems: 'flex-start', '& .MuiSwitch-root': {mt: -0.5}}}
+                                      control={<Switch size="small" checked={form.recordSession}
+                                                       onChange={e => set({recordSession: e.target.checked})}/>}
+                                      label={<Box>
+                                          <Typography variant="body2" sx={{fontWeight: 600}}>Record the session</Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                              Records the screen of each device. After the run, its replay shows the video next to the log and the test steps.
+                                          </Typography>
+                                      </Box>}/>
                 </Section>
             </Stack>
 

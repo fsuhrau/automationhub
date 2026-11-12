@@ -11,6 +11,8 @@ export default interface ITestConfigData {
     executionType: TestExecutionType,
     type: TestType,
     allDevices: boolean,
+    // records the screen of each device during a run
+    recordSession?: boolean,
     devices: ITestConfigDeviceData[]
     unity?: ITestConfigUnityData | null,
     createdAt: Date,

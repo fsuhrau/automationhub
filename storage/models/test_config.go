@@ -36,6 +36,8 @@ type TestConfig struct {
 	// Cocos 	*CocosTestConfig
 	// Serenity *SerenityTestConfig
 	Scenario *TestConfigScenario `json:"scenario"`
+	// RecordSession records the screen of each device during a run
+	RecordSession bool `json:"recordSession"`
 }
 
 func (t *TestConfig) GetDeviceIds() []uint {

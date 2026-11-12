@@ -12,4 +12,5 @@ type TestRun struct {
 	Protocols    []TestProtocol        `json:"protocols"`
 	Log          []TestRunLogEntry     `json:"log"`
 	DeviceStatus []TestRunDeviceStatus `json:"deviceStatus"`
+	Recordings   []TestRunRecording    `json:"recordings,omitempty"`
 }

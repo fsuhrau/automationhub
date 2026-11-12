@@ -14,6 +14,7 @@ import TestPageLoader from "./pages/tests/TestPageLoader";
 import EditTestPage from "./pages/tests/EditTestPage";
 import TestProtocolPageLoader from "./pages/tests/TestProtocolPageLoader";
 import TestRunPageLoader from "./pages/tests/TestRunPageLoader";
+import {TestReplayPageLoader} from "./pages/tests/TestReplayPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import DevicePageLoader from "./pages/devices/DevicePageLoader";
 import DeviceControlPage from "./pages/devices/DeviceControlPage";
@@ -82,6 +83,8 @@ function App(props: any) {
                                                     <Route path={'test/new'} element={<EditTestPage/>}/>
                                                     <Route path={'test/:testId/edit'}
                                                            element={<TestPageLoader edit={true}/>}/>
+                                                    <Route path={'test/:testId/run/:runId/replay'}
+                                                           element={<TestReplayPageLoader/>}/>
                                                     <Route path={'test/:testId/run/:runId/:protocolId'}
                                                            element={<TestProtocolPageLoader/>}/>
                                                     <Route path={"test/:testId/run/:runId"}
