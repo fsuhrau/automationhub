@@ -48,6 +48,11 @@ func (w *LogWriter) Parent() device.LogWriter {
 }
 
 func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem, vertexCount, triangles float64) {
+	// without samples the averages are 0, not NaN: NaN can't be encoded as
+	// JSON, so the finished test would never reach the run page
+	if w.performanceMetrics.Count == 0 {
+		return
+	}
 	cpu = w.performanceMetrics.CPU / float64(w.performanceMetrics.Count)
 	fps = w.performanceMetrics.FPS / float64(w.performanceMetrics.Count)
 	mem = w.performanceMetrics.MEM / float64(w.performanceMetrics.Count)
