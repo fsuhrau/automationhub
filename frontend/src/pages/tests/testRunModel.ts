@@ -61,7 +61,9 @@ const leafRow = (p: ITestProtocolData, runner: ITestProtocolData | null = null):
     protocol: p,
     runner,
     ...splitTestName(p.testName),
-    result: p.testResult,
+    // the master leaves out testResult while it is "open" (0), so a running
+    // test has none; without this it isn't counted and the run looks empty
+    result: p.testResult ?? TestResultState.TestResultOpen,
     // the runner times the test as the run log does; the test's own start is
     // taken when the app connects and can be far off
     startedAt: (runner ?? p).startedAt,
