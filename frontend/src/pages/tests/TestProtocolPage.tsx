@@ -23,8 +23,6 @@ import {
     TableRow,
     Tabs,
     TextField,
-    ToggleButton,
-    ToggleButtonGroup,
     Tooltip,
     Typography,
 } from '@mui/material';
@@ -66,7 +64,7 @@ import {getBaseline, IBaseline, IBaselineCandidate} from '../../services/test.ru
 import IProtocolPerformanceEntryData from '../../types/protocol.performance.entry';
 import {parseTags} from '../apps/bundlesModel';
 import BaselinePicker from './BaselinePicker';
-import {between, buildRows, formatDuration, leaves, mergeKey, mergeProtocol, splitTestName} from './testRunModel';
+import {between, buildRows, formatDuration, leaves, mergeKey, mergeProtocol, splitTestName, testResult as resultWithRunner} from './testRunModel';
 import {
     averageOf,
     bundleLabel,
@@ -78,7 +76,9 @@ import {
     isError,
     isScreen,
     logAsText,
+    LogEntry,
     measured,
+    mergeRunnerLog,
     Metric,
     METRICS,
     neighbours,
@@ -93,6 +93,8 @@ interface TestProtocolPageProps {
     protocol: ITestProtocolData
     // all protocols of the run, once loaded
     runProtocols: ITestProtocolData[] | null
+    // loads the run again, for the runner's log once it has ended
+    onRunChanged: () => void
 }
 
 interface NewTestProtocolLogPayload {
@@ -269,7 +271,7 @@ const CompareBar: React.FC<{ baseline: IBaseline | null, loading: boolean, faile
 // TestProtocolPage shows one test of a run: why it failed, what it did, and
 // how it performed. The loader mounts it with key={protocol.id}.
 const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
-    const {run, runProtocols} = props;
+    const {run, runProtocols, onRunChanged} = props;
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
     const navigate = useNavigate();
@@ -306,24 +308,42 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     }, [runProtocols, props.protocol.id, props.protocol.parentTestProtocolId]);
     const keys = useMemo(() => ownKeys.reduce((acc, k) => mergeKey(acc, k), relatedKeys), [ownKeys, relatedKeys]);
 
-    // the API omits testResult while it is Open (0), see the omitempty on TestProtocol
-    const testResult = protocol.testResult ?? TestResultState.TestResultOpen;
-    const running = testResult === TestResultState.TestResultOpen && !protocol.endedAt;
-
-    // the run around it: the other tests, and the runner that wrapped this test
+    // the run around it: the other tests, and the runner that wrapped this
+    // test: it started the app before the test method and ended it after
     const tests = useMemo(() => runProtocols ? leaves(buildRows(runProtocols)) : [], [runProtocols]);
     const place = neighbours(tests, protocol.id as number);
     const row = place.position > 0 ? tests[place.position - 1] : null;
     const runner = row?.runner && row.runner.id !== protocol.id ? row.runner : null;
-    const wrappedTest = row && row.runner?.id === protocol.id ? row.protocol : null;
-    const runnerEntries = runner?.entries ?? [];
 
+    // the runner's log is loaded with the run; its teardown comes after the
+    // test, so load the run again when the runner ends
+    const endedId = useSSE<number | null, ITestProtocolData | null>(
+        `test_run_${run.id}_protocol`, null,
+        {stateReducer: (state, action) => action.data?.endedAt ? action.data.id as number : state});
+    useEffect(() => {
+        if (endedId !== null && endedId === runner?.id && !runner.endedAt) onRunChanged();
+    }, [endedId, runner, onRunChanged]);
+
+    // the test fails with its runner, e.g. when the app crashed in teardown;
+    // the API omits testResult while it is Open (0)
+    const testResult = resultWithRunner(protocol, runner);
+    const running = testResult === TestResultState.TestResultOpen && !protocol.endedAt;
+
+    // the test's own log for its steps, and with the runner's setup and
+    // teardown for errors, screenshots and the log tab
     const summary = useMemo(() => summarize(entries), [entries]);
+    const log: LogEntry[] = useMemo(() => mergeRunnerLog(protocol, entries, runner, runner?.entries ?? []),
+        [protocol, entries, runner]);
+    const logSummary = useMemo(() => summarize(log), [log]);
+    const phases = useMemo(() => (['setup', 'teardown'] as const)
+        .map(phase => ({phase, count: log.filter(e => e.phase === phase).length}))
+        .filter(p => p.count > 0), [log]);
     // the runner takes the screenshots when a test ends
-    const screens = useMemo(() => [...summary.screens, ...runnerEntries.filter(isScreen)], [summary.screens, runnerEntries]);
-    const failed = protocol.testResult === TestResultState.TestResultFailed || protocol.testResult === TestResultState.TestResultUnstable;
-    const errors = useMemo(() => [...summary.errors, ...runnerEntries.filter(isError)
-        .filter(r => !summary.errors.some(e => e.message === r.message))], [summary.errors, runnerEntries]);
+    const screens: LogEntry[] = logSummary.screens;
+    const failed = testResult === TestResultState.TestResultFailed || testResult === TestResultState.TestResultUnstable;
+    // the runner often repeats the test's error, e.g. "Test X Failed"
+    const errors: LogEntry[] = useMemo(() => logSummary.errors
+        .filter(r => !r.phase || !summary.errors.some(e => e.message === r.message)), [logSummary.errors, summary.errors]);
     const lastStep = summary.steps.length > 0 ? summary.steps[summary.steps.length - 1] : null;
     const metrics = METRICS.filter(m => measured(protocol.performance, m.key));
     const earlier = earlierRuns(protocol).find(h => (h.performance ?? []).length > 0) ?? null;
@@ -376,12 +396,17 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const [search, setSearch] = useState('');
     const [limit, setLimit] = useState(500);
     const [focus, setFocus] = useState<number | null>(null);
-    const visibleLog = useMemo(() => filterLog(entries, {hidden, errorsOnly, text: search}), [entries, hidden, errorsOnly, search]);
+    const visibleLog = useMemo(() => filterLog(log, {hidden, errorsOnly, text: search}), [log, hidden, errorsOnly, search]);
+    const toggleHidden = (key: string) => setHidden(prev => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key); else next.add(key);
+        return next;
+    });
     const showInLog = (e: IProtocolEntryData) => {
         setHidden(new Set());
         setErrorsOnly(false);
         setSearch('');
-        setLimit(l => Math.max(l, entries.indexOf(e) + 50));
+        setLimit(l => Math.max(l, log.indexOf(e) + 50));
         setFocus(e.id as number);
         setTab('log');
     };
@@ -392,7 +417,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     }, [tab, focus]);
 
     const download = () => {
-        const blob = new Blob([logAsText(protocol.testName, entries)], {type: 'text/plain'});
+        const blob = new Blob([logAsText(protocol.testName, log)], {type: 'text/plain'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -403,8 +428,10 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
 
     const [viewer, setViewer] = useState<number | null>(null);
     const lastScreen = screens.length > 0 ? screens[screens.length - 1] : null;
+    // the right column: the screen and the keys
+    const side = !!lastScreen || keys.length > 0;
 
-    const counts = {log: entries.length, screenshots: screens.length, performance: (protocol.performance ?? []).length};
+    const counts = {log: log.length, screenshots: screens.length, performance: (protocol.performance ?? []).length};
 
     return (
         <Box sx={{width: '100%', maxWidth: {sm: '100%', md: '1700px'}, mt: 2}}>
@@ -444,15 +471,6 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         onClick={() => openTest(place.nextProblem!.protocol)}>Next failure</Button>
                             </Tooltip>}
                     </>}
-                    {(runner || wrappedTest) && <ToggleButtonGroup size="small" exclusive value={runner ? 'test' : 'runner'}
-                                                                   aria-label="Protocol of the test or of its runner"
-                                                                   onChange={(_, v) => {
-                                                                       if (v === 'runner' && runner) openTest(runner);
-                                                                       if (v === 'test' && wrappedTest) openTest(wrappedTest);
-                                                                   }}>
-                        <Tooltip title="What the test did: its steps, log and performance"><ToggleButton value="test">Test</ToggleButton></Tooltip>
-                        <Tooltip title="How the hub started and ended the test, with the final screenshot"><ToggleButton value="runner">Runner</ToggleButton></Tooltip>
-                    </ToggleButtonGroup>}
                 </Stack>
             </Stack>
 
@@ -466,9 +484,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
             </Box>
 
             {tab === 'overview' && <Grid container spacing={2}>
-                <Grid size={{xs: 12, lg: lastScreen ? 8 : 12}}>
+                {metrics.length > 0 && <Grid size={12}>
+                    <Section title="Performance" action={
+                        <Button size="small" onClick={() => setTab('performance')}>Charts and checkpoints</Button>}>
+                        <MetricTiles protocol={protocol} metrics={metrics} against={comparison}/>
+                    </Section>
+                </Grid>}
+                <Grid size={{xs: 12, lg: side ? 8 : 12}}>
                     <Stack spacing={2}>
-                        {failed && <Section title={protocol.testResult === TestResultState.TestResultFailed ? 'Why it failed' : 'Why it is unstable'}
+                        {failed && <Section title={testResult === TestResultState.TestResultFailed ? 'Why it failed' : 'Why it is unstable'}
                                             action={errors.length > 3 && <Button size="small" onClick={() => {
                                                 setErrorsOnly(true);
                                                 setTab('log');
@@ -485,16 +509,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <Message text={lastStep.message}/>
                                     </Box>}
                                     {errors.slice(-3).map(e => {
-                                        const fromRunner = !summary.errors.includes(e);
                                         return <Box key={`${e.id}`} sx={{borderLeft: 3, borderColor: (theme.vars ?? theme).palette.error.main, pl: 1.5}}>
                                             <Stack direction="row" spacing={1} alignItems="center" useFlexGap sx={{mb: 0.5}}>
                                                 <Typography variant="caption" color="text.secondary" sx={{fontFamily: 'monospace'}}>
                                                     {formatRuntime(e.runtime)}
                                                 </Typography>
-                                                <Chip size="small" variant="outlined" label={fromRunner ? 'runner' : sourceName(e.source)}/>
-                                                {!fromRunner && <Link component="button" variant="caption" onClick={() => showInLog(e)} sx={{ml: 'auto'}}>
+                                                <Chip size="small" variant="outlined" label={e.phase ? `${e.phase} · ${sourceName(e.source)}` : sourceName(e.source)}/>
+                                                <Link component="button" variant="caption" onClick={() => showInLog(e)} sx={{ml: 'auto'}}>
                                                     Show in log
-                                                </Link>}
+                                                </Link>
                                             </Stack>
                                             <Message text={e.message} error/>
                                         </Box>;
@@ -502,20 +525,11 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                 </Stack>}
                         </Section>}
 
-                        {keys.length > 0 && <Section title="Keys">
-                            {keys.map(k => <Box key={k.key} sx={{display: 'grid', gridTemplateColumns: 'minmax(80px, 35%) 1fr', gap: 1, py: 0.5}}>
-                                <Typography variant="body2" color="text.secondary" sx={{wordBreak: 'break-word'}}>{k.key}</Typography>
-                                <Typography variant="body2" sx={{wordBreak: 'break-all', fontFamily: 'monospace'}}>
-                                    {k.value || <Typography component="span" variant="body2" color="text.secondary">(empty)</Typography>}
-                                </Typography>
-                            </Box>)}
-                        </Section>}
-
                         <Section title="Steps" action={summary.steps.length > 0 &&
                             <Typography variant="body2" color="text.secondary">{summary.steps.length}</Typography>}>
                             {summary.steps.length === 0
                                 ? <Typography variant="body2" color="text.secondary">
-                                    {wrappedTest ? 'The runner has no steps; switch to "Test" for what the test did.' : 'The test reported no steps.'}
+                                    The test reported no steps.
                                 </Typography>
                                 : <Box component="ol" sx={{listStyle: 'none', m: 0, p: 0}}>
                                     {summary.steps.map((s, i) => {
@@ -542,18 +556,24 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                 </Box>}
                         </Section>
 
-                        {metrics.length > 0 && <Section title="Performance" action={
-                            <Button size="small" onClick={() => setTab('performance')}>Charts and checkpoints</Button>}>
-                            <MetricTiles protocol={protocol} metrics={metrics} against={comparison}/>
-                        </Section>}
                     </Stack>
                 </Grid>
-                {lastScreen && <Grid size={{xs: 12, lg: 4}}>
-                    <Section title={failed ? 'Screen at the end' : 'Last screenshot'} action={screens.length > 1 &&
-                        <Button size="small" onClick={() => setTab('screenshots')}>All {screens.length}</Button>}>
-                        <Screenshot entry={lastScreen} height={420} onClick={() => setViewer(screens.length - 1)}/>
-                        <Typography variant="caption" color="text.secondary">at {formatRuntime(lastScreen.runtime)}</Typography>
-                    </Section>
+                {side && <Grid size={{xs: 12, lg: 4}}>
+                    <Stack spacing={2}>
+                        {lastScreen && <Section title={failed ? 'Screen at the end' : 'Last screenshot'} action={screens.length > 1 &&
+                            <Button size="small" onClick={() => setTab('screenshots')}>All {screens.length}</Button>}>
+                            <Screenshot entry={lastScreen} height={420} onClick={() => setViewer(screens.length - 1)}/>
+                            <Typography variant="caption" color="text.secondary">at {formatRuntime(lastScreen.runtime)}</Typography>
+                        </Section>}
+                        {keys.length > 0 && <Section title="Keys">
+                            {keys.map(k => <Box key={k.key} sx={{display: 'grid', gridTemplateColumns: 'minmax(80px, 35%) 1fr', gap: 1, py: 0.5}}>
+                                <Typography variant="body2" color="text.secondary" sx={{wordBreak: 'break-word'}}>{k.key}</Typography>
+                                <Typography variant="body2" sx={{wordBreak: 'break-all', fontFamily: 'monospace'}}>
+                                    {k.value || <Typography component="span" variant="body2" color="text.secondary">(empty)</Typography>}
+                                </Typography>
+                            </Box>)}
+                        </Section>}
+                    </Stack>
                 </Grid>}
             </Grid>}
 
@@ -566,26 +586,35 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                        input: {startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small"/></InputAdornment>},
                                        htmlInput: {'aria-label': 'Find in log'},
                                    }}/>
-                        <Chip size="small" label={`Errors only ${summary.errors.length}`} disabled={summary.errors.length === 0}
+                        <Chip size="small" label={`Errors only ${logSummary.errors.length}`} disabled={logSummary.errors.length === 0}
                               color={errorsOnly ? 'error' : 'default'} variant={errorsOnly ? 'filled' : 'outlined'}
                               onClick={() => setErrorsOnly(v => !v)}/>
                         <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap role="group" aria-label="Show sources">
-                            {summary.sources.map(s => {
+                            {logSummary.sources.map(s => {
                                 const on = !hidden.has(s.source);
                                 return <Chip key={s.source} size="small" label={`${s.source} ${s.count}`}
                                              variant={on ? 'filled' : 'outlined'} aria-pressed={on}
-                                             onClick={() => setHidden(prev => {
-                                                 const next = new Set(prev);
-                                                 if (next.has(s.source)) next.delete(s.source); else next.add(s.source);
-                                                 return next;
-                                             })}/>;
+                                             onClick={() => toggleHidden(s.source)}/>;
                             })}
                         </Stack>
+                        {phases.length > 0 && <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap role="group"
+                                                     aria-label="Show the runner's setup and teardown">
+                            {phases.map(p => {
+                                const on = !hidden.has(p.phase);
+                                return <Tooltip key={p.phase} title={p.phase === 'setup'
+                                    ? 'Logged before the test method started: the hub starting the app, OneTimeSetUp and SetUp'
+                                    : 'Logged after the test method ended: TearDown, the hub ending the test, the last screenshot'}>
+                                    <Chip size="small" label={`${p.phase} ${p.count}`} color="secondary"
+                                          variant={on ? 'filled' : 'outlined'} aria-pressed={on}
+                                          onClick={() => toggleHidden(p.phase)}/>
+                                </Tooltip>;
+                            })}
+                        </Stack>}
                         <Button size="small" startIcon={<DownloadRounded/>} onClick={download} sx={{ml: {sm: 'auto'}}}>Download</Button>
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
-                        {visibleLog.length === entries.length ? `${entries.length} entries` : `${visibleLog.length} of ${entries.length} entries`}
-                        {' · times since the test started'}
+                        {visibleLog.length === log.length ? `${log.length} entries` : `${visibleLog.length} of ${log.length} entries`}
+                        {phases.length > 0 ? ' · times since the test started, setup before 0:00' : ' · times since the test started'}
                     </Typography>
                     {visibleLog.length === 0
                         ? <Typography variant="body2" color="text.secondary" sx={{py: 2}}>
@@ -600,7 +629,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                             {visibleLog.slice(0, limit).map(e => {
                                 const error = isError(e);
                                 return <Box key={e.id} id={`log-entry-${e.id}`} sx={{
-                                    display: 'grid', gridTemplateColumns: {xs: '72px 1fr', sm: '80px 92px 1fr'}, gap: 1.5, py: 0.5,
+                                    display: 'grid', gridTemplateColumns: {xs: '72px 1fr', sm: '80px 140px 1fr'}, gap: 1.5, py: 0.5,
                                     borderLeft: 3, pl: 1, ml: -1.5,
                                     borderColor: error ? (theme.vars ?? theme).palette.error.main : 'transparent',
                                     bgcolor: focus === e.id ? 'action.selected' : undefined,
@@ -608,7 +637,8 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                     <Typography variant="caption" color="text.secondary" sx={{fontFamily: 'monospace', pt: '2px'}}>
                                         {formatRuntime(e.runtime)}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary" sx={{pt: '2px', display: {xs: 'none', sm: 'block'}}}>
+                                    <Typography variant="caption" color="text.secondary" sx={{pt: '2px', display: {xs: 'none', sm: 'block'}, overflowWrap: 'anywhere'}}>
+                                        {e.phase && <Box component="span" sx={{color: 'secondary.main'}}>{e.phase} · </Box>}
                                         {sourceName(e.source)}
                                     </Typography>
                                     {isScreen(e)
@@ -630,7 +660,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                     <Screenshot entry={s} height={360} onClick={() => setViewer(i)}/>
                     <Box sx={{p: 1}}>
                         <Typography variant="caption" color="text.secondary">
-                            {formatRuntime(s.runtime)}{!summary.screens.includes(s) && ' · runner, at the end of the test'}
+                            {formatRuntime(s.runtime)}{s.phase && ` · ${s.phase}`}
                         </Typography>
                         {s.message && <Typography variant="body2">{s.message}</Typography>}
                     </Box>

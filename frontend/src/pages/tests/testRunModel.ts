@@ -58,14 +58,27 @@ export interface TestRow {
     children: TestRow[],
 }
 
+const problem = (r: TestResultState): number =>
+    r === TestResultState.TestResultFailed ? 2 : r === TestResultState.TestResultUnstable ? 1 : 0;
+
+// testResult is the result of a test together with its runner: a test that
+// passed fails when its setup or teardown did, e.g. the app crashed after
+// the test method. A runner still open doesn't change the test's result.
+export const testResult = (p: ITestProtocolData, runner: ITestProtocolData | null = null): TestResultState => {
+    // the master leaves out testResult while it is "open" (0)
+    const own = p.testResult ?? TestResultState.TestResultOpen;
+    const theirs = runner?.testResult ?? TestResultState.TestResultOpen;
+    return problem(theirs) > problem(own) ? theirs : own;
+};
+
 const leafRow = (p: ITestProtocolData, runner: ITestProtocolData | null = null): TestRow => ({
     key: p.id as number,
     protocol: p,
     runner,
     ...splitTestName(p.testName),
-    // the master leaves out testResult while it is "open" (0), so a running
-    // test has none; without this it isn't counted and the run looks empty
-    result: p.testResult ?? TestResultState.TestResultOpen,
+    // a running test has no result; without the "open" fallback in
+    // testResult it isn't counted and the run looks empty
+    result: testResult(p, runner),
     // the runner times the test as the run log does; the test's own start is
     // taken when the app connects and can be far off
     startedAt: (runner ?? p).startedAt,
@@ -75,8 +88,7 @@ const leafRow = (p: ITestProtocolData, runner: ITestProtocolData | null = null):
 
 // buildRows nests child protocols under their parent. A runner protocol with
 // a single child of the same test is one row: the row opens the test's own
-// protocol (its steps, screenshots and performance), the runner's is a side
-// link. Children whose parent hasn't arrived yet show up with it.
+// protocol, which shows the runner's log, errors and screenshots with it. Children whose parent hasn't arrived yet show up with it.
 export const buildRows = (protocols: ITestProtocolData[]): TestRow[] => {
     const children = new Map<number, ITestProtocolData[]>();
     protocols.filter(p => !isTopLevel(p)).forEach(p => {

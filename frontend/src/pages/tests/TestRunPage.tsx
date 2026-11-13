@@ -35,7 +35,6 @@ import {
     ExpandMoreRounded,
     FiberManualRecordRounded,
     HourglassEmptyRounded,
-    ListAltRounded,
     ReplayRounded,
     SearchRounded,
     SlowMotionVideoRounded,
@@ -261,15 +260,6 @@ const TestRows: React.FC<{
                                     onReplay(row);
                                 }}>
                         <SlowMotionVideoRounded fontSize="small"/>
-                    </IconButton>
-                </Tooltip>}
-                {row.runner && <Tooltip title="Runner protocol: how the hub started and ended this test">
-                    <IconButton size="small" aria-label={`Runner protocol of ${row.name}`}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    onOpen(row.runner!.id as number);
-                                }}>
-                        <ListAltRounded fontSize="small"/>
                     </IconButton>
                 </Tooltip>}
             </TableCell>
