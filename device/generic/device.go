@@ -151,6 +151,16 @@ func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, t
 	}
 }
 
+// SetKey stores a key the app reported for the running test. Outside a test
+// there is no protocol, so the key is only logged.
+func (d *Device) SetKey(key, value string) {
+	if d.writer != nil {
+		d.writer.SetKey(key, value)
+	} else {
+		logrus.Infof("run key %s = %s outside a test, dropped", key, value)
+	}
+}
+
 func (d *Device) Data(source, path string) {
 	if d.writer != nil {
 		d.writer.Data(source, path)

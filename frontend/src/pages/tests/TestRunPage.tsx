@@ -48,6 +48,7 @@ import {Link as RouterLink, useNavigate} from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
 import ITesRunLogEntryData from '../../types/test.run.log.entry';
 import ITestProtocolData from '../../types/test.protocol';
+import IProtocolKeyData, {ProtocolKeyPayload} from '../../types/protocol.key';
 import {TestResultState} from '../../types/test.result.state.enum';
 import {cancelTestRun, executeTest} from '../../services/test.service';
 import {useProjectContext} from '../../hooks/ProjectProvider';
@@ -67,6 +68,9 @@ import {
     filterRows,
     formatDuration,
     mergeProtocol,
+    mergeProtocolKey,
+    ProtocolKeys,
+    protocolKeys,
     parseParameters,
     ResultCounts,
     ResultFilter,
@@ -74,6 +78,7 @@ import {
     runEnd,
     runStatus,
     RunStatus,
+    rowKeys,
     TestRow,
 } from './testRunModel';
 
@@ -205,14 +210,16 @@ const ResultBar: React.FC<{ counts: ResultCounts, total: number }> = ({counts, t
 const TestRows: React.FC<{
     row: TestRow,
     running: boolean,
+    keys: ProtocolKeys,
     expanded: boolean,
     onToggle: () => void,
     onOpen: (protocolId: number) => void,
     // opens the replay where the test started; only for recorded runs
     onReplay?: (row: TestRow) => void,
     nested?: boolean,
-}> = ({row, running, expanded, onToggle, onOpen, onReplay, nested}) => {
+}> = ({row, running, keys, expanded, onToggle, onOpen, onReplay, nested}) => {
     const hasChildren = row.children.length > 0;
+    const shownKeys = rowKeys(keys, row.protocol.id, row.runner?.id);
     const ms = between(row.startedAt, row.endedAt);
     const open = () => hasChildren ? onToggle() : onOpen(row.protocol.id as number);
     const device = deviceName(row.protocol);
@@ -235,6 +242,7 @@ const TestRows: React.FC<{
                         {row.suite && <Typography variant="caption" color="text.secondary" component="div">
                             {breakAfterDots(row.suite)}
                         </Typography>}
+                        {shownKeys.length > 0 && <KeyChips keys={shownKeys}/>}
                     </Box>
                 </Stack>
             </TableCell>
@@ -280,10 +288,26 @@ const TestRows: React.FC<{
             </TableCell>
         </TableRow>
         {hasChildren && expanded && row.children.map(child =>
-            <TestRows key={child.key} row={child} running={running} expanded={false} onToggle={() => undefined}
+            <TestRows key={child.key} row={child} running={running} keys={keys} expanded={false} onToggle={() => undefined}
                       onOpen={onOpen} onReplay={onReplay} nested/>)}
     </>;
 };
+
+// KeyChips shows the keys the app reported for a test, e.g. player_id 1234.
+// The value can be selected and copied; clicking it doesn't open the test.
+const KeyChips: React.FC<{ keys: IProtocolKeyData[] }> = ({keys}) =>
+    <Stack direction="row" useFlexGap flexWrap="wrap" spacing={0.5} sx={{mt: 0.5}}
+           onClick={e => e.stopPropagation()} aria-label="Keys">
+        {keys.map(k => <Box key={k.key} component="span" sx={{
+            display: 'inline-flex', gap: 0.5, alignItems: 'baseline', px: 0.75, py: 0.125,
+            border: 1, borderColor: 'divider', borderRadius: 1, cursor: 'text', userSelect: 'text',
+        }}>
+            <Typography component="span" variant="caption" color="text.secondary">{k.key}</Typography>
+            <Typography component="span" variant="caption" sx={{fontFamily: 'monospace', wordBreak: 'break-all'}}>
+                {k.value || '(empty)'}
+            </Typography>
+        </Box>)}
+    </Stack>;
 
 const KeyValue: React.FC<{ name: string, children: React.ReactNode }> = ({name, children}) =>
     <Box sx={{display: 'grid', gridTemplateColumns: 'minmax(80px, 35%) 1fr', gap: 1, py: 0.5}}>
@@ -311,6 +335,10 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         `test_run_${testRun.id}_log`, testRun.log ?? [],
         {stateReducer: (state, action) => action.data?.entry && !state.some(e => e.id === action.data!.entry.id) ? [...state, action.data.entry] : state});
     const finished = useSSE<object | null>(`test_run_${testRun.id}_finished`, null);
+    // keys the app reported for each test, e.g. player_id
+    const keys = useSSE<ProtocolKeys, ProtocolKeyPayload | null>(
+        `test_run_${testRun.id}_keys`, useMemo(() => protocolKeys(testRun.protocols ?? []), [testRun.protocols]),
+        {stateReducer: (state, action) => mergeProtocolKey(state, action.data?.testProtocolId, action.data?.key)});
 
     const [cancelling, setCancelling] = useState(false);
     const lifecycle: RunLifecycle = finished ? 'finished' : props.state;
@@ -547,7 +575,7 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                             </TableHead>
                                             <TableBody>
                                                 {visibleRows.map(row =>
-                                                    <TestRows key={row.key} row={row} running={running}
+                                                    <TestRows key={row.key} row={row} running={running} keys={keys}
                                                               expanded={filtering || expanded.has(row.key)}
                                                               onToggle={() => toggle(row.key)} onOpen={openProtocol} onReplay={replayTest}/>)}
                                             </TableBody>

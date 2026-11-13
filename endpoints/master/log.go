@@ -20,6 +20,8 @@ func (s *nodeMaster) Log(c *gin.Context) {
 		VertexCount float64 `json:"vertexCount"`
 		Triangles   float64 `json:"triangles"`
 		Other       string  `json:"other"`
+		Key         string  `json:"key"`
+		Value       string  `json:"value"`
 	}
 
 	var req request
@@ -41,6 +43,8 @@ func (s *nodeMaster) Log(c *gin.Context) {
 			device.Error(req.Source, req.Message)
 		case 4:
 			device.Passed(req.Other == "passed")
+		case 5:
+			device.SetKey(req.Key, req.Value)
 		default:
 			fmt.Println("unhandled: " + req.Source + " " + req.Message)
 		}

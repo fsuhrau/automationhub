@@ -65,7 +65,7 @@ func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logPr
 	}
 	protocol.Device = &dev
 
-	writer := NewLogWriter(w.db, protocol.ID, &dev, nil)
+	writer := NewLogWriter(w.db, w.run.ID, protocol.ID, &dev, nil)
 
 	p := &logProtocol{w.db, protocol, writer}
 	w.protocols = append(w.protocols, p)
@@ -92,7 +92,7 @@ func (w *ProtocolWriter) NewSubProtocol(testname string, pw device.LogWriter) (*
 	}
 	protocol.Device = dev
 
-	writer := NewLogWriter(w.db, protocol.ID, dev, pw)
+	writer := NewLogWriter(w.db, w.run.ID, protocol.ID, dev, pw)
 
 	p := &logProtocol{w.db, protocol, writer}
 	w.protocols = append(w.protocols, p)

@@ -1,3 +1,4 @@
+import IProtocolKeyData from '../../types/protocol.key';
 // The data side of the test run page: merging live protocol updates,
 // grouping them into rows, counting results, and the run's overall status.
 // Kept free of React so it can be checked on its own.
@@ -23,7 +24,8 @@ export const mergeProtocol = (protocols: ITestProtocolData[], update: ITestProto
         return [...protocols, update];
     }
     const existing = protocols[index];
-    const merged: ITestProtocolData = {...existing, ...update, device: update.device ?? existing.device};
+    // a finished protocol comes without its keys
+    const merged: ITestProtocolData = {...existing, ...update, device: update.device ?? existing.device, keys: update.keys ?? existing.keys};
     if (existing.endedAt && !update.endedAt) {
         merged.endedAt = existing.endedAt;
         merged.testResult = existing.testResult;
@@ -171,3 +173,53 @@ export const formatDuration = (ms: number): string => {
 
 export const between = (start: Date, end: Date | null | undefined): number | null =>
     end ? new Date(end).valueOf() - new Date(start).valueOf() : null;
+
+// mergeKey folds a key that arrived live into a test's keys: a key sent again
+// replaces its value. Keys are listed by name.
+export const mergeKey = (keys: IProtocolKeyData[], key: IProtocolKeyData | null | undefined): IProtocolKeyData[] => {
+    if (!key?.key) {
+        return keys;
+    }
+    const current = keys.find(k => k.key === key.key);
+    if (current && current.value === key.value) {
+        return keys;
+    }
+    return [...keys.filter(k => k.key !== key.key), key].sort((a, b) => a.key.localeCompare(b.key));
+};
+
+// ProtocolKeys holds the keys of each test of a run by protocol id.
+export type ProtocolKeys = Record<number, IProtocolKeyData[]>;
+
+export const protocolKeys = (protocols: ITestProtocolData[]): ProtocolKeys => {
+    const keys: ProtocolKeys = {};
+    for (const p of protocols) {
+        if (p.id !== undefined && p.id !== null && p.keys?.length) {
+            keys[p.id] = p.keys;
+        }
+    }
+    return keys;
+};
+
+// mergeProtocolKey folds a key that arrived live into the run's keys.
+export const mergeProtocolKey = (keys: ProtocolKeys, protocolId: number | undefined, key: IProtocolKeyData | undefined): ProtocolKeys => {
+    if (protocolId === undefined) {
+        return keys;
+    }
+    const current = keys[protocolId] ?? [];
+    const next = mergeKey(current, key);
+    return next === current ? keys : {...keys, [protocolId]: next};
+};
+
+// rowKeys are the keys shown for a test: its own, and those the app sent to
+// the runner before the test method started; the test's own value wins.
+export const rowKeys = (keys: ProtocolKeys, protocolId: number | null | undefined, runnerId?: number | null): IProtocolKeyData[] => {
+    const own = protocolId != null ? keys[protocolId] ?? [] : [];
+    const runner = runnerId != null ? keys[runnerId] ?? [] : [];
+    if (runner.length === 0) {
+        return own;
+    }
+    return mergeKeys(runner, own);
+};
+
+const mergeKeys = (base: IProtocolKeyData[], over: IProtocolKeyData[]): IProtocolKeyData[] =>
+    over.reduce((acc, k) => mergeKey(acc, k), base);

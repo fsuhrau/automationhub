@@ -3,6 +3,7 @@ import { TestResultState } from './test.result.state.enum';
 import IDeviceData from './device';
 import IProtocolPerformanceEntryData from './protocol.performance.entry';
 import ITestRunData from "./test.run";
+import IProtocolKeyData from "./protocol.key";
 
 export default interface ITestProtocolData {
     id?: number | null,
@@ -17,6 +18,8 @@ export default interface ITestProtocolData {
     entries: IProtocolEntryData[]
     testResult: TestResultState
     performance: IProtocolPerformanceEntryData[]
+    // keys the app reported for this test through the plugin, e.g. player_id = 1234
+    keys?: IProtocolKeyData[],
     avgFps: number,
     avgMem: number,
     avgCpu: number,

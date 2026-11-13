@@ -406,6 +406,13 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 				}
 				continue
 			}
+			// keys go to the running test, whichever executor runs it
+			if resp.ActionType == action.ActionType_RunKey {
+				if k := resp.Payload.RunKey; k != nil && k.Key != "" {
+					d.SetKey(k.Key, k.Value)
+				}
+				continue
+			}
 			if handlers := d.ActionHandlers(); len(handlers) > 0 {
 				for i := range handlers {
 					handlers[i].OnActionResponse(d, &resp)

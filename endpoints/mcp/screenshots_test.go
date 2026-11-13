@@ -31,7 +31,7 @@ func screenshotSetup(t *testing.T) (*httptest.Server, uint, uint) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&models.Project{}, &models.App{}, &models.Test{}, &models.TestRun{}, &models.TestProtocol{}, &models.ProtocolEntry{}); err != nil {
+	if err := db.AutoMigrate(&models.Project{}, &models.App{}, &models.Test{}, &models.TestRun{}, &models.TestProtocol{}, &models.ProtocolKey{}, &models.ProtocolEntry{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,6 +62,7 @@ func screenshotSetup(t *testing.T) (*httptest.Server, uint, uint) {
 	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "screen", Data: "last.png", Runtime: 9})
 	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "data", Data: "trace.json"})
 	db.Create(&models.ProtocolEntry{TestProtocolID: foreign, Source: "screen", Data: "foreign.png"})
+	db.Create(&models.ProtocolKey{TestProtocolID: own, Key: "player_id", Value: "1234"})
 
 	h := NewHandler(Deps{DB: db, Backend: fakeBackend{}, Control: hubcontrol.New(nil), Runs: runs.NewTracker(nil)})
 	project := &models.Project{Identifier: "p1"}
@@ -113,8 +114,8 @@ func TestProtocolScreenshot(t *testing.T) {
 		t.Fatalf("maxWidth: width %d", w)
 	}
 
-	// get_protocol lists them
-	if s := text(call(t, cs, "get_protocol", map[string]any{"protocolId": own})); !strings.Contains(s, "first.png") || !strings.Contains(s, "last.png") || strings.Contains(s, "trace.json") {
+	// get_protocol lists them, and the protocol's keys
+	if s := text(call(t, cs, "get_protocol", map[string]any{"protocolId": own})); !strings.Contains(s, "first.png") || !strings.Contains(s, "last.png") || strings.Contains(s, "trace.json") || !strings.Contains(s, `"player_id": "1234"`) {
 		t.Fatalf("get_protocol screenshots: %s", s)
 	}
 

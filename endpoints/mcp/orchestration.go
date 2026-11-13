@@ -164,7 +164,7 @@ func (t *tools) projectRuns() *gorm.DB {
 
 func (t *tools) findProtocol(id uint) (*models.TestProtocol, error) {
 	var p models.TestProtocol
-	err := t.DB.Preload("Device").
+	err := t.DB.Preload("Device").Preload("Keys").
 		Joins("JOIN test_runs ON test_runs.id = test_protocols.test_run_id").
 		Joins("JOIN tests ON tests.id = test_runs.test_id").
 		Joins("JOIN apps ON apps.id = tests.app_id").
@@ -368,6 +368,8 @@ type protocolInfo struct {
 	AvgFPS   *float64 `json:"avgFps,omitempty"`
 	AvgMEM   *float64 `json:"avgMem,omitempty"`
 	AvgCPU   *float64 `json:"avgCpu,omitempty"`
+	// keys the app reported for the test through the plugin, e.g. player_id
+	Keys map[string]string `json:"keys,omitempty"`
 }
 
 func duration(p *models.TestProtocol) string {
@@ -393,6 +395,12 @@ func toProtocolInfo(p *models.TestProtocol) protocolInfo {
 	if p.Device != nil {
 		info.Device = p.Device.Name
 	}
+	if len(p.Keys) > 0 {
+		info.Keys = make(map[string]string, len(p.Keys))
+		for _, k := range p.Keys {
+			info.Keys[k.Key] = k.Value
+		}
+	}
 	return info
 }
 
@@ -408,7 +416,7 @@ func (t *tools) runSummary(runID uint) (map[string]any, error) {
 	var run models.TestRun
 	err := t.projectRuns().Preload("Test").Preload("AppBinary").
 		Preload("Protocols", func(db *gorm.DB) *gorm.DB { return db.Order("id") }).
-		Preload("Protocols.Device").
+		Preload("Protocols.Device").Preload("Protocols.Keys").
 		First(&run, "test_runs.id = ?", runID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("%w: test run %d", errNotFound, runID)
@@ -534,7 +542,7 @@ func (t *tools) getProtocol(ctx context.Context, req *mcp.CallToolRequest, in Pr
 		Scan(&perf)
 
 	var children []models.TestProtocol
-	t.DB.Preload("Device").Where("parent_test_protocol_id = ?", p.ID).Order("id").Find(&children)
+	t.DB.Preload("Device").Preload("Keys").Where("parent_test_protocol_id = ?", p.ID).Order("id").Find(&children)
 	childInfos := make([]protocolInfo, 0, len(children))
 	for i := range children {
 		childInfos = append(childInfos, toProtocolInfo(&children[i]))

@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"math"
 	"time"
 )
@@ -22,6 +23,7 @@ type PerformanceMetric struct {
 
 type LogWriter struct {
 	db                 *gorm.DB
+	runId              uint
 	protocolId         uint
 	errs               []error
 	startTime          time.Time
@@ -113,6 +115,23 @@ func (w *LogWriter) write(source, level, message, data string) {
 	})
 }
 
+// SetKey stores the key for the protocol; a key sent again replaces its
+// value. The protocol log notes it too, so the key shows up next to the test
+// step that reported it.
+func (w *LogWriter) SetKey(key, value string) {
+	entry := models.ProtocolKey{TestProtocolID: w.protocolId, Key: key, Value: value}
+	err := w.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "test_protocol_id"}, {Name: "key"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{"value": value, "updated_at": time.Now(), "deleted_at": nil}),
+	}).Create(&entry).Error
+	if err != nil {
+		w.Error("key", "unable to store key %s: %v", key, err)
+		return
+	}
+	w.Log("key", "%s = %s", key, value)
+	events.ProtocolKey.Trigger(events.ProtocolKeyPayload{TestRunID: w.runId, TestProtocolID: w.protocolId, Key: entry})
+}
+
 func (w *LogWriter) Data(source, data string) {
 	w.write(source, "log", "", data)
 }
@@ -131,9 +150,10 @@ func (w *LogWriter) Passed(passed bool) {
 	w.passed = passed
 }
 
-func NewLogWriter(db *gorm.DB, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {
+func NewLogWriter(db *gorm.DB, runId, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {
 	return &LogWriter{
 		db:         db,
+		runId:      runId,
 		protocolId: protocolId,
 		startTime:  time.Now().UTC(),
 		dev:        dev,

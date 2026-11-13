@@ -600,7 +600,7 @@ func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, applic
 	testId := c.Param("test_id")
 
 	var resp Response
-	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
+	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -625,7 +625,7 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 	runId := c.Param("run_id")
 
 	var resp Response
-	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Recordings", func(db *gorm.DB) *gorm.DB { return db.Order("started_at") }).First(&resp.TestRun, runId).Error; err != nil {
+	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Recordings", func(db *gorm.DB) *gorm.DB { return db.Order("started_at") }).Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).First(&resp.TestRun, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -692,7 +692,7 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 	protocolId := c.Param("protocol_id")
 
 	var run models.TestRun
-	if err := s.db.Preload("Protocols", "id = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
+	if err := s.db.Preload("Protocols", "id = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
 		s.error(c, http.StatusInternalServerError, err)
 		return
 	}

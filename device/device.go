@@ -73,6 +73,7 @@ type Device interface {
 	SetLogWriter(LogWriter)
 	GetLogWriter() LogWriter
 	Data(string, string)
+	SetKey(key, value string)
 	LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string)
 	Log(string, string, ...interface{})
 	Error(string, string, ...interface{})

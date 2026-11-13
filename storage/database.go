@@ -143,6 +143,12 @@ func GetDB(database config.Database) (*gorm.DB, error) {
 				return g.AutoMigrate(&models.TestRunRecording{})
 			},
 		},
+		{
+			ID: "AddProtocolKeys",
+			Migrate: func(g *gorm.DB) error {
+				return g.AutoMigrate(&models.ProtocolKey{})
+			},
+		},
 	})
 	m.InitSchema(migrations.InitSchema)
 

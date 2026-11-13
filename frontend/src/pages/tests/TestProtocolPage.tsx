@@ -56,6 +56,7 @@ import {Link as RouterLink, useNavigate, useSearchParams} from 'react-router-dom
 import ITestRunData from '../../types/test.run';
 import ITestProtocolData from '../../types/test.protocol';
 import IProtocolEntryData from '../../types/protocol.entry';
+import IProtocolKeyData, {ProtocolKeyPayload} from '../../types/protocol.key';
 import {TestResultState} from '../../types/test.result.state.enum';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
@@ -65,7 +66,7 @@ import {getBaseline, IBaseline, IBaselineCandidate} from '../../services/test.ru
 import IProtocolPerformanceEntryData from '../../types/protocol.performance.entry';
 import {parseTags} from '../apps/bundlesModel';
 import BaselinePicker from './BaselinePicker';
-import {between, buildRows, formatDuration, leaves, mergeProtocol, splitTestName} from './testRunModel';
+import {between, buildRows, formatDuration, leaves, mergeKey, mergeProtocol, splitTestName} from './testRunModel';
 import {
     averageOf,
     bundleLabel,
@@ -288,6 +289,17 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const entries = useSSE<IProtocolEntryData[], NewTestProtocolLogPayload | null>(
         `test_protocol_${props.protocol.id}_log`, props.protocol.entries ?? [],
         {stateReducer: (state, action) => action.data?.entry && !state.some(e => e.id === action.data!.entry.id) ? [...state, action.data.entry] : state});
+    // keys the app reported for this test, e.g. player_id, and those it sent
+    // to the runner before the test method started; the test's own value wins
+    const ownKeys = useSSE<IProtocolKeyData[], ProtocolKeyPayload | null>(
+        `test_protocol_${props.protocol.id}_keys`, props.protocol.keys ?? [],
+        {stateReducer: (state, action) => mergeKey(state, action.data?.key)});
+    const runnerKeys = useMemo(() => {
+        const parentId = props.protocol.parentTestProtocolId;
+        return parentId != null ? runProtocols?.find(p => p.id === parentId)?.keys ?? [] : [];
+    }, [runProtocols, props.protocol.parentTestProtocolId]);
+    const keys = useMemo(() => ownKeys.reduce((acc, k) => mergeKey(acc, k), runnerKeys), [ownKeys, runnerKeys]);
+
     // the API omits testResult while it is Open (0), see the omitempty on TestProtocol
     const testResult = protocol.testResult ?? TestResultState.TestResultOpen;
     const running = testResult === TestResultState.TestResultOpen && !protocol.endedAt;
@@ -482,6 +494,15 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         </Box>;
                                     })}
                                 </Stack>}
+                        </Section>}
+
+                        {keys.length > 0 && <Section title="Keys">
+                            {keys.map(k => <Box key={k.key} sx={{display: 'grid', gridTemplateColumns: 'minmax(80px, 35%) 1fr', gap: 1, py: 0.5}}>
+                                <Typography variant="body2" color="text.secondary" sx={{wordBreak: 'break-word'}}>{k.key}</Typography>
+                                <Typography variant="body2" sx={{wordBreak: 'break-all', fontFamily: 'monospace'}}>
+                                    {k.value || <Typography component="span" variant="body2" color="text.secondary">(empty)</Typography>}
+                                </Typography>
+                            </Box>)}
                         </Section>}
 
                         <Section title="Steps" action={summary.steps.length > 0 &&

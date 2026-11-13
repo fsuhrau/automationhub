@@ -20,7 +20,7 @@ func runStateSetup(t *testing.T) (*Service, *gin.Engine) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&models.Test{}, &models.TestConfig{}, &models.TestRun{}, &models.TestRunRecording{}, &models.TestProtocol{},
+	if err := db.AutoMigrate(&models.Test{}, &models.TestConfig{}, &models.TestRun{}, &models.TestRunRecording{}, &models.ProtocolKey{}, &models.TestProtocol{},
 		&models.TestRunLogEntry{}, &models.TestRunDeviceStatus{}, &models.ProtocolEntry{},
 		&models.ProtocolPerformanceEntry{}, &models.AppBinary{}, &models.Device{}); err != nil {
 		t.Fatal(err)

@@ -37,6 +37,7 @@ const (
 	LogType_Log         LogType = 2
 	LogType_Error       LogType = 3
 	LogType_Result      LogType = 4
+	LogType_RunKey      LogType = 5
 )
 
 type request struct {
@@ -52,6 +53,8 @@ type request struct {
 	VertexCount float64 `json:"vertexCount"`
 	Triangles   float64 `json:"triangles"`
 	Other       string  `json:"other"`
+	Key         string  `json:"key,omitempty"`
+	Value       string  `json:"value,omitempty"`
 }
 
 func NewRemoteLogWriter(masterURL, nodeIdentifier, deviceId string, authToken *string) *RemoteLogWriter {
@@ -126,6 +129,18 @@ func (w *RemoteLogWriter) LogPerformance(checkpoint string, cpu, fps, mem, verte
 	}
 	if err := w.sendLog(log); err != nil {
 		fmt.Printf("failed to send log: %v\n", err)
+	}
+}
+
+func (w *RemoteLogWriter) SetKey(key, value string) {
+	log := &request{
+		Source: "key",
+		Key:    key,
+		Value:  value,
+		Type:   LogType_RunKey,
+	}
+	if err := w.sendLog(log); err != nil {
+		fmt.Printf("failed to send key: %v\n", err)
 	}
 }
 

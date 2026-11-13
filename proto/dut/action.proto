@@ -53,6 +53,7 @@ enum ActionType {
   NativeScript = 19;
   ExecuteMethodStart = 20;
   ExecuteMethodFinished = 21;
+  RunKey = 22;
 }
 
 enum LogType {
@@ -145,6 +146,12 @@ message PerformanceData {
   float triangles = 6;
 }
 
+// a key and its value the app reports for the current run, e.g. player_id = 1234
+message RunKey {
+  string key = 1;
+  string value = 2;
+}
+
 message Response {
   string actionID = 1;
   ActionType actionType = 2;
@@ -159,5 +166,6 @@ message Response {
     LogData log = 10;
     TestDetails testDetails = 11;
     PerformanceData performance = 12;
+    RunKey runKey = 13;
   }
 }

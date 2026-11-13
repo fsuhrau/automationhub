@@ -17,6 +17,7 @@ type TestProtocol struct {
 	Entries              []ProtocolEntry            `json:"entries,omitempty"`
 	TestResult           TestResultState            `json:"testResult,omitempty"`
 	Performance          []ProtocolPerformanceEntry `json:"performance,omitempty"`
+	Keys                 []ProtocolKey              `json:"keys,omitempty"`
 	AvgFPS               float64                    `sql:"type:decimal(10,2);" json:"avgFps,omitempty"`
 	AvgMEM               float64                    `sql:"type:decimal(10,2);" json:"avgMem,omitempty"`
 	AvgCPU               float64                    `sql:"type:decimal(10,2);" json:"avgCpu,omitempty"`

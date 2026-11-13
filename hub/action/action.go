@@ -25,6 +25,9 @@ const (
 	ActionType_NativeScript          ActionType = 19
 	ActionType_ExecuteMethodStart    ActionType = 20
 	ActionType_ExecuteMethodFinished ActionType = 21
+	// RunKey is sent by the app: a key and its value for the current run,
+	// e.g. player_id = 1234, in payload.runKey
+	ActionType_RunKey ActionType = 22
 )
 
 type LogType int32
@@ -154,6 +157,11 @@ type PerformanceData struct {
 	Triangles   float64 `json:"triangles"`
 }
 
+type RunKey struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type ResponseData struct {
 	Visible         *bool            `json:"visible,omitempty"`
 	Data            *[]byte          `json:"data,omitempty"`
@@ -164,6 +172,7 @@ type ResponseData struct {
 	LogData         *LogData         `json:"logData,omitempty"`
 	TestDetails     *TestDetails     `json:"testDetails,omitempty"`
 	PerformanceData *PerformanceData `json:"performanceData,omitempty"`
+	RunKey          *RunKey          `json:"runKey,omitempty"`
 }
 
 type Response struct {
