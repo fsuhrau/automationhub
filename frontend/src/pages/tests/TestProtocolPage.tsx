@@ -289,16 +289,22 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const entries = useSSE<IProtocolEntryData[], NewTestProtocolLogPayload | null>(
         `test_protocol_${props.protocol.id}_log`, props.protocol.entries ?? [],
         {stateReducer: (state, action) => action.data?.entry && !state.some(e => e.id === action.data!.entry.id) ? [...state, action.data.entry] : state});
-    // keys the app reported for this test, e.g. player_id, and those it sent
-    // to the runner before the test method started; the test's own value wins
+    // keys the app reported for this test, e.g. player_id. The app sends them
+    // to whichever protocol is current, so a test also shows those its runner
+    // got before the test method started, and a runner those of its tests;
+    // the protocol's own value wins
     const ownKeys = useSSE<IProtocolKeyData[], ProtocolKeyPayload | null>(
         `test_protocol_${props.protocol.id}_keys`, props.protocol.keys ?? [],
         {stateReducer: (state, action) => mergeKey(state, action.data?.key)});
-    const runnerKeys = useMemo(() => {
+    const relatedKeys = useMemo(() => {
+        const id = props.protocol.id;
         const parentId = props.protocol.parentTestProtocolId;
-        return parentId != null ? runProtocols?.find(p => p.id === parentId)?.keys ?? [] : [];
-    }, [runProtocols, props.protocol.parentTestProtocolId]);
-    const keys = useMemo(() => ownKeys.reduce((acc, k) => mergeKey(acc, k), runnerKeys), [ownKeys, runnerKeys]);
+        return (runProtocols ?? [])
+            .filter(p => (parentId != null && p.id === parentId) || (id != null && p.parentTestProtocolId === id))
+            .flatMap(p => p.keys ?? [])
+            .reduce((acc, k) => mergeKey(acc, k), [] as IProtocolKeyData[]);
+    }, [runProtocols, props.protocol.id, props.protocol.parentTestProtocolId]);
+    const keys = useMemo(() => ownKeys.reduce((acc, k) => mergeKey(acc, k), relatedKeys), [ownKeys, relatedKeys]);
 
     // the API omits testResult while it is Open (0), see the omitempty on TestProtocol
     const testResult = protocol.testResult ?? TestResultState.TestResultOpen;
