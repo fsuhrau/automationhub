@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"fmt"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
@@ -11,10 +12,45 @@ import (
 	"slices"
 )
 
+// Unavailable says why a device can't run tests right now, or "" when it
+// can. A device must be seen by its node, network devices included (they are
+// connected with adb beforehand); shut down simulators and editors are
+// started by the run.
+func Unavailable(d models.Device) string {
+	dev, ok := d.Dev.(device.Device)
+	if !ok || dev == nil {
+		return "not connected to the hub"
+	}
+	switch dev.DeviceState() {
+	case device.StateRemoteDisconnected:
+		return "disconnected"
+	case device.StateNodeDisconnected:
+		return "on a node that is offline"
+	case device.StateUnauthorized:
+		return "not authorized for USB debugging"
+	}
+	return ""
+}
+
+// deviceLabel names a device in the run log
+func deviceLabel(d models.Device) string {
+	name := d.Alias
+	if name == "" {
+		name = d.Name
+	}
+	if name == "" || name == d.DeviceIdentifier {
+		return d.DeviceIdentifier
+	}
+	return fmt.Sprintf("%s (%s)", name, d.DeviceIdentifier)
+}
+
+// LockDevices locks the devices that can run tests; the others are skipped
+// with a line in the run log.
 func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
 	var devices []DeviceMap
 	for _, d := range devs {
-		if d.Dev == nil {
+		if reason := Unavailable(d); reason != "" {
+			tr.LogError("skipping device %s: %s", deviceLabel(d), reason)
 			continue
 		}
 		dev := d.Dev.(device.Device)
@@ -61,8 +97,6 @@ func (tr *TestRunner) StartDevices(ctx context.Context, devices []DeviceMap) err
 		case device.StateUnknown:
 			fallthrough
 		case device.StateShutdown:
-			fallthrough
-		case device.StateRemoteDisconnected:
 			wg.Add(1)
 			go func(dm manager.Devices, d device.Device, group sync.ExtendedWaitGroup) {
 				if err := dm.Start(d); err != nil {

@@ -59,3 +59,47 @@ func TestClosedProtocolWithoutSamplesEncodes(t *testing.T) {
 	}
 	t.Fatal("no finished protocol event")
 }
+
+type finishedRecorder chan events.TestRunFinishedPayload
+
+func (r finishedRecorder) Handle(p events.TestRunFinishedPayload) { r <- p }
+
+// A run that couldn't run its tests (e.g. no device) failed, although no
+// test failed; it used to be reported as a success.
+func TestFailedRunIsNoSuccess(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=private"), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.TestRun{}); err != nil {
+		t.Fatal(err)
+	}
+	r := make(finishedRecorder, 4)
+	events.TestRunFinished.Register(r)
+
+	result := func(fail bool) bool {
+		run := models.TestRun{}
+		db.Create(&run)
+		w := NewProtocolWriter(db, "p", 1, "t", &run)
+		if fail {
+			w.Fail()
+		}
+		w.Close()
+		for {
+			select {
+			case e := <-r:
+				if e.TestRunID == run.ID {
+					return e.Success
+				}
+			case <-time.After(time.Second):
+				t.Fatal("no finished event")
+			}
+		}
+	}
+	if result(true) {
+		t.Fatal("failed run reported as success")
+	}
+	if !result(false) {
+		t.Fatal("run without failures reported as failed")
+	}
+}

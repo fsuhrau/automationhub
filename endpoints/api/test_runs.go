@@ -13,6 +13,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
+	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/tester/scenario"
 	"github.com/fsuhrau/automationhub/tester/unity"
 	"gorm.io/gorm"
@@ -24,6 +25,9 @@ var ErrNotFound = errors.New("not found")
 
 // ErrBundleExists is returned when an identical app bundle was uploaded before.
 var ErrBundleExists = errors.New("app bundle exists already")
+
+// ErrNoDevices is returned when none of a test's devices can run it.
+var ErrNoDevices = errors.New("no device available to run the test")
 
 func notFound(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrNotFound, fmt.Sprintf(format, args...))
@@ -97,6 +101,9 @@ func (s *Service) StartTestRun(project *models.Project, testID, binaryID uint, s
 	for i := range devices {
 		devices[i].Dev, _ = s.devicesManager.GetDevice(devices[i].DeviceIdentifier)
 	}
+	if err := checkDevices(devices); err != nil {
+		return nil, err
+	}
 
 	var testRunner tester.Interface
 	switch test.TestConfig.Type {
@@ -131,6 +138,31 @@ func (s *Service) StartTestRun(project *models.Project, testID, binaryID uint, s
 		TestRunID: run.ID,
 	})
 	return run, nil
+}
+
+// checkDevices refuses a run when none of its devices can run tests, so the
+// caller (web, CLI, MCP, CI) fails right away instead of getting an empty
+// run. Unavailable devices next to available ones are skipped by the run.
+func checkDevices(devices []models.Device) error {
+	if len(devices) == 0 {
+		return fmt.Errorf("%w: the test has no devices", ErrNoDevices)
+	}
+	reasons := make([]string, 0, len(devices))
+	for _, d := range devices {
+		reason := base.Unavailable(d)
+		if reason == "" {
+			return nil
+		}
+		name := d.Alias
+		if name == "" {
+			name = d.Name
+		}
+		if name == "" {
+			name = d.DeviceIdentifier
+		}
+		reasons = append(reasons, fmt.Sprintf("%s is %s", name, reason))
+	}
+	return fmt.Errorf("%w: %s", ErrNoDevices, strings.Join(reasons, "; "))
 }
 
 func runKey(runID uint) string {

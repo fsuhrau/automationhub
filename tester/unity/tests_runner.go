@@ -83,7 +83,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
-		tr.LogError("no lockable devices available")
+		tr.FailRun("no device available to run the tests")
 		return
 	}
 
@@ -96,7 +96,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 
 	tr.LogInfo("Starting devices")
 	if err := tr.StartDevices(tr.ctx, devices); err != nil {
-		tr.LogError("unable to start devices")
+		tr.FailRun("unable to start devices")
 		return
 	}
 
@@ -122,8 +122,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 	if errors.Is(err, sync.TimeoutError) {
 		tr.LogError("Timeout while stating app")
 	}
-	if connectedDevices == nil {
-		tr.LogError("No devices connected can't execute tests...")
+	if len(connectedDevices) == 0 {
+		tr.FailRun("no device connected, the tests can't run")
 		return
 	}
 

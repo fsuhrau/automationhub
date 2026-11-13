@@ -461,7 +461,7 @@ func statusForError(err error) int {
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
-	case errors.Is(err, ErrBundleExists):
+	case errors.Is(err, ErrBundleExists), errors.Is(err, ErrNoDevices):
 		return http.StatusConflict
 	case errors.As(err, new(invalidRequest)):
 		return http.StatusBadRequest

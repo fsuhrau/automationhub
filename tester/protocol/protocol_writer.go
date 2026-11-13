@@ -40,6 +40,8 @@ func (p *logProtocol) TestProtocolId() *uint {
 }
 
 type ProtocolWriter struct {
+	// failed marks a run that couldn't run its tests, e.g. without devices
+	failed    bool
 	db        *gorm.DB
 	run       *models.TestRun
 	testName  string
@@ -102,6 +104,12 @@ func (w *ProtocolWriter) NewSubProtocol(testname string, pw device.LogWriter) (*
 	return p, nil
 }
 
+// Fail marks the run as failed even when no test failed, e.g. because no
+// device could run the tests.
+func (w *ProtocolWriter) Fail() {
+	w.failed = true
+}
+
 func (w *ProtocolWriter) RunID() uint {
 	return w.run.ID
 }
@@ -140,7 +148,7 @@ func (w *ProtocolWriter) Close() {
 		TestName:  w.testName,
 		ProjectID: w.projectId,
 		AppID:     w.appId,
-		Success:   failedCount == 0 && unstableCount == 0,
+		Success:   !w.failed && failedCount == 0 && unstableCount == 0,
 		Succeeded: successCount,
 		Unstable:  unstableCount,
 		Failed:    failedCount,

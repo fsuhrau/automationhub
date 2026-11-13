@@ -33,3 +33,11 @@ func (tr *TestRunner) LogError(format string, params ...interface{}) {
 		Entry:     logEntry,
 	})
 }
+// FailRun logs why the run can't go on and marks it as failed, so callers
+// waiting for the result (CLI, MCP, CI) don't take it for a pass.
+func (tr *TestRunner) FailRun(format string, params ...interface{}) {
+	tr.LogError(format, params...)
+	if tr.ProtocolWriter != nil {
+		tr.ProtocolWriter.Fail()
+	}
+}

@@ -70,14 +70,14 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 	// lock devices
 	devices := tr.LockDevices(devs)
 	if len(devices) == 0 {
-		tr.LogError("No lockable devices available")
+		tr.FailRun("no device available to run the tests")
 		return
 	}
 	defer tr.UnlockDevices(devices)
 
 	tr.LogInfo("Starting devices")
 	if err := tr.StartDevices(tr.ctx, devices); err != nil {
-		tr.LogError("Unable to start devices")
+		tr.FailRun("unable to start devices")
 		return
 	}
 
