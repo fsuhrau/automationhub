@@ -71,8 +71,8 @@ func (s *videoStream) InjectInput(ev device.InputEvent) error {
 
 // StartVideo implements device.VideoStreamer with the scrcpy server.
 func (d *Device) StartVideo(ctx context.Context, opts device.VideoOptions) (device.VideoStream, error) {
-	if state := d.DeviceState(); state != device.StateBooted {
-		return nil, fmt.Errorf("device %s is %s", d.DeviceID(), device.StateToString(state))
+	if err := d.notReady(); err != nil {
+		return nil, err
 	}
 	d.Log("device", "Start video stream (scrcpy %s)", scrcpy.Version)
 	session, err := scrcpy.Start(ctx, d.DeviceID(), scrcpy.Options{MaxSize: opts.MaxSize, MaxFPS: opts.MaxFPS, BitRate: opts.BitRate, Control: true})

@@ -6,6 +6,8 @@ const (
 	StateNone State = iota
 	StateUnknown
 	StateShutdown
+	// StateRemoteDisconnected: the node doesn't see the device, e.g. an
+	// unplugged USB phone or a network device that isn't connected
 	StateRemoteDisconnected
 	StateBooted
 	StateLocked
@@ -23,7 +25,7 @@ func StateToString(state State) string {
 	case StateBooted:
 		return "booted"
 	case StateRemoteDisconnected:
-		return "remote disconnected"
+		return "disconnected"
 	case StateLocked:
 		return "locked"
 	case StateNodeDisconnected:

@@ -130,7 +130,7 @@ func TestUpdateNodeDevicesAppliesPushWithoutRPC(t *testing.T) {
 	// unplugged: the node no longer reports it
 	_ = h.UpdateNodeDevices("node-1", pushed(), 3)
 	if s := store.state("phone"); s != device.StateRemoteDisconnected {
-		t.Fatalf("expected remote disconnected, got %v", s)
+		t.Fatalf("expected disconnected, got %v", s)
 	}
 
 	if nodes.rpcCalls != 0 {

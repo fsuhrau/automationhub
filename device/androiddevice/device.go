@@ -358,10 +358,24 @@ func (d *Device) IsAwake() (bool, error) {
 	return findings[1] == "true", nil
 }
 
+// notReady says why adb can't use the device right now, or nil when it can.
+func (d *Device) notReady() error {
+	switch state := d.DeviceState(); state {
+	case device.StateBooted:
+		return nil
+	case device.StateRemoteDisconnected:
+		return fmt.Errorf("device %s is disconnected: adb on the node doesn't list it (check the USB cable and that the phone is unlocked; adb devices -l on the node should show it as \"device\")", d.DeviceID())
+	case device.StateUnauthorized:
+		return fmt.Errorf("device %s is unauthorized: accept \"Allow USB debugging?\" on the phone", d.DeviceID())
+	default:
+		return fmt.Errorf("device %s is %s", d.DeviceID(), device.StateToString(state))
+	}
+}
+
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	// don't run adb (and log its errors) for devices adb can't use right now
-	if state := d.DeviceState(); state != device.StateBooted {
-		return nil, 0, 0, fmt.Errorf("device %s is %s", d.DeviceID(), device.StateToString(state))
+	if err := d.notReady(); err != nil {
+		return nil, 0, 0, err
 	}
 	d.Log("device", "Get Native Screenshot")
 	start := time.Now()
