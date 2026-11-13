@@ -188,6 +188,7 @@ func (t *tools) registerOrchestration(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "get_test_run", Description: "Status and summary of a test run: state, results per protocol (one per device and test), and the last run log lines.", Annotations: readOnly}, t.getTestRun)
 	mcp.AddTool(s, &mcp.Tool{Name: "wait_for_test_run", Description: "Wait until a test run finished or the timeout passed. Sends progress notifications.", Annotations: readOnly}, t.waitForTestRun)
 	mcp.AddTool(s, &mcp.Tool{Name: "get_protocol", Description: "Details of one protocol: result, duration, errors and a performance summary.", Annotations: readOnly}, t.getProtocol)
+	mcp.AddTool(s, &mcp.Tool{Name: "get_protocol_screenshot", Description: "A screenshot taken during a test, as an image. Give the file from get_protocol (screenshots) or get_protocol_logs (data: ...); without a file the protocol's last screenshot is returned.", Annotations: readOnly}, t.getProtocolScreenshot)
 	mcp.AddTool(s, &mcp.Tool{Name: "get_protocol_logs", Description: "Log entries of a protocol, filtered and paged.", Annotations: readOnly}, t.getProtocolLogs)
 	mcp.AddTool(s, &mcp.Tool{Name: "cancel_test_run", Description: "Cancel a running test run.", Annotations: destructive}, t.cancelTestRun)
 	mcp.AddTool(s, &mcp.Tool{Name: "unlock_device", Description: "Force unlock a device. This aborts a test run or control session that holds it.", Annotations: destructive}, t.unlockDevice)
@@ -539,8 +540,14 @@ func (t *tools) getProtocol(ctx context.Context, req *mcp.CallToolRequest, in Pr
 		childInfos = append(childInfos, toProtocolInfo(&children[i]))
 	}
 
+	screenshots, err := t.protocolScreenshots(p.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return jsonResult(map[string]any{
 		"protocol":    toProtocolInfo(p),
+		"screenshots": screenshots,
 		"testRunId":   p.TestRunID,
 		"startedAt":   p.StartedAt,
 		"endedAt":     p.EndedAt,

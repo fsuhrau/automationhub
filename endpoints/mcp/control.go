@@ -167,7 +167,22 @@ func (t *tools) screenshot(ctx context.Context, req *mcp.CallToolRequest, in Scr
 	if width == 0 || height == 0 {
 		width, height = img.Bounds().Dx(), img.Bounds().Dy()
 	}
-	maxWidth := in.MaxWidth
+	scaled, jpg, err := scaleToJPEG(img, in.MaxWidth)
+	if err != nil {
+		return nil, nil, err
+	}
+	scale := float64(width) / float64(scaled.Bounds().Dx())
+	note := fmt.Sprintf("device screen %dx%d px; image %dx%d (multiply image coordinates by %.3f for tap/swipe)",
+		width, height, scaled.Bounds().Dx(), scaled.Bounds().Dy(), scale)
+	return &mcp.CallToolResult{Content: []mcp.Content{
+		&mcp.ImageContent{Data: jpg, MIMEType: "image/jpeg"},
+		&mcp.TextContent{Text: note},
+	}}, nil, nil
+}
+
+// scaleToJPEG shrinks img to at most maxWidth (default defaultScreenshotWidth)
+// and encodes it as JPEG, small enough to hand to a model.
+func scaleToJPEG(img image.Image, maxWidth int) (image.Image, []byte, error) {
 	if maxWidth <= 0 {
 		maxWidth = defaultScreenshotWidth
 	}
@@ -182,13 +197,7 @@ func (t *tools) screenshot(ctx context.Context, req *mcp.CallToolRequest, in Scr
 	if err := jpeg.Encode(&buf, scaled, &jpeg.Options{Quality: 80}); err != nil {
 		return nil, nil, err
 	}
-	scale := float64(width) / float64(scaled.Bounds().Dx())
-	note := fmt.Sprintf("device screen %dx%d px; image %dx%d (multiply image coordinates by %.3f for tap/swipe)",
-		width, height, scaled.Bounds().Dx(), scaled.Bounds().Dy(), scale)
-	return &mcp.CallToolResult{Content: []mcp.Content{
-		&mcp.ImageContent{Data: buf.Bytes(), MIMEType: "image/jpeg"},
-		&mcp.TextContent{Text: note},
-	}}, nil, nil
+	return scaled, buf.Bytes(), nil
 }
 
 func (t *tools) getHierarchy(ctx context.Context, req *mcp.CallToolRequest, in HierarchyArgs) (*mcp.CallToolResult, any, error) {
