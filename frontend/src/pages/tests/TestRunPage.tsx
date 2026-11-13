@@ -30,7 +30,6 @@ import {
     ArrowForwardRounded,
     CancelRounded,
     CheckCircleRounded,
-    ChevronRightRounded,
     ErrorRounded,
     ExpandLessRounded,
     ExpandMoreRounded,
@@ -48,7 +47,6 @@ import {Link as RouterLink, useNavigate} from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
 import ITesRunLogEntryData from '../../types/test.run.log.entry';
 import ITestProtocolData from '../../types/test.protocol';
-import IProtocolKeyData, {ProtocolKeyPayload} from '../../types/protocol.key';
 import {TestResultState} from '../../types/test.result.state.enum';
 import {cancelTestRun, executeTest} from '../../services/test.service';
 import {useProjectContext} from '../../hooks/ProjectProvider';
@@ -68,9 +66,6 @@ import {
     filterRows,
     formatDuration,
     mergeProtocol,
-    mergeProtocolKey,
-    ProtocolKeys,
-    protocolKeys,
     parseParameters,
     ResultCounts,
     ResultFilter,
@@ -78,7 +73,6 @@ import {
     runEnd,
     runStatus,
     RunStatus,
-    rowKeys,
     TestRow,
 } from './testRunModel';
 
@@ -210,30 +204,35 @@ const ResultBar: React.FC<{ counts: ResultCounts, total: number }> = ({counts, t
 const TestRows: React.FC<{
     row: TestRow,
     running: boolean,
-    keys: ProtocolKeys,
     expanded: boolean,
     onToggle: () => void,
     onOpen: (protocolId: number) => void,
     // opens the replay where the test started; only for recorded runs
     onReplay?: (row: TestRow) => void,
     nested?: boolean,
-}> = ({row, running, keys, expanded, onToggle, onOpen, onReplay, nested}) => {
+}> = ({row, running, expanded, onToggle, onOpen, onReplay, nested}) => {
     const hasChildren = row.children.length > 0;
-    const shownKeys = rowKeys(keys, row.protocol.id, row.runner?.id);
     const ms = between(row.startedAt, row.endedAt);
     const open = () => hasChildren ? onToggle() : onOpen(row.protocol.id as number);
     const device = deviceName(row.protocol);
     return <>
-        <TableRow hover onClick={open} sx={{cursor: 'pointer', '& > td': {borderBottomColor: 'divider'}}}
-                  aria-expanded={hasChildren ? expanded : undefined}>
-            <TableCell sx={{width: 40, pl: nested ? 4 : 2}}>
+        <TableRow hover onClick={open} aria-expanded={hasChildren ? expanded : undefined}
+                  tabIndex={0}
+                  onKeyDown={e => {
+                      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          open();
+                      }
+                  }}
+                  sx={{cursor: 'pointer', '& > td': {borderBottomColor: 'divider'}}}>
+            <TableCell sx={{width: 40, pl: nested ? 4 : 2, pr: 1}}>
                 <ResultIcon result={row.result} running={running}/>
             </TableCell>
-            <TableCell sx={{minWidth: 0}}>
+            <TableCell sx={{minWidth: 0, px: 1}}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                     {hasChildren && (expanded ? <ExpandLessRounded fontSize="small"/> : <ExpandMoreRounded fontSize="small"/>)}
                     <Box sx={{minWidth: 0}}>
-                        <Typography variant="body2" sx={{fontWeight: 600, wordBreak: 'break-word'}}>
+                        <Typography variant="body2" sx={{fontWeight: 600, overflowWrap: 'break-word'}}>
                             {row.name}
                             {hasChildren && <Typography component="span" variant="caption" color="text.secondary" sx={{ml: 1}}>
                                 {row.children.length} tests
@@ -242,22 +241,19 @@ const TestRows: React.FC<{
                         {row.suite && <Typography variant="caption" color="text.secondary" component="div">
                             {breakAfterDots(row.suite)}
                         </Typography>}
-                        {shownKeys.length > 0 && <KeyChips keys={shownKeys}/>}
+                        {device && <Typography variant="caption" color="text.secondary" component="div">
+                            {device}
+                            {row.protocol.device && ` · ${row.protocol.device.os} ${row.protocol.device.osVersion}`}
+                        </Typography>}
                     </Box>
                 </Stack>
             </TableCell>
-            <TableCell sx={{display: {xs: 'none', md: 'table-cell', lg: 'none', xl: 'table-cell'}}}>
-                <Typography variant="body2">{device}</Typography>
-                {row.protocol.device && <Typography variant="caption" color="text.secondary">
-                    {row.protocol.device.os} {row.protocol.device.osVersion}
-                </Typography>}
-            </TableCell>
-            <TableCell align="right" sx={{whiteSpace: 'nowrap'}}>
+            <TableCell align="right" sx={{whiteSpace: 'nowrap', px: 1}}>
                 <Typography variant="body2" color={ms === null ? 'text.secondary' : 'text.primary'}>
                     {ms === null ? (running ? 'running' : '–') : formatDuration(ms)}
                 </Typography>
             </TableCell>
-            <TableCell align="right" sx={{width: onReplay ? 120 : 88, whiteSpace: 'nowrap', pr: 1}}>
+            <TableCell align="right" sx={{whiteSpace: 'nowrap', pl: 0, pr: 1}}>
                 {onReplay && !hasChildren && <Tooltip title="Replay this test">
                     <IconButton size="small" aria-label={`Replay ${row.name}`}
                                 onClick={e => {
@@ -276,38 +272,13 @@ const TestRows: React.FC<{
                         <ListAltRounded fontSize="small"/>
                     </IconButton>
                 </Tooltip>}
-                {!hasChildren && <Tooltip title="Open protocol">
-                    <IconButton size="small" aria-label={`Open protocol of ${row.name}`}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    onOpen(row.protocol.id as number);
-                                }}>
-                        <ChevronRightRounded fontSize="small"/>
-                    </IconButton>
-                </Tooltip>}
             </TableCell>
         </TableRow>
         {hasChildren && expanded && row.children.map(child =>
-            <TestRows key={child.key} row={child} running={running} keys={keys} expanded={false} onToggle={() => undefined}
+            <TestRows key={child.key} row={child} running={running} expanded={false} onToggle={() => undefined}
                       onOpen={onOpen} onReplay={onReplay} nested/>)}
     </>;
 };
-
-// KeyChips shows the keys the app reported for a test, e.g. player_id 1234.
-// The value can be selected and copied; clicking it doesn't open the test.
-const KeyChips: React.FC<{ keys: IProtocolKeyData[] }> = ({keys}) =>
-    <Stack direction="row" useFlexGap flexWrap="wrap" spacing={0.5} sx={{mt: 0.5}}
-           onClick={e => e.stopPropagation()} aria-label="Keys">
-        {keys.map(k => <Box key={k.key} component="span" sx={{
-            display: 'inline-flex', gap: 0.5, alignItems: 'baseline', px: 0.75, py: 0.125,
-            border: 1, borderColor: 'divider', borderRadius: 1, cursor: 'text', userSelect: 'text',
-        }}>
-            <Typography component="span" variant="caption" color="text.secondary">{k.key}</Typography>
-            <Typography component="span" variant="caption" sx={{fontFamily: 'monospace', wordBreak: 'break-all'}}>
-                {k.value || '(empty)'}
-            </Typography>
-        </Box>)}
-    </Stack>;
 
 const KeyValue: React.FC<{ name: string, children: React.ReactNode }> = ({name, children}) =>
     <Box sx={{display: 'grid', gridTemplateColumns: 'minmax(80px, 35%) 1fr', gap: 1, py: 0.5}}>
@@ -335,10 +306,6 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
         `test_run_${testRun.id}_log`, testRun.log ?? [],
         {stateReducer: (state, action) => action.data?.entry && !state.some(e => e.id === action.data!.entry.id) ? [...state, action.data.entry] : state});
     const finished = useSSE<object | null>(`test_run_${testRun.id}_finished`, null);
-    // keys the app reported for each test, e.g. player_id
-    const keys = useSSE<ProtocolKeys, ProtocolKeyPayload | null>(
-        `test_run_${testRun.id}_keys`, useMemo(() => protocolKeys(testRun.protocols ?? []), [testRun.protocols]),
-        {stateReducer: (state, action) => mergeProtocolKey(state, action.data?.testProtocolId, action.data?.key)});
 
     const [cancelling, setCancelling] = useState(false);
     const lifecycle: RunLifecycle = finished ? 'finished' : props.state;
@@ -566,16 +533,15 @@ const TestRunPage: React.FC<TestRunPageProps> = (props: TestRunPageProps) => {
                                         <Table size="small" aria-label="Tests of this run">
                                             <TableHead>
                                                 <TableRow>
-                                                    <TableCell sx={{pl: 2}}><Box component="span" sx={visuallyHidden}>Result</Box></TableCell>
-                                                    <TableCell>Test</TableCell>
-                                                    <TableCell sx={{display: {xs: 'none', md: 'table-cell', lg: 'none', xl: 'table-cell'}}}>Device</TableCell>
-                                                    <TableCell align="right">Duration</TableCell>
-                                                    <TableCell><Box component="span" sx={visuallyHidden}>Actions</Box></TableCell>
+                                                    <TableCell sx={{pl: 2, pr: 1}}><Box component="span" sx={visuallyHidden}>Result</Box></TableCell>
+                                                    <TableCell sx={{px: 1}}>Test</TableCell>
+                                                    <TableCell align="right" sx={{px: 1}}>Duration</TableCell>
+                                                    <TableCell sx={{pl: 0, pr: 1}}><Box component="span" sx={visuallyHidden}>Actions</Box></TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
                                                 {visibleRows.map(row =>
-                                                    <TestRows key={row.key} row={row} running={running} keys={keys}
+                                                    <TestRows key={row.key} row={row} running={running}
                                                               expanded={filtering || expanded.has(row.key)}
                                                               onToggle={() => toggle(row.key)} onOpen={openProtocol} onReplay={replayTest}/>)}
                                             </TableBody>

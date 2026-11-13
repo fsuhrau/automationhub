@@ -8,7 +8,7 @@ export default interface IProtocolKeyData {
     createdAt?: Date,
 }
 
-// payload of the test_run_<id>_keys and test_protocol_<id>_keys events
+// payload of the test_protocol_<id>_keys event
 export interface ProtocolKeyPayload {
     testRunId: number,
     testProtocolId: number,

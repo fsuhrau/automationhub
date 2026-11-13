@@ -14,12 +14,8 @@ func RegisterProtocolKeyListener(publisher sse.Publisher) {
 	events.ProtocolKey.Register(protocolKeyNotifier{publisher: publisher})
 }
 
-// Handle tells the run page and the protocol page about the key.
+// Handle tells the protocol page about the key.
 func (u protocolKeyNotifier) Handle(payload events.ProtocolKeyPayload) {
-	u.publisher.PublishEvent(sse.Event{
-		Channel: fmt.Sprintf("test_run_%d_keys", payload.TestRunID),
-		Content: payload,
-	})
 	u.publisher.PublishEvent(sse.Event{
 		Channel: fmt.Sprintf("test_protocol_%d_keys", payload.TestProtocolID),
 		Content: payload,

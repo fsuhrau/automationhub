@@ -187,39 +187,3 @@ export const mergeKey = (keys: IProtocolKeyData[], key: IProtocolKeyData | null 
     return [...keys.filter(k => k.key !== key.key), key].sort((a, b) => a.key.localeCompare(b.key));
 };
 
-// ProtocolKeys holds the keys of each test of a run by protocol id.
-export type ProtocolKeys = Record<number, IProtocolKeyData[]>;
-
-export const protocolKeys = (protocols: ITestProtocolData[]): ProtocolKeys => {
-    const keys: ProtocolKeys = {};
-    for (const p of protocols) {
-        if (p.id !== undefined && p.id !== null && p.keys?.length) {
-            keys[p.id] = p.keys;
-        }
-    }
-    return keys;
-};
-
-// mergeProtocolKey folds a key that arrived live into the run's keys.
-export const mergeProtocolKey = (keys: ProtocolKeys, protocolId: number | undefined, key: IProtocolKeyData | undefined): ProtocolKeys => {
-    if (protocolId === undefined) {
-        return keys;
-    }
-    const current = keys[protocolId] ?? [];
-    const next = mergeKey(current, key);
-    return next === current ? keys : {...keys, [protocolId]: next};
-};
-
-// rowKeys are the keys shown for a test: its own, and those the app sent to
-// the runner before the test method started; the test's own value wins.
-export const rowKeys = (keys: ProtocolKeys, protocolId: number | null | undefined, runnerId?: number | null): IProtocolKeyData[] => {
-    const own = protocolId != null ? keys[protocolId] ?? [] : [];
-    const runner = runnerId != null ? keys[runnerId] ?? [] : [];
-    if (runner.length === 0) {
-        return own;
-    }
-    return mergeKeys(runner, own);
-};
-
-const mergeKeys = (base: IProtocolKeyData[], over: IProtocolKeyData[]): IProtocolKeyData[] =>
-    over.reduce((acc, k) => mergeKey(acc, k), base);
