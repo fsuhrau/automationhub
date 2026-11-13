@@ -288,7 +288,9 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     const entries = useSSE<IProtocolEntryData[], NewTestProtocolLogPayload | null>(
         `test_protocol_${props.protocol.id}_log`, props.protocol.entries ?? [],
         {stateReducer: (state, action) => action.data?.entry && !state.some(e => e.id === action.data!.entry.id) ? [...state, action.data.entry] : state});
-    const running = protocol.testResult === TestResultState.TestResultOpen && !protocol.endedAt;
+    // the API omits testResult while it is Open (0), see the omitempty on TestProtocol
+    const testResult = protocol.testResult ?? TestResultState.TestResultOpen;
+    const running = testResult === TestResultState.TestResultOpen && !protocol.endedAt;
 
     // the run around it: the other tests, and the runner that wrapped this test
     const tests = useMemo(() => runProtocols ? leaves(buildRows(runProtocols)) : [], [runProtocols]);
@@ -347,7 +349,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
     // the app connected
     const timing = runner ?? protocol;
     const ms = running ? null : between(timing.startedAt, timing.endedAt);
-    const result = RESULT[protocol.testResult];
+    const result = RESULT[testResult];
     const device = protocol.device ? (protocol.device.alias?.length > 0 ? protocol.device.alias : protocol.device.name) : null;
 
     // log: filters, and "show in log" from the overview
@@ -507,7 +509,7 @@ const TestProtocolPage: React.FC<TestProtocolPageProps> = (props) => {
                                         <Typography variant="caption" color="text.secondary" sx={{fontFamily: 'monospace', pt: '2px'}}>
                                             {entries.length > 0 ? formatRuntime(entries[entries.length - 1].runtime) : ''}
                                         </Typography>
-                                        <Box sx={{pt: '2px'}}><ResultIcon result={protocol.testResult}/></Box>
+                                        <Box sx={{pt: '2px'}}><ResultIcon result={testResult}/></Box>
                                         <Typography variant="body2" sx={{fontWeight: 600}}>{result.label}</Typography>
                                     </Box>}
                                 </Box>}
