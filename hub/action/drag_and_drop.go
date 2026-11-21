@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type DragAndDrop struct {
 	From string
 	To   string
@@ -14,11 +10,7 @@ func (a *DragAndDrop) GetActionType() ActionType {
 }
 
 func (a *DragAndDrop) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_DragAndDrop,
-		Payload:    RequestData{MoveElement: &MoveElement{From: a.From, To: a.To}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_DragAndDrop, RequestData{MoveElement: &MoveElement{From: a.From, To: a.To}})
 }
 
 func (a *DragAndDrop) ProcessResponse(response *Response) error {

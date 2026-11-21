@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type TestStart struct {
 	Assembly string
 	Class    string
@@ -17,16 +13,12 @@ func (a *TestStart) GetActionType() ActionType {
 }
 
 func (a *TestStart) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_ExecuteTest,
-		Payload: RequestData{Test: &Test{
-			Assembly:  a.Assembly,
-			Class:     a.Class,
-			Method:    a.Method,
-			Parameter: a.Env,
-		}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_ExecuteTest, RequestData{Test: &Test{
+		Assembly:  a.Assembly,
+		Class:     a.Class,
+		Method:    a.Method,
+		Parameter: a.Env,
+	}})
 }
 
 func (a *TestStart) ProcessResponse(response *Response) error {

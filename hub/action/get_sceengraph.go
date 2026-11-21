@@ -2,7 +2,6 @@ package action
 
 import (
 	"bytes"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"github.com/antchfx/xmlquery"
@@ -71,10 +70,7 @@ func (a *GetSceenGraph) GetActionType() ActionType {
 }
 
 func (a *GetSceenGraph) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_GetSceneGraph,
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_GetSceneGraph, RequestData{})
 }
 
 func (a *GetSceenGraph) ProcessResponse(response *Response) error {

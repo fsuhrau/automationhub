@@ -1,7 +1,5 @@
 package action
 
-import "encoding/json"
-
 type TouchDownPosition struct {
 	PosX    int64
 	PosY    int64
@@ -13,11 +11,7 @@ func (a *TouchDownPosition) GetActionType() ActionType {
 }
 
 func (a *TouchDownPosition) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_TouchDown,
-		Payload:    RequestData{Touch: &Touch{Xoffset: a.PosX, Yoffset: a.PosY}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_TouchDown, touchPayload(a.PosX, a.PosY))
 }
 
 func (a *TouchDownPosition) ProcessResponse(response *Response) error {
@@ -36,11 +30,7 @@ func (a *TouchUpPosition) GetActionType() ActionType {
 }
 
 func (a *TouchUpPosition) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_TouchUp,
-		Payload:    RequestData{Touch: &Touch{Xoffset: a.PosX, Yoffset: a.PosY}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_TouchUp, touchPayload(a.PosX, a.PosY))
 }
 
 func (a *TouchUpPosition) ProcessResponse(response *Response) error {
@@ -59,11 +49,7 @@ func (a *TouchMovePosition) GetActionType() ActionType {
 }
 
 func (a *TouchMovePosition) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_TouchMove,
-		Payload:    RequestData{Touch: &Touch{Xoffset: a.PosX, Yoffset: a.PosY}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_TouchMove, touchPayload(a.PosX, a.PosY))
 }
 
 func (a *TouchMovePosition) ProcessResponse(response *Response) error {

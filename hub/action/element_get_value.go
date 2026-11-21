@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type GetValue struct {
 	ElementID string
 	Success   bool
@@ -16,15 +12,15 @@ func (a *GetValue) GetActionType() ActionType {
 }
 
 func (a *GetValue) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_ElementGetValue,
-		Payload:    RequestData{GetAttr: &GetAttr{Id: a.ElementID, Attr: a.Attr}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_ElementGetValue, RequestData{GetAttr: &GetAttr{Id: a.ElementID, Attr: a.Attr}})
 }
 
 func (a *GetValue) ProcessResponse(response *Response) error {
-	a.Value = *response.Payload.Value
 	a.Success = response.Success
+	value, err := payloadValue(response.Payload.Value, "value")
+	if err != nil {
+		return err
+	}
+	a.Value = value
 	return nil
 }

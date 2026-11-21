@@ -2,7 +2,6 @@ package action
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -21,10 +20,7 @@ func (a *GetScreenshot) GetActionType() ActionType {
 }
 
 func (a *GetScreenshot) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_GetScreenshot,
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_GetScreenshot, RequestData{})
 }
 
 func (a *GetScreenshot) ProcessResponse(response *Response) error {

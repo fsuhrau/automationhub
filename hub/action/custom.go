@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type Custom struct {
 	RequestData string
 	Content     []byte
@@ -16,15 +12,15 @@ func (a *Custom) GetActionType() ActionType {
 
 func (a *Custom) Serialize() ([]byte, error) {
 	data := []byte(a.RequestData)
-	req := &Request{
-		ActionType: ActionType_Custom,
-		Payload:    RequestData{Data: &data},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_Custom, RequestData{Data: &data})
 }
 
 func (a *Custom) ProcessResponse(response *Response) error {
-	a.Content = *response.Payload.Data
 	a.Success = response.Success
+	content, err := payloadValue(response.Payload.Data, "data")
+	if err != nil {
+		return err
+	}
+	a.Content = content
 	return nil
 }

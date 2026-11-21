@@ -1,7 +1,5 @@
 package action
 
-import "encoding/json"
-
 type UnityReset struct {
 	Assembly string
 	Class    string
@@ -14,10 +12,7 @@ func (a *UnityReset) GetActionType() ActionType {
 }
 
 func (a *UnityReset) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_UnityReset,
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_UnityReset, RequestData{})
 }
 
 func (a *UnityReset) ProcessResponse(response *Response) error {

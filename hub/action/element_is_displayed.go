@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type IsDisplayed struct {
 	ElementID   string
 	Success     bool
@@ -15,15 +11,15 @@ func (a *IsDisplayed) GetActionType() ActionType {
 }
 
 func (a *IsDisplayed) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_ElementIsDisplayed,
-		Payload:    RequestData{Id: &a.ElementID},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_ElementIsDisplayed, RequestData{Id: &a.ElementID})
 }
 
 func (a *IsDisplayed) ProcessResponse(response *Response) error {
 	a.Success = response.Success
-	a.IsDisplayed = *response.Payload.Visible
+	visible, err := payloadValue(response.Payload.Visible, "visible")
+	if err != nil {
+		return err
+	}
+	a.IsDisplayed = visible
 	return nil
 }

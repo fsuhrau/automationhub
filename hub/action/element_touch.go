@@ -1,9 +1,5 @@
 package action
 
-import (
-	"encoding/json"
-)
-
 type TouchElement struct {
 	ElementID string
 	Success   bool
@@ -14,11 +10,7 @@ func (a *TouchElement) GetActionType() ActionType {
 }
 
 func (a *TouchElement) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_ElementTouch,
-		Payload:    RequestData{Id: &a.ElementID},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_ElementTouch, RequestData{Id: &a.ElementID})
 }
 
 func (a *TouchElement) ProcessResponse(response *Response) error {

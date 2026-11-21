@@ -1,7 +1,5 @@
 package action
 
-import "encoding/json"
-
 type SetValue struct {
 	ElementID string
 	Success   bool
@@ -14,11 +12,7 @@ func (a *SetValue) GetActionType() ActionType {
 }
 
 func (a *SetValue) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_ElementSetValue,
-		Payload:    RequestData{SetAttr: &SetAttr{Id: a.ElementID, Attr: a.Attr, Val: a.Value}},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_ElementSetValue, RequestData{SetAttr: &SetAttr{Id: a.ElementID, Attr: a.Attr, Val: a.Value}})
 }
 
 func (a *SetValue) ProcessResponse(response *Response) error {

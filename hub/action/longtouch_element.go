@@ -1,7 +1,5 @@
 package action
 
-import "encoding/json"
-
 type LongTouchElement struct {
 	ElementID string
 	Success   bool
@@ -12,11 +10,7 @@ func (a *LongTouchElement) GetActionType() ActionType {
 }
 
 func (a *LongTouchElement) Serialize() ([]byte, error) {
-	req := &Request{
-		ActionType: ActionType_LongTouch,
-		Payload:    RequestData{Id: &a.ElementID},
-	}
-	return json.Marshal(req)
+	return serialize(ActionType_LongTouch, RequestData{Id: &a.ElementID})
 }
 
 func (a *LongTouchElement) ProcessResponse(response *Response) error {
