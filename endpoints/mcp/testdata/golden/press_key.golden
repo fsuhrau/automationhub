@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== press_key map[deviceId:1 key:home]
+isError: false
+--- text
+pressed home
+

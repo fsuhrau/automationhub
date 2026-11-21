@@ -27,6 +27,17 @@ func TestAppsListsTheProjectsApps(t *testing.T) {
 	}
 }
 
+func TestAppReturnsAnAppOfTheProjectOnly(t *testing.T) {
+	f := newFixture(t)
+
+	got, err := f.svc.App(context.Background(), f.sc)
+	if err != nil || got.Name != "App" {
+		t.Fatalf("app %+v, %v; want the app of the scope", got, err)
+	}
+	_, err = f.svc.App(context.Background(), Scope{ProjectID: 1, AppID: 2})
+	wantKind(t, err, apperr.KindNotFound)
+}
+
 func TestCreateApp(t *testing.T) {
 	tests := []struct {
 		name string

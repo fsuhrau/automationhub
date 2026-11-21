@@ -1,0 +1,19 @@
+=== run_test map[bundleId:1 testId:1]
+isError: false
+--- text
+{
+  "runId": 3,
+  "sessionId": "session-1",
+  "state": "running"
+}
+
+=== cancel_test_run map[runId:3]
+isError: false
+--- text
+test run 3 cancelled
+
+=== cancel_test_run map[runId:3]
+isError: true
+--- text
+not found: no active runner for test run 3
+

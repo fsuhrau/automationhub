@@ -1,0 +1,5 @@
+=== get_hierarchy map[deviceId:1 xpath://[]
+isError: true
+--- text
+invalid xpath: expression must evaluate to a node-set
+

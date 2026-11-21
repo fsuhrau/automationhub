@@ -1,0 +1,5 @@
+=== screenshot map[deviceId:1 source:app]
+isError: true
+--- text
+no app connected to the device (dev-1); start the app first
+

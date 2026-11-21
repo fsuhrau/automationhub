@@ -1,0 +1,5 @@
+=== upload_bundle map[appId:1 url:{files}/]
+isError: true
+--- text
+url has no file name
+

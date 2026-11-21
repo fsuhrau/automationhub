@@ -1,0 +1,16 @@
+=== list_bundles map[appId:1 limit:1]
+isError: false
+--- text
+[
+  {
+    "id": 2,
+    "name": "Client",
+    "version": "0.9",
+    "identifier": "",
+    "platform": "android",
+    "size": 99,
+    "createdAt": "<time>",
+    "archived": true
+  }
+]
+

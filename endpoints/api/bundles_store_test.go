@@ -1,27 +1,32 @@
 package api_test
 
 import (
-	"errors"
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/endpoints/api"
 	"github.com/fsuhrau/automationhub/endpoints/api/internal/appfixture"
+	appsvc "github.com/fsuhrau/automationhub/service/app"
+	"github.com/fsuhrau/automationhub/storage/appstore"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/sirupsen/logrus"
 )
+
+// storeBundle adds the file as a bundle of the project's app, the way an
+// upload does.
+func storeBundle(e *appfixture.Env, path string) (*models.AppBinary, error) {
+	svc := appsvc.New(appsvc.Deps{Repo: appstore.New(e.DB), Files: appsvc.NewOSFiles(e.Store), Analyser: appsvc.FileAnalyser{}})
+	return svc.StoreBundle(context.Background(), appsvc.Scope{ProjectID: e.Mine.ProjectID, AppID: e.Mine.ID}, path)
+}
 
 // Archiving removes the file but keeps the bundle, its info and its icon;
 // it can't be read again, and uploading the same file brings it back.
 func TestBundleArchiveAndRestore(t *testing.T) {
 	e := appfixture.New(t)
-	svc := api.New(logrus.New(), e.DB, "", e.Devices, nil, config.Service{}, e.Nodes)
 	path := e.WriteIPA("upload.ipa")
-	bundle, err := svc.StoreBundle(e.Mine, path)
+	bundle, err := storeBundle(e, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +55,7 @@ func TestBundleArchiveAndRestore(t *testing.T) {
 		t.Errorf("archive twice: %d", rec.Code)
 	}
 
-	restored, err := svc.StoreBundle(e.Mine, e.WriteIPA("again.ipa"))
+	restored, err := storeBundle(e, e.WriteIPA("again.ipa"))
 	if err != nil || restored.ID != bundle.ID || restored.Archived() {
 		t.Fatalf("restored %+v, %v, want bundle %d back", restored, err, bundle.ID)
 	}
@@ -59,26 +64,5 @@ func TestBundleArchiveAndRestore(t *testing.T) {
 	}
 	if _, err := os.Stat(file + ".icon"); !os.IsNotExist(err) {
 		t.Errorf("icon copy stays: %v", err)
-	}
-}
-
-func TestStoreBundleReportsAnExistingBuildAndTheProjectScope(t *testing.T) {
-	e := appfixture.New(t)
-	svc := api.New(logrus.New(), e.DB, "", e.Devices, nil, config.Service{}, e.Nodes)
-	first, err := svc.StoreBundle(e.Mine, e.WriteIPA("one.ipa"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	again, err := svc.StoreBundle(e.Mine, e.WriteIPA("two.ipa"))
-	if !errors.Is(err, api.ErrBundleExists) || again == nil || again.ID != first.ID {
-		t.Fatalf("again %+v, %v; want the stored bundle and ErrBundleExists", again, err)
-	}
-	if _, err := os.Stat(filepath.Join(e.Store, "two.ipa")); !os.IsNotExist(err) {
-		t.Error("the duplicate upload stays")
-	}
-	foreignApp := *e.Other
-	foreignApp.ProjectID = e.Mine.ProjectID
-	if _, err := svc.StoreBundle(&foreignApp, e.WriteIPA("three.ipa")); err == nil {
-		t.Error("an app that is not the project's must not take a bundle")
 	}
 }

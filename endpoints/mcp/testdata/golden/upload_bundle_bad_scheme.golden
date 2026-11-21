@@ -1,0 +1,5 @@
+=== upload_bundle map[appId:1 url:ftp://x/y.apk]
+isError: true
+--- text
+url must be http or https
+

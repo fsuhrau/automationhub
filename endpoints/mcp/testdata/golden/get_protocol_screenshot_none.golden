@@ -1,0 +1,5 @@
+=== get_protocol_screenshot map[protocolId:3]
+isError: true
+--- text
+not found: protocol 3 has no screenshots
+

@@ -1,0 +1,6 @@
+=== get_protocol_screenshot map[file:last.png protocolId:1]
+isError: false
+--- image image/jpeg 1024x512
+--- text
+screenshot last.png of protocol 1 at 9.0 s (2000x1000 px, image 1024x512)
+

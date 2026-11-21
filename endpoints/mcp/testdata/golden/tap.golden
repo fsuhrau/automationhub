@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== tap map[deviceId:1 x:5 y:6]
+isError: false
+--- text
+tapped 5,6
+

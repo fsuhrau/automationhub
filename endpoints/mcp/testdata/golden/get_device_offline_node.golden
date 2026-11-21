@@ -1,0 +1,18 @@
+=== get_device map[deviceId:2]
+isError: false
+--- text
+{
+  "id": 2,
+  "identifier": "dev-2",
+  "name": "iPhone",
+  "alias": "Pocket",
+  "platform": "ios",
+  "os": "",
+  "osVersion": "",
+  "node": "Lab",
+  "online": false,
+  "status": "node disconnected",
+  "locked": false,
+  "appConnected": false
+}
+

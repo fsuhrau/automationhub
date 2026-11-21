@@ -1,0 +1,22 @@
+=== list_tests map[appId:1]
+isError: false
+--- text
+[
+  {
+    "id": 1,
+    "name": "Smoke",
+    "type": "scenario",
+    "allDevices": false,
+    "deviceIds": [
+      1
+    ],
+    "lastRunId": 1
+  },
+  {
+    "id": 2,
+    "name": "Unity",
+    "type": "unity",
+    "allDevices": true
+  }
+]
+

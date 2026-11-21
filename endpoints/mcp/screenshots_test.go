@@ -3,75 +3,37 @@ package mcp
 import (
 	"bytes"
 	"image"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
-	"github.com/fsuhrau/automationhub/hub/runs"
-	"github.com/fsuhrau/automationhub/storage/apps"
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/glebarez/sqlite"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"gorm.io/gorm"
 )
 
-// screenshotSetup has two projects, each with a run whose protocol took
-// screenshots, and an unrelated file in the data folder.
-func screenshotSetup(t *testing.T) (*httptest.Server, uint, uint) {
-	dir := t.TempDir()
-	old := apps.TestDataPath
-	apps.TestDataPath = dir
-	t.Cleanup(func() { apps.TestDataPath = old })
-
-	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=private"), &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
+// shotsProtocol stores a protocol of the first run that took two screenshots
+// and wrote a data file, next to the unrelated files of the data folder.
+func shotsProtocol(t *testing.T, w *goldenWorld) uint {
+	t.Helper()
+	p := testkit.Protocol(w.db, func(p *models.TestProtocol) { p.TestRunID = 1 })
+	for _, e := range []models.ProtocolEntry{
+		{Source: "screen", Data: "shot-first.png", Message: "login", Runtime: 1.5},
+		{Source: "log", Message: "no data"},
+		{Source: "screen", Data: "shot-last.png", Runtime: 9},
+		{Source: "data", Data: "trace.json"},
+	} {
+		e.TestProtocolID = p.ID
+		w.db.Create(&e)
 	}
-	if err := db.AutoMigrate(&models.Project{}, &models.App{}, &models.Test{}, &models.TestRun{}, &models.TestProtocol{}, &models.ProtocolKey{}, &models.ProtocolEntry{}); err != nil {
-		t.Fatal(err)
-	}
-
-	protocol := func(projectID uint) uint {
-		a := models.App{ProjectID: projectID}
-		db.Create(&a)
-		test := models.Test{AppID: a.ID}
-		db.Create(&test)
-		run := models.TestRun{TestID: test.ID}
-		db.Create(&run)
-		p := models.TestProtocol{TestRunID: run.ID, TestName: "Suite/A"}
-		db.Create(&p)
-		return p.ID
-	}
-	own, foreign := protocol(1), protocol(2)
-
-	write := func(name string, w, h int) {
-		if err := os.WriteFile(filepath.Join(dir, name), testPNG(t, w, h), 0o644); err != nil {
+	w.db.Create(&models.ProtocolKey{TestProtocolID: p.ID, Key: "player_id", Value: "1234"})
+	for name, size := range map[string][2]int{"shot-first.png": {400, 800}, "shot-last.png": {2000, 1000}, "unreferenced.png": {10, 10}} {
+		if err := os.WriteFile(filepath.Join(w.dataDir, name), testPNG(t, size[0], size[1]), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	write("first.png", 400, 800)
-	write("last.png", 2000, 1000)
-	write("foreign.png", 10, 10)
-	write("unreferenced.png", 10, 10)
-	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "screen", Data: "first.png", Message: "login", Runtime: 1.5})
-	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "log", Message: "no data"})
-	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "screen", Data: "last.png", Runtime: 9})
-	db.Create(&models.ProtocolEntry{TestProtocolID: own, Source: "data", Data: "trace.json"})
-	db.Create(&models.ProtocolEntry{TestProtocolID: foreign, Source: "screen", Data: "foreign.png"})
-	db.Create(&models.ProtocolKey{TestProtocolID: own, Key: "player_id", Value: "1234"})
-
-	h := NewHandler(Deps{DB: db, Backend: fakeBackend{}, Control: hubcontrol.New(nil), Runs: runs.NewTracker(nil)})
-	project := &models.Project{Identifier: "p1"}
-	project.ID = 1
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.ServeHTTP(w, r, project, r.Header.Get("X-Caller"))
-	}))
-	t.Cleanup(srv.Close)
-	return srv, own, foreign
+	return p.ID
 }
 
 func imageWidth(t *testing.T, data []byte) int {
@@ -82,53 +44,87 @@ func imageWidth(t *testing.T, data []byte) int {
 	return cfg.Width
 }
 
-func TestProtocolScreenshot(t *testing.T) {
-	srv, own, foreign := screenshotSetup(t)
-	cs := connect(t, srv, "alice")
-	defer cs.Close()
-
-	image := func(args map[string]any) (int, string) {
-		t.Helper()
-		res := call(t, cs, "get_protocol_screenshot", args)
-		if res.IsError {
-			t.Fatalf("%v: %s", args, text(res))
-		}
-		for _, c := range res.Content {
-			if ic, ok := c.(*mcp.ImageContent); ok && ic.MIMEType == "image/jpeg" {
-				return imageWidth(t, ic.Data), text(res)
-			}
-		}
-		t.Fatalf("%v: no jpeg", args)
-		return 0, ""
+// screenshotOf calls get_protocol_screenshot and returns the width of the
+// image and the note.
+func screenshotOf(t *testing.T, cs *mcp.ClientSession, args map[string]any) (int, string) {
+	t.Helper()
+	res := call(t, cs, "get_protocol_screenshot", args)
+	if res.IsError {
+		t.Fatalf("%v: %s", args, text(res))
 	}
+	for _, c := range res.Content {
+		if ic, ok := c.(*mcp.ImageContent); ok && ic.MIMEType == "image/jpeg" {
+			return imageWidth(t, ic.Data), text(res)
+		}
+	}
+	t.Fatalf("%v: no jpeg", args)
+	return 0, ""
+}
+
+func TestProtocolScreenshot(t *testing.T) {
+	srv, w := setup(t)
+	own := shotsProtocol(t, w)
+	cs := connect(t, srv, "alice")
 
 	// by file, with the step it belongs to
-	if w, note := image(map[string]any{"protocolId": own, "file": "first.png"}); w != 400 || !strings.Contains(note, "login") {
-		t.Fatalf("first.png: width %d, note %q", w, note)
+	if w, note := screenshotOf(t, cs, a("protocolId", own, "file", "shot-first.png")); w != 400 || !strings.Contains(note, "login") {
+		t.Fatalf("first: width %d, note %q", w, note)
 	}
 	// without a file: the last screenshot, downscaled
-	if w, note := image(map[string]any{"protocolId": own}); w != defaultScreenshotWidth || !strings.Contains(note, "last.png") {
+	if w, note := screenshotOf(t, cs, a("protocolId", own)); w != defaultScreenshotWidth || !strings.Contains(note, "shot-last.png") {
 		t.Fatalf("last: width %d, note %q", w, note)
 	}
-	if w, _ := image(map[string]any{"protocolId": own, "maxWidth": 500}); w != 500 {
+	if w, _ := screenshotOf(t, cs, a("protocolId", own, "maxWidth", 500)); w != 500 {
 		t.Fatalf("maxWidth: width %d", w)
 	}
-
 	// get_protocol lists them, and the protocol's keys
-	if s := text(call(t, cs, "get_protocol", map[string]any{"protocolId": own})); !strings.Contains(s, "first.png") || !strings.Contains(s, "last.png") || strings.Contains(s, "trace.json") || !strings.Contains(s, `"player_id": "1234"`) {
+	if s := text(call(t, cs, "get_protocol", a("protocolId", own))); !strings.Contains(s, "shot-first.png") || !strings.Contains(s, "shot-last.png") || strings.Contains(s, "trace.json") || !strings.Contains(s, `"player_id": "1234"`) {
 		t.Fatalf("get_protocol screenshots: %s", s)
 	}
+}
 
-	// nothing outside the protocol's own screenshots
+func TestProtocolScreenshotServesNothingOutsideTheProtocolsOwn(t *testing.T) {
+	srv, w := setup(t)
+	own := shotsProtocol(t, w)
+	cs := connect(t, srv, "alice")
+
 	for _, args := range []map[string]any{
 		{"protocolId": own, "file": "unreferenced.png"},
 		{"protocolId": own, "file": "foreign.png"},
 		{"protocolId": own, "file": "../" + filepath.Base(t.TempDir()) + "/first.png"},
 		{"protocolId": own, "file": "trace.json"},
-		{"protocolId": foreign},
+		{"protocolId": 4},
 	} {
 		if res := call(t, cs, "get_protocol_screenshot", args); !res.IsError {
 			t.Errorf("%v: expected an error", args)
 		}
+	}
+}
+
+func TestPickScreenshot(t *testing.T) {
+	entries := []models.ProtocolEntry{
+		{Data: "a.png", Message: "old"}, {Data: "trace.json"}, {Data: "a.png", Message: "new"}, {Data: "B.JPG"}, {Data: "c.txt"},
+	}
+	tests := []struct {
+		name, file, want string
+		message          string
+		fails            bool
+	}{
+		{"newest screenshot", "", "B.JPG", "", false},
+		{"newest entry of the file", "a.png", "a.png", "new", false},
+		{"any entry of the file, even a data file", "trace.json", "trace.json", "", false},
+		{"file without an entry", "z.png", "", "", true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := pickScreenshot(entries, ProtocolScreenshotArgs{ProtocolID: 7, File: tc.file})
+
+			if tc.fails != (err != nil) || (err == nil && (got.Data != tc.want || got.Message != tc.message)) {
+				t.Fatalf("got %+v, err %v", got, err)
+			}
+		})
+	}
+	if _, err := pickScreenshot(nil, ProtocolScreenshotArgs{ProtocolID: 7}); err == nil || !strings.Contains(err.Error(), "protocol 7 has no screenshots") {
+		t.Errorf("no entries: %v", err)
 	}
 }

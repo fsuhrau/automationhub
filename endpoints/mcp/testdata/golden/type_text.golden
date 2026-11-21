@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== type_text map[deviceId:1 text:héllo]
+isError: false
+--- text
+typed 5 characters
+

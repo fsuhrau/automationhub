@@ -1,0 +1,64 @@
+=== get_test_run map[runId:1]
+isError: false
+--- text
+{
+  "bundle": {
+    "id": 1,
+    "name": "Client",
+    "version": "1.0",
+    "identifier": "com.x.android",
+    "platform": "android",
+    "size": 1234,
+    "tags": "release",
+    "createdAt": "<time>"
+  },
+  "createdAt": "<time>",
+  "log": [
+    "<time> [info] run started",
+    "<time> [error] device lost",
+    "<time> [info] run ended"
+  ],
+  "parameter": "Level=1\nProxy=x",
+  "protocols": [
+    {
+      "id": 1,
+      "name": "Suite/A",
+      "deviceId": 1,
+      "device": "Pixel",
+      "result": "success",
+      "duration": "1m35s",
+      "avgFps": 59.5,
+      "avgMem": 120,
+      "keys": {
+        "player_id": "1234"
+      }
+    },
+    {
+      "id": 2,
+      "parentId": 1,
+      "name": "Suite/A/Child",
+      "deviceId": 1,
+      "device": "Pixel",
+      "result": "failed",
+      "duration": "4s"
+    },
+    {
+      "id": 3,
+      "name": "Suite/B",
+      "result": "open",
+      "duration": "running"
+    }
+  ],
+  "resultCounts": {
+    "failed": 1,
+    "open": 1,
+    "success": 1
+  },
+  "runId": 1,
+  "state": "not_running",
+  "test": {
+    "id": 1,
+    "name": "Smoke"
+  }
+}
+

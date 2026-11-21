@@ -1,0 +1,12 @@
+=== get_protocol_logs map[limit:2 offset:1 protocolId:1]
+isError: false
+--- text
+{
+  "entries": [
+    "<time> [info/screen] login (data: first.png)",
+    "<time> [error/log] boom 50% failed"
+  ],
+  "offset": 1,
+  "total": 7
+}
+

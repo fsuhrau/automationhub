@@ -1,0 +1,13 @@
+=== upload_bundle map[appId:1 url:{files}/builds/ok.apk]
+isError: false
+--- text
+{
+  "id": 4,
+  "name": "Client",
+  "version": "1.58.0",
+  "identifier": "com.x.android",
+  "platform": "android",
+  "size": 13,
+  "createdAt": "<time>"
+}
+

@@ -1,0 +1,11 @@
+=== get_protocol_logs map[contains:50% protocolId:1]
+isError: false
+--- text
+{
+  "entries": [
+    "<time> [error/log] boom 50% failed"
+  ],
+  "offset": 0,
+  "total": 1
+}
+

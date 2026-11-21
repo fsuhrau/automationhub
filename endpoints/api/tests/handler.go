@@ -55,14 +55,6 @@ func testRef(c *gin.Context) (service.TestRef, error) {
 	return service.TestRef{Scope: scope(c), TestID: id}, nil
 }
 
-// bind reads the JSON body; anything else is an Invalid error.
-func bind(c *gin.Context, into any) error {
-	if err := c.ShouldBindJSON(into); err != nil {
-		return apperr.Invalid("%s", err.Error())
-	}
-	return nil
-}
-
 func (h *Handler) list(c *gin.Context) {
 	list, err := h.svc.List(c.Request.Context(), scope(c))
 	if err != nil {
@@ -88,7 +80,7 @@ func (h *Handler) get(c *gin.Context) {
 
 func (h *Handler) create(c *gin.Context) {
 	var in service.NewTest
-	if err := bind(c, &in); err != nil {
+	if err := httpx.BindJSON(c, &in); err != nil {
 		httpx.Fail(c, err)
 		return
 	}
@@ -102,7 +94,7 @@ func (h *Handler) create(c *gin.Context) {
 
 func (h *Handler) update(c *gin.Context) {
 	var in service.Edit
-	if err := bind(c, &in); err != nil {
+	if err := httpx.BindJSON(c, &in); err != nil {
 		httpx.Fail(c, err)
 		return
 	}

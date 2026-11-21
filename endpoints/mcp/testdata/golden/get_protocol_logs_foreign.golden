@@ -1,0 +1,5 @@
+=== get_protocol_logs map[protocolId:4]
+isError: true
+--- text
+not found: protocol 4
+

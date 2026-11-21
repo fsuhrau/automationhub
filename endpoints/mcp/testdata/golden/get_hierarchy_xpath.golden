@@ -1,0 +1,7 @@
+=== get_hierarchy map[deviceId:1 xpath://Button[@Name='Play']]
+isError: false
+--- text
+1 matching elements
+<Button ID="8" Name="Play"></Button>
+
+

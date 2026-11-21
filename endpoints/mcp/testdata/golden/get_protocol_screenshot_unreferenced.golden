@@ -1,0 +1,5 @@
+=== get_protocol_screenshot map[file:foreign.png protocolId:1]
+isError: true
+--- text
+not found: screenshot foreign.png in protocol 1
+

@@ -1,0 +1,5 @@
+=== get_hierarchy map[deviceId:1]
+isError: true
+--- text
+no app connected to the device (dev-1); start the app first
+

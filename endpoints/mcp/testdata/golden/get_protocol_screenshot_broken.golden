@@ -1,0 +1,5 @@
+=== get_protocol_screenshot map[file:bad.png protocolId:1]
+isError: true
+--- text
+decode screenshot bad.png: image: unknown format
+

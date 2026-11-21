@@ -1,0 +1,20 @@
+=== get_device map[deviceId:1]
+isError: false
+--- text
+{
+  "id": 1,
+  "identifier": "dev-1",
+  "name": "Pixel",
+  "platform": "android",
+  "os": "Android",
+  "osVersion": "14",
+  "node": "Lab",
+  "online": true,
+  "status": "booted",
+  "locked": false,
+  "appConnected": false,
+  "parameter": {
+    "abi": "arm64"
+  }
+}
+

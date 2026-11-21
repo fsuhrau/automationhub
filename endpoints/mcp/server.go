@@ -5,18 +5,14 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
-	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/runs"
+	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"gorm.io/gorm"
 )
 
 const sessionIdleTimeout = 30 * time.Minute
@@ -28,25 +24,29 @@ Coordinates for tap and swipe are in device screenshot pixels (see the size repo
 Elements of a connected Unity app can be addressed by XPath on the scene graph from get_hierarchy.
 Builds: upload_bundle fetches a build from an http(s) URL; for a local file call begin_upload and PUT the file to the returned uploadUrl (e.g. curl -T).`
 
-// Backend is the part of the REST service the tools share with it.
-type Backend interface {
-	// ProjectDevices lists the devices visible to the project (with Node).
-	ProjectDevices(project *models.Project) ([]models.Device, error)
-	// FindDevice returns a device of the project or an error wrapping ErrNotFound.
-	FindDevice(project *models.Project, id uint) (*models.Device, error)
-	StartTestRun(project *models.Project, testID, binaryID uint, startURL, params string) (*models.TestRun, error)
-	CancelTestRun(project *models.Project, runID uint) error
-	StoreBundle(application *models.App, filePath string) (*models.AppBinary, error)
-}
-
+// Deps are what the tools call: the services of the master, the pool of live
+// devices and the live control. The tools hold no database.
 type Deps struct {
-	DB      *gorm.DB
-	Backend Backend
-	Devices manager.Devices
-	Control *hubcontrol.Service
-	Runs    *runs.Tracker
-	NodeURL string
-	Version string
+	Runs      RunService
+	Protocols ProtocolService
+	Lookup    DeviceLookup
+	Apps      AppService
+	Tests     TestService
+	Devices   DeviceService
+	Pool      Pool
+	Control   Control
+	Tracker   *runs.Tracker
+	NodeURL   string
+	Version   string
+	// DataDir holds the screenshot files of protocols and StoreDir the bundle
+	// files; they default to the folders of the storage.
+	DataDir  string
+	StoreDir string
+	// MaxUpload limits one upload in bytes; it defaults to MaxUploadBytes.
+	MaxUpload int64
+	// ProgressEvery is how often wait_for_test_run reports progress; it
+	// defaults to 10 seconds.
+	ProgressEvery time.Duration
 }
 
 // Handler serves MCP for all projects. Each project gets its own streamable
@@ -63,6 +63,18 @@ func NewHandler(deps Deps) *Handler {
 	if deps.Version == "" {
 		deps.Version = "dev"
 	}
+	if deps.DataDir == "" {
+		deps.DataDir = apps.TestDataPath
+	}
+	if deps.StoreDir == "" {
+		deps.StoreDir = apps.AppStoragePath
+	}
+	if deps.MaxUpload <= 0 {
+		deps.MaxUpload = MaxUploadBytes
+	}
+	if deps.ProgressEvery <= 0 {
+		deps.ProgressEvery = 10 * time.Second
+	}
 	return &Handler{deps: deps, projects: make(map[uint]*mcp.StreamableHTTPHandler), uploads: newUploadStore()}
 }
 
@@ -70,6 +82,8 @@ type callerKey struct{}
 
 // ServeHTTP handles an MCP request for the project; caller names the
 // authenticated user or access token and becomes part of the lease owner.
+//
+//nolint:revive // called by the MCP route of endpoints/api with these arguments
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, project *models.Project, caller string) {
 	ctx := context.WithValue(r.Context(), callerKey{}, caller)
 	// the master's own address, for upload URLs when no proxy reports one
@@ -125,8 +139,11 @@ func (h *Handler) newServer(project *models.Project, caller string) *mcp.Server 
 			}()
 		},
 	})
-	t.registerOrchestration(server)
-	t.registerControl(server)
+	for _, register := range []func(*mcp.Server){
+		t.registerDevices, t.registerApps, t.registerRuns, t.registerProtocols, t.registerUploads, t.registerControl,
+	} {
+		register(server)
+	}
 	return server
 }
 
@@ -136,27 +153,4 @@ func (t *tools) ownerFor(ss *mcp.ServerSession) string {
 		return "mcp:" + t.caller + ":" + ss.ID()
 	}
 	return "mcp:" + t.caller
-}
-
-// --- helpers ---
-
-func ptr[T any](v T) *T { return &v }
-
-var (
-	readOnly    = &mcp.ToolAnnotations{ReadOnlyHint: true}
-	writeSafe   = &mcp.ToolAnnotations{DestructiveHint: ptr(false)}
-	destructive = &mcp.ToolAnnotations{DestructiveHint: ptr(true)}
-)
-
-// jsonResult returns v as pretty JSON text.
-func jsonResult(v any) (*mcp.CallToolResult, any, error) {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return nil, nil, err
-	}
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(b)}}}, nil, nil
-}
-
-func textResult(format string, args ...any) (*mcp.CallToolResult, any, error) {
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf(format, args...)}}}, nil, nil
 }

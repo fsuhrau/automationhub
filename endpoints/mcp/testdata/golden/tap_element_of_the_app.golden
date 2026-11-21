@@ -1,0 +1,20 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": true,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== tap map[deviceId:1 elementId:8]
+isError: false
+--- text
+touched element 8
+
+=== tap map[deviceId:1 xpath://Button[@Name='Play']]
+isError: false
+--- text
+touched element //Button[@Name='Play']
+

@@ -3,25 +3,17 @@ package test
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/fsuhrau/automationhub/hub/runs"
+	appsvc "github.com/fsuhrau/automationhub/service/app"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
-// RunSummary is one run in a list: when it ran and how it went.
-type RunSummary struct {
-	ID        uint          `json:"id"`
-	CreatedAt time.Time     `json:"createdAt"`
-	State     runs.RunState `json:"state"`
-	// running, passed, failed, unstable, interrupted, not_run or empty;
-	// the same rules as the run page
-	Status   string `json:"status"`
-	Passed   int    `json:"passed"`
-	Failed   int    `json:"failed"`
-	Unstable int    `json:"unstable"`
-	Open     int    `json:"open"`
-}
+// RunSummary is one run in a list: when it ran and how it went. The status
+// is running, passed, failed, unstable, interrupted, not_run or empty; the
+// same rules as the run page. The app service shows the same summaries on the
+// bundle page, so the type lives there.
+type RunSummary = appsvc.RunSummary
 
 type counts struct{ passed, failed, unstable, open, logErrors int }
 

@@ -1,0 +1,5 @@
+=== upload_bundle map[appId:1 url:{files}/builds/missing.apk]
+isError: true
+--- text
+download failed: 404 Not Found
+

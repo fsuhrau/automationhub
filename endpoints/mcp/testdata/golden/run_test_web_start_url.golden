@@ -1,0 +1,9 @@
+=== run_test map[startUrl:http://game testId:4]
+isError: false
+--- text
+{
+  "runId": 3,
+  "sessionId": "session-1",
+  "state": "running"
+}
+

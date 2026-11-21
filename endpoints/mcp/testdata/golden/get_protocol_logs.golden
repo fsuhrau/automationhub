@@ -1,0 +1,17 @@
+=== get_protocol_logs map[protocolId:1]
+isError: false
+--- text
+{
+  "entries": [
+    "<time> [info/log] starting",
+    "<time> [info/screen] login (data: first.png)",
+    "<time> [error/log] boom 50% failed",
+    "<time> [exception/log] NullReference (data: trace.json)",
+    "<time> [info/screen]  (data: last.png)",
+    "<time> [info/screen] gone (data: gone.png)",
+    "<time> [info/screen] broken (data: bad.png)"
+  ],
+  "offset": 0,
+  "total": 7
+}
+

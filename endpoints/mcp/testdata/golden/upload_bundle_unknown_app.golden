@@ -1,0 +1,5 @@
+=== upload_bundle map[appId:99 url:{files}/builds/ok.apk]
+isError: true
+--- text
+app 99 not found
+

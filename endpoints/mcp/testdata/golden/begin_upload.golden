@@ -1,0 +1,12 @@
+=== begin_upload map[appId:1 fileName:Client-1.58.0.apk]
+isError: false
+--- text
+{
+  "example": "curl --fail-with-body -T '\u003cpath to Client-1.58.0.apk\u003e' 'http://<host>/api/p1/mcp/uploads/<id>'",
+  "expiresAt": "<time>",
+  "maxBytes": 8589934592,
+  "method": "PUT",
+  "note": "Send the raw file as the PUT body, once. Through the AutomationHub host proxy no auth header is needed; when connected to the master directly, send the same X-Auth-Token as for MCP. The response is the stored bundle.",
+  "uploadUrl": "http://<host>/api/p1/mcp/uploads/<id>"
+}
+

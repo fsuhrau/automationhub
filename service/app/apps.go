@@ -23,6 +23,11 @@ func (s *Service) Apps(ctx context.Context, projectID uint) ([]models.App, error
 	return s.repo.Apps(ctx, projectID)
 }
 
+// App returns one app of the project with its parameters.
+func (s *Service) App(ctx context.Context, sc Scope) (*models.App, error) {
+	return s.repo.App(ctx, sc)
+}
+
 // CreateApp adds an app to the project; it needs a name, a platform an app
 // can target, and an identifier for the platforms that install bundles.
 func (s *Service) CreateApp(ctx context.Context, projectID uint, in AppInput) (*models.App, error) {

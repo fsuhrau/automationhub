@@ -1,0 +1,5 @@
+=== get_protocol_screenshot map[file:trace.json protocolId:1]
+isError: true
+--- text
+trace.json is not a screenshot
+

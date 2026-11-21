@@ -1,0 +1,5 @@
+=== swipe map[deviceId:1 fromX:1 fromY:2 toX:3 toY:4]
+isError: true
+--- text
+lock the device for control first (call lock_device with deviceId 1 first)
+

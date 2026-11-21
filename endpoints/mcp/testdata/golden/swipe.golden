@@ -1,0 +1,20 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== swipe map[deviceId:1 fromX:1 fromY:2 toX:3 toY:4]
+isError: false
+--- text
+swiped 1,2 -> 3,4
+
+=== swipe map[deviceId:1 durationMs:50 fromX:1 fromY:2 toX:3 toY:4]
+isError: false
+--- text
+swiped 1,2 -> 3,4
+

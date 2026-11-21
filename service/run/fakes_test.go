@@ -37,6 +37,15 @@ type fakeRepo struct {
 	before     uint
 	limit      int
 	runIDsSeen []uint
+
+	reportRun *models.TestRun
+	logTail   []models.TestRunLogEntry
+	tailLimit int
+	progress  run.Progress
+	digest    run.Digest
+	dataList  []models.ProtocolEntry
+	digestFor uint
+	digestMax int
 }
 
 func (f *fakeRepo) err(method string) error { return f.fail[method] }
@@ -97,6 +106,28 @@ func (f *fakeRepo) ProjectProtocol(context.Context, uint, uint) (*models.TestPro
 func (f *fakeRepo) ProtocolLogs(_ context.Context, q run.LogQuery) ([]models.ProtocolEntry, int64, error) {
 	f.logQuery = q
 	return f.logs, f.logsTotal, f.err("ProtocolLogs")
+}
+
+func (f *fakeRepo) ReportRun(context.Context, uint) (*models.TestRun, error) {
+	return f.reportRun, f.err("ReportRun")
+}
+
+func (f *fakeRepo) LogTail(_ context.Context, _ uint, limit int) ([]models.TestRunLogEntry, error) {
+	f.tailLimit = limit
+	return f.logTail, f.err("LogTail")
+}
+
+func (f *fakeRepo) ProtocolProgress(context.Context, uint) (run.Progress, error) {
+	return f.progress, f.err("ProtocolProgress")
+}
+
+func (f *fakeRepo) ProtocolDigest(_ context.Context, protocolID uint, limit int) (run.Digest, error) {
+	f.digestFor, f.digestMax = protocolID, limit
+	return f.digest, f.err("ProtocolDigest")
+}
+
+func (f *fakeRepo) DataEntries(context.Context, uint) ([]models.ProtocolEntry, error) {
+	return f.dataList, f.err("DataEntries")
 }
 
 // fakeRunner is a run.Runner that records its calls.

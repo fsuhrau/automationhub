@@ -1,0 +1,5 @@
+=== begin_upload map[appId:99 fileName:x.apk]
+isError: true
+--- text
+app 99 not found
+

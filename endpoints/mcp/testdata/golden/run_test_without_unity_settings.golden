@@ -1,0 +1,5 @@
+=== run_test map[bundleId:1 testId:2]
+isError: true
+--- text
+test config 2 has no unity settings
+

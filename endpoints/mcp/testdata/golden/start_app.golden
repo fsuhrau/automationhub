@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== start_app map[bundleId:1 deviceId:1]
+isError: false
+--- text
+started com.x.android; it may take a few seconds until the app is connected (see get_device appConnected)
+

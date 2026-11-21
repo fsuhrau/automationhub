@@ -1,0 +1,5 @@
+=== get_hierarchy map[deviceId:1]
+isError: false
+--- text
+<Root ID="1" Name="root"><Button ID="8" Name="Play"/><Button ID="9" Name="Quit"/></Root>
+

@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== install_app map[bundleId:3 deviceId:1]
+isError: true
+--- text
+app bundle 3 not found
+

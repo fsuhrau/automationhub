@@ -1,0 +1,5 @@
+=== get_protocol_screenshot map[file:gone.png protocolId:1]
+isError: true
+--- text
+not found: the file of screenshot gone.png is gone
+

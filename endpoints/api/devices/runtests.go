@@ -3,7 +3,6 @@ package devices
 import (
 	"net/http"
 
-	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	svc "github.com/fsuhrau/automationhub/service/device"
 	"github.com/gin-gonic/gin"
@@ -14,13 +13,10 @@ type runTestsResponse struct {
 	Message string `json:"message"`
 }
 
-// invalid classifies a request body that could not be read.
-func invalid(err error) error { return apperr.Invalid("%v", err) }
-
 func (h *Handler) runTests(c *gin.Context) {
 	var req svc.TestRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Fail(c, invalid(err))
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	req.DeviceID = c.Param("device_id")

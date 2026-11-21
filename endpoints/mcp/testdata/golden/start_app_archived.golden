@@ -1,0 +1,15 @@
+=== lock_device map[deviceId:1]
+isError: false
+--- text
+{
+  "appConnected": false,
+  "deviceId": 1,
+  "expiresAt": "<time>",
+  "owner": "mcp:alice:<session>"
+}
+
+=== start_app map[bundleId:2 deviceId:1]
+isError: true
+--- text
+app bundle 2 is archived; upload its file again to install it
+

@@ -1,0 +1,6 @@
+=== device_logs map[deviceId:1]
+isError: false
+--- text
+line one
+line two
+

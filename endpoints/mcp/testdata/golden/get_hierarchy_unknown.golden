@@ -1,0 +1,5 @@
+=== get_hierarchy map[deviceId:42]
+isError: true
+--- text
+not found: device 42
+

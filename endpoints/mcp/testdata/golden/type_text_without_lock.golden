@@ -1,0 +1,5 @@
+=== type_text map[deviceId:1 text:x]
+isError: true
+--- text
+lock the device for control first (call lock_device with deviceId 1 first)
+

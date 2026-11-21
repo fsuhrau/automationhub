@@ -1,0 +1,6 @@
+=== screenshot map[deviceId:1 source:app]
+isError: false
+--- image image/jpeg 640x480
+--- text
+device screen 640x480 px; image 640x480 (multiply image coordinates by 1.000 for tap/swipe)
+

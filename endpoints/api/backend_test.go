@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"io"
 	"testing"
 
@@ -93,48 +92,5 @@ func TestNewRunnerBuildsTheRunnerOfTheTestType(t *testing.T) {
 	}
 	if _, err := svc.newRunner(models.TestType(99), project, 1); apperr.KindOf(err) != apperr.KindInternal {
 		t.Errorf("unknown type: %v", err)
-	}
-}
-
-func TestProjectDevicesAndFindDeviceAreScopedToTheProject(t *testing.T) {
-	svc, db, project := backendOf(t)
-	shared := testkit.Device(db)
-	testkit.Device(db, func(d *models.Device) { d.CompanyID = 99 })
-
-	devices, err := svc.ProjectDevices(project)
-	if err != nil || len(devices) != 1 || devices[0].ID != shared.ID {
-		t.Fatalf("devices %+v, err %v", devices, err)
-	}
-	found, err := svc.FindDevice(project, shared.ID)
-	if err != nil || found.ID != shared.ID {
-		t.Fatalf("device %+v, err %v", found, err)
-	}
-	if _, err := svc.FindDevice(project, 9999); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("an unknown device wraps ErrNotFound, got %v", err)
-	}
-}
-
-func TestFindDeviceKeepsADatabaseError(t *testing.T) {
-	svc, db, project := backendOf(t)
-	sqlDB, _ := db.DB()
-	_ = sqlDB.Close()
-
-	_, err := svc.FindDevice(project, 1)
-
-	if err == nil || errors.Is(err, ErrNotFound) {
-		t.Fatalf("error %v, want a database error", err)
-	}
-}
-
-func TestStartAndCancelAnswerWithTheServiceErrors(t *testing.T) {
-	svc, _, project := backendOf(t)
-
-	run, err := svc.StartTestRun(project, 99, 1, "", "")
-	if run != nil || apperr.KindOf(err) != apperr.KindNotFound || err.Error() != "not found: test 99" {
-		t.Fatalf("start: %v, %v", run, err)
-	}
-	err = svc.CancelTestRun(project, 99)
-	if apperr.KindOf(err) != apperr.KindNotFound || err.Error() != "not found: test run 99" {
-		t.Fatalf("cancel: %v", err)
 	}
 }

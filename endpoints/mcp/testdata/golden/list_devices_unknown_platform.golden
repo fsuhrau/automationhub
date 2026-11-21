@@ -1,0 +1,5 @@
+=== list_devices map[platform:toaster]
+isError: true
+--- text
+unknown platform "toaster"
+

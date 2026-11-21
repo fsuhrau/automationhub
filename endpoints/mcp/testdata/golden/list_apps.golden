@@ -1,0 +1,18 @@
+=== list_apps map[]
+isError: false
+--- text
+[
+  {
+    "id": 1,
+    "name": "Android",
+    "identifier": "com.x.android",
+    "platform": "android"
+  },
+  {
+    "id": 2,
+    "name": "Web",
+    "identifier": "web",
+    "platform": "web"
+  }
+]
+

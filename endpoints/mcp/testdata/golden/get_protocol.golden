@@ -1,0 +1,67 @@
+=== get_protocol map[protocolId:1]
+isError: false
+--- text
+{
+  "children": [
+    {
+      "id": 2,
+      "parentId": 1,
+      "name": "Suite/A/Child",
+      "deviceId": 1,
+      "device": "Pixel",
+      "result": "failed",
+      "duration": "4s"
+    }
+  ],
+  "endedAt": "<time>",
+  "entries": 7,
+  "errors": [
+    "<time> [error/log] boom 50% failed",
+    "<time> [exception/log] NullReference"
+  ],
+  "performance": {
+    "Samples": 2,
+    "AvgFPS": 55,
+    "MinFPS": 50,
+    "AvgMEM": 120,
+    "MaxMEM": 140,
+    "AvgCPU": 20
+  },
+  "protocol": {
+    "id": 1,
+    "name": "Suite/A",
+    "deviceId": 1,
+    "device": "Pixel",
+    "result": "success",
+    "duration": "1m35s",
+    "avgFps": 59.5,
+    "avgMem": 120,
+    "keys": {
+      "player_id": "1234"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "first.png",
+      "message": "login",
+      "runtime": 1.5
+    },
+    {
+      "file": "last.png",
+      "runtime": 9
+    },
+    {
+      "file": "gone.png",
+      "message": "gone",
+      "runtime": 10
+    },
+    {
+      "file": "bad.png",
+      "message": "broken",
+      "runtime": 11
+    }
+  ],
+  "startedAt": "<time>",
+  "testRunId": 1
+}
+

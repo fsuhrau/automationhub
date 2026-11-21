@@ -1,0 +1,30 @@
+=== get_protocol map[protocolId:2]
+isError: false
+--- text
+{
+  "children": [],
+  "endedAt": "<time>",
+  "entries": 0,
+  "errors": [],
+  "performance": {
+    "Samples": 0,
+    "AvgFPS": 0,
+    "MinFPS": 0,
+    "AvgMEM": 0,
+    "MaxMEM": 0,
+    "AvgCPU": 0
+  },
+  "protocol": {
+    "id": 2,
+    "parentId": 1,
+    "name": "Suite/A/Child",
+    "deviceId": 1,
+    "device": "Pixel",
+    "result": "failed",
+    "duration": "4s"
+  },
+  "screenshots": [],
+  "startedAt": "<time>",
+  "testRunId": 1
+}
+

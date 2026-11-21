@@ -1,0 +1,6 @@
+=== get_hierarchy map[deviceId:1 maxChars:20]
+isError: false
+--- text
+<Root ID="1" Name="r
+... truncated (88 characters total); use xpath to narrow it down
+

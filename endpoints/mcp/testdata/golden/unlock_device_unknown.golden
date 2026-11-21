@@ -1,0 +1,5 @@
+=== unlock_device map[deviceId:42]
+isError: true
+--- text
+device 42 not found
+

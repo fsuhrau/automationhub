@@ -1,0 +1,5 @@
+=== release_device map[deviceId:1]
+isError: true
+--- text
+lock the device for control first (call lock_device with deviceId 1 first)
+

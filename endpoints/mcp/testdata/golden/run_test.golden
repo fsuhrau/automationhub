@@ -1,0 +1,9 @@
+=== run_test map[bundleId:1 params:a=b testId:1]
+isError: false
+--- text
+{
+  "runId": 3,
+  "sessionId": "session-1",
+  "state": "running"
+}
+

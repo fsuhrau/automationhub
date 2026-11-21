@@ -1,0 +1,6 @@
+=== get_protocol_screenshot map[file:first.png protocolId:1]
+isError: false
+--- image image/jpeg 400x800
+--- text
+screenshot first.png of protocol 1 at 1.5 s: login (400x800 px, image 400x800)
+

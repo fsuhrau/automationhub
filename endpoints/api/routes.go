@@ -52,14 +52,7 @@ func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices,
 	svc.control.OnChange(svc.onDeviceControlChanged)
 	svc.runTracker = runs.NewTracker(svc.onRunFinished)
 	events.TestRunFinished.Register(svc.runTracker)
-	svc.mcp = hubmcp.NewHandler(hubmcp.Deps{
-		DB:      db,
-		Backend: svc,
-		Devices: dm,
-		Control: svc.control,
-		Runs:    svc.runTracker,
-		NodeURL: nodeUrl,
-	})
+	svc.mcp = svc.newMCPHandler()
 	return svc
 }
 

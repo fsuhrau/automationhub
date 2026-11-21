@@ -44,6 +44,8 @@ type Repo interface {
 	StartRepo
 	ReadRepo
 	LookupRepo
+	ReportRepo
+	DigestRepo
 }
 
 // Pool is the pool of live devices.

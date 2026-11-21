@@ -4,92 +4,18 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"image"
 	"image/png"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/fsuhrau/automationhub/device"
-	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/hub/runs"
-	"github.com/fsuhrau/automationhub/storage/models"
+	runsvc "github.com/fsuhrau/automationhub/service/run"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
-
-type fakeDevice struct {
-	device.Device
-	id string
-
-	mu     sync.Mutex
-	locked bool
-	taps   [][2]int
-	png    []byte
-}
-
-func (d *fakeDevice) DeviceID() string                         { return d.id }
-func (d *fakeDevice) DeviceState() device.State                { return device.StateBooted }
-func (d *fakeDevice) DeviceParameter() map[string]string       { return nil }
-func (d *fakeDevice) IsAppConnected() bool                     { return false }
-func (d *fakeDevice) GetScreenshot() ([]byte, int, int, error) { return d.png, 2000, 1000, nil }
-func (d *fakeDevice) Lock() error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.locked {
-		return errors.New("locked")
-	}
-	d.locked = true
-	return nil
-}
-func (d *fakeDevice) Unlock() error  { return d.Release() }
-func (d *fakeDevice) Release() error { d.mu.Lock(); d.locked = false; d.mu.Unlock(); return nil }
-func (d *fakeDevice) IsLocked() bool { d.mu.Lock(); defer d.mu.Unlock(); return d.locked }
-func (d *fakeDevice) Tap(x, y int) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.taps = append(d.taps, [2]int{x, y})
-	return nil
-}
-func (d *fakeDevice) Swipe(int, int, int, int, time.Duration) error { return nil }
-func (d *fakeDevice) InputText(string) error                        { return nil }
-func (d *fakeDevice) PressKey(string) error                         { return nil }
-
-type devicesManager = manager.Devices
-
-type fakeDevices struct {
-	devicesManager
-	dev *fakeDevice
-}
-
-func (m *fakeDevices) GetDevice(id string) (device.Device, string) {
-	if id == m.dev.id {
-		return m.dev, "fake"
-	}
-	return nil, ""
-}
-
-type fakeBackend struct {
-	Backend
-}
-
-func (fakeBackend) FindDevice(project *models.Project, id uint) (*models.Device, error) {
-	if id != 1 {
-		return nil, fmt.Errorf("%w: device %d", errNotFound, id)
-	}
-	d := &models.Device{DeviceIdentifier: "dev-1", Name: "Pixel", PlatformType: models.PlatformTypeAndroid}
-	d.ID = 1
-	return d, nil
-}
-
-func (b fakeBackend) ProjectDevices(project *models.Project) ([]models.Device, error) {
-	d, _ := b.FindDevice(project, 1)
-	return []models.Device{*d}, nil
-}
 
 func testPNG(t *testing.T, w, h int) []byte {
 	var buf bytes.Buffer
@@ -99,21 +25,10 @@ func testPNG(t *testing.T, w, h int) []byte {
 	return buf.Bytes()
 }
 
-func setup(t *testing.T) (*httptest.Server, *fakeDevice) {
-	dev := &fakeDevice{id: "dev-1", png: testPNG(t, 2000, 1000)}
-	h := NewHandler(Deps{
-		Backend: fakeBackend{},
-		Devices: &fakeDevices{dev: dev},
-		Control: hubcontrol.New(nil),
-		Runs:    runs.NewTracker(nil),
-	})
-	project := &models.Project{Identifier: "p1"}
-	project.ID = 1
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.ServeHTTP(w, r, project, r.Header.Get("X-Caller"))
-	}))
-	t.Cleanup(srv.Close)
-	return srv, dev
+func setup(t *testing.T) (*httptest.Server, *goldenWorld) {
+	t.Helper()
+	w := newGoldenWorld(t)
+	return w.serve(t, w.handler()), w
 }
 
 type callerTransport struct{ caller string }
@@ -134,6 +49,7 @@ func connect(t *testing.T, srv *httptest.Server, caller string) *mcp.ClientSessi
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = cs.Close() })
 	return cs
 }
 
@@ -159,7 +75,6 @@ func text(res *mcp.CallToolResult) string {
 func TestToolsAreListedWithAnnotations(t *testing.T) {
 	srv, _ := setup(t)
 	cs := connect(t, srv, "alice")
-	defer cs.Close()
 
 	res, err := cs.ListTools(context.Background(), nil)
 	if err != nil {
@@ -183,10 +98,10 @@ func TestToolsAreListedWithAnnotations(t *testing.T) {
 }
 
 func TestControlNeedsLockAndLockIsPerSession(t *testing.T) {
-	srv, dev := setup(t)
+	srv, w := setup(t)
+	dev := w.dev
 	alice := connect(t, srv, "alice")
 	bob := connect(t, srv, "bob")
-	defer bob.Close()
 
 	res := call(t, alice, "tap", map[string]any{"deviceId": 1, "x": 5, "y": 6})
 	if !res.IsError || !strings.Contains(text(res), "lock_device") {
@@ -206,10 +121,7 @@ func TestControlNeedsLockAndLockIsPerSession(t *testing.T) {
 	if res := call(t, alice, "tap", map[string]any{"deviceId": 1, "x": 5, "y": 6}); res.IsError {
 		t.Fatalf("tap failed: %s", text(res))
 	}
-	dev.mu.Lock()
-	taps := append([][2]int(nil), dev.taps...)
-	dev.mu.Unlock()
-	if len(taps) != 1 || taps[0] != [2]int{5, 6} {
+	if taps := dev.CallsTo("Tap"); len(taps) != 1 || taps[0].Args[0] != 5 || taps[0].Args[1] != 6 {
 		t.Fatalf("tap not forwarded: %v", taps)
 	}
 
@@ -232,7 +144,6 @@ func TestControlNeedsLockAndLockIsPerSession(t *testing.T) {
 func TestScreenshotIsDownscaled(t *testing.T) {
 	srv, _ := setup(t)
 	cs := connect(t, srv, "alice")
-	defer cs.Close()
 
 	res := call(t, cs, "screenshot", map[string]any{"deviceId": 1})
 	if res.IsError {
@@ -262,7 +173,6 @@ func TestScreenshotIsDownscaled(t *testing.T) {
 func TestUnknownDevice(t *testing.T) {
 	srv, _ := setup(t)
 	cs := connect(t, srv, "alice")
-	defer cs.Close()
 	res := call(t, cs, "get_device", map[string]any{"deviceId": 42})
 	if !res.IsError || !strings.Contains(text(res), "not found") {
 		t.Fatalf("expected not found, got %q", text(res))
@@ -270,5 +180,68 @@ func TestUnknownDevice(t *testing.T) {
 	res = call(t, cs, "list_devices", map[string]any{"platform": "android"})
 	if res.IsError || !strings.Contains(text(res), "Pixel") {
 		t.Fatalf("list_devices failed: %s", text(res))
+	}
+}
+
+func TestTheHolderOfALockIsShownOnTheDevice(t *testing.T) {
+	srv, _ := setup(t)
+	cs := connect(t, srv, "alice")
+	call(t, cs, "lock_device", a("deviceId", 1))
+
+	got := text(call(t, cs, "get_device", a("deviceId", 1)))
+
+	if !strings.Contains(got, `"locked": true`) || !strings.Contains(got, `"lockedBy": "mcp:alice:`) {
+		t.Fatalf("device %s", got)
+	}
+}
+
+// failingRelease is the live control whose lease cannot be released.
+type failingRelease struct{ Control }
+
+func (failingRelease) Release(string, string) error { return errBoom }
+
+func TestReleaseReportsALeaseThatCannotBeReleased(t *testing.T) {
+	w := newBareWorld(t)
+	h := NewHandler(Deps{Pool: w.pool, Control: failingRelease{w.control}, Lookup: &stub{}, Tracker: w.tracker})
+	cs := connect(t, w.serve(t, h), "alice")
+	call(t, cs, "lock_device", a("deviceId", 1))
+
+	res := call(t, cs, "release_device", a("deviceId", 1))
+
+	if !res.IsError || text(res) != "boom" {
+		t.Fatalf("%v %q", res.IsError, text(res))
+	}
+}
+
+func TestJSONResultReportsAValueThatCannotBeEncoded(t *testing.T) {
+	if _, _, err := jsonResult(math.NaN()); err == nil {
+		t.Fatal("NaN was encoded")
+	}
+}
+
+// cancelAfterReport is the run service whose first report cancels the call.
+type cancelAfterReport struct {
+	RunService
+	cancel context.CancelFunc
+}
+
+func (c cancelAfterReport) Report(ctx context.Context, projectID, runID uint) (*runsvc.Report, error) {
+	report, err := c.RunService.Report(ctx, projectID, runID)
+	c.cancel()
+	return report, err
+}
+
+func TestWaitEndsWithTheErrorOfACancelledCall(t *testing.T) {
+	w := newGoldenWorld(t)
+	w.tracker.Started(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	deps := w.handler().deps
+	deps.Runs = cancelAfterReport{deps.Runs, cancel}
+	tl := &tools{Deps: deps, project: w.project}
+
+	_, _, err := tl.waitForTestRun(ctx, &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{}}, WaitArgs{RunID: 1})
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("error %v, want the cancellation", err)
 	}
 }

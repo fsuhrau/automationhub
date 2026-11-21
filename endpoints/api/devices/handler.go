@@ -88,8 +88,8 @@ func (h *Handler) delete(c *gin.Context) {
 
 func (h *Handler) update(c *gin.Context) {
 	var req svc.Update
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Fail(c, invalid(err))
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	req.DeviceID = c.Param("device_id")

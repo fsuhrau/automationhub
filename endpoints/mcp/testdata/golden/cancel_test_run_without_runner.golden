@@ -1,0 +1,5 @@
+=== cancel_test_run map[runId:1]
+isError: true
+--- text
+not found: no active runner for test run 1
+
