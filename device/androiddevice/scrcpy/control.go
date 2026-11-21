@@ -36,12 +36,17 @@ var ErrNoControl = errors.New("scrcpy session has no control channel")
 // pointerIDMouse makes the server inject a mouse event; any other id is a finger.
 const pointerIDMouse = -1
 
-func encodeTouch(action int, pointerID int64, x, y, width, height int) []byte {
+// Position is a point in a video frame of Width x Height pixels.
+type Position struct {
+	X, Y, Width, Height int
+}
+
+func encodeTouch(action int, pointerID int64, pos Position) []byte {
 	b := make([]byte, 32)
 	b[0] = typeInjectTouch
 	b[1] = byte(action)
 	binary.BigEndian.PutUint64(b[2:], uint64(pointerID))
-	putPosition(b[10:], x, y, width, height)
+	putPosition(b[10:], pos)
 	if action != ActionUp {
 		binary.BigEndian.PutUint16(b[22:], 0xffff) // pressure 1.0
 	}
@@ -70,20 +75,20 @@ func encodeText(text string) ([]byte, error) {
 }
 
 // encodeScroll encodes a scroll; hScroll and vScroll are in [-16, 16] "lines".
-func encodeScroll(x, y, width, height int, hScroll, vScroll float64) []byte {
+func encodeScroll(pos Position, hScroll, vScroll float64) []byte {
 	b := make([]byte, 21)
 	b[0] = typeInjectScroll
-	putPosition(b[1:], x, y, width, height)
+	putPosition(b[1:], pos)
 	binary.BigEndian.PutUint16(b[13:], uint16(i16FixedPoint(hScroll/16)))
 	binary.BigEndian.PutUint16(b[15:], uint16(i16FixedPoint(vScroll/16)))
 	return b
 }
 
-func putPosition(b []byte, x, y, width, height int) {
-	binary.BigEndian.PutUint32(b, uint32(int32(x)))
-	binary.BigEndian.PutUint32(b[4:], uint32(int32(y)))
-	binary.BigEndian.PutUint16(b[8:], uint16(width))
-	binary.BigEndian.PutUint16(b[10:], uint16(height))
+func putPosition(b []byte, pos Position) {
+	binary.BigEndian.PutUint32(b, uint32(int32(pos.X)))
+	binary.BigEndian.PutUint32(b[4:], uint32(int32(pos.Y)))
+	binary.BigEndian.PutUint16(b[8:], uint16(pos.Width))
+	binary.BigEndian.PutUint16(b[10:], uint16(pos.Height))
 }
 
 // i16FixedPoint converts [-1, 1] to a 16 bit fixed point value (Binary.java).
@@ -95,14 +100,14 @@ func i16FixedPoint(f float64) int16 {
 	return int16(f * 0x8000)
 }
 
-// InjectTouch injects a finger event. x and y are pixels of a video frame of
-// width x height, which must be the current video size; the server drops
+// InjectTouch injects a finger event. pos is a pixel of a video frame of
+// pos.Width x pos.Height, which must be the current video size; the server drops
 // events for another size (e.g. while rotating).
-func (s *Session) InjectTouch(action int, pointerID int64, x, y, width, height int) error {
+func (s *Session) InjectTouch(action int, pointerID int64, pos Position) error {
 	if pointerID == pointerIDMouse {
 		pointerID = -2 // the generic finger
 	}
-	return s.writeControl(encodeTouch(action, pointerID, x, y, width, height))
+	return s.writeControl(encodeTouch(action, pointerID, pos))
 }
 
 // InjectKeycode injects an Android key event.
@@ -120,8 +125,8 @@ func (s *Session) InjectText(text string) error {
 }
 
 // InjectScroll injects a scroll at a position, like a mouse wheel.
-func (s *Session) InjectScroll(x, y, width, height int, hScroll, vScroll float64) error {
-	return s.writeControl(encodeScroll(x, y, width, height, hScroll, vScroll))
+func (s *Session) InjectScroll(pos Position, hScroll, vScroll float64) error {
+	return s.writeControl(encodeScroll(pos, hScroll, vScroll))
 }
 
 // ResetVideo asks the server to restart the encoder, which sends a new

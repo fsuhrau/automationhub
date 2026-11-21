@@ -11,7 +11,7 @@ import (
 
 var (
 	waitForEx = regexp.MustCompile(`wait_for xpath:"(.+)" timeout:([0-9]+);`)
-	clickEx = regexp.MustCompile(`click xpath:"(.+)";`)
+	clickEx   = regexp.MustCompile(`click xpath:"(.+)";`)
 )
 
 type NativeAction interface {
@@ -19,9 +19,10 @@ type NativeAction interface {
 }
 
 type WaitForAction struct {
-	XPath string
+	XPath   string
 	Timeout int64
 }
+
 func (a *WaitForAction) GetAction() string {
 	return "wait_for"
 }
@@ -34,37 +35,47 @@ func (a *ClickAction) GetAction() string {
 	return "click"
 }
 
+// ParseNativeScript parses the lines of a native script into actions.
 func ParseNativeScript(data []byte) ([]NativeAction, error) {
-	reader := bytes.NewReader(data)
-	scanner := bufio.NewScanner(reader)
+	scanner := bufio.NewScanner(bytes.NewReader(data))
 	var actions []NativeAction
-	_ = actions
 	for scanner.Scan() {
 		content := strings.TrimSpace(scanner.Text())
-		if len(content) == 0 {
+		if content == "" {
 			continue
 		}
-		if strings.HasPrefix(content, "wait_for") {
-			actionContent := waitForEx.FindAllStringSubmatch(content, -1)
-			if len(actionContent) == 0 {
-				return nil, fmt.Errorf("invalid format for wait_for")
-			}
-			timeout, _ := strconv.ParseInt(actionContent[0][2], 10, 64)
-			actions = append(actions, &WaitForAction{
-				XPath:   actionContent[0][1],
-				Timeout: timeout,
-			})
-		}  else if strings.HasPrefix(content, "click") {
-			actionContent := clickEx.FindAllStringSubmatch(content, -1)
-			if len(actionContent) == 0 {
-				return nil, fmt.Errorf("invalid format for click")
-			}
-			actions = append(actions, &ClickAction{
-				XPath:   actionContent[0][1],
-			})
-		} else {
-			return nil, fmt.Errorf("unsupported native script:  %s", content)
+		action, err := parseNativeLine(content)
+		if err != nil {
+			return nil, err
 		}
+		actions = append(actions, action)
 	}
 	return actions, nil
+}
+
+func parseNativeLine(content string) (NativeAction, error) {
+	switch {
+	case strings.HasPrefix(content, "wait_for"):
+		return parseWaitFor(content)
+	case strings.HasPrefix(content, "click"):
+		return parseClick(content)
+	}
+	return nil, fmt.Errorf("unsupported native script:  %s", content)
+}
+
+func parseWaitFor(content string) (NativeAction, error) {
+	m := waitForEx.FindStringSubmatch(content)
+	if m == nil {
+		return nil, fmt.Errorf("invalid format for wait_for")
+	}
+	timeout, _ := strconv.ParseInt(m[2], 10, 64)
+	return &WaitForAction{XPath: m[1], Timeout: timeout}, nil
+}
+
+func parseClick(content string) (NativeAction, error) {
+	m := clickEx.FindStringSubmatch(content)
+	if m == nil {
+		return nil, fmt.Errorf("invalid format for click")
+	}
+	return &ClickAction{XPath: m[1]}, nil
 }

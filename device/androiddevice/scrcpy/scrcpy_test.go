@@ -85,7 +85,7 @@ func TestEmbeddedServer(t *testing.T) {
 }
 
 func TestEncodeTouch(t *testing.T) {
-	b := encodeTouch(ActionDown, 7, 100, 200, 576, 1280)
+	b := encodeTouch(ActionDown, 7, Position{100, 200, 576, 1280})
 	want := []byte{
 		typeInjectTouch, ActionDown,
 		0, 0, 0, 0, 0, 0, 0, 7, // pointer id
@@ -97,7 +97,7 @@ func TestEncodeTouch(t *testing.T) {
 	if !bytes.Equal(b, want) {
 		t.Fatalf("touch down\n got %x\nwant %x", b, want)
 	}
-	if up := encodeTouch(ActionUp, 7, 1, 1, 2, 2); up[22] != 0 || up[23] != 0 {
+	if up := encodeTouch(ActionUp, 7, Position{1, 1, 2, 2}); up[22] != 0 || up[23] != 0 {
 		t.Fatalf("touch up must have no pressure: %x", up)
 	}
 }
@@ -113,7 +113,7 @@ func TestEncodeKeyTextScroll(t *testing.T) {
 	if _, err := encodeText(strings.Repeat("x", injectTextMaxLength+1)); err == nil {
 		t.Fatal("expected an error for too long text")
 	}
-	s := encodeScroll(1, 2, 3, 4, 0, -16)
+	s := encodeScroll(Position{1, 2, 3, 4}, 0, -16)
 	if len(s) != 21 || s[0] != typeInjectScroll || binary.BigEndian.Uint16(s[13:]) != 0 || int16(binary.BigEndian.Uint16(s[15:])) != -0x8000 {
 		t.Fatalf("scroll %x", s)
 	}
@@ -127,10 +127,10 @@ func TestSessionWritesControl(t *testing.T) {
 		t.Fatalf("expected ErrNoControl, got %v", err)
 	}
 	client, server := net.Pipe()
-	defer client.Close()
-	defer server.Close()
+	defer func() { _ = client.Close() }()
+	defer func() { _ = server.Close() }()
 	s := &Session{control: client}
-	go func() { _ = s.InjectTouch(ActionMove, -1, 5, 6, 10, 20) }()
+	go func() { _ = s.InjectTouch(ActionMove, -1, Position{5, 6, 10, 20}) }()
 	buf := make([]byte, 32)
 	if _, err := io.ReadFull(server, buf); err != nil {
 		t.Fatal(err)

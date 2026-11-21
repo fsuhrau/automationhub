@@ -2,36 +2,34 @@ package androiddevice
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/fsuhrau/automationhub/tools/exec"
 )
 
-var namedKeys = map[string]int{
-	"home":        KEYCODE_HOME,
-	"back":        KEYCODE_BACK,
-	"enter":       KEYCODE_ENTER,
-	"menu":        KEYCODE_MENU,
-	"delete":      KEYCODE_DEL,
-	"tab":         KEYCODE_TAB,
-	"app_switch":  KEYCODE_APP_SWITCH,
-	"power":       KEYCODE_POWER,
-	"volume_up":   KEYCODE_VOLUME_UP,
-	"volume_down": KEYCODE_VOLUME_DOWN,
-	"escape":      KEYCODE_ESCAPE,
-	"search":      KEYCODE_SEARCH,
+// namedKey resolves the name of a key, case insensitive.
+func namedKey(name string) (int, bool) {
+	keys := map[string]int{
+		"home":        KEYCODE_HOME,
+		"back":        KEYCODE_BACK,
+		"enter":       KEYCODE_ENTER,
+		"menu":        KEYCODE_MENU,
+		"delete":      KEYCODE_DEL,
+		"tab":         KEYCODE_TAB,
+		"app_switch":  KEYCODE_APP_SWITCH,
+		"power":       KEYCODE_POWER,
+		"volume_up":   KEYCODE_VOLUME_UP,
+		"volume_down": KEYCODE_VOLUME_DOWN,
+		"escape":      KEYCODE_ESCAPE,
+		"search":      KEYCODE_SEARCH,
+	}
+	code, ok := keys[strings.ToLower(name)]
+	return code, ok
 }
 
 func (d *Device) pressKey(key int) error {
-	cmd := exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "keyevent", fmt.Sprintf("%d", key))
-	return cmd.Run()
-}
-
-func (d *Device) swipe(fromX, fromY, toX, toY int) error {
-	return d.Swipe(fromX, fromY, toX, toY, 0)
+	_, err := d.run("shell", "input", "keyevent", strconv.Itoa(key))
+	return err
 }
 
 func (d *Device) sendText(text string) error {
@@ -41,17 +39,21 @@ func (d *Device) sendText(text string) error {
 // Tap implements device.InputCapable.
 func (d *Device) Tap(x, y int) error {
 	d.Log("device", "Execute Tap: %d,%d", x, y)
-	return exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "tap", strconv.Itoa(x), strconv.Itoa(y)).Run()
+	_, err := d.run("shell", "input", "tap", strconv.Itoa(x), strconv.Itoa(y))
+	return err
 }
 
 // Swipe implements device.InputCapable. A zero duration uses the system default.
+//
+//nolint:revive // argument-limit: the signature is fixed by device.InputCapable
 func (d *Device) Swipe(fromX, fromY, toX, toY int, duration time.Duration) error {
-	args := []string{"-s", d.DeviceID(), "shell", "input", "swipe",
+	args := []string{"shell", "input", "swipe",
 		strconv.Itoa(fromX), strconv.Itoa(fromY), strconv.Itoa(toX), strconv.Itoa(toY)}
 	if duration > 0 {
 		args = append(args, strconv.FormatInt(duration.Milliseconds(), 10))
 	}
-	return exec.NewCommand("adb", args...).Run()
+	_, err := d.run(args...)
+	return err
 }
 
 // InputText implements device.InputCapable.
@@ -59,7 +61,8 @@ func (d *Device) InputText(text string) error {
 	if text == "" {
 		return nil
 	}
-	return exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "input", "text", escapeInputText(text)).Run()
+	_, err := d.run("shell", "input", "text", escapeInputText(text))
+	return err
 }
 
 // PressKey implements device.InputCapable.
@@ -73,7 +76,7 @@ func (d *Device) PressKey(key string) error {
 
 // keyCode resolves a named key or a numeric Android key code.
 func keyCode(key string) (int, error) {
-	if code, ok := namedKeys[strings.ToLower(key)]; ok {
+	if code, ok := namedKey(key); ok {
 		return code, nil
 	}
 	n, err := strconv.Atoi(key)
@@ -81,49 +84,6 @@ func keyCode(key string) (int, error) {
 		return 0, fmt.Errorf("unknown key %q", key)
 	}
 	return n, nil
-}
-
-// ReadLogs implements device.LogReader using a logcat dump.
-func (d *Device) ReadLogs(lines int) ([]string, error) {
-	if lines <= 0 {
-		lines = 200
-	}
-	out, err := exec.NewCommand("adb", "-s", d.DeviceID(), "logcat", "-d", "-v", "time", "-t", strconv.Itoa(lines)).Output()
-	if err != nil {
-		return nil, err
-	}
-	result := strings.Split(strings.TrimRight(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n"), "\n")
-	if len(result) == 1 && result[0] == "" {
-		return nil, nil
-	}
-	return result, nil
-}
-
-// logcatTime is the time format of "logcat -v time" and of "logcat -T".
-var logcatTime = regexp.MustCompile(`^\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$`)
-
-// ReadLogsSince implements device.LogFollower: the log lines since a time,
-// at most the last lines of them.
-func (d *Device) ReadLogsSince(since string, lines int) ([]string, error) {
-	if !logcatTime.MatchString(since) {
-		return nil, fmt.Errorf("invalid log time %q", since)
-	}
-	if lines <= 0 {
-		lines = 2000
-	}
-	// adb quotes each logcat argument for the device shell
-	out, err := exec.NewCommand("adb", "-s", d.DeviceID(), "logcat", "-d", "-v", "time", "-T", since).Output()
-	if err != nil {
-		return nil, err
-	}
-	result := strings.Split(strings.TrimRight(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n"), "\n")
-	if len(result) == 1 && result[0] == "" {
-		return nil, nil
-	}
-	if len(result) > lines {
-		result = result[len(result)-lines:]
-	}
-	return result, nil
 }
 
 // escapeInputText prepares text for "adb shell input text": the argument is

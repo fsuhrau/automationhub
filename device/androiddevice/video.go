@@ -2,13 +2,11 @@ package androiddevice
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strconv"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/androiddevice/scrcpy"
-	"github.com/fsuhrau/automationhub/tools/exec"
 )
 
 var (
@@ -16,57 +14,29 @@ var (
 	overrideSizeRegex = regexp.MustCompile(`Override size:\s*(\d+)x(\d+)`)
 )
 
-type videoStream struct {
-	*scrcpy.Session
-	meta device.VideoMeta
+// videoSession is a running scrcpy session.
+type videoSession interface {
+	injector
+	Codec() string
+	Size() (int, int)
+	ReadPacket() (device.VideoPacket, error)
+	Close() error
 }
 
-func (s *videoStream) Meta() device.VideoMeta { return s.meta }
-
-var touchActions = map[string]int{
-	device.InputDown:   scrcpy.ActionDown,
-	device.InputMove:   scrcpy.ActionMove,
-	device.InputUp:     scrcpy.ActionUp,
-	device.InputCancel: scrcpy.ActionCancel,
+// sessionStarter starts scrcpy sessions.
+type sessionStarter interface {
+	Start(ctx context.Context, serial string, opts scrcpy.Options) (videoSession, error)
 }
 
-// InjectInput implements device.VideoInput through the scrcpy control socket.
-func (s *videoStream) InjectInput(ev device.InputEvent) error {
-	switch ev.Kind {
-	case device.InputTouch:
-		action, ok := touchActions[ev.Action]
-		if !ok {
-			return fmt.Errorf("unknown touch action %q", ev.Action)
-		}
-		if ev.Width <= 0 || ev.Height <= 0 {
-			return fmt.Errorf("touch needs the video width and height")
-		}
-		return s.InjectTouch(action, ev.PointerID, ev.X, ev.Y, ev.Width, ev.Height)
-	case device.InputKey:
-		code, err := keyCode(ev.Key)
-		if err != nil {
-			return err
-		}
-		switch ev.Action {
-		case device.InputDown:
-			return s.InjectKeycode(scrcpy.ActionDown, code)
-		case device.InputUp:
-			return s.InjectKeycode(scrcpy.ActionUp, code)
-		case device.InputPress, "":
-			if err := s.InjectKeycode(scrcpy.ActionDown, code); err != nil {
-				return err
-			}
-			return s.InjectKeycode(scrcpy.ActionUp, code)
-		}
-		return fmt.Errorf("unknown key action %q", ev.Action)
-	case device.InputText:
-		return s.InjectText(ev.Text)
-	case device.InputScroll:
-		return s.InjectScroll(ev.X, ev.Y, ev.Width, ev.Height, ev.ScrollX, ev.ScrollY)
-	case device.InputResetVideo:
-		return s.ResetVideo()
+// scrcpyStarter adapts the scrcpy launcher to sessionStarter.
+type scrcpyStarter struct{ launcher *scrcpy.Launcher }
+
+func (s scrcpyStarter) Start(ctx context.Context, serial string, opts scrcpy.Options) (videoSession, error) {
+	session, err := s.launcher.Start(ctx, serial, opts)
+	if err != nil {
+		return nil, err
 	}
-	return fmt.Errorf("unknown input kind %q", ev.Kind)
+	return session, nil
 }
 
 // StartVideo implements device.VideoStreamer with the scrcpy server.
@@ -75,16 +45,16 @@ func (d *Device) StartVideo(ctx context.Context, opts device.VideoOptions) (devi
 		return nil, err
 	}
 	d.Log("device", "Start video stream (scrcpy %s)", scrcpy.Version)
-	session, err := scrcpy.Start(ctx, d.DeviceID(), scrcpy.Options{MaxSize: opts.MaxSize, MaxFPS: opts.MaxFPS, BitRate: opts.BitRate, Control: true})
+	session, err := d.video.Start(ctx, d.DeviceID(), scrcpy.Options{MaxSize: opts.MaxSize, MaxFPS: opts.MaxFPS, BitRate: opts.BitRate, Control: true})
 	if err != nil {
 		return nil, err
 	}
 	w, h := session.Size()
 	meta := device.VideoMeta{Codec: session.Codec(), Width: w, Height: h}
-	if out, err := exec.NewCommand("adb", "-s", d.DeviceID(), "shell", "wm", "size").Output(); err == nil {
+	if out, err := d.run("shell", "wm", "size"); err == nil {
 		meta.ScreenWidth, meta.ScreenHeight = parseWmSize(string(out))
 	}
-	return &videoStream{Session: session, meta: meta}, nil
+	return &videoStream{videoSession: session, meta: meta}, nil
 }
 
 // parseWmSize parses "wm size"; an override size wins, since input

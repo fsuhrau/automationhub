@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,12 +19,20 @@ const screenXML = `<hierarchy>
 
 // autoClock advances itself by the waited duration.
 type autoClock struct {
+	mu    sync.Mutex
 	now   time.Time
 	waits int
 }
 
-func (c *autoClock) Now() time.Time { return c.now }
+func (c *autoClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
 func (c *autoClock) After(d time.Duration) <-chan time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.now = c.now.Add(d)
 	c.waits++
 	ch := make(chan time.Time, 1)
@@ -129,25 +138,30 @@ func TestWaitForAlertWithIsNotRegistered(t *testing.T) {
 	}
 }
 
+// clickWant is what a click must have done.
+type clickWant struct {
+	taps  [][2]int
+	back  bool
+	err   string
+	dumps int
+}
+
 func TestClick(t *testing.T) {
 	tests := []struct {
 		name     string
 		screen   fakeScreen
 		lookup   string
 		lookType string
-		wantTaps [][2]int
-		wantBack bool
-		wantErr  string
-		wantDump int
+		want     clickWant
 	}{
-		{name: "taps the center", lookup: "//*[@name='Kaufen']", lookType: "xpath", wantTaps: [][2]int{{200, 300}}, wantDump: 1},
-		{name: "unsupported lookup type", lookup: "x", lookType: "id", wantErr: "lookupType 'id' not supported"},
-		{name: "element missing presses back after the retries", lookup: "//*[@name='Nope']", lookType: "xpath", wantBack: true, wantErr: "Element '//*[@name='Nope']' not found", wantDump: 5},
-		{name: "dump failure counts as missing", screen: fakeScreen{xmlErr: errors.New("adb")}, lookup: "//a", lookType: "xpath", wantBack: true, wantErr: "get screen failed", wantDump: 5},
-		{name: "element without bounds", lookup: "//*[@name='NoBounds']", lookType: "xpath", wantBack: true, wantErr: "No valid bounds", wantDump: 1},
-		{name: "unparsable bounds", lookup: "//*[@name='BadBounds']", lookType: "xpath", wantBack: true, wantErr: "No valid bounds", wantDump: 1},
+		{name: "taps the center", lookup: "//*[@name='Kaufen']", lookType: "xpath", want: clickWant{taps: [][2]int{{200, 300}}, dumps: 1}},
+		{name: "unsupported lookup type", lookup: "x", lookType: "id", want: clickWant{err: "lookupType 'id' not supported"}},
+		{name: "element missing presses back after the retries", lookup: "//*[@name='Nope']", lookType: "xpath", want: clickWant{back: true, err: "Element '//*[@name='Nope']' not found", dumps: 5}},
+		{name: "dump failure counts as missing", screen: fakeScreen{xmlErr: errors.New("adb")}, lookup: "//a", lookType: "xpath", want: clickWant{back: true, err: "get screen failed", dumps: 5}},
+		{name: "element without bounds", lookup: "//*[@name='NoBounds']", lookType: "xpath", want: clickWant{back: true, err: "No valid bounds", dumps: 1}},
+		{name: "unparsable bounds", lookup: "//*[@name='BadBounds']", lookType: "xpath", want: clickWant{back: true, err: "No valid bounds", dumps: 1}},
 		{name: "tap failure presses back", screen: fakeScreen{tapErr: errors.New("input")}, lookup: "//*[@name='Kaufen']", lookType: "xpath",
-			wantTaps: [][2]int{{200, 300}}, wantBack: true, wantErr: "Touch element '//*[@name='Kaufen']' failed: 'input'", wantDump: 1},
+			want: clickWant{taps: [][2]int{{200, 300}}, back: true, err: "Touch element '//*[@name='Kaufen']' failed: 'input'", dumps: 1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,24 +171,29 @@ func TestClick(t *testing.T) {
 			if _, err := run(&f, script); err != nil {
 				t.Fatalf("click must not fail the script: %v", err)
 			}
-			if fmt.Sprint(f.taps) != fmt.Sprint(tt.wantTaps) {
-				t.Errorf("taps = %v, want %v", f.taps, tt.wantTaps)
-			}
-			if (len(f.keys) == 1 && f.keys[0] == KEYCODE_BACK) != tt.wantBack {
-				t.Errorf("keys = %v, want back=%v", f.keys, tt.wantBack)
-			}
-			if f.dumps != tt.wantDump {
-				t.Errorf("dumps = %d, want %d", f.dumps, tt.wantDump)
-			}
-			if tt.wantErr != "" && !strings.Contains(strings.Join(f.errLines, "\n"), tt.wantErr) {
-				t.Errorf("errors = %v, want %q", f.errLines, tt.wantErr)
-			}
+			assertClick(t, &f, tt.want)
 		})
 	}
 }
 
+func assertClick(t *testing.T, f *fakeScreen, want clickWant) {
+	t.Helper()
+	if fmt.Sprint(f.taps) != fmt.Sprint(want.taps) {
+		t.Errorf("taps = %v, want %v", f.taps, want.taps)
+	}
+	if (len(f.keys) == 1 && f.keys[0] == KEYCODE_BACK) != want.back {
+		t.Errorf("keys = %v, want back=%v", f.keys, want.back)
+	}
+	if f.dumps != want.dumps {
+		t.Errorf("dumps = %d, want %d", f.dumps, want.dumps)
+	}
+	if want.err != "" && !strings.Contains(strings.Join(f.errLines, "\n"), want.err) {
+		t.Errorf("errors = %v, want %q", f.errLines, want.err)
+	}
+}
+
 func TestNewBuildsTheHandlerOfADevice(t *testing.T) {
-	if New(&Device{}) == nil {
+	if New(newDevice(Deps{}.withDefaults(), nil, "S1")) == nil {
 		t.Error("New returned nil")
 	}
 }

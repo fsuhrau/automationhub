@@ -15,6 +15,7 @@ func TestLoopbackPort(t *testing.T) {
 		{"wss://localhost/device/connect", "443", true},
 		{"ws://192.168.0.10:8004/device/connect", "", false},
 		{"ws://hub.example.com:8004/device/connect", "", false},
+		{"ftp://localhost/x", "", false},
 		{"", "", false},
 		{"::not a url", "", false},
 	}

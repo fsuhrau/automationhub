@@ -10,10 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/device"
 )
 
 // DefaultADBServerAddr is where the adb server listens (adb start-server).
 const DefaultADBServerAddr = "127.0.0.1:5037"
+
+const maxBackoff = 30 * time.Second
 
 const (
 	trackDevicesLong  = "host:track-devices-l" // same format as "adb devices -l"
@@ -23,38 +27,31 @@ const (
 // errADBFailed is an error answer ("FAIL") from the adb server.
 var errADBFailed = errors.New("adb server refused the request")
 
+// adbSubscription is a track-devices request to the adb server.
+type adbSubscription struct {
+	addr    string
+	request string
+}
+
 // trackDevices subscribes to device list changes of the adb server and calls
 // onList with the complete list once right away and again on every change.
 // It returns when ctx is done or the connection to the server breaks.
-func trackDevices(ctx context.Context, addr, request string, onList func([]adbDeviceEntry)) error {
+func trackDevices(ctx context.Context, sub adbSubscription, onList func([]adbDeviceEntry)) error {
 	var dialer net.Dialer
-	conn, err := dialer.DialContext(ctx, "tcp", addr)
+	conn, err := dialer.DialContext(ctx, "tcp", sub.addr)
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// unblock the read loop when ctx is cancelled
 	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
 	defer stop()
 
-	if _, err := fmt.Fprintf(conn, "%04x%s", len(request), request); err != nil {
-		return err
-	}
 	r := bufio.NewReader(conn)
-	status := make([]byte, 4)
-	if _, err := io.ReadFull(r, status); err != nil {
+	if err := requestTracking(conn, r, sub.request); err != nil {
 		return err
 	}
-	switch string(status) {
-	case "OKAY":
-	case "FAIL":
-		msg, _ := readADBMessage(r)
-		return fmt.Errorf("%w: %s", errADBFailed, msg)
-	default:
-		return fmt.Errorf("unexpected adb server answer %q", status)
-	}
-
 	for {
 		payload, err := readADBMessage(r)
 		if err != nil {
@@ -65,6 +62,25 @@ func trackDevices(ctx context.Context, addr, request string, onList func([]adbDe
 		}
 		onList(parseADBDeviceList(payload))
 	}
+}
+
+// requestTracking sends the request and checks the answer of the server.
+func requestTracking(conn net.Conn, r *bufio.Reader, request string) error {
+	if _, err := fmt.Fprintf(conn, "%04x%s", len(request), request); err != nil {
+		return err
+	}
+	status := make([]byte, 4)
+	if _, err := io.ReadFull(r, status); err != nil {
+		return err
+	}
+	switch string(status) {
+	case "OKAY":
+		return nil
+	case "FAIL":
+		msg, _ := readADBMessage(r)
+		return fmt.Errorf("%w: %s", errADBFailed, msg)
+	}
+	return fmt.Errorf("unexpected adb server answer %q", status)
 }
 
 // readADBMessage reads one length-prefixed (4 hex digits) adb message.
@@ -96,19 +112,28 @@ func parseADBDeviceList(text string) []adbDeviceEntry {
 	return entries
 }
 
-// watchADBDevices keeps a track-devices subscription open and reconnects
-// with backoff when the adb server goes away. connected is called with true
-// while a subscription delivers updates and false when it broke.
-func watchADBDevices(ctx context.Context, addr string, startServer func() error, onList func([]adbDeviceEntry), connected func(bool)) {
+// adbWatcher keeps a track-devices subscription open and reconnects with
+// backoff when the adb server goes away.
+type adbWatcher struct {
+	addr        string
+	clock       device.Clock
+	startServer func() error // restarts the adb server, may be nil
+	onList      func([]adbDeviceEntry)
+	// connected is called with true while a subscription delivers updates and
+	// false when it broke
+	connected func(bool)
+}
+
+func (w adbWatcher) run(ctx context.Context) {
 	request := trackDevicesLong
 	backoff := time.Second
 	for ctx.Err() == nil {
-		err := trackDevices(ctx, addr, request, func(entries []adbDeviceEntry) {
+		err := trackDevices(ctx, adbSubscription{addr: w.addr, request: request}, func(entries []adbDeviceEntry) {
 			backoff = time.Second
-			connected(true)
-			onList(entries)
+			w.connected(true)
+			w.onList(entries)
 		})
-		connected(false)
+		w.connected(false)
 		if ctx.Err() != nil {
 			return
 		}
@@ -117,16 +142,29 @@ func watchADBDevices(ctx context.Context, addr string, startServer func() error,
 			request = trackDevicesShort
 			continue
 		}
-		if startServer != nil {
-			_ = startServer()
-		}
-		select {
-		case <-ctx.Done():
+		if !w.wait(ctx, backoff) {
 			return
-		case <-time.After(backoff):
 		}
-		if backoff < 30*time.Second {
-			backoff *= 2
-		}
+		backoff = nextBackoff(backoff)
 	}
+}
+
+// wait restarts the adb server and sleeps; false when ctx ended meanwhile.
+func (w adbWatcher) wait(ctx context.Context, backoff time.Duration) bool {
+	if w.startServer != nil {
+		_ = w.startServer()
+	}
+	select {
+	case <-ctx.Done():
+		return false
+	case <-w.clock.After(backoff):
+		return true
+	}
+}
+
+func nextBackoff(backoff time.Duration) time.Duration {
+	if backoff < maxBackoff {
+		return backoff * 2
+	}
+	return backoff
 }
