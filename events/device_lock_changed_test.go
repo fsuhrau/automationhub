@@ -83,3 +83,18 @@ func TestLockAndUnlockDeviceAnnounceTheChange(t *testing.T) {
 	}
 	expectNoLockEvent(t, r)
 }
+
+func TestSetDeviceLockAnnouncesOnTheGivenBus(t *testing.T) {
+	bus := NewBus[DeviceLockChangedPayload]()
+	r := make(lockRecorder, 1)
+	bus.Register(r)
+	global := make(lockRecorder, 1)
+	DeviceLockChanged.Register(global)
+	dev := &lockDevice{id: "tablet"}
+
+	if err := SetDeviceLock(bus, dev, true); err != nil {
+		t.Fatal(err)
+	}
+	expectLockEvent(t, r, DeviceLockChangedPayload{DeviceIdentifier: "tablet", Locked: true})
+	expectNoLockEvent(t, global)
+}
