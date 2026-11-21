@@ -5,6 +5,6 @@ import (
 )
 
 type DeviceLock struct {
-	Device       device.Device
-	AppName      string
+	Device  device.Device
+	AppName string
 }
