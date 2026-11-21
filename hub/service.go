@@ -1,8 +1,10 @@
 package hub
 
 import (
+	"github.com/fsuhrau/automationhub/authentication"
 	"github.com/fsuhrau/automationhub/authentication/github"
 	"github.com/fsuhrau/automationhub/authentication/oauth2"
+	"github.com/fsuhrau/automationhub/authentication/oauthflow"
 	"github.com/fsuhrau/automationhub/authentication/password"
 	"github.com/fsuhrau/automationhub/authentication/token"
 	"github.com/fsuhrau/automationhub/config"
@@ -85,25 +87,32 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 
 // setupAuth configures the first configured authentication provider
 // (OAuth2, GitHub, password) and returns its session middleware, session
-// handler and routes.
+// handler and routes. A provider that can't be set up ends the process.
 func setupAuth(db *gorm.DB, auth config.Auth) (sessionFunc, sessionHandler gin.HandlerFunc, authRoutes func(*gin.Engine)) {
-	if auth.OAuth2 != nil {
-		oauth2.Setup(db, auth.OAuth2.RedirectUrl, auth.OAuth2.AuthUrl, auth.OAuth2.TokenUrl, auth.OAuth2.UserUrl, auth.OAuth2.Credentials, auth.OAuth2.Scopes, []byte(auth.OAuth2.Secret))
-		sessionFunc = oauth2.Session("session")
-		sessionHandler = oauth2.SessionHandler()
-		authRoutes = oauth2.Routes
-	} else if auth.Github != nil {
-		github.Setup(db, auth.Github.RedirectUrl, auth.Github.Credentials, auth.Github.Scopes, []byte(auth.Github.Secret))
-		sessionFunc = github.Session("session")
-		sessionHandler = github.SessionHandler()
-		authRoutes = github.Routes
-	} else if auth.Password != nil {
-		password.Setup(db, []byte(auth.Password.Secret))
-		sessionFunc = password.Session("session")
-		sessionHandler = password.SessionHandler()
-		authRoutes = password.Routes
+	provider, err := authProvider(db, auth)
+	if err != nil {
+		logrus.Fatalf("Failed to set up authentication: %v", err)
 	}
-	return
+	if provider == nil {
+		return nil, nil, nil
+	}
+	return provider.Session("session"), provider.SessionHandler(), provider.Routes
+}
+
+// authProvider builds the provider of the first configured method, nil for none.
+func authProvider(db *gorm.DB, auth config.Auth) (authentication.Provider, error) {
+	switch {
+	case auth.OAuth2 != nil:
+		o := auth.OAuth2
+		endpoints := oauth2.Endpoints{AuthURL: o.AuthUrl, TokenURL: o.TokenUrl, UserURL: o.UserUrl}
+		return oauth2.New(db, endpoints, oauthflow.Settings{RedirectURL: o.RedirectUrl, CredFile: o.Credentials, Scopes: o.Scopes, Secret: []byte(o.Secret)})
+	case auth.Github != nil:
+		g := auth.Github
+		return github.New(db, oauthflow.Settings{RedirectURL: g.RedirectUrl, CredFile: g.Credentials, Scopes: g.Scopes, Secret: []byte(g.Secret)})
+	case auth.Password != nil:
+		return password.New(db, []byte(auth.Password.Secret)), nil
+	}
+	return nil, nil
 }
 
 func newRouter(logger *logrus.Logger) *gin.Engine {

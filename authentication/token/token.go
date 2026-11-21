@@ -1,14 +1,10 @@
 package token
 
 import (
-	"errors"
-	"github.com/fsuhrau/automationhub/authentication"
-	"github.com/fsuhrau/automationhub/storage/models"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // NodeRoute tells whether a node token may be used for the path: the node
@@ -17,82 +13,20 @@ func NodeRoute(path string) bool {
 	return strings.HasPrefix(path, "/node/") || strings.HasPrefix(path, "/upload/")
 }
 
+// SessionHandler authenticates requests that carry an X-Auth-Token header
+// and hands every other request to handler (the browser session guard).
 func SessionHandler(db *gorm.DB, handler gin.HandlerFunc) gin.HandlerFunc {
+	g := guard{db: db}
 	return func(ctx *gin.Context) {
-
-		var (
-			token   models.AccessToken
-			project models.Project
-		)
-
-		xauth := ctx.GetHeader("X-Auth-Token")
-		if xauth != "" {
-
-			// fail closed: only a token that was found signs the request in
-			if err := lookup(db, xauth, &token); errors.Is(err, gorm.ErrRecordNotFound) {
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-				return
-			} else if err != nil {
-				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "token lookup failed"})
-				return
-			}
-
-			if token.ExpiresAt != nil && token.ExpiresAt.Before(time.Now()) {
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized token expired"})
-				return
-			}
-
-			// a personal token acts as its user, in every project
-			if token.UserID != nil {
-				if !authenticatePersonal(db, ctx, &token) {
-					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-					return
-				}
-				ctx.Next()
-				return
-			}
-
-			if token.ProjectID != nil {
-				projectParam := ctx.Param("project_id")
-				if projectParam == "" {
-					// tokens work only with params
-					ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "X-Auth-Token is project dependent"})
-					return
-				}
-
-				if err := db.First(&project, "id = ?", token.ProjectID).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-					return
-				}
-
-				if projectParam != project.Identifier {
-					ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "X-Auth-Token is project dependent"})
-					return
-				}
-			}
-			if token.NodeID != nil {
-				// a node token is the node's credential, not an API key: it
-				// only reaches the node endpoints and the bundle downloads
-				// FullPath is the matched route pattern, so ".." or doubled
-				// slashes in the request path can't sneak past the check
-				if !NodeRoute(ctx.FullPath()) {
-					ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "node tokens only work for node endpoints"})
-					return
-				}
-				var node models.Node
-
-				if err := db.First(&node, "id = ?", token.NodeID).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-					return
-				}
-			}
-
-			ctx.Set(authentication.UserKey, token.Name)
-			ctx.Set(AuthTokenKey, token.ID)
-			ctx.Next()
+		value := ctx.GetHeader("X-Auth-Token")
+		if value == "" {
+			handler(ctx)
 			return
 		}
-
-		handler(ctx)
+		if d := g.check(ctx, value); d != nil {
+			ctx.AbortWithStatusJSON(d.status, gin.H{"error": d.message})
+			return
+		}
+		ctx.Next()
 	}
 }

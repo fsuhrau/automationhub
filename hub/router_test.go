@@ -32,8 +32,8 @@ func TestNewRouterRecoversPanicsAndLogsRequests(t *testing.T) {
 }
 
 func TestNewSessionManagerIsASessionManager(t *testing.T) {
-	var m *session.Manager = NewSessionManager(logrus.New(), nil)
-	if m == nil || len(m.GetSessions()) != 0 {
+	m := NewSessionManager(logrus.New(), nil)
+	if _, ok := any(m).(*session.Manager); !ok || m == nil || len(m.GetSessions()) != 0 {
 		t.Error("expected an empty manager")
 	}
 }
