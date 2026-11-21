@@ -2,12 +2,36 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/sirupsen/logrus"
 )
+
+// withRole runs fn with the local device as role R. A device without the role
+// fails the call with device.ErrUnsupported, which is also what the master
+// maps back, see controlError.
+func withRole[R any](s *RPCNode, deviceID string, fn func(R) error) error {
+	return s.withDevice(deviceID, func(dev device.Device) error {
+		role, ok := device.As[R](dev)
+		if !ok {
+			return device.ErrUnsupported
+		}
+		return fn(role)
+	})
+}
+
+// skipUnsupported turns the ErrUnsupported of withRole into a debug log: the
+// calls that don't report a result are skipped on devices without the role.
+func skipUnsupported(method string, err error) error {
+	if errors.Is(err, device.ErrUnsupported) {
+		logrus.Debugf("RPC: %s skipped: %v", method, err)
+		return nil
+	}
+	return err
+}
 
 // Control applies a native control call to a local device.
 func (s *RPCNode) Control(req *device.ControlRequest, resp *device.ControlResponse) error {
@@ -21,11 +45,7 @@ func (s *RPCNode) Control(req *device.ControlRequest, resp *device.ControlRespon
 // StartVideoStream starts the video of a local device and pumps it into a
 // websocket to the master's /node/video/:stream_id endpoint.
 func (s *RPCNode) StartVideoStream(req *device.VideoStreamRequest, resp *Void) error {
-	return s.withDevice(req.DeviceID, func(dev device.Device) error {
-		streamer, ok := dev.(device.VideoStreamer)
-		if !ok {
-			return device.ErrUnsupported
-		}
+	return withRole(s, req.DeviceID, func(streamer device.VideoStreamer) error {
 		stream, err := streamer.StartVideo(context.Background(), req.Options)
 		if err != nil {
 			return err
@@ -45,8 +65,8 @@ func (s *RPCNode) IsConnected(req *DeviceRequest, resp *BoolResponse) error {
 
 func (s *RPCNode) TakeScreenshot(req *DeviceRequest, resp *ScreenShotResponse) error {
 	logrus.Info("RPC: TakeScreenshot")
-	return s.withDevice(req.DeviceID, func(dev device.Device) error {
-		b, w, h, err := dev.GetScreenshot()
+	return withRole(s, req.DeviceID, func(shooter device.Screenshotter) error {
+		b, w, h, err := shooter.GetScreenshot()
 		if err != nil {
 			return err
 		}
@@ -83,20 +103,24 @@ func (s *RPCNode) GetScreenshotData(req *ScreenShotDataRequest, resp *ScreenShot
 	return nil
 }
 
+// HasFeature answers false for a device without features.
 func (s *RPCNode) HasFeature(req *FeatureRequest, resp *BoolResponse) error {
 	logrus.Info("RPC: HasFeature")
-	return s.withDevice(req.DeviceID, func(dev device.Device) error {
-		resp.Value = dev.HasFeature(req.Feature)
+	err := withRole(s, req.DeviceID, func(f device.FeatureExecutor) error {
+		resp.Value = f.HasFeature(req.Feature)
 		return nil
 	})
+	return skipUnsupported("HasFeature", err)
 }
 
+// Execute is skipped on a device without features.
 func (s *RPCNode) Execute(req *ExecuteRequest, resp *Void) error {
 	logrus.Info("RPC: Execute")
-	return s.withDevice(req.DeviceID, func(dev device.Device) error {
-		dev.Execute(req.Data)
+	err := withRole(s, req.DeviceID, func(f device.FeatureExecutor) error {
+		f.Execute(req.Data)
 		return nil
 	})
+	return skipUnsupported("Execute", err)
 }
 
 func (s *RPCNode) ConnectionTimeout(req *DeviceRequest, resp *TimeoutResponse) error {
@@ -107,12 +131,14 @@ func (s *RPCNode) ConnectionTimeout(req *DeviceRequest, resp *TimeoutResponse) e
 	})
 }
 
+// RunNativeScript is skipped on a device without native scripts.
 func (s *RPCNode) RunNativeScript(req *ExecuteRequest, resp *Void) error {
 	logrus.Info("RPC: RunNativeScript")
-	return s.withDevice(req.DeviceID, func(dev device.Device) error {
-		dev.RunNativeScript([]byte(req.Data))
+	err := withRole(s, req.DeviceID, func(n device.NativeScripter) error {
+		n.RunNativeScript([]byte(req.Data))
 		return nil
 	})
+	return skipUnsupported("RunNativeScript", err)
 }
 
 func (s *RPCNode) SendAction(req *ExecuteRequest, resp *Void) error {

@@ -109,7 +109,8 @@ func forward(ctx context.Context, c adb.Client, dep deployment) (int, error) {
 func (s *Session) launch(ctx context.Context, dep deployment, opts Options) error {
 	args := append([]string{"shell", "CLASSPATH=" + dep.remote, "app_process", "/", "com.genymobile.scrcpy.Server", Version},
 		serverArgs(dep.scid, opts)...)
-	proc, err := s.adb.Start(ctx, args...)
+	s.output = &tailWriter{}
+	proc, err := s.adb.StartStreaming(ctx, s.output, args...)
 	if err != nil {
 		s.removeForward()
 		removeRemote(s.adb, dep.remote)

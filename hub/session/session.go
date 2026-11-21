@@ -2,6 +2,7 @@ package session
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/antchfx/xmlquery"
@@ -27,14 +28,32 @@ type Recorder struct {
 	Device  device.Device
 }
 
+// recorder returns the recording role of the device or an error wrapping
+// device.ErrUnsupported.
+func (r *Recorder) recorder() (device.Recorder, error) {
+	rec, ok := device.As[device.Recorder](r.Device)
+	if !ok {
+		return nil, fmt.Errorf("recording: %w", device.ErrUnsupported)
+	}
+	return rec, nil
+}
+
 // Start starts the recording.
 func (r *Recorder) Start() error {
-	return r.Device.StartRecording(r.Storage.GetPath())
+	rec, err := r.recorder()
+	if err != nil {
+		return err
+	}
+	return rec.StartRecording(r.Storage.GetPath())
 }
 
 // Stop stops the recording.
 func (r *Recorder) Stop() error {
-	return r.Device.StopRecording()
+	rec, err := r.recorder()
+	if err != nil {
+		return err
+	}
+	return rec.StopRecording()
 }
 
 // Session is one test session on a device.

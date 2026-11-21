@@ -3,6 +3,7 @@ package adb
 
 import (
 	"context"
+	"io"
 
 	"github.com/fsuhrau/automationhub/device"
 )
@@ -24,6 +25,12 @@ func (c Client) Run(ctx context.Context, args ...string) ([]byte, error) {
 // Start starts "adb -s <serial> <args>" in the background.
 func (c Client) Start(ctx context.Context, args ...string) (device.Process, error) {
 	return c.Runner.Start(ctx, Binary, c.args(args)...)
+}
+
+// StartStreaming starts "adb -s <serial> <args>" in the background and writes
+// its stdout and stderr to out, see device.CommandRunner.StartStreaming.
+func (c Client) StartStreaming(ctx context.Context, out io.Writer, args ...string) (device.Process, error) {
+	return c.Runner.StartStreaming(ctx, out, Binary, c.args(args)...)
 }
 
 func (c Client) args(args []string) []string {

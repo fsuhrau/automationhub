@@ -66,24 +66,3 @@ func (d *Device) UpdatedAt() time.Time { return d.updatedAt }
 func (d *Device) IsAppConnected() bool { return d.Connection() != nil }
 
 func (d *Device) ConnectionTimeout() time.Duration { return ConnectionTimeout }
-
-// HasFeature: a browser has no optional device features.
-func (d *Device) HasFeature(string) bool { return false }
-
-// Execute does nothing, there are no features to execute.
-func (d *Device) Execute(string) {}
-
-// RunNativeScript does nothing, a browser has no native script runtime.
-func (d *Device) RunNativeScript([]byte) {}
-
-func (d *Device) StartRecording(string) error {
-	return fmt.Errorf("recording: %w", device.ErrUnsupported)
-}
-
-func (d *Device) StopRecording() error {
-	return fmt.Errorf("recording: %w", device.ErrUnsupported)
-}
-
-func (d *Device) GetScreenshot() ([]byte, int, int, error) {
-	return nil, 0, 0, fmt.Errorf("screenshot: %w", device.ErrUnsupported)
-}

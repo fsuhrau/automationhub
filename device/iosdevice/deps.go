@@ -1,7 +1,6 @@
 package iosdevice
 
 import (
-	"io"
 	"net"
 	"net/http"
 
@@ -15,20 +14,6 @@ import (
 type Forwarder interface {
 	Addr() string
 	Close()
-}
-
-// RunnerProcess is a started xcodebuild that runs WebDriverAgent.
-type RunnerProcess interface {
-	device.Process
-	// Interrupt asks the process and its children to end.
-	Interrupt() error
-}
-
-// ProcessStarter starts a command and streams its stdout and stderr to out.
-// device.CommandRunner can't be used for xcodebuild: its Start gives no access
-// to the output, which carries the WebDriverAgent URL.
-type ProcessStarter interface {
-	StartStreaming(out io.Writer, name string, args ...string) (RunnerProcess, error)
 }
 
 // USBOps are the go-ios calls of the iOS packages as function values, so tests
@@ -48,10 +33,12 @@ type USBOps struct {
 // Deps are the collaborators of the handler and its devices. A zero field gets
 // its default, see withDefaults.
 type Deps struct {
-	Clock     device.Clock
-	HTTP      *http.Client
-	Processes ProcessStarter
-	USB       USBOps
+	Clock device.Clock
+	HTTP  *http.Client
+	// Runner starts xcodebuild; its output carries the WebDriverAgent URL, so
+	// it is started with StartStreaming.
+	Runner device.CommandRunner
+	USB    USBOps
 	// Hook picks the WebDriverAgent URL out of the go-ios log output. It only
 	// sees the logs once it is added to the logger, see NewHandler.
 	Hook *webdriver.WDAConnectHook
@@ -67,8 +54,8 @@ func (d Deps) withDefaults() Deps {
 	if d.HTTP == nil {
 		d.HTTP = &http.Client{}
 	}
-	if d.Processes == nil {
-		d.Processes = execStarter{}
+	if d.Runner == nil {
+		d.Runner = device.ExecRunner{}
 	}
 	if d.Hook == nil {
 		d.Hook = &webdriver.WDAConnectHook{}

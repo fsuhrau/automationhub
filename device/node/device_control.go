@@ -82,32 +82,8 @@ func (d *NodeDevice) IsAppConnected() bool {
 	return d.nodeManager.IsConnected(d.nodeId, d.ID)
 }
 
-func (d *NodeDevice) StartRecording(path string) error {
-	return d.nodeManager.StartRecording(d.nodeId, d.ID, path)
-}
-
-func (d *NodeDevice) StopRecording() error {
-	return d.nodeManager.StopRecording(d.nodeId, d.ID)
-}
-
-func (d *NodeDevice) GetScreenshot() ([]byte, int, int, error) {
-	return d.nodeManager.GetScreenshot(d.nodeId, d.ID)
-}
-
-func (d *NodeDevice) HasFeature(feature string) bool {
-	return d.nodeManager.HasFeature(d.nodeId, d.ID, feature)
-}
-
-func (d *NodeDevice) Execute(data string) {
-	d.nodeManager.Execute(d.nodeId, d.ID, data)
-}
-
 func (d *NodeDevice) ConnectionTimeout() time.Duration {
 	return d.nodeManager.ConnectionTimeout(d.nodeId, d.ID)
-}
-
-func (d *NodeDevice) RunNativeScript(script []byte) {
-	d.nodeManager.RunNativeScript(d.nodeId, d.ID, script)
 }
 
 // Send forwards the action to the node. The node reports no delivery result.

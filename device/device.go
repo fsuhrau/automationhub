@@ -28,18 +28,18 @@ type AppDataClearer interface {
 	ClearAppData(*app.Parameter) error
 }
 
-// Device is the composite of every role a device can play. G33 removes the
-// optional roles from it; consumers then reach them with As.
+// Device is the composite of the roles every device plays. The optional
+// roles (Recorder, Screenshotter, FeatureExecutor, NativeScripter, and the
+// ones in video.go and control.go) are reached with As.
+//
+// ActionHandlerRegistry stays in the core: every platform gets it from
+// generic.Device, and the device manager, the action executors and the app
+// connection use it unconditionally on every device.
 type Device interface {
 	Identity
 	AppManager
 	AppConnection
 	Locker
 	TestLogger
-
-	Recorder
-	Screenshotter
-	FeatureExecutor
-	NativeScripter
 	ActionHandlerRegistry
 }

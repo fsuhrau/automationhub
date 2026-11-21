@@ -41,18 +41,12 @@ type RPCConnection interface {
 // RPCControl drives a device on the node.
 type RPCControl interface {
 	Control(req device.ControlRequest) (device.ControlResponse, error)
-	HasFeature(deviceId string, feature string) bool
-	Execute(deviceId string, data string)
-	RunNativeScript(deviceId string, script []byte)
 	SendAction(deviceId string, action []byte)
 }
 
-// RPCMedia captures the screen of a device on the node.
+// RPCMedia streams the video of a device on the node.
 type RPCMedia interface {
 	StartVideoStream(req device.VideoStreamRequest) error
-	StartRecording(deviceId string, path string) error
-	StopRecording(deviceId string) error
-	GetScreenshot(deviceId string) ([]byte, int, int, error)
 }
 
 // RPCClient is the master's RPC connection to one node.
@@ -63,4 +57,29 @@ type RPCClient interface {
 	RPCConnection
 	RPCControl
 	RPCMedia
+}
+
+// The optional per-device roles of a node connection. A connection offers
+// the ones its protocol supports; the node manager asserts them.
+
+// RPCRecorder records the screen of a device on the node.
+type RPCRecorder interface {
+	StartRecording(deviceId string, path string) error
+	StopRecording(deviceId string) error
+}
+
+// RPCScreenshotter takes the screenshot of a device on the node.
+type RPCScreenshotter interface {
+	GetScreenshot(deviceId string) ([]byte, int, int, error)
+}
+
+// RPCFeatures runs the device specific features of a device on the node.
+type RPCFeatures interface {
+	HasFeature(deviceId string, feature string) bool
+	Execute(deviceId string, data string)
+}
+
+// RPCNativeScripter runs native scripts on a device of the node.
+type RPCNativeScripter interface {
+	RunNativeScript(deviceId string, script []byte)
 }

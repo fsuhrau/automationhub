@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -53,6 +54,16 @@ type longRunner struct{ *testkit.FakeRunner }
 
 func (r longRunner) Start(ctx context.Context, name string, args ...string) (device.Process, error) {
 	if _, err := r.FakeRunner.Start(ctx, name, args...); err != nil {
+		return nil, err
+	}
+	p := &blockingProcess{done: make(chan struct{})}
+	go func() { <-ctx.Done(); _ = p.Kill() }()
+	return p, nil
+}
+
+func (r longRunner) StartStreaming(ctx context.Context, out io.Writer, name string, args ...string) (device.Process, error) {
+	_, err := r.FakeRunner.StartStreaming(ctx, out, name, args...)
+	if err != nil {
 		return nil, err
 	}
 	p := &blockingProcess{done: make(chan struct{})}
@@ -158,6 +169,14 @@ func TestConnectFailures(t *testing.T) {
 			close(s.exited)
 			return s
 		}, context.Background(), false, "scrcpy server exited: exit 1"},
+		{"server exited with output", func() *Session {
+			s := newSession(closedPort(), &autoClock{})
+			s.exitErr = errors.New("exit 1")
+			s.output = &tailWriter{}
+			_, _ = s.output.Write([]byte("Aborted: no display\n"))
+			close(s.exited)
+			return s
+		}, context.Background(), false, "scrcpy server exited: exit 1: Aborted: no display"},
 		{"bad header", func() *Session {
 			srv := listen(t)
 			srv.serve(false, []byte{0, 0, 0, 1})
@@ -290,6 +309,37 @@ func TestStartFailures(t *testing.T) {
 				t.Fatalf("jar removed = %v, want %v: %q", got, tt.rm, f.runner.Commands())
 			}
 		})
+	}
+}
+
+// The server output is the only place that says why scrcpy died.
+func TestStartReportsTheOutputOfAServerThatDied(t *testing.T) {
+	f := newStartFixture(t)
+	_ = f.srv.ln.Close() // nothing to connect to, so the exit is what Start sees
+	line := f.serverLine(Options{})
+	f.runner.Script(line, []byte("starting server\n"), errors.New("exit status 1"))
+	f.runner.ScriptStderr(line, []byte("java.lang.IllegalStateException: no display\n"))
+	f.l.deps.Runner = f.runner.FakeRunner // the fake process ends at once
+
+	_, err := f.l.Start(context.Background(), "S1", Options{})
+	for _, want := range []string{"scrcpy server exited: exit status 1", "starting server", "java.lang.IllegalStateException: no display"} {
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Fatalf("error = %v, want it to contain %q", err, want)
+		}
+	}
+}
+
+func TestTailWriterKeepsTheEnd(t *testing.T) {
+	var nilTail *tailWriter
+	if nilTail.String() != "" {
+		t.Error("a nil tail is empty")
+	}
+	tail := &tailWriter{}
+	_, _ = tail.Write([]byte(strings.Repeat("a", outputTailSize)))
+	_, _ = tail.Write([]byte("end\n"))
+	got := tail.String()
+	if !strings.HasSuffix(got, "aaend") || len(got) > outputTailSize {
+		t.Errorf("tail = %d bytes ending %q", len(got), got[len(got)-5:])
 	}
 }
 

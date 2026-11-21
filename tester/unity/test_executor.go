@@ -8,6 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/tester/protocol"
 	"github.com/fsuhrau/automationhub/utils/sync"
+	"github.com/sirupsen/logrus"
 	gosync "sync"
 	"time"
 )
@@ -140,7 +141,12 @@ func (tr *testExecutor) handlePerformance(dev device.Device, response *action.Re
 }
 
 func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.Response) {
-	go dev.RunNativeScript(*response.Payload.Data)
+	scripter, ok := device.As[device.NativeScripter](dev)
+	if !ok {
+		logrus.Warnf("native script skipped: device %s has no native scripts", dev.DeviceID())
+		return
+	}
+	go scripter.RunNativeScript(*response.Payload.Data)
 }
 
 func (tr *testExecutor) handleLog(dev device.Device, response *action.Response) {

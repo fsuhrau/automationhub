@@ -1,11 +1,10 @@
 package iosdevice
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fsuhrau/automationhub/config"
 )
@@ -62,45 +61,19 @@ func TestLineTailKeepsTheLastLines(t *testing.T) {
 	}
 }
 
-// fakeXcodebuild puts a script named xcodebuild first on PATH.
-func fakeXcodebuild(t *testing.T, script string) {
-	t.Helper()
-	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "xcodebuild"), []byte("#!/bin/sh\n"+script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-}
+// killOnly is a process that can't be interrupted, only killed.
+type killOnly struct{ killed int }
 
-func TestExecStarterStreamsOutputAndStopsTheProcessGroup(t *testing.T) {
-	pidFile := filepath.Join(t.TempDir(), "pid")
-	fakeXcodebuild(t, "echo $$ > "+pidFile+"\necho started\nexec sleep 60\n")
-	var out syncBuffer
-	proc, err := execStarter{}.StartStreaming(&out, "xcodebuild", "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	waitFor(t, func() bool { return strings.Contains(out.String(), "started") })
-	if err := proc.Interrupt(); err != nil {
-		t.Fatal(err)
-	}
-	_ = proc.Wait()
-}
+func (p *killOnly) Wait() error { return nil }
+func (p *killOnly) Kill() error { p.killed++; return nil }
 
-func TestExecStarterKill(t *testing.T) {
-	fakeXcodebuild(t, "trap '' INT\nexec sleep 60\n")
-	proc, err := execStarter{}.StartStreaming(&syncBuffer{}, "xcodebuild")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := proc.Kill(); err != nil {
-		t.Fatal(err)
-	}
-	_ = proc.Wait()
-}
-
-func TestExecStarterReportsAMissingCommand(t *testing.T) {
-	if _, err := (execStarter{}).StartStreaming(&syncBuffer{}, "/no/such/xcodebuild"); err == nil || !strings.Contains(err.Error(), "start /no/such/xcodebuild") {
-		t.Fatalf("err = %v", err)
+func TestStopKillsAProcessThatCannotBeInterrupted(t *testing.T) {
+	proc := &killOnly{}
+	done := make(chan struct{})
+	close(done)
+	r := &wdaRunner{proc: proc, done: done, after: func(time.Duration) <-chan time.Time { return nil }}
+	r.Stop()
+	if proc.killed != 1 {
+		t.Fatalf("killed %d times, want once", proc.killed)
 	}
 }

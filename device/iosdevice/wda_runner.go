@@ -1,6 +1,10 @@
 package iosdevice
 
-import "time"
+import (
+	"time"
+
+	"github.com/fsuhrau/automationhub/device"
+)
 
 // stopGracePeriod is how long xcodebuild gets to end after an interrupt.
 const stopGracePeriod = 5 * time.Second
@@ -8,7 +12,7 @@ const stopGracePeriod = 5 * time.Second
 // wdaRunner is a WebDriverAgentRunner started by xcodebuild, reachable on
 // local ports forwarded over usbmux.
 type wdaRunner struct {
-	proc     RunnerProcess // nil when attached to a runner someone else started
+	proc     device.Process // nil when attached to a runner someone else started
 	done     chan struct{}
 	after    func(time.Duration) <-chan time.Time
 	forwards []Forwarder
@@ -26,11 +30,21 @@ func (r *wdaRunner) Stop() {
 		// attached to a runner someone else started
 		return
 	}
-	_ = r.proc.Interrupt()
+	r.interrupt()
 	select {
 	case <-r.done:
 	case <-r.after(stopGracePeriod):
 		_ = r.proc.Kill()
 		<-r.done
 	}
+}
+
+// interrupt asks xcodebuild to end; a process that can't be interrupted is
+// killed.
+func (r *wdaRunner) interrupt() {
+	if p, ok := r.proc.(device.Interrupter); ok {
+		_ = p.Interrupt()
+		return
+	}
+	_ = r.proc.Kill()
 }

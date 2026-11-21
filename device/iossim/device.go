@@ -1,7 +1,6 @@
 package iossim
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -62,23 +61,4 @@ func (d *Device) IsAppConnected() bool {
 
 func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
-}
-
-// HasFeature reports false: the simulator has no optional features.
-func (d *Device) HasFeature(string) bool {
-	return false
-}
-
-// Execute logs that features are not supported, it has no error to return.
-func (d *Device) Execute(feature string) {
-	d.Error("device", "execute %q: %v", feature, unsupported("execute"))
-}
-
-// RunNativeScript logs that native scripts are not supported, it has no error to return.
-func (d *Device) RunNativeScript([]byte) {
-	d.Error("device", "%v", unsupported("native script"))
-}
-
-func unsupported(what string) error {
-	return fmt.Errorf("%s: %w", what, device.ErrUnsupported)
 }

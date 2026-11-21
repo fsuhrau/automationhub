@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/sirupsen/logrus"
@@ -140,5 +141,15 @@ func TestCloseStopsRecording(t *testing.T) {
 	dev.FailWith("StopRecording", errDisk)
 	if err := s.Close(); !errors.Is(err, errDisk) {
 		t.Errorf("close err %v, want %v", err, errDisk)
+	}
+}
+
+func TestRecorderOfADeviceWithoutRecordingIsUnsupported(t *testing.T) {
+	rec := &Recorder{Storage: NewStorage(deps(newMemFS()), "logs", "sid"), Device: testkit.NewCoreDevice("d1")}
+	if err := rec.Start(); !errors.Is(err, device.ErrUnsupported) {
+		t.Errorf("Start err = %v, want one wrapping device.ErrUnsupported", err)
+	}
+	if err := (&Session{Recorder: rec}).Close(); !errors.Is(err, device.ErrUnsupported) {
+		t.Errorf("Close err = %v, want one wrapping device.ErrUnsupported", err)
 	}
 }

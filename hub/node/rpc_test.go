@@ -633,3 +633,30 @@ func TestNewRemoteActionHandler(t *testing.T) {
 		t.Fatal("no handler")
 	}
 }
+
+func TestOptionalRoles_UnsupportedDevice(t *testing.T) {
+	w := newWire(t)
+	w.dm.Add("android_device", bare{testDeviceNamed("bare-1")})
+
+	_, _, _, err := w.client.GetScreenshot("bare-1")
+	if err == nil || !strings.Contains(err.Error(), device.ErrUnsupported.Error()) {
+		t.Errorf("GetScreenshot: %v, want the unsupported error", err)
+	}
+	var features BoolResponse
+	if err := w.node.HasFeature(&FeatureRequest{DeviceID: "bare-1", Feature: "f"}, &features); err != nil || features.Value {
+		t.Errorf("HasFeature = %v, %v, want false without an error", features.Value, err)
+	}
+	if err := w.node.Execute(&ExecuteRequest{DeviceID: "bare-1", Data: "x"}, &Void{}); err != nil {
+		t.Errorf("Execute: %v, want it skipped", err)
+	}
+	if err := w.node.RunNativeScript(&ExecuteRequest{DeviceID: "bare-1", Data: "x"}, &Void{}); err != nil {
+		t.Errorf("RunNativeScript: %v, want it skipped", err)
+	}
+}
+
+func TestOptionalRoles_ErrorsOfTheRoleStillReachTheMaster(t *testing.T) {
+	w := newWire(t)
+	if err := w.node.Execute(&ExecuteRequest{DeviceID: "ghost"}, &Void{}); err == nil {
+		t.Error("an unknown device must still fail")
+	}
+}

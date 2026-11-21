@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	tester_action "github.com/fsuhrau/automationhub/tester/action"
@@ -31,9 +32,20 @@ func (s *strategy) captureScreenShot(ctx context.Context, tc testCase) {
 	tc.dev.Device.Data("screen", fileName)
 }
 
+// deviceScreenshot is the native screenshot of the device; it is nil when the
+// device has no Screenshotter role or fails.
+func deviceScreenshot(dev device.Device) []byte {
+	shooter, ok := device.As[device.Screenshotter](dev)
+	if !ok {
+		return nil
+	}
+	data, _, _, _ := shooter.GetScreenshot()
+	return data
+}
+
 // screenshot asks the device and, when it can't, the app for the screen.
 func (s *strategy) screenshot(ctx context.Context, tc testCase) []byte {
-	if data, _, _, _ := tc.dev.Device.GetScreenshot(); data != nil {
+	if data := deviceScreenshot(tc.dev.Device); data != nil {
 		return data
 	}
 	var get action.GetScreenshot

@@ -1,21 +1,10 @@
 package unityeditor
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/device"
 )
-
-func TestGetScreenshotIsUnsupported(t *testing.T) {
-	data, w, h, err := (&Device{}).GetScreenshot()
-	if !errors.Is(err, device.ErrUnsupported) {
-		t.Fatalf("err = %v, want device.ErrUnsupported", err)
-	}
-	if data != nil || w != 0 || h != 0 {
-		t.Fatalf("got %v %d %d, want nothing", data, w, h)
-	}
-}
 
 func TestSetDeviceStateUsesParseState(t *testing.T) {
 	tests := []struct {

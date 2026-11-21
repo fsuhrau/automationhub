@@ -9,6 +9,7 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/hub/manager"
 )
 
 //nolint:gochecknoglobals // go test flag
@@ -92,15 +93,26 @@ func TestWireFormat(t *testing.T) {
 	}
 }
 
-func TestWireRecordingIsLocal(t *testing.T) {
-	w := newWire(t)
-	if err := w.client.StartRecording("dev-1", "x"); err != nil {
-		t.Fatal(err)
+// The node has no recording RPC: the client doesn't pretend to record, so the
+// node manager answers device.ErrUnsupported.
+func TestRPCClientOffersTheRolesItsProtocolSupports(t *testing.T) {
+	var client manager.RPCClient = &RPCClient{}
+	checks := map[string]bool{
+		"RPCScreenshotter":  assertsRole[manager.RPCScreenshotter](client),
+		"RPCFeatures":       assertsRole[manager.RPCFeatures](client),
+		"RPCNativeScripter": assertsRole[manager.RPCNativeScripter](client),
 	}
-	if err := w.client.StopRecording("dev-1"); err != nil {
-		t.Fatal(err)
+	for role, ok := range checks {
+		if !ok {
+			t.Errorf("RPCClient should implement %s", role)
+		}
 	}
-	if got := w.rec.golden(); got != "\n" {
-		t.Fatalf("recording must not touch the wire, got %q", got)
+	if assertsRole[manager.RPCRecorder](client) {
+		t.Error("RPCClient has no recording protocol, it must not implement RPCRecorder")
 	}
+}
+
+func assertsRole[R any](client manager.RPCClient) bool {
+	_, ok := client.(R)
+	return ok
 }

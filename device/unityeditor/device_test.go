@@ -42,10 +42,8 @@ func TestNewDeviceIdentity(t *testing.T) {
 func TestUnsupportedRoles(t *testing.T) {
 	d := &Device{}
 	tests := map[string]error{
-		"install":         d.InstallApp(nil),
-		"uninstall":       d.UninstallApp(nil),
-		"start recording": d.StartRecording("p"),
-		"stop recording":  d.StopRecording(),
+		"install":   d.InstallApp(nil),
+		"uninstall": d.UninstallApp(nil),
 	}
 	for name, err := range tests {
 		if !errors.Is(err, device.ErrUnsupported) {
@@ -60,11 +58,15 @@ func TestNoOpRoles(t *testing.T) {
 	if !installed || err != nil {
 		t.Fatalf("IsAppInstalled = %v, %v", installed, err)
 	}
-	if d.HasFeature("x") || d.IsAppConnected() {
-		t.Fatal("a new editor has no feature and no app connection")
+	if d.IsAppConnected() {
+		t.Fatal("a new editor has no app connection")
 	}
-	d.Execute("x")
-	d.RunNativeScript(nil)
+}
+
+func TestHasNoOptionalRoles(t *testing.T) {
+	if got := testkit.Roles(&Device{}); len(got) != 0 {
+		t.Fatalf("roles = %v, want none", got)
+	}
 }
 
 func TestSendCommand(t *testing.T) {

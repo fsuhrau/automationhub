@@ -3,6 +3,7 @@ package testkit
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 
@@ -13,8 +14,9 @@ import (
 type Process = device.Process
 
 type result struct {
-	out []byte
-	err error
+	out    []byte
+	stderr []byte
+	err    error
 }
 
 // FakeRunner is a scripted command runner with the signatures of
@@ -34,6 +36,20 @@ func (r *FakeRunner) Script(line string, out []byte, err error) {
 		r.scripts = map[string]result{}
 	}
 	r.scripts[line] = result{out: out, err: err}
+}
+
+// ScriptStderr sets what the command line writes to stderr. Run then fails
+// with a *device.CommandError that carries it, as ExecRunner does, instead of
+// the plain scripted error. StartStreaming writes it to out after the output.
+func (r *FakeRunner) ScriptStderr(line string, stderr []byte) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.scripts == nil {
+		r.scripts = map[string]result{}
+	}
+	res := r.scripts[line]
+	res.stderr = stderr
+	r.scripts[line] = res
 }
 
 // Commands returns the command lines of all Run and Start calls in order.
@@ -62,6 +78,9 @@ func (r *FakeRunner) Run(_ context.Context, name string, args ...string) ([]byte
 	if err != nil {
 		return nil, err
 	}
+	if res.err != nil && res.stderr != nil {
+		return res.out, &device.CommandError{Name: name, Stdout: res.out, Stderr: res.stderr, Err: res.err}
+	}
 	return res.out, res.err
 }
 
@@ -75,15 +94,41 @@ func (r *FakeRunner) Start(_ context.Context, name string, args ...string) (Proc
 	return &FakeProcess{waitErr: res.err}, nil
 }
 
+// StartStreaming writes the scripted output and stderr to out in the
+// background. The returned process waits for that, then gives the scripted
+// error. An unscripted command line is
+// an error.
+//
+//nolint:revive // argument-limit: fixed by device.CommandRunner
+func (r *FakeRunner) StartStreaming(_ context.Context, out io.Writer, name string, args ...string) (Process, error) {
+	res, err := r.lookup(name, args)
+	if err != nil {
+		return nil, err
+	}
+	written := make(chan struct{})
+	go func() { // like exec: out may be a pipe that is read after this call
+		defer close(written)
+		_, _ = out.Write(res.out)
+		_, _ = out.Write(res.stderr)
+	}()
+	return &FakeProcess{waitErr: res.err, written: written}, nil
+}
+
 // FakeProcess is the Process of FakeRunner.Start.
 type FakeProcess struct {
 	mu      sync.Mutex
 	waitErr error
+	written chan struct{} // closed when the streamed output is written; may be nil
 	killed  int
 }
 
-// Wait returns the scripted error.
-func (p *FakeProcess) Wait() error { return p.waitErr }
+// Wait returns the scripted error, after the streamed output is written.
+func (p *FakeProcess) Wait() error {
+	if p.written != nil {
+		<-p.written
+	}
+	return p.waitErr
+}
 
 // Kill counts the call.
 func (p *FakeProcess) Kill() error {

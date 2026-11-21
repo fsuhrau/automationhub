@@ -2,6 +2,7 @@ package node
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/generic"
@@ -56,53 +57,39 @@ func (d *RPCDevice) DeviceType() int {
 	return int(d.Dev.DeviceType)
 }
 
+// RPCDevice only describes a device of a node. It can't be controlled: the
+// master wraps it into a device/node.NodeDevice, which forwards to the node.
+// Its app management says so instead of pretending to work.
+
 func (d *RPCDevice) IsAppInstalled(*app.Parameter) (bool, error) {
-	return true, nil
+	return false, errDescriptionOnly("is app installed")
 }
 
 func (d *RPCDevice) InstallApp(*app.Parameter) error {
-	return nil
+	return errDescriptionOnly("install app")
 }
 
 func (d *RPCDevice) UninstallApp(*app.Parameter) error {
-	return nil
+	return errDescriptionOnly("uninstall app")
+}
+
+func (d *RPCDevice) StartApp(*device.DeviceConfig, *app.Parameter, string, string) error {
+	return errDescriptionOnly("start app")
+}
+
+func (d *RPCDevice) StopApp(*app.Parameter) error {
+	return errDescriptionOnly("stop app")
 }
 
 func (d *RPCDevice) ConnectionTimeout() time.Duration {
 	return 30 * time.Second
 }
 
+// IsAppConnected is false: the description has no connection to the app.
 func (d *RPCDevice) IsAppConnected() bool {
-	return true
+	return false
 }
 
-func (d *RPCDevice) StartApp(*device.DeviceConfig, *app.Parameter, string, string) error {
-	return nil
-}
-
-func (d *RPCDevice) StopApp(*app.Parameter) error {
-	return nil
-}
-
-func (d *RPCDevice) StartRecording(string) error {
-	return nil
-}
-
-func (d *RPCDevice) StopRecording() error {
-	return nil
-}
-
-func (d *RPCDevice) GetScreenshot() ([]byte, int, int, error) {
-	return nil, 0, 0, nil
-}
-
-func (d *RPCDevice) HasFeature(string) bool {
-	return true
-}
-
-func (d *RPCDevice) Execute(string) {
-
-}
-func (d *RPCDevice) RunNativeScript(data []byte) {
-
+func errDescriptionOnly(op string) error {
+	return fmt.Errorf("%s: %w", op, device.ErrUnsupported)
 }

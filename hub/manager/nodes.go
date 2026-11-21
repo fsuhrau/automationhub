@@ -42,21 +42,15 @@ type NodeConnection interface {
 	ConnectionTimeout(nodeIdentifier NodeIdentifier, deviceId string) time.Duration
 }
 
-// NodeControl drives a node device: native control, features and scripts.
+// NodeControl drives a node device: native control and app actions.
 type NodeControl interface {
 	Control(nodeIdentifier NodeIdentifier, req device.ControlRequest) (device.ControlResponse, error)
-	HasFeature(nodeIdentifier NodeIdentifier, deviceId string, feature string) bool
-	Execute(nodeIdentifier NodeIdentifier, deviceId string, data string)
-	RunNativeScript(nodeIdentifier NodeIdentifier, deviceId string, script []byte)
 	SendAction(nodeIdentifier NodeIdentifier, deviceId string, action []byte)
 }
 
-// NodeMedia captures the screen of a node device.
+// NodeMedia streams the video of a node device.
 type NodeMedia interface {
 	StartVideoStream(nodeIdentifier NodeIdentifier, req device.VideoStreamRequest) error
-	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error
-	StopRecording(nodeIdentifier NodeIdentifier, deviceId string) error
-	GetScreenshot(nodeIdentifier NodeIdentifier, deviceId string) ([]byte, int, int, error)
 }
 
 // Nodes is the master's view of all nodes. Consumers that need only one role
@@ -68,4 +62,29 @@ type Nodes interface {
 	NodeConnection
 	NodeControl
 	NodeMedia
+}
+
+// The optional per-device roles of a node. Not every node connection offers
+// them, so they are not part of Nodes: consumers assert them, see NodeDevice.
+
+// NodeRecorder records the screen of a node device.
+type NodeRecorder interface {
+	StartRecording(nodeIdentifier NodeIdentifier, deviceId string, path string) error
+	StopRecording(nodeIdentifier NodeIdentifier, deviceId string) error
+}
+
+// NodeScreenshotter takes the screenshot of a node device.
+type NodeScreenshotter interface {
+	GetScreenshot(nodeIdentifier NodeIdentifier, deviceId string) ([]byte, int, int, error)
+}
+
+// NodeFeatures runs the device specific features of a node device.
+type NodeFeatures interface {
+	HasFeature(nodeIdentifier NodeIdentifier, deviceId string, feature string) bool
+	Execute(nodeIdentifier NodeIdentifier, deviceId string, data string)
+}
+
+// NodeNativeScripter runs native scripts on a node device.
+type NodeNativeScripter interface {
+	RunNativeScript(nodeIdentifier NodeIdentifier, deviceId string, script []byte)
 }

@@ -1,6 +1,7 @@
 package androiddevice
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -72,6 +73,23 @@ func TestInstallAppFailures(t *testing.T) {
 	runner.Script("aapt dump badging /apps/game.apk", nil, errBoom)
 	if d.isDebuggable("/apps/game.apk") {
 		t.Fatal("a failing aapt must not report debuggable")
+	}
+}
+
+// adb says why an installation failed on stderr; the error must carry it.
+func TestInstallAppFailureCarriesTheAdbStderr(t *testing.T) {
+	runner := &testkit.FakeRunner{}
+	line := "adb -s S1 install -t -r -g /apps/game.apk"
+	runner.Script(line, nil, errBoom)
+	runner.ScriptStderr(line, []byte("adb: failed to install /apps/game.apk: Failure [INSTALL_FAILED_OLDER_SDK]\n"))
+	d := newTestDevice(runner)
+	d.apiLevel = 30
+	err := d.InstallApp(testApp())
+	if err == nil || !strings.Contains(err.Error(), "installation failed") || !strings.Contains(err.Error(), "INSTALL_FAILED_OLDER_SDK") {
+		t.Fatalf("error = %v, want the adb stderr in it", err)
+	}
+	if !errors.Is(err, errBoom) {
+		t.Fatalf("error = %v, want it to wrap the exit error", err)
 	}
 }
 

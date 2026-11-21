@@ -2,13 +2,14 @@ package macos
 
 import (
 	"context"
-	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/hostinfo"
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -39,20 +40,14 @@ func TestNewDeviceReadsTheMac(t *testing.T) {
 
 func TestDeviceTrivia(t *testing.T) {
 	d := &Device{}
-	if d.IsAppConnected() || d.HasFeature("x") || d.ConnectionTimeout() != ConnectionTimeout {
-		t.Fatal("a new device is not connected and has no features")
+	if d.IsAppConnected() || d.ConnectionTimeout() != ConnectionTimeout {
+		t.Fatal("a new device is not connected")
 	}
-	d.Execute("x")
-	d.RunNativeScript(nil)
 }
 
-func TestRecordingIsUnsupported(t *testing.T) {
-	d := &Device{}
-	if err := d.StartRecording("x"); !errors.Is(err, device.ErrUnsupported) {
-		t.Errorf("StartRecording: %v", err)
-	}
-	if err := d.StopRecording(); !errors.Is(err, device.ErrUnsupported) {
-		t.Errorf("StopRecording: %v", err)
+func TestRoles(t *testing.T) {
+	if got, want := testkit.Roles(&Device{}), []string{"Screenshotter"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("roles = %v, want %v", got, want)
 	}
 }
 

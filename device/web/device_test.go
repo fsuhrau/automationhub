@@ -1,11 +1,11 @@
 package web
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/hostinfo"
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -46,11 +46,9 @@ func TestNewDeviceOnLinuxWithoutVersion(t *testing.T) {
 
 func TestDeviceTrivia(t *testing.T) {
 	d := &Device{}
-	if d.IsAppConnected() || d.HasFeature("x") || d.ConnectionTimeout() != ConnectionTimeout {
-		t.Fatal("a new device is not connected and has no features")
+	if d.IsAppConnected() || d.ConnectionTimeout() != ConnectionTimeout {
+		t.Fatal("a new device is not connected")
 	}
-	d.Execute("x")
-	d.RunNativeScript(nil)
 	if ok, err := d.IsAppInstalled(nil); !ok || err != nil {
 		t.Fatalf("IsAppInstalled %v %v", ok, err)
 	}
@@ -59,16 +57,8 @@ func TestDeviceTrivia(t *testing.T) {
 	}
 }
 
-func TestUnsupportedCapabilities(t *testing.T) {
-	d := &Device{}
-	_, _, _, shotErr := d.GetScreenshot()
-	for name, err := range map[string]error{
-		"StartRecording": d.StartRecording("x"),
-		"StopRecording":  d.StopRecording(),
-		"GetScreenshot":  shotErr,
-	} {
-		if !errors.Is(err, device.ErrUnsupported) {
-			t.Errorf("%s: %v, want ErrUnsupported", name, err)
-		}
+func TestHasNoOptionalRoles(t *testing.T) {
+	if got := testkit.Roles(&Device{}); len(got) != 0 {
+		t.Fatalf("roles = %v, want none", got)
 	}
 }

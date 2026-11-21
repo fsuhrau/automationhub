@@ -53,6 +53,7 @@ type Session struct {
 	cancel    context.CancelFunc
 	exited    chan struct{}
 	exitErr   error
+	output    *tailWriter // the server's stdout and stderr; nil before launch
 	closeOnce sync.Once
 }
 

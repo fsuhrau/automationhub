@@ -2,6 +2,8 @@ package testkit
 
 import (
 	"context"
+	"errors"
+	"io"
 	"reflect"
 	"testing"
 	"time"
@@ -99,7 +101,78 @@ func TestFakeRunnerStart(t *testing.T) {
 	}
 }
 
+func TestFakeRunnerRunWithStderrFailsLikeExecRunner(t *testing.T) {
+	r := &FakeRunner{}
+	r.Script("adb install x", []byte("out"), errBoom)
+	r.ScriptStderr("adb install x", []byte("Failure [INSTALL_FAILED]\n"))
+	out, err := r.Run(context.Background(), "adb", "install", "x")
+	var cmdErr *device.CommandError
+	if !errors.As(err, &cmdErr) || !errors.Is(err, errBoom) {
+		t.Fatalf("err = %v, want a *device.CommandError wrapping errBoom", err)
+	}
+	if string(out) != "out" || string(cmdErr.Stdout) != "out" || string(cmdErr.Stderr) != "Failure [INSTALL_FAILED]\n" {
+		t.Errorf("out=%q stdout=%q stderr=%q", out, cmdErr.Stdout, cmdErr.Stderr)
+	}
+}
+
+func TestFakeRunnerStderrWithoutAnErrorIsNotAnError(t *testing.T) {
+	r := &FakeRunner{}
+	r.ScriptStderr("adb ok", []byte("warning"))
+	r.Script("adb ok", []byte("fine"), nil)
+	if out, err := r.Run(context.Background(), "adb", "ok"); err != nil || string(out) != "fine" {
+		t.Errorf("out=%q err=%v", out, err)
+	}
+}
+
+func TestFakeRunnerStartStreamingWritesOutputAndStderr(t *testing.T) {
+	r := &FakeRunner{}
+	r.Script("xcodebuild test", []byte("line1\n"), errBoom)
+	r.ScriptStderr("xcodebuild test", []byte("line2\n"))
+	pr, pw := io.Pipe()
+	p, err := r.StartStreaming(context.Background(), pw, "xcodebuild", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { _ = p.Wait(); _ = pw.Close() }()
+	got, _ := io.ReadAll(pr)
+	if string(got) != "line1\nline2\n" {
+		t.Errorf("streamed %q", got)
+	}
+	if p.Wait() != errBoom {
+		t.Error("wait error")
+	}
+	if _, err := r.StartStreaming(context.Background(), io.Discard, "other"); err == nil {
+		t.Error("unscripted streaming start must fail")
+	}
+	if got := r.Commands(); !reflect.DeepEqual(got, []string{"xcodebuild test", "other"}) {
+		t.Errorf("commands = %v", got)
+	}
+}
+
+func TestNewCoreDeviceHasOnlyTheCoreRoles(t *testing.T) {
+	d := NewCoreDevice("c1")
+	if d.DeviceID() != "c1" || d.Fake.DeviceID() != "c1" {
+		t.Errorf("id = %q", d.DeviceID())
+	}
+	if _, ok := device.As[device.Screenshotter](d); ok {
+		t.Error("a core device must not be a Screenshotter")
+	}
+	if err := d.InstallApp(nil); err != nil || len(d.Fake.CallsTo("InstallApp")) != 1 {
+		t.Errorf("core calls reach the fake: %v", err)
+	}
+}
+
 var (
 	_ device.CommandRunner = (*FakeRunner)(nil)
 	_ device.Clock         = (*FakeClock)(nil)
 )
+
+func TestRolesListsTheOptionalRolesOfADevice(t *testing.T) {
+	full := []string{"Recorder", "Screenshotter", "FeatureExecutor", "NativeScripter", "AppDataClearer", "InputCapable", "LogReader", "LogFollower", "VideoStreamer"}
+	if got := Roles(NewFakeDevice("a")); !reflect.DeepEqual(got, full) {
+		t.Errorf("full device roles = %v", got)
+	}
+	if got := Roles(NewCoreDevice("a")); len(got) != 0 {
+		t.Errorf("core device roles = %v", got)
+	}
+}

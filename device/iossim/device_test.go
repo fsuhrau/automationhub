@@ -2,6 +2,7 @@ package iossim
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -97,7 +98,7 @@ func TestIdentityAndDefaults(t *testing.T) {
 	if d.DeviceType() != int(models.DeviceTypePhone) || d.PlatformType() != int(models.PlatformTypeiOSSimulator) {
 		t.Fatalf("types: %d %d", d.DeviceType(), d.PlatformType())
 	}
-	if d.ConnectionTimeout() != 10*time.Second || d.HasFeature("x") || !d.LastUpdate().IsZero() {
+	if d.ConnectionTimeout() != 10*time.Second || !d.LastUpdate().IsZero() {
 		t.Fatal("unexpected defaults")
 	}
 	d.State = parseSimState("nonsense")
@@ -106,12 +107,10 @@ func TestIdentityAndDefaults(t *testing.T) {
 	}
 }
 
-func TestUnsupportedActionsDoNotPanic(t *testing.T) {
+func TestRoles(t *testing.T) {
 	d := newTestDevice(&testkit.FakeRunner{}, false)
-	d.Execute("feature")
-	d.RunNativeScript([]byte("x"))
-	if err := unsupported("x"); !errors.Is(err, device.ErrUnsupported) {
-		t.Fatalf("not ErrUnsupported: %v", err)
+	if got, want := testkit.Roles(d), []string{"Recorder", "Screenshotter"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("roles = %v, want %v", got, want)
 	}
 }
 

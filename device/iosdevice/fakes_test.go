@@ -237,7 +237,15 @@ type fakeStarter struct {
 	proc     *fakeProc
 }
 
-func (s *fakeStarter) StartStreaming(out io.Writer, name string, args ...string) (RunnerProcess, error) {
+func (s *fakeStarter) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return s.runner.Run(ctx, name, args...)
+}
+
+func (s *fakeStarter) Start(ctx context.Context, name string, args ...string) (device.Process, error) {
+	return s.runner.Start(ctx, name, args...)
+}
+
+func (s *fakeStarter) StartStreaming(_ context.Context, out io.Writer, name string, args ...string) (device.Process, error) {
 	if _, err := s.runner.Start(context.Background(), name, args...); err != nil {
 		return nil, err
 	}
@@ -322,7 +330,7 @@ func newRigWith(t *testing.T, cfg *config.WebDriver, serials ...string) *rig {
 	for _, s := range serials {
 		r.proc.runner.Script("xcodebuild test-without-building -xctestrun "+xctestrun+" -destination id="+s, nil, nil)
 	}
-	deps := Deps{Clock: r.clock, Processes: r.proc, USB: r.usb.ops(), Hook: r.hook}
+	deps := Deps{Clock: r.clock, Runner: r.proc, USB: r.usb.ops(), Hook: r.hook}
 	r.h = NewHandlerWithDeps(config.Manager{WebDriver: cfg}, r.store, deps)
 	r.h.masterURL = strings.TrimPrefix(newMaster(t), "http://")
 	return r

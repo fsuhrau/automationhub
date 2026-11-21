@@ -54,12 +54,3 @@ func (d *Device) UpdatedAt() time.Time { return d.updatedAt }
 func (d *Device) IsAppConnected() bool { return d.Connection() != nil }
 
 func (d *Device) ConnectionTimeout() time.Duration { return ConnectionTimeout }
-
-// HasFeature: the Mac has no optional device features.
-func (d *Device) HasFeature(string) bool { return false }
-
-// Execute does nothing, there are no features to execute.
-func (d *Device) Execute(string) {}
-
-// RunNativeScript does nothing, the Mac has no native script runtime.
-func (d *Device) RunNativeScript([]byte) {}

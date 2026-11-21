@@ -35,7 +35,11 @@ func inputOf(dev device.Device) (device.InputCapable, error) {
 
 // Screenshot returns a native PNG screenshot.
 func (s *Service) Screenshot(dev device.Device) ([]byte, int, int, error) {
-	return dev.GetScreenshot()
+	shooter, ok := device.As[device.Screenshotter](dev)
+	if !ok {
+		return nil, 0, 0, fmt.Errorf("screenshot: %w", device.ErrUnsupported)
+	}
+	return shooter.GetScreenshot()
 }
 
 // Video starts a live video stream of the screen. It ends when ctx is done

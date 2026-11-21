@@ -44,10 +44,18 @@ func (s *Session) alive(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-s.exited:
-		return fmt.Errorf("scrcpy server exited: %v", s.exitErr)
+		return s.exitError()
 	default:
 		return nil
 	}
+}
+
+// exitError says that the server ended, with the end of its output.
+func (s *Session) exitError() error {
+	if tail := s.output.String(); tail != "" {
+		return fmt.Errorf("scrcpy server exited: %v: %s", s.exitErr, tail)
+	}
+	return fmt.Errorf("scrcpy server exited: %v", s.exitErr)
 }
 
 // attempt tries to connect once. retry is true when err is transient.

@@ -225,7 +225,7 @@ func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
 
 func TestDepsDefaults(t *testing.T) {
 	d := Deps{}.withDefaults()
-	if d.Clock == nil || d.HTTP == nil || d.Processes == nil || d.Hook == nil || d.openListener == nil {
+	if d.Clock == nil || d.HTTP == nil || d.Runner == nil || d.Hook == nil || d.openListener == nil {
 		t.Errorf("deps = %+v", d)
 	}
 	u := d.USB

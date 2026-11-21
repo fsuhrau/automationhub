@@ -15,7 +15,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
-func newForwardingDevice(t *testing.T, nodes *testkit.FakeNodes) *NodeDevice {
+func newForwardingDevice(t *testing.T, nodes manager.Nodes) *NodeDevice {
 	t.Helper()
 	h, _ := newHandlerFor(t, nodes)
 	d := h.newNodeDevice("node-1")

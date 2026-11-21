@@ -34,14 +34,6 @@ func (c *RPCClient) IsConnected(deviceId string) bool {
 	return err == nil && resp.Value
 }
 
-func (c *RPCClient) StartRecording(deviceId string, path string) error {
-	return nil
-}
-
-func (c *RPCClient) StopRecording(deviceId string) error {
-	return nil
-}
-
 func (c *RPCClient) HasFeature(deviceId string, feature string) bool {
 	ok, err := c.forwardBool("HasFeature", &FeatureRequest{DeviceID: deviceId, Feature: feature})
 	return err == nil && ok

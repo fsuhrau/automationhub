@@ -2,6 +2,7 @@ package iosdevice
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"math"
@@ -60,7 +61,7 @@ type xcodebuildOutput struct {
 // spawn starts xcodebuild and scans its output for the WebDriverAgent URL.
 func (l *launcher) spawn(args []string) (*wdaRunner, *xcodebuildOutput, error) {
 	pr, pw := io.Pipe()
-	proc, err := l.deps.Processes.StartStreaming(pw, "xcodebuild", args...)
+	proc, err := l.deps.Runner.StartStreaming(context.Background(), pw, "xcodebuild", args...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("start xcodebuild: %w", err)
 	}

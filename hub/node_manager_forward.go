@@ -106,43 +106,8 @@ func (nm *NodeManager) IsConnected(id manager.NodeIdentifier, deviceId string) b
 	return forwardOr(nm, id, false, func(h manager.RPCClient) bool { return h.IsConnected(deviceId) })
 }
 
-// StartRecording ignores path: the node decides where a recording goes.
-func (nm *NodeManager) StartRecording(id manager.NodeIdentifier, deviceId string, _ string) error {
-	return forwardErr(nm, id, func(h manager.RPCClient) error { return h.StartRecording(deviceId, "") })
-}
-
-func (nm *NodeManager) StopRecording(id manager.NodeIdentifier, deviceId string) error {
-	return forwardErr(nm, id, func(h manager.RPCClient) error { return h.StopRecording(deviceId) })
-}
-
-func (nm *NodeManager) GetScreenshot(id manager.NodeIdentifier, deviceId string) ([]byte, int, int, error) {
-	shot, err := forward(nm, id, func(h manager.RPCClient) (screenshot, error) {
-		data, width, height, err := h.GetScreenshot(deviceId)
-		return screenshot{data, width, height}, err
-	})
-	return shot.data, shot.width, shot.height, err
-}
-
-// screenshot bundles the results of GetScreenshot for forward.
-type screenshot struct {
-	data          []byte
-	width, height int
-}
-
-func (nm *NodeManager) HasFeature(id manager.NodeIdentifier, deviceId string, feature string) bool {
-	return forwardOr(nm, id, false, func(h manager.RPCClient) bool { return h.HasFeature(deviceId, feature) })
-}
-
-func (nm *NodeManager) Execute(id manager.NodeIdentifier, deviceId string, data string) {
-	forwardDo(nm, id, func(h manager.RPCClient) { h.Execute(deviceId, data) })
-}
-
 func (nm *NodeManager) ConnectionTimeout(id manager.NodeIdentifier, deviceId string) time.Duration {
 	return forwardOr(nm, id, NodeConnectionTimeout, func(h manager.RPCClient) time.Duration { return h.ConnectionTimeout(deviceId) })
-}
-
-func (nm *NodeManager) RunNativeScript(id manager.NodeIdentifier, deviceId string, script []byte) {
-	forwardDo(nm, id, func(h manager.RPCClient) { h.RunNativeScript(deviceId, script) })
 }
 
 func (nm *NodeManager) SendAction(id manager.NodeIdentifier, deviceId string, action []byte) {

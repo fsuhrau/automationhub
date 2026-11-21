@@ -81,32 +81,10 @@ func (d *Device) UninstallApp(_ *app.Parameter) error {
 	return fmt.Errorf("uninstall app: %w", device.ErrUnsupported)
 }
 
-func (d *Device) StartRecording(string) error {
-	return fmt.Errorf("start recording: %w", device.ErrUnsupported)
-}
-
-func (d *Device) StopRecording() error {
-	return fmt.Errorf("stop recording: %w", device.ErrUnsupported)
-}
-
-func (d *Device) GetScreenshot() ([]byte, int, int, error) {
-	return nil, 0, 0, fmt.Errorf("screenshot: %w", device.ErrUnsupported)
-}
-
 func (d *Device) IsAppConnected() bool {
 	return d.Connection() != nil
 }
 
-func (d *Device) HasFeature(string) bool {
-	return false
-}
-
-// Execute has no features to run, see HasFeature.
-func (d *Device) Execute(string) {}
-
 func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }
-
-// RunNativeScript does nothing: the editor has no native scripts.
-func (d *Device) RunNativeScript([]byte) {}

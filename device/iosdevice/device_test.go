@@ -3,6 +3,7 @@ package iosdevice
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -44,22 +46,11 @@ func TestNewDeviceIdentity(t *testing.T) {
 	}
 }
 
-func TestUnsupportedCapabilities(t *testing.T) {
+func TestRoles(t *testing.T) {
 	d := newDevice("U", nil, Deps{}.withDefaults())
-	if err := d.StartRecording("x"); !errors.Is(err, device.ErrUnsupported) {
-		t.Errorf("StartRecording = %v", err)
-	}
-	if err := d.StopRecording(); !errors.Is(err, device.ErrUnsupported) {
-		t.Errorf("StopRecording = %v", err)
-	}
-	if d.HasFeature("anything") {
-		t.Error("HasFeature = true")
-	}
-	log := &recordingWriter{}
-	d.SetLogWriter(log)
-	d.Execute("feature")
-	if len(log.errors) != 1 || !strings.Contains(log.errors[0], device.ErrUnsupported.Error()) {
-		t.Errorf("Execute logged %q", log.errors)
+	want := []string{"Screenshotter", "NativeScripter", "InputCapable", "VideoStreamer"}
+	if got := testkit.Roles(d); !reflect.DeepEqual(got, want) {
+		t.Errorf("roles = %v, want %v", got, want)
 	}
 }
 

@@ -45,26 +45,6 @@ func (d *Device) ConnectionTimeout() time.Duration {
 	return ConnectionTimeout
 }
 
-// StartRecording is not supported on iOS devices.
-func (d *Device) StartRecording(string) error {
-	return fmt.Errorf("start recording: %w", device.ErrUnsupported)
-}
-
-// StopRecording is not supported on iOS devices.
-func (d *Device) StopRecording() error {
-	return fmt.Errorf("stop recording: %w", device.ErrUnsupported)
-}
-
-// HasFeature is false: iOS devices have no device features.
-func (d *Device) HasFeature(string) bool {
-	return false
-}
-
-// Execute reports the feature as unsupported, see HasFeature.
-func (d *Device) Execute(feature string) {
-	d.Error("device", "feature %q: %v", feature, device.ErrUnsupported)
-}
-
 // RunNativeScript runs a hub script through WebDriverAgent.
 func (d *Device) RunNativeScript(script []byte) {
 	if d.webDriver == nil {

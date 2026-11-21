@@ -104,7 +104,11 @@ func runActions(t *testing.T, e *testEnv, d device.Device) {
 	if err := d.StartApp(nil, params, "s1", "n:1"); err != nil {
 		t.Fatal(err)
 	}
-	if data, _, _, err := d.GetScreenshot(); err != nil || string(data) != "png" {
+	shooter, ok := device.As[device.Screenshotter](d)
+	if !ok {
+		t.Fatal("the Mac device takes screenshots")
+	}
+	if data, _, _, err := shooter.GetScreenshot(); err != nil || string(data) != "png" {
 		t.Fatalf("screenshot %q, %v", data, err)
 	}
 	if err := d.StopApp(params); err != nil {

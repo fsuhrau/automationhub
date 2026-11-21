@@ -27,14 +27,6 @@ func (d *Device) StopApp(params *app.Parameter) error {
 	return nil
 }
 
-func (d *Device) StartRecording(string) error {
-	return fmt.Errorf("recording: %w", device.ErrUnsupported)
-}
-
-func (d *Device) StopRecording() error {
-	return fmt.Errorf("recording: %w", device.ErrUnsupported)
-}
-
 // GetScreenshot captures the window of the running app with screencapture.
 func (d *Device) GetScreenshot() ([]byte, int, int, error) {
 	ctx := context.Background()

@@ -3,32 +3,12 @@ package iosdevice
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/danielpaulus/go-ios/ios"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 )
-
-// syncBuffer is a bytes.Buffer safe for a writer and a reader goroutine.
-type syncBuffer struct {
-	mu sync.Mutex
-	sb strings.Builder
-}
-
-func (b *syncBuffer) Write(p []byte) (int, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.sb.Write(p)
-}
-
-func (b *syncBuffer) String() string {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.sb.String()
-}
 
 // waitFor polls cond until it holds; the conditions are goroutines catching up,
 // not elapsed time.
