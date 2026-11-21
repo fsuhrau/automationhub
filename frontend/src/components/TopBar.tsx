@@ -10,11 +10,12 @@ import OptionsMenu from './OptionsMenu';
 import ColorModeIconDropdown from '../shared-theme/ColorModeIconDropdown';
 import HubLogo from './HubLogo';
 import {useAuth} from '../hooks/AuthProvider';
+import {routes} from '../lib/routes';
 
 // TopBar is the header of the pages outside a project (the project list and
 // the profile): the product name leads home, the breadcrumbs say where you
 // are, and the user menu reaches the profile and logout from anywhere.
-export default function TopBar() {
+export default function TopBar(): React.ReactElement {
     const {user} = useAuth();
     return (
         <Box component="header" sx={{
@@ -22,9 +23,9 @@ export default function TopBar() {
             borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper',
         }}>
             <Stack direction="row" alignItems="center" spacing={2}
-                   sx={{maxWidth: 1700, mx: 'auto', px: {xs: 2, sm: 3}, py: 1}}>
-                <ButtonBase component={RouterLink} to="/" aria-label="Automation Hub, all projects"
-                            sx={{borderRadius: 1, gap: 1, p: 0.5}}>
+                sx={{maxWidth: 1700, mx: 'auto', px: {xs: 2, sm: 3}, py: 1}}>
+                <ButtonBase component={RouterLink} to={routes.projects()} aria-label="Automation Hub, all projects"
+                    sx={{borderRadius: 1, gap: 1, p: 0.5}}>
                     <HubLogo sx={{fontSize: 28}}/>
                     <Typography variant="subtitle1" sx={{fontWeight: 600, display: {xs: 'none', sm: 'block'}}}>
                         Automation Hub

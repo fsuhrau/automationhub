@@ -1,11 +1,13 @@
 import React, {Dispatch, ReactNode, useEffect, useRef, useState} from 'react';
 import {useSSE} from 'react-hooks-sse';
 import {DeviceStatePayload, HubStateAction, HubStateActions} from "./HubStateActions";
-import {useProjectContext} from "../hooks/ProjectProvider";
+import {useParams} from "react-router-dom";
 import {useHubState} from "../hooks/HubStateProvider";
 import {getAllDevices} from "../services/device.service";
 import {getAllApps} from "../services/app.service";
 import {getNodes} from "../services/settings.service";
+import {getProjects} from "../project/project.service";
+import IProject from "../project/project";
 import {useError} from "../ErrorProvider";
 import {SSE_CONNECTED_EVENT} from "./sseSource";
 
@@ -85,6 +87,21 @@ const applyUnlessCancelled = <T, >(
     });
 };
 
+// the project list is needed by every project page; load it once
+export const useProjectsLoad = (projects: IProject[] | null, dispatch: HubDispatch, setError: (e: object) => void): void => {
+    useEffect(() => {
+        if (projects !== null) return;
+        let cancelled = false;
+        applyUnlessCancelled(getProjects(), () => cancelled, {
+            apply: payload => dispatch({type: HubStateActions.ProjectsUpdate, payload}),
+            fail: setError,
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [projects, dispatch, setError]);
+};
+
 // devices and apps belong to the project; reload both when it changes
 export const useProjectDataLoad = (
     projectIdentifier: string,
@@ -129,9 +146,9 @@ export const useDeviceStateChanges = (dispatch: HubDispatch): void => {
     }, [changes, dispatch]);
 };
 
-const HubStateUpdates: React.FC<{ children: ReactNode }> = ({children}) => {
+// keeps the state of one project up to date: its nodes, devices and apps
+const ProjectUpdates: React.FC<{ projectIdentifier: string }> = ({projectIdentifier}) => {
     const {dispatch} = useHubState()
-    const {projectIdentifier} = useProjectContext()
     const {setError} = useError()
     const reconnects = useReconnects();
     // a node connected or disconnected: its status and its devices changed
@@ -144,8 +161,22 @@ const HubStateUpdates: React.FC<{ children: ReactNode }> = ({children}) => {
     useNodesLoad(projectIdentifier, dispatch, reconnects + nodeEvents);
     useProjectDataLoad(projectIdentifier, dispatch, setError);
     useDeviceStateChanges(dispatch);
+    return null;
+};
+
+// HubStateUpdates sits above the project pages: it loads the project list,
+// and then keeps the project of the URL up to date once it is known. It reads the project from
+// the URL, because the project provider below waits for the list it loads.
+const HubStateUpdates: React.FC<{ children: ReactNode }> = ({children}) => {
+    const {state, dispatch} = useHubState()
+    const {setError} = useError()
+    const {project_identifier: projectIdentifier} = useParams();
+    useProjectsLoad(state.projects, dispatch, setError);
+    // like the project provider, wait for the project to be known
+    const known = state.projects?.some(p => p.identifier === projectIdentifier);
 
     return <>
+        {projectIdentifier && known && <ProjectUpdates projectIdentifier={projectIdentifier}/>}
         {children}
     </>
 };

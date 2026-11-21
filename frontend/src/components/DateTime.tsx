@@ -1,3 +1,4 @@
+import React from 'react';
 import dayjs from 'dayjs';
 
 export const DEFAULT_DATE_TIME_FORMAT = 'YYYY/MM/DD HH:mm:ss';
@@ -10,7 +11,7 @@ export const formatDateTime = (value: Date | string | number | null | undefined,
     return date.isValid() ? date.format(format) : '';
 };
 
-const DateTime = ({value, format}: { value: Date | string | number | null | undefined, format?: string }) => (
+const DateTime = ({value, format}: { value: Date | string | number | null | undefined, format?: string }): React.ReactElement => (
     <>{formatDateTime(value, format)}</>
 );
 

@@ -2,7 +2,9 @@ import React, {ReactNode} from "react";
 import {Navigate, Outlet, useParams} from "react-router-dom";
 import {useProjectContext} from "./ProjectProvider";
 import {useHubState} from "./HubStateProvider";
+import {parseAppParam, useSelectedApp} from "./useSelectedApp";
 import PageLoader from "../components/PageLoader";
+import {routes} from "../lib/routes";
 
 interface ApplicationProviderProps {
     children: ReactNode;
@@ -12,63 +14,33 @@ type ApplicationContextType = {
     appId: number | null,
 }
 
-const initialState: ApplicationContextType = {
-    appId: null,
-}
+const ApplicationContext = React.createContext<ApplicationContextType>({appId: null});
 
-const ApplicationContext = React.createContext(initialState);
-
-export const useApplicationContext = (): ApplicationContextType => {
-    const contextState = React.useContext(ApplicationContext);
-    if (contextState === null) {
-        throw new Error('useApplicationContext must be used within a ApplicationProvider tag');
-    }
-    return contextState;
-}
+export const useApplicationContext = (): ApplicationContextType => React.useContext(ApplicationContext);
 
 const ApplicationProvider: React.FC<ApplicationProviderProps> = ({children}) => {
-
-    const {project, projectIdentifier} = useProjectContext();
+    const {projectIdentifier} = useProjectContext();
     const {state} = useHubState();
-    const {appId: urlAppId} = useParams<{ appId: string }>();
+    const {appId: param} = useParams<{ appId: string }>();
+    // the page's app, or the one picked last, or the first of the project
+    const {app} = useSelectedApp();
 
-    if (state.apps === null || state.apps === undefined) {
+    if (state.apps === null) {
         // apps of the project are still loading
         return <PageLoader/>;
     }
-    // redirect to project settings if there are no apps
-    if (state.apps.length === 0) {
-        return (<Navigate to={`/project/${projectIdentifier}/settings?tab=apps`}/>);
+    if (app === null) {
+        // there is no app to show yet
+        return <Navigate to={routes.project(projectIdentifier).settings('apps')}/>;
     }
-
-    const known = (id: number | null) => id !== null && !isNaN(id) && state.apps!.some(a => a.id === id);
-    let appId: number | null = urlAppId ? +urlAppId.replace("app:", "") : null;
-    if (!urlAppId) {
-        // the stored app may belong to another project
-        let stored: number | null = null;
-        try {
-            const value = localStorage.getItem('appId');
-            stored = value ? +value : null;
-        } catch {
-            stored = null;
-        }
-        appId = known(stored) ? stored : state.apps[0].id as number;
-    }
-
-
-    return (
-        <ApplicationContext.Provider value={{
-            appId: appId,
-        }}>
-            {children}
-        </ApplicationContext.Provider>
-    );
+    // an app of the URL that isn't known stays the page's app, so its pages show the error
+    return <ApplicationContext.Provider value={{appId: parseAppParam(param) ?? app.id}}>
+        {children}
+    </ApplicationContext.Provider>;
 };
 
-const ApplicationPage: React.FC = () => {
-    return <ApplicationProvider>
-        <Outlet/>
-    </ApplicationProvider>;
-};
+const ApplicationPage: React.FC = () => <ApplicationProvider>
+    <Outlet/>
+</ApplicationProvider>;
 
 export default ApplicationPage;

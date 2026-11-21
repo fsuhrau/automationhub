@@ -4,7 +4,7 @@ import {IAppData} from "../types/app";
 
 const STORAGE_KEY = 'appId';
 
-export const rememberApp = (appId: number) => {
+export const rememberApp = (appId: number): void => {
     try {
         localStorage.setItem(STORAGE_KEY, `${appId}`);
     } catch {

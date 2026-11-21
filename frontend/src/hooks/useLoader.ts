@@ -23,6 +23,8 @@ export function useLoader<T>(load: () => Promise<T> | null, deps: DependencyList
             return;
         }
         let current = true;
+        // a new load starts: the old error is gone and loading is true in the render right after this effect
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setError(null);
         setLoading(true);
         promise.then(result => {

@@ -1,25 +1,5 @@
-import http from '../http-common';
-import {IRunSummary} from '../types/test';
-
-// a run on the project overview, with its test and app
-export interface IOverviewRun extends IRunSummary {
-    testId: number,
-    testName: string,
-    appId: number,
-}
-
-export interface IProjectOverview {
-    apps: number,
-    tests: number,
-    bundles: number,
-    bundleStorage: number,
-    // tests whose latest run failed, was unstable or didn't run
-    failing: IOverviewRun[],
-    // latest runs that are still running
-    running: IOverviewRun[],
-    // the latest runs of the project, newest first
-    latest: IOverviewRun[],
-}
+import {ApiClient} from '../api/ApiClient';
+import {IProjectOverview} from '../types/overview.project';
 
 // OverviewMissing: the master predates the overview and needs a restart
 // with the current version
@@ -29,9 +9,15 @@ export class OverviewMissing extends Error {
     }
 }
 
-export const getOverview = (projectId: string): Promise<IProjectOverview> =>
-    http.get(`/${encodeURIComponent(projectId)}/overview`).then(resp => {
+export interface OverviewService {
+    get: (projectId: string) => Promise<IProjectOverview>,
+}
+
+export const overviewService = (api: ApiClient): OverviewService => ({
+    get: async projectId => {
+        const overview = await api.get<IProjectOverview | null>(`/${encodeURIComponent(projectId)}/overview`);
         // older masters don't have the route and answer with the web page
-        if (!resp.data || !Array.isArray(resp.data.latest)) throw new OverviewMissing();
-        return resp.data;
-    });
+        if (!overview || !Array.isArray(overview.latest)) throw new OverviewMissing();
+        return overview;
+    },
+});

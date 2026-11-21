@@ -8,7 +8,7 @@ const base = '/project/my%20proj';
 const a = p.app(3);
 const t = a.test(5);
 
-// every path pattern of App.tsx, with the builder that makes it
+// every path pattern of the route table, with the builder that makes it
 const BUILDERS: Record<string, string> = {
     '/login': routes.login(),
     '/signup': routes.signup(),
@@ -40,12 +40,12 @@ const BUILDERS: Record<string, string> = {
 };
 
 const appPatterns = (): string[] => {
-    const source = readFileSync(`${__dirname}/../App.tsx`, 'utf8');
+    const source = readFileSync(`${__dirname}/../app/routes.tsx`, 'utf8');
     return [...source.matchAll(/<Route\s+path=\{?["']([^"']+)["']/g)].map(m => m[1]);
 };
 
 describe('routes of App.tsx', () => {
-    it('has a builder for every path pattern of App.tsx', () => {
+    it('has a builder for every path pattern of the route table', () => {
         const patterns = appPatterns().filter(x => !['project'].includes(x));
         expect(patterns.length).toBeGreaterThan(20);
         expect(patterns.filter(x => !(x in BUILDERS))).toEqual([]);

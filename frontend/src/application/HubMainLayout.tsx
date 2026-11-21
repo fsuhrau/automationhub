@@ -1,72 +1,21 @@
-import React, {useEffect} from 'react';
-import {Outlet} from 'react-router-dom';
-import CssBaseline from '@mui/material/CssBaseline';
-import {SSEProvider, useSSE} from 'react-hooks-sse';
+import React from 'react';
+import {SSEProvider} from 'react-hooks-sse';
 import {createHubEventSource} from "./sseSource";
+import {ProjectProvider} from "../hooks/ProjectProvider";
+import HubStateUpdates from './HubStateUpdates';
+import LayoutShell from "../app/LayoutShell";
 
 const hubEventSource = createHubEventSource('/api/sse');
-import {Box} from '@mui/system';
-import {HubStateActions} from "./HubState";
-import MainMenu from "../components/MainMenu";
-import AppNavbar from "../components/AppNavbar";
-import Stack from "@mui/material/Stack";
-import Header from "../components/Header";
-import {ProjectProvider} from "../hooks/ProjectProvider";
-import {useHubState} from "../hooks/HubStateProvider";
-import {getProjects} from "../project/project.service";
-import HubStateUpdates from './HubStateUpdates';
 
-
-const HubMainLayout: React.FC = () => {
-
-    const {dispatch, state} = useHubState()
-
-    const handleDrawerToggle = (): void => {
-        dispatch({type: HubStateActions.ToggleMobileOpen});
-    };
-
-    useEffect(() => {
-        if (state.projects == null) {
-            getProjects().then(projects => {
-                dispatch({type: HubStateActions.ProjectsUpdate, payload: projects})
-            })
-        }
-    }, [state.projects])
-
-
-    return <ProjectProvider>
-        <SSEProvider source={hubEventSource}>
-            <HubStateUpdates>
-                <CssBaseline enableColorScheme/>
-                <Box sx={{display: 'flex'}}>
-                    <MainMenu/>
-                    <AppNavbar/>
-                    {/* Main content */}
-                    <Box
-                        component="main"
-                        sx={(theme) => ({
-                            flexGrow: 1,
-                            overflow: 'auto',
-                        })}
-                    >
-                        <Stack
-                            spacing={2}
-                            sx={{
-                                alignItems: 'center',
-                                mx: 3,
-                                pb: 5,
-                                mt: {xs: 8, md: 0},
-                            }}
-                        >
-                            <Header/>
-                            <Outlet/>
-                            {/*<MainGrid/>*/}
-                        </Stack>
-                    </Box>
-                </Box>
-            </HubStateUpdates>
-        </SSEProvider>
-    </ProjectProvider>
-};
+// HubMainLayout is the frame of every project page. HubStateUpdates loads the
+// project list and keeps the project's state up to date; the project provider
+// waits for that list.
+const HubMainLayout: React.FC = () => <SSEProvider source={hubEventSource}>
+    <HubStateUpdates>
+        <ProjectProvider>
+            <LayoutShell/>
+        </ProjectProvider>
+    </HubStateUpdates>
+</SSEProvider>;
 
 export default HubMainLayout;

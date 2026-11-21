@@ -12,69 +12,38 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import MenuButton from './MenuButton';
 import {useAuth} from "../hooks/AuthProvider";
 import {useNavigate} from "react-router-dom";
+import {routes} from "../lib/routes";
 
 const MenuItem = styled(MuiMenuItem)({
     margin: '2px 0',
 });
 
-export default function OptionsMenu() {
+const menuSx = {
+    [`& .${listClasses.root}`]: {padding: '4px'},
+    [`& .${paperClasses.root}`]: {padding: 0},
+    [`& .${dividerClasses.root}`]: {margin: '4px -4px'},
+};
+
+const logoutSx = {[`& .${listItemIconClasses.root}`]: {ml: 'auto', minWidth: 0}};
+
+export default function OptionsMenu(): React.ReactElement {
     const auth = useAuth();
     const navigate = useNavigate();
-
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+    const close = (): void => setAnchorEl(null);
 
-    const handleLogout = () => {
-        setAnchorEl(null);
-        auth.logOut();
-    }
     return (
         <React.Fragment>
-            <MenuButton
-                aria-label="Account menu"
-                onClick={handleClick}
-                sx={{borderColor: 'transparent'}}
-            >
+            <MenuButton aria-label="Account menu" onClick={e => setAnchorEl(e.currentTarget)} sx={{borderColor: 'transparent'}}>
                 <MoreVertRoundedIcon/>
             </MenuButton>
-            <Menu
-                anchorEl={anchorEl}
-                id="menu"
-                open={open}
-                onClose={handleClose}
-                onClick={handleClose}
+            <Menu anchorEl={anchorEl} id="menu" open={Boolean(anchorEl)} onClose={close} onClick={close}
                 transformOrigin={{horizontal: 'right', vertical: 'top'}}
-                anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
-                sx={{
-                    [`& .${listClasses.root}`]: {
-                        padding: '4px',
-                    },
-                    [`& .${paperClasses.root}`]: {
-                        padding: 0,
-                    },
-                    [`& .${dividerClasses.root}`]: {
-                        margin: '4px -4px',
-                    },
-                }}
-            >
-                <MenuItem onClick={() => navigate('/profile')}>Profile and access tokens</MenuItem>
-                <MenuItem onClick={() => navigate('/')}>All projects</MenuItem>
+                anchorOrigin={{horizontal: 'right', vertical: 'bottom'}} sx={menuSx}>
+                <MenuItem onClick={() => navigate(routes.profile())}>Profile and access tokens</MenuItem>
+                <MenuItem onClick={() => navigate(routes.projects())}>All projects</MenuItem>
                 <Divider/>
-                <MenuItem
-                    onClick={handleLogout}
-                    sx={{
-                        [`& .${listItemIconClasses.root}`]: {
-                            ml: 'auto',
-                            minWidth: 0,
-                        },
-                    }}
-                >
+                <MenuItem onClick={() => auth.logOut()} sx={logoutSx}>
                     <ListItemText>Logout</ListItemText>
                     <ListItemIcon>
                         <LogoutRoundedIcon fontSize="small"/>

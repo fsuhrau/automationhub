@@ -1,70 +1,67 @@
-import { Alert } from '@mui/material';
-    import React, { createContext, ReactNode, useContext, useState } from 'react';
+import {Alert} from '@mui/material';
+import React, {createContext, ReactNode, useContext, useEffect, useState} from 'react';
+import {errorMessage} from './lib/errorMessage';
 
-    interface ErrorContextType {
-        error: string | object | null;
-        setError: (message: string | object | null) => void;
+type ErrorValue = string | object | null;
+
+interface ErrorContextType {
+    error: ErrorValue;
+    setError: (message: ErrorValue) => void;
+}
+
+const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
+
+const HIDE_AFTER_MS = 8000;
+const NO_MESSAGE = 'An unknown error occurred';
+// what errorMessage makes of an object without any message
+const OBJECT_TEXT = '[object Object]';
+
+const textOf = (error: string | object): string => {
+    const text = errorMessage(error);
+    return text === OBJECT_TEXT ? NO_MESSAGE : text;
+};
+
+const alertStyle: React.CSSProperties = {
+    // fixed, so it shows wherever the page is scrolled
+    position: 'fixed',
+    zIndex: 1500,
+    bottom: '5%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '80%',
+    maxWidth: '600px',
+};
+
+// an error hides itself after a while
+const useAutoHide = (error: ErrorValue, hide: () => void): void => {
+    useEffect(() => {
+        if (!error) return;
+        const timer = setTimeout(hide, HIDE_AFTER_MS);
+        return () => clearTimeout(timer);
+    }, [error, hide]);
+};
+
+export const ErrorProvider = ({children}: { children: ReactNode }): React.ReactElement => {
+    const [error, setError] = useState<ErrorValue>(null);
+    const clear = React.useCallback(() => setError(null), []);
+    useAutoHide(error, clear);
+
+    return (
+        <ErrorContext.Provider value={{error, setError}}>
+            {children}
+            {error && (
+                <Alert severity="error" color="error" role="alert" onClose={clear} style={alertStyle}>
+                    {textOf(error)}
+                </Alert>
+            )}
+        </ErrorContext.Provider>
+    );
+};
+
+export const useError = (): ErrorContextType => {
+    const context = useContext(ErrorContext);
+    if (context === undefined) {
+        throw new Error('useError must be used within an ErrorProvider');
     }
-
-    const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
-
-    export const ErrorProvider = ({ children }: { children: ReactNode }) => {
-        const [error, setError] = useState<string | object | null>(null);
-
-        React.useEffect(() => {
-            if (error) {
-                const timer = setTimeout(() => {
-                    setError(null);
-                }, 8000);
-
-                return () => clearTimeout(timer);
-            }
-        }, [error]);
-
-        const getErrorMessage = (error: string | object): string => {
-            if (typeof error === 'string') {
-                return error;
-            }
-            // axios errors: prefer the message the server sent
-            const serverMessage = (error as { response?: { data?: { message?: unknown } } }).response?.data?.message;
-            if (typeof serverMessage === 'string' && serverMessage.length > 0) {
-                return serverMessage;
-            } else if (error && typeof error === 'object' && 'message' in error) {
-                return (error as { message: string }).message;
-            }
-            return 'An unknown error occurred';
-        };
-
-        return (
-            <ErrorContext.Provider value={{ error, setError }}>
-                {children}
-                {error && (
-                    <Alert
-                        severity="error"
-                        color="error"
-                        role="alert"
-                        onClose={() => setError(null)}
-                        style={{
-                            // fixed, so it shows wherever the page is scrolled
-                            position: 'fixed',
-                            zIndex: 1500,
-                            bottom: '5%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '80%',
-                            maxWidth: '600px',
-                        }}>
-                        {getErrorMessage(error)}
-                    </Alert>
-                )}
-            </ErrorContext.Provider>
-        );
-    };
-
-    export const useError = (): ErrorContextType => {
-        const context = useContext(ErrorContext);
-        if (context === undefined) {
-            throw new Error('useError must be used within an ErrorProvider');
-        }
-        return context;
-    };
+    return context;
+};

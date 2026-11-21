@@ -33,7 +33,7 @@ const PlatformTypeIcon: React.FC<PlatformTypeIconProps> = ({platformType, ...pro
     if (!icon) {
         return null;
     }
-    return <SvgIcon component={icon} inheritViewBox {...props}/>;
+    return <SvgIcon component={icon} inheritViewBox={true} {...props}/>;
 };
 
 export default PlatformTypeIcon;

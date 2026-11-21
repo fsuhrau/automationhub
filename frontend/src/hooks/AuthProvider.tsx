@@ -1,29 +1,16 @@
-import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import React, {createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {IUser} from "../types/user"
+import {IUser} from "../types/user";
+import {AuthClient, createAuthClient, CredentialsResult, LoginData, RegisterData, SessionResult, SignInMethod} from "../app/authClient";
+import {routes} from "../lib/routes";
 
-
-export interface RegisterData {
-    name: string,
-    email: string,
-    password: string,
-}
-
-export interface LoginData {
-    email: string,
-    password: string,
-}
+export type {LoginData, RegisterData, SignInMethod};
 
 // checking: session lookup in flight; anonymous: auth is enabled and nobody
 // is logged in; disabled: the master runs without authentication
 export type AuthState = 'checking' | 'authenticated' | 'anonymous' | 'disabled';
 
-// how people sign in to this master: an email and password form, or a
-// provider whose sign in starts at url
-export interface SignInMethod {
-    method: 'password' | 'github' | 'oauth2',
-    url?: string,
-}
+type OnError = (error: string) => void;
 
 type AuthContextProps = {
     user: IUser | null,
@@ -31,160 +18,88 @@ type AuthContextProps = {
     // known once a signed out session was checked; older masters don't say
     signIn: SignInMethod | null,
     // signs in and opens `to` (the page that asked for it) or the project list
-    loginAction: (d: LoginData, onError: (error: string) => void, to?: string) => {},
+    loginAction: (d: LoginData, onError: OnError, to?: string) => Promise<void>,
     // creates the account, signs in and opens `to` or the project list
-    registerAction: (d: RegisterData, onError: (error: string) => void, to?: string) => {},
-    logOut: () => {},
+    registerAction: (d: RegisterData, onError: OnError, to?: string) => Promise<void>,
+    logOut: () => Promise<void>,
 };
-
 
 interface AuthProviderProps {
     children: ReactNode;
+    // tests inject a fake
+    client?: AuthClient;
 }
 
 const AuthContext = createContext<AuthContextProps>({
     user: null,
     authState: 'checking',
     signIn: null,
-    loginAction: async () => {
-    },
-    registerAction: async () => {
-    },
-    logOut: async () => {
-    },
+    loginAction: async () => undefined,
+    registerAction: async () => undefined,
+    logOut: async () => undefined,
 });
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
+const defaultClient = createAuthClient();
 
-    const [user, setUser] = useState<IUser | null>(null);
-    const [authState, setAuthState] = useState<AuthState>('checking');
-    const [signIn, setSignIn] = useState<SignInMethod | null>(null);
+interface Session {
+    user: IUser | null,
+    authState: AuthState,
+    signIn: SignInMethod | null,
+}
+
+const CHECKING: Session = {user: null, authState: 'checking', signIn: null};
+
+const sessionOf = (result: SessionResult, previous: Session): Session => {
+    if (result.state === 'authenticated') return {...previous, user: result.user, authState: 'authenticated'};
+    if (result.state === 'anonymous') return {...previous, authState: 'anonymous', signIn: result.signIn};
+    return {...previous, authState: 'disabled'};
+};
+
+// looks the session up while nobody is signed in
+const useSession = (client: AuthClient): [Session, (s: Session) => void] => {
+    const [session, setSession] = useState<Session>(CHECKING);
+    const signedIn = session.user !== null;
+    useEffect(() => {
+        if (signedIn) return;
+        let active = true;
+        client.session().then(result => {
+            if (active) setSession(previous => sessionOf(result, previous));
+        });
+        return () => {
+            active = false;
+        };
+    }, [signedIn, client]);
+    return [session, setSession];
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({children, client = defaultClient}) => {
+    const [session, setSession] = useSession(client);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const checkSession = async () => {
-            try {
-                const response = await fetch("/auth/session", {
-                    method: "GET",
-                    credentials: "include", // Include cookies in the request
-                });
-                if (response.status === 401) {
-                    const body = await response.json().catch(() => ({}));
-                    if (body.method === 'password' || body.method === 'github' || body.method === 'oauth2') {
-                        setSignIn({method: body.method, url: body.url});
-                    }
-                    setAuthState('anonymous');
-                    return;
-                }
-                const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
-                if (!response.ok || !isJson) {
-                    // no /auth routes: the master runs without authentication
-                    setAuthState('disabled');
-                    return;
-                }
-                const res = await response.json();
-                if (res.user) {
-                    setUser(res.user);
-                    setAuthState('authenticated');
-                } else {
-                    // a master without authentication answers {"status": "ok"};
-                    // logged out sessions get a 401 (handled above)
-                    setAuthState('disabled');
-                }
-            } catch (err) {
-                // network problem: don't lock the user out, API calls still get 401
-                console.error(err);
-                setAuthState('disabled');
-            }
-        };
-
-        if (user == null) {
-            checkSession();
+    const submit = useCallback(async (send: Promise<CredentialsResult>, onError: OnError, to: string): Promise<void> => {
+        const result = await send;
+        if (!result.ok) {
+            onError(result.error);
+            return;
         }
-    }, [user, navigate]);
+        setSession({user: result.user, authState: 'authenticated', signIn: null});
+        navigate(to, {replace: true});
+    }, [navigate, setSession]);
 
-    const loginAction = async (data: LoginData, onError: (error: string) => void, to: string = "/") => {
-        try {
-            const response = await fetch("/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-                credentials: "include", // Include cookies in the request
-            });
-            const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
-            if (!isJson) {
-                // /auth/login only exists when the master uses password authentication
-                onError("Sign in with email and password is not enabled on this master (check auth.password in its config).");
-                return;
-            }
-            const res = await response.json();
-            if (res.user) {
-                setUser(res.user);
-                setAuthState('authenticated');
-                navigate(to, {replace: true});
-                return;
-            }
-            onError(res.error ?? "Invalid email or password");
-        } catch (err) {
-            console.error(err);
-            onError("Sign in failed: the server could not be reached.");
-        }
-    };
+    const logOut = useCallback(async (): Promise<void> => {
+        if (!await client.logout()) return;
+        setSession({user: null, authState: 'anonymous', signIn: null});
+        navigate(routes.login());
+    }, [client, navigate, setSession]);
 
-    const registerAction = async (data: RegisterData, onError: (error: string) => void, to: string = "/") => {
-        try {
-            const response = await fetch("/auth/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-                credentials: "include", // Include cookies in the request
-            });
-            const isJson = (response.headers.get('content-type') ?? '').includes('application/json');
-            if (!isJson) {
-                // without password auth the master has no /auth routes
-                onError("Registration is not available: the master is not configured for password authentication (auth.password in its config).");
-                return;
-            }
-            const res = await response.json();
-            if (res.user) {
-                setUser(res.user);
-                setAuthState('authenticated');
-                navigate(to, {replace: true});
-                return;
-            }
-            onError(res.error ?? `Registration failed (${response.status})`);
-        } catch (err) {
-            console.error(err);
-            onError("Registration failed: the server could not be reached.");
-        }
-    };
+    const value = useMemo((): AuthContextProps => ({
+        ...session,
+        loginAction: (data, onError, to = routes.projects()) => submit(client.login(data), onError, to),
+        registerAction: (data, onError, to = routes.projects()) => submit(client.register(data), onError, to),
+        logOut,
+    }), [session, client, submit, logOut]);
 
-    const logOut = async () => {
-        try {
-            const res = await fetch("/auth/logout", {
-                method: "POST",
-                credentials: "include", // Include cookies in the request
-            });
-            setUser(null);
-            setAuthState('anonymous');
-            navigate("/login");
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    return (
-        <AuthContext.Provider
-            value={{user: user, authState: authState, signIn: signIn, loginAction: loginAction, registerAction: registerAction, logOut: logOut}}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextProps => {
-    return useContext(AuthContext);
-};
+export const useAuth = (): AuthContextProps => useContext(AuthContext);

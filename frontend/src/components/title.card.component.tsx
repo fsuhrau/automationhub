@@ -29,7 +29,7 @@ export const TitleCard: React.FC<TitleCardProps> = (props: TitleCardProps) => {
                 </Box>
                 {actions && <Box sx={{ml: 'auto', display: 'flex', gap: 1, alignItems: 'center'}}>{actions}</Box>}
             </Box>
-            <Grid container spacing={2} columns={1}>
+            <Grid container={true} spacing={2} columns={1}>
                 <Grid size={{xs: 12, lg: 12}}>
                     {children}
                 </Grid>

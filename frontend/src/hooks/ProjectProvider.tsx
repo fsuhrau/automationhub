@@ -4,6 +4,7 @@ import IProject from "../project/project";
 import {useHubState} from "./HubStateProvider";
 import PageLoader from "../components/PageLoader";
 import {rememberProject} from "../project/projectsModel";
+import {routes} from "../lib/routes";
 
 type ProjectContextType = {
     project: IProject
@@ -21,43 +22,34 @@ type ProjectProps = {
     children: React.ReactNode;
 };
 
-export const useProjectContext = (): ProjectContextType => {
-    const contextState = React.useContext(ProjectContext);
-    if (contextState === null) {
-        throw new Error('useProjectContext must be used within a ProjectProvider tag');
-    }
-    return contextState;
-}
+export const useProjectContext = (): ProjectContextType => React.useContext(ProjectContext);
 
-export const ProjectProvider: React.FC<ProjectProps> = (props: ProjectProps) => {
+// links built from a missing value end up as "undefined" or "null"
+const isMissing = (identifier: string | undefined): identifier is undefined =>
+    identifier === undefined || identifier === "undefined" || identifier === "null";
 
+export const ProjectProvider: React.FC<ProjectProps> = ({children}) => {
     const {state} = useHubState()
+    const {project_identifier} = useParams();
 
-    let {project_identifier} = useParams();
-
-
-    if (project_identifier === undefined || project_identifier === "undefined" || project_identifier === null || project_identifier === "null") {
-        return <Navigate to="/"/>;
+    if (isMissing(project_identifier)) {
+        return <Navigate to={routes.projects()}/>;
     }
-
     if (state.projects === null) {
         // projects are still loading
         return <PageLoader/>;
     }
     const project = state.projects.find(p => p.identifier === project_identifier)
     if (project === undefined) {
-        return <Navigate to="/"/>;
+        return <Navigate to={routes.projects()}/>;
     }
 
     // the projects page lists the last opened project first
     rememberProject(project.identifier);
 
     return (
-        <ProjectContext.Provider value={{
-            project: project,
-            projectIdentifier: project_identifier,
-        }}>
-            {props.children}
+        <ProjectContext.Provider value={{project, projectIdentifier: project_identifier}}>
+            {children}
         </ProjectContext.Provider>
     );
 };

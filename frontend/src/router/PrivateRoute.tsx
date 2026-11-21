@@ -2,8 +2,9 @@ import React from "react";
 import {Navigate, Outlet, useLocation} from "react-router-dom";
 import {Backdrop, CircularProgress} from "@mui/material";
 import {useAuth} from "../hooks/AuthProvider";
+import {routes} from "../lib/routes";
 
-const PrivateRoute = () => {
+const PrivateRoute = (): React.ReactElement => {
     const {authState} = useAuth();
     const location = useLocation();
     if (authState === 'checking') {
@@ -11,7 +12,7 @@ const PrivateRoute = () => {
     }
     if (authState === 'anonymous') {
         // after signing in, the sign in page returns here
-        return <Navigate to="/login" replace state={{from: location.pathname + location.search}}/>;
+        return <Navigate to={routes.login()} replace={true} state={{from: location.pathname + location.search}}/>;
     }
     return <Outlet/>;
 };
