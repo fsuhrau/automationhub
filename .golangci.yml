@@ -44,7 +44,7 @@ linters:
           - revive
           - gochecknoglobals
           - gochecknoinits
-        path-except: '^(scripts/|events/|hub/action/|internal/testkit/|app/|tester/recording/|apperr/|storage/storeerr/|endpoints/httpx/|endpoints/api/apitest/|endpoints/api/(event_[^/]*|sse)\.go$|storage/migrations/|storage/(database|device|device_notifier|device_update)\.go$|device/[^/]+\.go$|device/generic/|device/appproto/|device/remote/|device/luascript/|device/(android|ios)device/lua_script_handler\.go$|hub/middleware/|hub/session/|service/|storage/[a-z]+store/|endpoints/api/[a-z]+/|authentication/|endpoints/control/|endpoints/(node|web|manager|master)/)'
+        path-except: '^(scripts/|events/|hub/action/|internal/testkit/|app/|tester/recording/|apperr/|storage/storeerr/|endpoints/httpx/|endpoints/api/apitest/|endpoints/api/(event_[^/]*|sse)\.go$|storage/migrations/|storage/(database|device|device_notifier|device_update)\.go$|device/[^/]+\.go$|device/generic/|device/appproto/|device/remote/|device/luascript/|device/(android|ios)device/lua_script_handler\.go$|hub/middleware/|hub/session/|service/|storage/[a-z]+store/|endpoints/api/[a-z]+/|authentication/|endpoints/control/|endpoints/(node|web|manager|master)/|device/(androiddevice|iosdevice|iossim|macos|web|hostinfo|unityeditor|node)/|modules/webdriver/|tester/(base|unity|scenario)/|tester/interface\.go$|hub/node/|hub/manager/|hub/node_manager\.go$|hub/videostream/rendezvous\.go$|hub/device_manager[^/]*\.go$|hub/service_device_manager\.go$)'
       # Generated code and tests are exempt from funlen.
       - linters:
           - funlen
