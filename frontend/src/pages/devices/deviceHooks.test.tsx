@@ -6,7 +6,9 @@ import {useDeviceEditForm} from './useDeviceEditForm';
 import {useDevicePool} from './useDevicePool';
 import {useUnlockDevice} from './useUnlockDevice';
 import {useHubState} from '../../hooks/HubStateProvider';
-import {device, fakeApi, renderPage} from './testKit';
+import {device} from './deviceFixtures';
+import {fakeApi} from '../../testing/fakeApi';
+import {renderPage} from './deviceHarness';
 
 describe('useScreenshot', () => {
     it('takes a new screenshot on refresh and forgets that the last one was broken', () => {

@@ -5,15 +5,14 @@ import {Route, Routes, useLocation} from 'react-router-dom';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import ProjectDashboard from './ProjectDashboard';
 import {ProjectProvider} from '../../hooks/ProjectProvider';
-import {renderInApp} from '../../app/testing/renderInApp';
-import {fakeApi, FakeApi} from '../../app/testing/fakeApi';
-import {resetSse, sendSse} from '../../app/testing/fakeSse';
-import {aDevice, aProject, anApp, SeedHub} from '../../app/testing/seedHub';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {fakeAuthClient, signedIn} from '../../testing/fakeAuth';
+import {FakeSse} from '../../testing/fakeSse';
+import {aDevice, aProject, anApp} from '../../testing/fixtures';
+import {renderWithProviders} from '../../testing/renderWithProviders';
 import {DeviceStateType} from '../../types/deviceStateType';
 import {IOverviewRun} from '../../types/overview.run';
 import {IProjectOverview} from '../../types/overview.project';
-
-vi.mock('react-hooks-sse', async () => (await import('../../app/testing/fakeSse')).fakeSseModule);
 
 const run = (id: number, fields: Partial<IOverviewRun> = {}): IOverviewRun => ({
     id, testId: 7, testName: `Test ${id}`, appId: 1, status: 'failed', state: 'finished', createdAt: new Date(Date.now() - 3 * 3600 * 1000),
@@ -26,25 +25,27 @@ const overview = (fields: Partial<IProjectOverview> = {}): IProjectOverview =>
 const Where: React.FC = () => <p>{`at ${useLocation().pathname}${useLocation().search}`}</p>;
 
 const mount = async (api: FakeApi, devices = [aDevice({id: 1, status: DeviceStateType.Booted})]): Promise<void> => {
-    renderInApp(
-        <SeedHub projects={[aProject('p1', 'Project One')]} apps={[anApp(1, 'Android app')]} devices={devices}>
-            <Routes>
-                <Route path="/project/:project_identifier" element={<ProjectProvider><ProjectDashboard/></ProjectProvider>}/>
-                <Route path="*" element={<Where/>}/>
-            </Routes>
-        </SeedHub>, {path: '/project/p1', api});
+    renderWithProviders(
+        <Routes>
+            <Route path="/project/:project_identifier" element={<ProjectProvider><ProjectDashboard/></ProjectProvider>}/>
+            <Route path="*" element={<Where/>}/>
+        </Routes>,
+        {url: '/project/p1', api, sse, auth: fakeAuthClient(signedIn), hub: {projects: [aProject('p1', 'Project One')], apps: [anApp(1, 'Android app')], devices}},
+    );
     await act(async () => undefined);
 };
 
+let sse = new FakeSse();
+
 beforeEach(() => {
-    resetSse();
+    sse = new FakeSse();
     localStorage.clear();
 });
 afterEach(() => vi.useRealTimers());
 
 describe('ProjectDashboard', () => {
     it('shows the project, its tiles and its runs', async () => {
-        await mount(fakeApi({'/p1/overview': overview()}));
+        await mount(fakeApi({'GET /p1/overview': overview()}));
         expect(screen.getByRole('heading', {name: 'Project One', level: 1})).toBeInTheDocument();
         expect(screen.getByText('1 of 1')).toBeInTheDocument();
         expect(screen.getByText('none in use')).toBeInTheDocument();
@@ -57,19 +58,19 @@ describe('ProjectDashboard', () => {
     });
 
     it('opens a run when its row is clicked', async () => {
-        await mount(fakeApi({'/p1/overview': overview()}));
+        await mount(fakeApi({'GET /p1/overview': overview()}));
         await userEvent.click(screen.getByText('Test 1'));
         expect(screen.getByText('at /project/p1/app:1/test/7/run/1')).toBeInTheDocument();
     });
 
     it('leads from the tiles to the devices and the apps', async () => {
-        await mount(fakeApi({'/p1/overview': overview()}));
+        await mount(fakeApi({'GET /p1/overview': overview()}));
         await userEvent.click(screen.getByRole('link', {name: /Devices ready/}));
         expect(screen.getByText('at /project/p1/devices')).toBeInTheDocument();
     });
 
     it('says that nothing failed and that nothing ran', async () => {
-        await mount(fakeApi({'/p1/overview': overview({failing: [], latest: []})}));
+        await mount(fakeApi({'GET /p1/overview': overview({failing: [], latest: []})}));
         expect(screen.getByText('No test failed in its latest run.')).toBeInTheDocument();
         expect(screen.getByText('Nothing ran yet. Start a test from Tests.')).toBeInTheDocument();
     });
@@ -79,7 +80,7 @@ describe('ProjectDashboard', () => {
 describe('ProjectDashboard runs and devices', () => {
     it('shows the runs that are running, with the name of their app or a fallback', async () => {
         const running = [run(3, {status: 'running'}), run(4, {status: 'running', appId: 9})];
-        await mount(fakeApi({'/p1/overview': overview({running})}));
+        await mount(fakeApi({'GET /p1/overview': overview({running})}));
         const section = within(screen.getByRole('heading', {name: 'Running now'}).closest('.MuiCard-root') as HTMLElement);
         expect(section.getByText(/Android app/)).toBeInTheDocument();
         expect(section.getByText(/app 9/)).toBeInTheDocument();
@@ -87,26 +88,26 @@ describe('ProjectDashboard runs and devices', () => {
 
     it('counts devices in use', async () => {
         const devices = [aDevice({id: 1, status: DeviceStateType.Booted}), aDevice({id: 2, status: DeviceStateType.Booted, lockedBy: 'someone'})];
-        await mount(fakeApi({'/p1/overview': overview()}), devices);
+        await mount(fakeApi({'GET /p1/overview': overview()}), devices);
         expect(screen.getByText('1 of 2')).toBeInTheDocument();
         expect(screen.getByText('1 in use')).toBeInTheDocument();
     });
 
     it('says when there are no devices yet', async () => {
-        await mount(fakeApi({'/p1/overview': overview()}), []);
+        await mount(fakeApi({'GET /p1/overview': overview()}), []);
         expect(screen.getByText('no devices yet')).toBeInTheDocument();
     });
 });
 
 describe('ProjectDashboard for new projects', () => {
     it('asks for the first app', async () => {
-        await mount(fakeApi({'/p1/overview': overview({apps: 0, tests: 0})}));
+        await mount(fakeApi({'GET /p1/overview': overview({apps: 0, tests: 0})}));
         await userEvent.click(screen.getByRole('link', {name: 'Add an app'}));
         expect(screen.getByText('at /project/p1/settings?tab=apps')).toBeInTheDocument();
     });
 
     it('offers to create a test for each app', async () => {
-        await mount(fakeApi({'/p1/overview': overview({tests: 0})}));
+        await mount(fakeApi({'GET /p1/overview': overview({tests: 0})}));
         await userEvent.click(screen.getByRole('link', {name: /Test for Android app/}));
         expect(screen.getByText('at /project/p1/app:1/test/new')).toBeInTheDocument();
     });
@@ -114,13 +115,13 @@ describe('ProjectDashboard for new projects', () => {
 
 describe('ProjectDashboard loading', () => {
     it('shows progress until the overview arrives', async () => {
-        await mount(fakeApi({'/p1/overview': () => new Promise(() => undefined)}));
+        await mount(fakeApi({'GET /p1/overview': () => new Promise(() => undefined)}));
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
 
     it('shows the error and retries', async () => {
         let fail = true;
-        const api = fakeApi({'/p1/overview': () => {
+        const api = fakeApi({'GET /p1/overview': () => {
             if (fail) throw new Error('overview down');
             return overview();
         }});
@@ -133,7 +134,7 @@ describe('ProjectDashboard loading', () => {
     });
 
     it('says when the master is too old', async () => {
-        await mount(fakeApi({'/p1/overview': '<html/>'}));
+        await mount(fakeApi({'GET /p1/overview': '<html/>'}));
         expect(screen.getByText(/This master is older than the page/)).toBeInTheDocument();
         expect(screen.queryByRole('progressbar')).toBeNull();
     });
@@ -142,10 +143,10 @@ describe('ProjectDashboard loading', () => {
 
 describe('ProjectDashboard reloading', () => {
     it('reloads when a run of the project started', async () => {
-        const api = fakeApi({'/p1/overview': overview()});
+        const api = fakeApi({'GET /p1/overview': overview()});
         await mount(api);
         vi.useFakeTimers();
-        sendSse('test_runs', {projectId: 'p1', appId: 1, testRunId: 5, state: 'started'});
+        sse.emit('test_runs', {projectId: 'p1', appId: 1, testRunId: 5, state: 'started'});
         await act(async () => {
             await vi.advanceTimersByTimeAsync(300);
         });
@@ -154,7 +155,7 @@ describe('ProjectDashboard reloading', () => {
 
     it('refreshes while a run is running', async () => {
         vi.useFakeTimers();
-        const api = fakeApi({'/p1/overview': overview({running: [run(3, {status: 'running'})]})});
+        const api = fakeApi({'GET /p1/overview': overview({running: [run(3, {status: 'running'})]})});
         await mount(api);
         await act(async () => {
             await vi.advanceTimersByTimeAsync(15000);
@@ -163,7 +164,7 @@ describe('ProjectDashboard reloading', () => {
     });
 
     it('does not refresh when nothing runs', async () => {
-        const api = fakeApi({'/p1/overview': overview()});
+        const api = fakeApi({'GET /p1/overview': overview()});
         await mount(api);
         vi.useFakeTimers();
         await act(async () => {

@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {TestType} from '../../types/test.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
-import {aSummary, aTest} from './definitions/testing/fixtures';
+import {aSummary, aTest} from './definitions/harness/fixtures';
 import {countHealth, describeConfig, filterTests, health, runStats, TestConfigLike} from './testsListModel';
 
 const config = (over: Partial<TestConfigLike> = {}): TestConfigLike =>

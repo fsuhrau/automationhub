@@ -1,12 +1,10 @@
 import {useMemo} from 'react';
-import {ApiClient, createApiClient} from '../api/ApiClient';
+import {ApiClient} from '../api/ApiClient';
 import {useApiClient} from '../api/ApiClientProvider';
-import http from '../http-common';
 import IAccessTokenData from '../types/access.token';
-import {AppParameter, IAppData} from '../types/app';
 import {INodeData} from '../types/node';
 import {IUser} from '../types/user';
-import {NewAccessTokenRequest, NewAppRequest, NewNodeRequest, NodeWithToken, ParameterRequest} from '../types/settings.requests';
+import {NewAccessTokenRequest, NewNodeRequest, NodeWithToken} from '../types/settings.requests';
 
 export interface SettingsService {
     accessTokens: (projectId: string) => Promise<IAccessTokenData[]>,
@@ -31,40 +29,7 @@ export const settingsService = (api: ApiClient): SettingsService => ({
     users: (projectId) => api.get(`/${projectId}/settings/users`),
 });
 
-// an app of a project
-export interface AppScope {
-    projectId: string,
-    appId: number,
-}
-
-// the app calls of the settings page: the apps, their name and parameters
-export interface AppsSettingsService {
-    list: (projectId: string) => Promise<IAppData[]>,
-    create: (projectId: string, data: NewAppRequest) => Promise<IAppData>,
-    update: (app: AppScope, data: IAppData) => Promise<IAppData>,
-    addParameter: (app: AppScope, data: ParameterRequest) => Promise<AppParameter>,
-    updateParameter: (app: AppScope, id: number, data: ParameterRequest) => Promise<AppParameter>,
-    removeParameter: (app: AppScope, id: number) => Promise<void>,
-}
-
-export const appsSettingsService = (api: ApiClient): AppsSettingsService => ({
-    list: (projectId) => api.get(`/${projectId}/apps`),
-    create: (projectId, data) => api.post(`/${projectId}/app`, data),
-    update: ({projectId, appId}, data) => api.put(`/${projectId}/app/${appId}`, data),
-    addParameter: ({projectId, appId}, data) => api.post(`/${projectId}/app/${appId}/parameter`, data),
-    updateParameter: ({projectId, appId}, id, data) => api.put(`/${projectId}/app/${appId}/parameter/${id}`, data),
-    removeParameter: ({projectId, appId}, id) => api.delete(`/${projectId}/app/${appId}/parameter/${id}`),
-});
-
 export const useSettingsService = (): SettingsService => {
     const api = useApiClient();
     return useMemo(() => settingsService(api), [api]);
 };
-
-export const useAppsSettingsService = (): AppsSettingsService => {
-    const api = useApiClient();
-    return useMemo(() => appsSettingsService(api), [api]);
-};
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getNodes = (projectId: string): Promise<INodeData[]> => settingsService(createApiClient(http)).nodes(projectId);

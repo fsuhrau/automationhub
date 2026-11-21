@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import {IBaselineCandidate} from '../../types/protocol.baseline';
 import BaselinePicker from './BaselinePicker';
 import {METRICS} from './run/performanceModel';
-import {fakeApi, FakeApi} from './run/testkit/fakes';
-import {at} from './run/testkit/fixtures';
-import {wrapperOf} from './run/testkit/wrapper';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {at} from './run/harness/fixtures';
+import {wrapperOf} from '../../testing/renderWithProviders';
 
 const refs = {projectId: 'p1', appId: 1, testId: 2, runId: 5, protocolId: 9};
 const key = 'GET /p1/app/1/test/2/run/5/9/baselines';
@@ -61,7 +61,7 @@ describe('the baseline picker', () => {
         const api = fakeApi({[key]: {candidates: [], tags: []}});
         show(api, {open: false});
         await act(async () => undefined);
-        expect(api.requests).toHaveLength(0);
+        expect(api.calls).toHaveLength(0);
     });
 });
 
@@ -75,7 +75,7 @@ describe('the baseline picker: empty and failing', () => {
         const api = fakeApi({[key]: new Error('down')});
         show(api);
         await userEvent.click(await screen.findByRole('button', {name: 'Retry'}));
-        await waitFor(() => expect(api.requests).toHaveLength(2));
+        await waitFor(() => expect(api.calls).toHaveLength(2));
         expect(screen.getByText('The runs could not be loaded.')).toBeInTheDocument();
     });
 
@@ -95,7 +95,7 @@ describe('the baseline picker: searching', () => {
         vi.useRealTimers();
     });
 
-    const params = (api: FakeApi): unknown[] => api.requests.map(r => r.config?.params);
+    const params = (api: FakeApi): unknown[] => api.calls.map(r => r.config?.params);
 
     it('searches by text once typing pauses, by tag and on any device', async () => {
         const api = fakeApi({[key]: {candidates: [], tags: ['release']}});

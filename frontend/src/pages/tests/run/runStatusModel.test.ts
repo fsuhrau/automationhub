@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {TestResultState as S} from '../../../types/test.result.state.enum';
-import {device} from './testkit/fixtures';
+import {device} from './harness/fixtures';
 import {deviceLabel, RESULT_ORDER, resultLabel, resultPalette, STATUS} from './runStatusModel';
 
 describe('resultLabel', () => {

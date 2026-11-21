@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {screen, waitFor} from '@testing-library/react';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {at, entry, protocol} from './run/testkit/fixtures';
-import {base, login, openProtocol, steps} from './run/testkit/protocolPage';
+import {at, entry, protocol} from './run/harness/fixtures';
+import {base, login, openProtocol, steps} from './run/harness/protocolPage';
 
 beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
@@ -44,8 +44,8 @@ describe('a protocol that is executing', () => {
         const runner = protocol({id: 5, testName: 'Game.Tests/Login', endedAt: undefined});
         const {sse, api} = openProtocol(login({parentTestProtocolId: 5}), [runner]);
         await screen.findByText('open menu');
-        const before = api.requests.filter(r => r.key === `GET ${base}`).length;
+        const before = api.calls.filter(r => r.key === `GET ${base}`).length;
         sse.emit('test_run_3_protocol', protocol({id: 5, endedAt: at(30)}));
-        await waitFor(() => expect(api.requests.filter(r => r.key === `GET ${base}`)).toHaveLength(before + 1));
+        await waitFor(() => expect(api.calls.filter(r => r.key === `GET ${base}`)).toHaveLength(before + 1));
     });
 });

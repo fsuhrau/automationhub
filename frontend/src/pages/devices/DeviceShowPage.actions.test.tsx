@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {fireEvent, screen, waitFor, within} from '@testing-library/react';
-import {device} from './testKit';
+import {device} from './deviceFixtures';
 import {open, withHistory} from './deviceShowKit';
 
 describe('DeviceShowPage unlocking', () => {

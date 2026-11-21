@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {act, fireEvent, screen} from '@testing-library/react';
 import {PlatformType} from '../../types/platform.type.enum';
-import {device} from './testKit';
+import {device} from './deviceFixtures';
 import {open, withHistory} from './deviceShowKit';
 
 describe('DeviceShowPage log and screen', () => {

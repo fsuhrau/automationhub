@@ -1,5 +1,5 @@
-import {cleanup, fireEvent, render, screen} from '@testing-library/react';
-import {afterEach, describe, expect, it} from 'vitest';
+import {fireEvent, render, screen} from '@testing-library/react';
+import {describe, expect, it} from 'vitest';
 import React from 'react';
 import {HubStateActions} from '../application/HubState';
 import {HubStateProvider, useHubState} from './HubStateProvider';
@@ -19,8 +19,6 @@ const toggle = (): void => {
 };
 
 describe('HubStateProvider', () => {
-    afterEach(cleanup);
-
     it('starts with the initial state', () => {
         render(<HubStateProvider><Consumer name="a"/></HubStateProvider>);
         expect(screen.getByText('a:false')).toBeInTheDocument();

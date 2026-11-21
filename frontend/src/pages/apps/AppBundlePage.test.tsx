@@ -3,11 +3,12 @@ import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBundleDetail} from '../../types/app';
 import {androidInfo, bundleInfo, detail, device} from './appsFixtures';
-import {failure, fakeApi, FakeApi, Handler, renderBundles} from './appsHarness';
+import {failure, fakeApi, FakeApi, Reply} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 const DETAIL = 'GET /demo/app/3/bundle/7';
 
-const master = (shown: () => IAppBundleDetail, extra: Record<string, Handler> = {}): FakeApi => fakeApi({
+const master = (shown: () => IAppBundleDetail, extra: Record<string, Reply> = {}): FakeApi => fakeApi({
     [DETAIL]: shown,
     'GET /demo/devices': () => [device(1), device(2, {osVersion: '6', alias: 'Old phone'}), device(3, {platformType: 1 - 1})],
     ...extra,

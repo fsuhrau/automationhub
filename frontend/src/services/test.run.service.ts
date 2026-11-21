@@ -1,7 +1,6 @@
 import {AxiosRequestConfig} from 'axios';
-import {ApiClient, createApiClient} from '../api/ApiClient';
+import {ApiClient} from '../api/ApiClient';
 import {useApiClient} from '../api/ApiClientProvider';
-import http from '../http-common';
 import {useMemo} from 'react';
 import ITestRunData from '../types/test.run';
 import ITestRunResponseData from '../types/test.run.response';
@@ -9,9 +8,6 @@ import {IBaseline, IBaselineFilter, IBaselineList} from '../types/protocol.basel
 import {ITestRunListEntry, ITestRunsPage} from '../types/test.run.list';
 import {ProtocolRef, RunRef, TestRef} from '../types/test.run.refs';
 import type {RunTestData} from '../types/test.requests';
-
-export type {IBaseline, IBaselineCandidate, IBaselineFilter} from '../types/protocol.baseline';
-export type {ITestRunListEntry, ITestRunsPage} from '../types/test.run.list';
 
 export interface RunsQuery {
     before?: number,
@@ -74,15 +70,3 @@ export const useTestRunService = (): TestRunService => {
     const api = useApiClient();
     return useMemo(() => testRunService(api), [api]);
 };
-
-const legacy = testRunService(createApiClient(http));
-
-/** @deprecated legacy wrapper, removed in F13 */
-// eslint-disable-next-line max-params
-export const getRunsPage = (projectId: string, appId: number, testId: number, before?: number, limit?: number): Promise<ITestRunsPage> =>
-    legacy.runsPage({projectId, appId, testId}, {before, limit});
-
-/** @deprecated legacy wrapper, removed in F13 */
-// eslint-disable-next-line max-params
-export const getRun = (projectId: string, appId: number, testId: string, runId: string): Promise<ITestRunResponseData> =>
-    legacy.run({projectId, appId, testId, runId});

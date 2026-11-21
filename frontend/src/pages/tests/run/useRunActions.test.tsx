@@ -1,9 +1,9 @@
 import {describe, expect, it} from 'vitest';
 import {act, renderHook, RenderHookResult, screen, waitFor} from '@testing-library/react';
 import {Location, useLocation} from 'react-router-dom';
-import {fakeApi, FakeApi} from './testkit/fakes';
-import {run} from './testkit/fixtures';
-import {wrapperOf} from './testkit/wrapper';
+import {fakeApi, FakeApi} from '../../../testing/fakeApi';
+import {run} from './harness/fixtures';
+import {wrapperOf} from '../../../testing/renderWithProviders';
 import {RunActions, useRunActions} from './useRunActions';
 
 const test = {projectId: 'p1', appId: 1, testId: 2};
@@ -29,7 +29,7 @@ describe('useRunActions', () => {
     it('starts the test again with the bundle and parameters and opens the new run', async () => {
         const {api, result} = setup({[`POST ${base}/run`]: run({id: 4})});
         await act(async () => result.current.actions.rerun());
-        expect(api.requests[0].data).toEqual({appBinaryId: 5, params: 'A=1', startUrl: 'u'});
+        expect(api.calls[0].data).toEqual({appBinaryId: 5, params: 'A=1', startUrl: 'u'});
         expect(result.current.location.pathname).toBe('/project/p1/app:1/test/2/run/4');
     });
 
@@ -37,7 +37,7 @@ describe('useRunActions', () => {
         const {api, result} = setup({[`POST ${base}/run/3/cancel`]: null});
         expect(result.current.actions.cancelling).toBe(false);
         await act(async () => result.current.actions.cancel());
-        expect(api.requests[0].key).toBe(`POST ${base}/run/3/cancel`);
+        expect(api.calls[0].key).toBe(`POST ${base}/run/3/cancel`);
         expect(result.current.actions.cancelling).toBe(true);
     });
 

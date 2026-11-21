@@ -2,12 +2,15 @@ import {expect, it} from 'vitest';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from './SettingsPage';
-import {apiError, app, createFakeApi, Handler, Opened, parameter, renderInProject, User} from './testKit';
+import {app, parameter} from './settingsFixtures';
+import {Reply, failure, fakeApi} from '../../testing/fakeApi';
+import {Opened, User} from '../../testing/opened';
+import {renderInProject} from './settingsHarness';
 
 const android = app({parameter: [parameter(), parameter({id: 11, name: 'Mode', type: {type: 'option', options: ['a', 'b'], defaultValue: 'a'}})]});
 
-const open = async (handlers: Record<string, Handler> = {}): Promise<Opened> => {
-    const api = createFakeApi({'GET /p1/apps': () => [android], ...handlers});
+const open = async (handlers: Record<string, Reply> = {}): Promise<Opened> => {
+    const api = fakeApi({'GET /p1/apps': () => [android], ...handlers});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=apps'});
     await screen.findByRole('table', {name: 'Parameters'});
     return {api, user: userEvent.setup()};
@@ -83,13 +86,13 @@ it('Settings > Apps > parameters: edits a parameter', async () => {
     await user.type(field, 'us');
     await user.click(within(d).getByRole('button', {name: 'Save'}));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(api.bodies('PUT /p1/app/1/parameter/10')).toEqual([{name: 'MarketId', type: {type: 'string', defaultValue: 'us'}}]);
+    expect(api.bodies('PUT /p1/app/1/parameter/10')).toEqual([{id: 10, name: 'MarketId', type: {type: 'string', defaultValue: 'us'}}]);
     expect(screen.getByText('us')).toBeInTheDocument();
 });
 
 it('Settings > Apps > parameters: shows the master\'s error when saving fails', async () => {
     const {user} = await open({'PUT /p1/app/1/parameter/10': () => {
-        throw apiError('rejected');
+        throw failure('rejected');
     }});
     await user.click(screen.getByRole('button', {name: 'Edit MarketId'}));
     const d = await dialog('Edit MarketId');
@@ -109,7 +112,7 @@ it('Settings > Apps > parameters: deletes a parameter after a confirmation', asy
 
 it('Settings > Apps > parameters: keeps the parameter and shows the error when the delete fails', async () => {
     const {user} = await open({'DELETE /p1/app/1/parameter/10': () => {
-        throw apiError('locked');
+        throw failure('locked');
     }});
     await user.click(screen.getByRole('button', {name: 'Delete MarketId'}));
     const d = await dialog('Delete MarketId?');

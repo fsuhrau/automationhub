@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import Grid from '@mui/material/Grid';
-import {ITestRunListEntry} from '../../../../services/test.run.service';
+import {ITestRunListEntry} from '../../../../types/test.run.list';
 import {formatDateTime} from '../../../../components/DateTime';
 import {ago} from '../../../apps/bundlesModel';
 import {formatDuration} from '../../testRunModel';

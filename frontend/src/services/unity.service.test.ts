@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import {ApiClient} from '../api/ApiClient';
-import {aFunction} from '../pages/tests/definitions/testing/fixtures';
+import {aFunction} from '../pages/tests/definitions/harness/fixtures';
 import {unityService} from './unity.service';
 
 describe('unityService', () => {

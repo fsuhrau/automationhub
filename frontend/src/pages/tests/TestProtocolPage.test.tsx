@@ -3,8 +3,9 @@ import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ITestProtocolData from '../../types/test.protocol';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {entry, protocol} from './run/testkit/fixtures';
-import {location, login, openProtocol, shop, tab, url} from './run/testkit/protocolPage';
+import {entry, protocol} from './run/harness/fixtures';
+import {login, openProtocol, shop, tab, url} from './run/harness/protocolPage';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
@@ -42,9 +43,9 @@ describe('the protocol page: overview', () => {
         await userEvent.click(await screen.findByRole('button', {name: 'Charts and checkpoints'}));
         expect(tab(/Performance/)).toHaveAttribute('aria-selected', 'true');
         await userEvent.click(tab(/Log/));
-        expect(location()).toBe(`${url}?t=log`);
+        expect(currentLocation()).toBe(`${url}?t=log`);
         await userEvent.click(tab(/Overview/));
-        expect(location()).toBe(url);
+        expect(currentLocation()).toBe(url);
     });
 
 });
@@ -69,7 +70,7 @@ describe('the protocol page: the other tests of the run', () => {
         await screen.findByText('Test 1 of 2');
         expect(screen.getByRole('button', {name: 'Previous'})).toBeDisabled();
         await userEvent.click(screen.getByRole('button', {name: 'Next'}));
-        expect(location()).toBe('/project/p1/app:1/test/2/run/3/2');
+        expect(currentLocation()).toBe('/project/p1/app:1/test/2/run/3/2');
     });
 
     it('goes to the previous test, keeping the tab, with no next one on the last', async () => {
@@ -77,14 +78,14 @@ describe('the protocol page: the other tests of the run', () => {
         await screen.findByText('Test 2 of 2');
         expect(screen.getByRole('button', {name: 'Next'})).toBeDisabled();
         await userEvent.click(screen.getByRole('button', {name: 'Previous'}));
-        expect(location()).toBe('/project/p1/app:1/test/2/run/3/1?t=performance');
+        expect(currentLocation()).toBe('/project/p1/app:1/test/2/run/3/1?t=performance');
     });
 
     it('skips to the next failure', async () => {
         openProtocol(login(), [protocol({id: 2, testName: 'Game.Tests/Other'}), {...shop, id: 3}], {at: `${url}?t=log`});
         expect(await screen.findByText('Test 1 of 3')).toBeInTheDocument();
         await userEvent.click(screen.getByText('Next failure'));
-        expect(location()).toBe('/project/p1/app:1/test/2/run/3/3?t=log');
+        expect(currentLocation()).toBe('/project/p1/app:1/test/2/run/3/3?t=log');
     });
 });
 
@@ -110,7 +111,7 @@ describe('a failed test', () => {
         openProtocol(failed());
         await userEvent.click(await screen.findAllByRole('button', {name: 'Show in log'}).then(b => b[2]));
         expect(tab(/Log/)).toHaveAttribute('aria-selected', 'true');
-        expect(location()).toContain('t=log');
+        expect(currentLocation()).toContain('t=log');
         await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
         expect(screen.getByText('error 3')).toBeInTheDocument();
     });

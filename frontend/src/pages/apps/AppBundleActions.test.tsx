@@ -3,12 +3,13 @@ import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBundleDetail} from '../../types/app';
 import {bundle, detail} from './appsFixtures';
-import {failure, fakeApi, FakeApi, Handler, renderBundles} from './appsHarness';
+import {failure, fakeApi, FakeApi, Reply} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 const BUNDLE = '/demo/app/3/bundle/7';
 
 // a master that keeps the bundle, so a bundle loaded after a change shows it
-const master = (store: { shown: IAppBundleDetail }, extra: Record<string, Handler> = {}): FakeApi => fakeApi({
+const master = (store: { shown: IAppBundleDetail }, extra: Record<string, Reply> = {}): FakeApi => fakeApi({
     [`GET ${BUNDLE}`]: () => store.shown,
     'GET /demo/devices': () => [],
     'GET /demo/app/3/bundles': () => [bundle(7)],

@@ -2,8 +2,8 @@ import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ITestProtocolData from '../../types/test.protocol';
-import {at, entry, protocol} from './run/testkit/fixtures';
-import {login, openProtocol, shop, steps, tab, url} from './run/testkit/protocolPage';
+import {at, entry, protocol} from './run/harness/fixtures';
+import {login, openProtocol, shop, steps, tab, url} from './run/harness/protocolPage';
 
 beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();

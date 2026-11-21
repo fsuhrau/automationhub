@@ -1,9 +1,9 @@
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it} from 'vitest';
-import {failure, FakeApi} from '../testing/fakeApi';
-import {aFunction} from '../testing/fixtures';
-import {CREATE, openEditor, UNITY} from '../testing/editSupport';
+import {describe, expect, it} from 'vitest';
+import {failure, FakeApi} from '../../../../testing/fakeApi';
+import {aFunction} from '../harness/fixtures';
+import {CREATE, openEditor, UNITY} from '../harness/editSupport';
 
 const FUNCTIONS = [aFunction('System.Void Hit'), aFunction('System.Void Block'), aFunction('System.Void Walk', 'Ns.Move')];
 let api: FakeApi;
@@ -14,12 +14,11 @@ const open = async (unity: unknown = FUNCTIONS): Promise<void> => {
 };
 const search = (text: string): Promise<void> => userEvent.type(screen.getByRole('textbox', {name: 'Find a test to add'}), text);
 const silent = (): never => {
-    throw failure(500, 'no unity');
+    throw failure('no unity', 500);
 };
 const paste = (text: string): Promise<void> => userEvent.click(screen.getByRole('textbox', {name: 'Pasted test list'})).then(() => userEvent.paste(text));
 const picked = (): HTMLElement => screen.getByText(/^Picked tests \(/);
 
-afterEach(() => api.restore());
 
 describe('TestPicker with the Unity editor', () => {
     it('adds all tests Unity reported', async () => {
@@ -97,8 +96,8 @@ describe('TestPicker creating', () => {
         await userEvent.type(screen.getByRole('textbox', {name: 'Name'}), 'Fights');
         await userEvent.click(await screen.findByRole('button', {name: 'Add all 3'}));
         await userEvent.click(screen.getByRole('button', {name: 'Create test'}));
-        await waitFor(() => expect(api.calledWith(CREATE)).toHaveLength(1));
-        expect((api.calledWith(CREATE)[0].data as {testFunctions: unknown[]}).testFunctions).toHaveLength(3);
+        await waitFor(() => expect(api.called(CREATE)).toHaveLength(1));
+        expect((api.called(CREATE)[0].data as {testFunctions: unknown[]}).testFunctions).toHaveLength(3);
     });
 });
 

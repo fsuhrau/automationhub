@@ -1,7 +1,6 @@
 import {useMemo} from 'react';
-import {ApiClient, createApiClient} from '../api/ApiClient';
+import {ApiClient} from '../api/ApiClient';
 import {useApiClient} from '../api/ApiClientProvider';
-import http from '../http-common';
 import IProject from './project';
 
 export interface ProjectService {
@@ -22,6 +21,3 @@ export const useProjectService = (): ProjectService => {
     const api = useApiClient();
     return useMemo(() => projectService(api), [api]);
 };
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getProjects = (): Promise<IProject[]> => projectService(createApiClient(http)).list();

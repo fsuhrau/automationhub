@@ -6,7 +6,7 @@ import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useLoader} from '../../hooks/useLoader';
 import PageLoader from '../../components/PageLoader';
-import {useTestService} from './definitions/useTestService';
+import {useTestService} from '../../services/test.service';
 
 interface TestPageProps {
     edit: boolean

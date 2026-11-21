@@ -4,7 +4,7 @@ import {useAsyncAction} from '../../../../hooks/useAsyncAction';
 import {routes} from '../../../../lib/routes';
 import {IAppData} from '../../../../types/app';
 import {PlatformType} from '../../../../types/platform.type.enum';
-import {useTestService} from '../useTestService';
+import {useTestRunService} from '../../../../services/test.run.service';
 import {defaultParams, paramsString, readyToStart} from './runTestModel';
 import {RunBundles, useRunBundles} from './useRunBundles';
 
@@ -33,7 +33,7 @@ export interface RunTestForm {
 // opens the new run.
 export const useRunTestForm = ({projectIdentifier, app, test}: RunTarget, onClose: () => void): RunTestForm => {
     const navigate = useNavigate();
-    const service = useTestService();
+    const service = useTestRunService();
     const needsBundle = app.platform !== PlatformType.Editor && app.platform !== PlatformType.Web;
     const needsUrl = app.platform === PlatformType.Web;
     const bundles = useRunBundles(projectIdentifier, app, needsBundle);
@@ -41,7 +41,7 @@ export const useRunTestForm = ({projectIdentifier, app, test}: RunTarget, onClos
     const [startUrl, setStartUrl] = useState('');
 
     const {run, busy, error} = useAsyncAction(async (): Promise<void> => {
-        const started = await service.execute({projectId: projectIdentifier, appId: app.id}, test.id, {
+        const started = await service.execute({projectId: projectIdentifier, appId: app.id, testId: test.id}, {
             appBinaryId: bundles.bundleId === '' ? null : bundles.bundleId,
             params: paramsString(params),
             startUrl: needsUrl ? startUrl : '',

@@ -6,37 +6,20 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
 
-// Globs of the folders and files that already meet the size limits.
-// Inside them the size rules are errors; everywhere else they only warn.
-// Each package adds its folders here: append a glob such as 'src/api/**'.
-const refactored = [
-    'src/setupTests.ts',
-    'src/services/device.video.test.ts',
-    // F2 shared kit
-    'src/lib/**',
-    'src/components/common/**',
-    'src/hooks/useAsyncAction*',
-    'src/hooks/useNow*',
-    'src/hooks/useSseLog*',
-    // F3 state and API core
-    'src/api/**',
-    'src/application/HubState*',
-    'src/hooks/HubStateProvider*',
-    'src/types/**',
-    // F4-F12 feature packages (wave 3); each package validates its own files
-    'src/App.tsx',
-    'src/app/**',
-    'src/application/**',
-    'src/components/**',
-    'src/hooks/**',
-    'src/pages/**',
-    'src/project/**',
-    'src/router/**',
-    'src/services/**',
-];
-
-// Generated-looking theme files are data tables and stay exempt.
+// The size rules are errors for all of src; the generated-looking theme files are data tables and stay exempt.
 const sizeExempt = ['src/shared-theme/**', 'src/theme/**'];
+const testFiles = ['src/**/*.test.{ts,tsx}', 'src/testing/**'];
+
+// The theme files come from a template and still break these rules: warnings there, errors everywhere else.
+const themeWarnRules = [
+    'react/jsx-indent',
+    'react/jsx-indent-props',
+    '@typescript-eslint/explicit-function-return-type',
+    '@typescript-eslint/no-unused-vars',
+    '@typescript-eslint/no-empty-object-type',
+    '@typescript-eslint/ban-ts-comment',
+];
+const themeRules = Object.fromEntries(themeWarnRules.map((rule) => [rule, 'warn']));
 
 const sizeRules = (level) => ({
     'max-lines': [level, { max: 200, skipBlankLines: true, skipComments: true }],
@@ -44,25 +27,6 @@ const sizeRules = (level) => ({
     complexity: [level, 10],
     'max-params': [level, 3],
 });
-
-// Rules the legacy code still violates: warnings there, errors in `refactored`.
-const legacyWarnRules = [
-    'react/jsx-indent',
-    'react/jsx-indent-props',
-    'react-hooks/exhaustive-deps',
-    'react-hooks/set-state-in-effect',
-    'react-hooks/purity',
-    'react-hooks/refs',
-    'react-hooks/use-memo',
-    '@typescript-eslint/explicit-function-return-type',
-    '@typescript-eslint/no-unused-vars',
-    '@typescript-eslint/no-explicit-any',
-    '@typescript-eslint/no-empty-object-type',
-    '@typescript-eslint/no-wrapper-object-types',
-    '@typescript-eslint/ban-ts-comment',
-    'prefer-const',
-];
-const legacyRules = Object.fromEntries(legacyWarnRules.map((rule) => [rule, 'warn']));
 
 export default [
     { ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', 'public/**', '**/*.js'] },
@@ -98,7 +62,8 @@ export default [
             'react-hooks/exhaustive-deps': 'error',
         },
     },
-    { files: ['**/*.{ts,tsx}'], ignores: refactored, rules: legacyRules },
-    { files: ['**/*.{ts,tsx}'], ignores: sizeExempt, rules: sizeRules('warn') },
-    { files: refactored, ignores: sizeExempt, rules: sizeRules('error') },
+    { files: sizeExempt.map((glob) => `${glob}/*.{ts,tsx}`), rules: themeRules },
+    { files: ['**/*.{ts,tsx}'], ignores: sizeExempt, rules: sizeRules('error') },
+    // Tests group many cases in describe blocks and the kit builds fixtures: only the length limits are off.
+    { files: testFiles, rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' } },
 ];

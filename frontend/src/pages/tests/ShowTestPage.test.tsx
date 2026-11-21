@@ -1,33 +1,30 @@
 import {act, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import ITestData from '../../types/test';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {TestType} from '../../types/test.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
-import {createFakeApi, failure, FakeApi, Reply} from './definitions/testing/fakeApi';
-import {FakeEventSource} from './definitions/testing/fakeEventSource';
-import {aDevice, aFunction, aRunEntry, aTest, anApp} from './definitions/testing/fixtures';
-import {renderTestsApp} from './definitions/testing/renderTestsApp';
+import {Call, fakeApi, failure, FakeApi, Reply} from '../../testing/fakeApi';
+import {FakeSse} from '../../testing/fakeSse';
+import {aDevice, aFunction, aRunEntry, aTest, anApp} from './definitions/harness/fixtures';
+import {renderTestsApp} from './definitions/harness/renderTestsApp';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 const PATH = '/project/proj/app:1/test/7';
 const RUNS = 'GET /proj/app/1/test/7/runs';
-const page = (runs: Reply, test: ITestData = aTest()): {api: FakeApi, sse: FakeEventSource} => {
-    const sse = new FakeEventSource();
-    const api = createFakeApi({'GET /proj/app/1/test/7': test, [RUNS]: runs, 'POST /proj/app/1/test/7/run': {id: 12}});
-    current = api;
+const page = (runs: Reply, test: ITestData = aTest()): {api: FakeApi, sse: FakeSse} => {
+    const sse = new FakeSse();
+    const api = fakeApi({'GET /proj/app/1/test/7': test, [RUNS]: runs, 'POST /proj/app/1/test/7/run': {id: 12}});
     renderTestsApp(PATH, {api, apps: [anApp()], sse});
     return {api, sse};
 };
-let current: FakeApi;
-const location = (): string | null => screen.getByTestId('location').textContent;
 const withUnity = (testCategoryType: UnityTestCategory, rest: object = {}): ITestData => {
     const test = aTest();
     test.testConfig.unity = {...test.testConfig.unity!, testCategoryType, ...rest};
     return test;
 };
 
-afterEach(() => current.restore());
 
 describe('ShowTestPage runs', () => {
     it('shows the test with its stats and runs', async () => {
@@ -68,20 +65,20 @@ describe('ShowTestPage runs', () => {
 
 describe('ShowTestPage paging and errors', () => {
     it('loads older runs on request', async () => {
-        const {api} = page(({params}) => (params as {before?: number}).before
+        const {api} = page(({params}: Call) => (params as {before?: number}).before
             ? {runs: [aRunEntry({id: 5})], more: false}
             : {runs: [aRunEntry({id: 12})], more: true});
         await userEvent.click(await screen.findByRole('button', {name: 'Older runs'}));
         expect(await screen.findByText('#5')).toBeInTheDocument();
         expect(screen.getByText('#12')).toBeInTheDocument();
         expect(screen.queryByRole('button', {name: 'Older runs'})).not.toBeInTheDocument();
-        expect(api.calledWith(RUNS)[1].params).toEqual({limit: 25, before: 12});
+        expect(api.called(RUNS)[1].params).toEqual({limit: 25, before: 12});
     });
 
     it('shows the error and retries', async () => {
         let fail = true;
         page(() => {
-            if (fail) throw failure(500, 'runs are gone');
+            if (fail) throw failure('runs are gone', 500);
             return {runs: [aRunEntry()], more: false};
         });
         expect(await screen.findByText('runs are gone')).toBeInTheDocument();
@@ -96,27 +93,27 @@ describe('ShowTestPage run links', () => {
     it('opens a run from its row and the latest run from the section', async () => {
         page({runs: [aRunEntry({id: 12})], more: false});
         await userEvent.click(await screen.findByText('#12'));
-        expect(location()).toBe('/project/proj/app:1/test/7/run/12');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/run/12');
     });
 
     it('opens the latest run', async () => {
         page({runs: [aRunEntry()], more: false});
         await userEvent.click(await screen.findByRole('link', {name: 'Latest run'}));
-        expect(location()).toBe('/project/proj/app:1/test/7/runs/last');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/runs/last');
     });
 
     it('opens a run from its row without a click on the id', async () => {
         page({runs: [aRunEntry({id: 12})], more: false});
         const row = (await screen.findByText('Passed', {selector: '.MuiChip-label'})).closest('tr')!;
         await userEvent.click(row);
-        expect(location()).toBe('/project/proj/app:1/test/7/run/12');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/run/12');
     });
 
     it('reloads the runs when a run finished', async () => {
         const {api, sse} = page({runs: [aRunEntry()], more: false});
         await screen.findByText('#11');
         act(() => sse.emit('test_runs', {projectId: 'proj', appId: 1, testId: 7, testRunId: 12, state: 'started'}));
-        await waitFor(() => expect(api.calledWith(RUNS)).toHaveLength(2));
+        await waitFor(() => expect(api.called(RUNS)).toHaveLength(2));
     });
 });
 
@@ -177,7 +174,7 @@ describe('ShowTestPage devices', () => {
     it('opens the editor from the header', async () => {
         page({runs: [], more: false});
         await userEvent.click((await screen.findAllByRole('link', {name: 'Edit'}))[0]);
-        expect(location()).toBe('/project/proj/app:1/test/7/edit');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/edit');
     });
 });
 
@@ -186,8 +183,8 @@ describe('ShowTestPage starting a run', () => {
         const {api} = page({runs: [aRunEntry()], more: false});
         await userEvent.click(await screen.findByRole('button', {name: 'Run'}));
         await userEvent.click(await screen.findByRole('button', {name: 'Start run'}));
-        await waitFor(() => expect(location()).toBe('/project/proj/app:1/test/7/run/12'));
-        expect(api.calledWith('POST /proj/app/1/test/7/run')[0].data).toEqual({appBinaryId: null, params: '', startUrl: ''});
+        await waitFor(() => expect(currentLocation()).toBe('/project/proj/app:1/test/7/run/12'));
+        expect(api.called('POST /proj/app/1/test/7/run')[0].data).toEqual({appBinaryId: null, params: '', startUrl: ''});
     });
 
     it('starts a test that never ran from the empty state', async () => {

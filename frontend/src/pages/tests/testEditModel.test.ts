@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
-import {aFunction, aTest} from './definitions/testing/fixtures';
+import {aFunction, aTest} from './definitions/harness/fixtures';
 import {
     addFunctions, canSubmit, formOf, functionKey, groupByClass, isDirty, matchesFunction, mergeCategories, newForm, noChoicesText,
     parsePastedTests, saveDisabled, saveHint, SaveState, shortClass, shortMethod, splitCategories, toggled, toRequest, validate,

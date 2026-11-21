@@ -4,7 +4,7 @@ import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import {describe, expect, it} from 'vitest';
 import PrivateRoute from './PrivateRoute';
 import {AuthProvider} from '../hooks/AuthProvider';
-import {fakeAuthClient, noAuth, signedIn, signedOut} from '../app/testing/fakeAuth';
+import {fakeAuthClient, noAuth, signedIn, signedOut} from '../testing/fakeAuth';
 import {AuthClient} from '../app/authClient';
 
 const Login: React.FC = () => <p>{`login from=${(useLocation().state as { from: string }).from}`}</p>;

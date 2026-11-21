@@ -3,7 +3,10 @@ import {ReactElement} from 'react';
 import DeviceShowPage from './DeviceShowPage';
 import IDeviceData from '../../types/device';
 import {TestResultState} from '../../types/test.result.state.enum';
-import {fakeApi, FakeApi, fakeSources, node, renderPage} from './testKit';
+import {node} from './deviceFixtures';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {fakeSources} from '../../testing/fakeSse';
+import {renderPage} from './deviceHarness';
 
 export const protocol = {
     id: 9, testRunId: 4, testName: 'Suite.Auth/Login', startedAt: new Date('2025-01-02T10:00:00Z'),

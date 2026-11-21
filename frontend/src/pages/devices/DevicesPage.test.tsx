@@ -3,7 +3,9 @@ import {fireEvent, screen, waitFor, within} from '@testing-library/react';
 import DevicesPage from './DevicesPage';
 import {DeviceStateType} from '../../types/deviceStateType';
 import {PlatformType} from '../../types/platform.type.enum';
-import {device, fakeApi, FakeApi, node, renderPage} from './testKit';
+import {device, node} from './deviceFixtures';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderPage} from './deviceHarness';
 
 const open = (api: FakeApi, nodes = [node()]): ReturnType<typeof renderPage> =>
     renderPage(<DevicesPage/>, {api, nodes, route: 'devices', url: '/project/p1/devices'});

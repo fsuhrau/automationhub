@@ -2,8 +2,9 @@ import {describe, expect, it} from 'vitest';
 import {fireEvent, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {protocol} from './run/testkit/fixtures';
-import {fullRun, location, openRun, url} from './run/testkit/runPage';
+import {protocol} from './run/harness/fixtures';
+import {fullRun, openRun, url} from './run/harness/runPage';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 const many = Array.from({length: 7}, (_, i) => protocol({
     id: i + 1, testName: `Suite.Part/test_${i}`, testResult: [S.TestResultFailed, S.TestResultUnstable][i] ?? S.TestResultSuccess,
@@ -35,7 +36,7 @@ describe('the tests of a run: filters', () => {
         const row = (await screen.findByText('test_2')).closest('tr') as HTMLElement;
         row.focus();
         await userEvent.keyboard('{Enter}');
-        expect(location()).toBe(`${url}/3`);
+        expect(currentLocation()).toBe(`${url}/3`);
     });
 });
 

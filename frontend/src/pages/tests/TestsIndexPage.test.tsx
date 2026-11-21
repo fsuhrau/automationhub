@@ -1,25 +1,24 @@
 import {act, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import ITestData, {RunSummaryStatus} from '../../types/test';
-import {createFakeApi, failure, FakeApi, Reply} from './definitions/testing/fakeApi';
-import {FakeEventSource} from './definitions/testing/fakeEventSource';
-import {aSummary, aTest, anApp} from './definitions/testing/fixtures';
-import {renderTestsApp} from './definitions/testing/renderTestsApp';
+import {fakeApi, failure, FakeApi, Reply} from '../../testing/fakeApi';
+import {FakeSse} from '../../testing/fakeSse';
+import {aSummary, aTest, anApp} from './definitions/harness/fixtures';
+import {renderTestsApp} from './definitions/harness/renderTestsApp';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 const PATH = '/project/proj/app:1/tests';
 const LIST = 'GET /proj/app/1/tests';
 let api: FakeApi;
 
-const open = (tests: Reply, apps = [anApp()], sse?: FakeEventSource): void => {
-    api = createFakeApi({[LIST]: tests, 'POST /proj/app/1/test/7/run': {id: 12}});
+const open = (tests: Reply, apps = [anApp()], sse?: FakeSse): void => {
+    api = fakeApi({[LIST]: tests, 'POST /proj/app/1/test/7/run': {id: 12}});
     renderTestsApp(PATH, {api, apps, sse});
 };
-const location = (): string | null => screen.getByTestId('location').textContent;
 const withRuns = (id: number, name: string, status: RunSummaryStatus): ITestData =>
     aTest({id, name, recentRuns: [aSummary({id: id * 10, status})]});
 
-afterEach(() => api.restore());
 
 describe('TestsIndexPage', () => {
     it('lists the tests with what they run and how the last run went', async () => {
@@ -89,19 +88,19 @@ describe('TestsIndexPage empty and error states', () => {
         open([]);
         expect(await screen.findByText('No tests yet')).toBeInTheDocument();
         await userEvent.click(screen.getByRole('link', {name: 'Create a test'}));
-        expect(location()).toBe('/project/proj/app:1/test/new');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/new');
     });
 
     it('opens the new test form from the header', async () => {
         open([]);
         await userEvent.click(await screen.findByRole('link', {name: 'New test'}));
-        expect(location()).toBe('/project/proj/app:1/test/new');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/new');
     });
 
     it('shows the load error and loads again on retry', async () => {
         let fail = true;
         open(() => {
-            if (fail) throw failure(500, 'master is down');
+            if (fail) throw failure('master is down', 500);
             return [aTest()];
         });
         expect(await screen.findByText('master is down')).toBeInTheDocument();
@@ -116,7 +115,7 @@ describe('TestsIndexPage navigation', () => {
     it('opens a test, its last run and a run of its history', async () => {
         open([withRuns(7, 'Smoke', 'passed')]);
         await userEvent.click(await screen.findByText('Smoke'));
-        expect(location()).toBe('/project/proj/app:1/test/7');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7');
     });
 
     it.each([
@@ -126,14 +125,14 @@ describe('TestsIndexPage navigation', () => {
         open([withRuns(7, 'Smoke', 'passed')]);
         await screen.findByText('Smoke');
         await userEvent.click(target());
-        expect(location()).toBe('/project/proj/app:1/test/7/run/70');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/run/70');
     });
 
     it('starts a test from its row and opens the new run', async () => {
         open([aTest()]);
         await userEvent.click(await screen.findByRole('button', {name: 'Run'}));
         await userEvent.click(await screen.findByRole('button', {name: 'Start run'}));
-        await waitFor(() => expect(location()).toBe('/project/proj/app:1/test/7/run/12'));
+        await waitFor(() => expect(currentLocation()).toBe('/project/proj/app:1/test/7/run/12'));
     });
 
     it('cannot start a test of an app that is not known', async () => {
@@ -144,10 +143,10 @@ describe('TestsIndexPage navigation', () => {
     });
 
     it('reloads when a run of the app finished', async () => {
-        const sse = new FakeEventSource();
+        const sse = new FakeSse();
         open([aTest()], [anApp()], sse);
         await screen.findByText('Smoke');
         act(() => sse.emit('test_runs', {projectId: 'proj', appId: 1, testRunId: 3, state: 'finished'}));
-        await waitFor(() => expect(api.calledWith(LIST)).toHaveLength(2));
+        await waitFor(() => expect(api.called(LIST)).toHaveLength(2));
     });
 });

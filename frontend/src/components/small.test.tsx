@@ -8,10 +8,8 @@ import PlatformTypeIcon from './PlatformTypeIcon';
 import {TitleCard} from './title.card.component';
 import TopBar from './TopBar';
 import {PlatformType} from '../types/platform.type.enum';
-import {renderInApp} from '../app/testing/renderInApp';
-import {fakeAuthClient, signedOut} from '../app/testing/fakeAuth';
-
-vi.mock('../services/test.service', () => ({getTest: vi.fn()}));
+import {renderWithProviders} from '../testing/renderWithProviders';
+import {fakeAuthClient, signedIn, signedOut} from '../testing/fakeAuth';
 
 describe('formatDateTime', () => {
     it.each([
@@ -92,14 +90,14 @@ describe('TitleCard', () => {
 
 describe('TopBar', () => {
     it('leads home, shows breadcrumbs and the signed in user', async () => {
-        renderInApp(<TopBar/>, {path: '/profile'});
+        renderWithProviders(<TopBar/>, {url: '/profile', auth: fakeAuthClient(signedIn)});
         expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument();
         expect(screen.getByRole('link', {name: /Automation Hub/})).toHaveAttribute('href', '/');
         expect(screen.getByRole('navigation', {name: 'breadcrumb'})).toHaveTextContent('Profile');
     });
 
     it('shows no user when nobody is signed in', async () => {
-        renderInApp(<TopBar/>, {path: '/', auth: fakeAuthClient(signedOut)});
+        renderWithProviders(<TopBar/>, {url: '/', auth: fakeAuthClient(signedOut)});
         expect(await screen.findByRole('navigation', {name: 'breadcrumb'})).toBeInTheDocument();
         expect(screen.queryByText('Ada Lovelace')).toBeNull();
     });

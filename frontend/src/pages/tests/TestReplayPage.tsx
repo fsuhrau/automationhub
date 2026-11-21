@@ -3,13 +3,12 @@ import {Alert, Box} from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {useParams} from 'react-router-dom';
 import ITestRunData from '../../types/test.run';
-import {useApiClient} from '../../api/ApiClientProvider';
+import {useTestRunService} from '../../services/test.run.service';
 import {routes} from '../../lib/routes';
 import {useProjectContext} from '../../hooks/ProjectProvider';
 import {useApplicationContext} from '../../hooks/ApplicationProvider';
 import {useLoader} from '../../hooks/useLoader';
 import PageLoader from '../../components/PageLoader';
-import {fetchReplayRun} from './replay/replayApi';
 import {EventsPanel} from './replay/parts/EventsPanel';
 import {PlayerPanel} from './replay/parts/PlayerPanel';
 import {ReplayHeader} from './replay/parts/ReplayHeader';
@@ -48,13 +47,13 @@ const TestReplayPage: React.FC<TestReplayPageProps> = ({run}) => {
 };
 
 export const TestReplayPageLoader: React.FC = () => {
-    const api = useApiClient();
+    const service = useTestRunService();
     const {projectIdentifier} = useProjectContext();
     const {appId} = useApplicationContext();
     const {testId, runId} = useParams();
     const {data, error, retry} = useLoader(
-        () => fetchReplayRun(api, {projectId: projectIdentifier, appId: appId as number, testId: testId as string, runId: runId as string}),
-        [api, projectIdentifier, appId, testId, runId]);
+        () => service.run({projectId: projectIdentifier, appId: appId as number, testId: testId as string, runId: runId as string}),
+        [service, projectIdentifier, appId, testId, runId]);
     if (!data || error) {
         return <PageLoader error={error} onRetry={retry}/>;
     }

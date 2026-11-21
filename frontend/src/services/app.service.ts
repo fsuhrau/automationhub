@@ -1,22 +1,22 @@
 import {useMemo} from 'react';
-import http from '../http-common';
-import {ApiClient, createApiClient} from '../api/ApiClient';
+import {ApiClient} from '../api/ApiClient';
 import {useApiClient} from '../api/ApiClientProvider';
 import {AppParameter, IAppBinaryData, IAppBundleDetail, IAppData} from '../types/app';
 import {AppRef, BundleRef} from '../types/app.ref';
 import {AppFilter} from '../types/app.filter';
 import {UploadOptions} from '../types/bundle.upload';
+import {NewAppRequest, ParameterRequest} from '../types/settings.requests';
 
 export interface AppService {
     list(projectId: string): Promise<IAppData[]>;
 
     get(projectId: string, id: string): Promise<IAppData | undefined>;
 
-    create(projectId: string, data: IAppData): Promise<IAppData>;
+    create(projectId: string, data: NewAppRequest): Promise<IAppData>;
 
     update(projectId: string, appId: number, data: IAppData): Promise<IAppData>;
 
-    addParameter(projectId: string, appId: number, data: AppParameter): Promise<AppParameter>;
+    addParameter(projectId: string, appId: number, data: ParameterRequest): Promise<AppParameter>;
 
     // the parameter is saved under its own id
     updateParameter(projectId: string, appId: number, parameter: AppParameter): Promise<AppParameter>;
@@ -92,34 +92,3 @@ export const usableBundles = (list: IAppBinaryData[]): IAppBinaryData[] =>
 
 export const bundleIconUrl = ({projectId, appId}: AppRef, id: number): string =>
     `/api/${encodeURIComponent(projectId)}/app/${appId}/bundle/${id}/icon`;
-
-const legacy = appService(createApiClient(http));
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getAllApps = (projectId: string): Promise<IAppData[]> => legacy.list(projectId);
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const createApp = (projectId: string, data: IAppData): Promise<IAppData> => legacy.create(projectId, data);
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const updateApp = (projectId: string, appId: number, data: IAppData): Promise<IAppData> => legacy.update(projectId, appId, data);
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const addAppParameter = (projectId: string, appId: number, data: AppParameter): Promise<AppParameter> =>
-    legacy.addParameter(projectId, appId, data);
-
-/** @deprecated legacy wrapper, removed in F13 */
-// eslint-disable-next-line max-params
-export const updateAppParameter = (projectId: string, appId: number, id: number, data: AppParameter): Promise<AppParameter> =>
-    legacy.updateParameter(projectId, appId, {...data, id});
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const removeAppParameter = (projectId: string, appId: number, id: number): Promise<void> => legacy.removeParameter(projectId, appId, id);
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getAppBundles = (projectId: string, appId: number): Promise<IAppBinaryData[]> => legacy.bundles({projectId, appId});
-
-/** @deprecated legacy wrapper, removed in F13 */
-// eslint-disable-next-line max-params
-export const uploadBundle = (file: File, projectId: string, appId: number, onProgress: (sent: number) => void): Promise<IAppBinaryData> =>
-    legacy.upload({projectId, appId}, file, {onProgress});

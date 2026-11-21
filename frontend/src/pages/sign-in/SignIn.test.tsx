@@ -5,20 +5,20 @@ import {Route, Routes, useLocation} from 'react-router-dom';
 import {describe, expect, it, vi} from 'vitest';
 import SignIn from './SignIn';
 import SignUp from '../sign-up/SignUp';
-import {renderInApp} from '../../app/testing/renderInApp';
-import {aUser, fakeAuthClient, noAuth, signedIn, signedOut} from '../../app/testing/fakeAuth';
+import {renderWithProviders} from '../../testing/renderWithProviders';
+import {aUser, fakeAuthClient, noAuth, signedIn, signedOut} from '../../testing/fakeAuth';
 import {AuthClient, SessionResult} from '../../app/authClient';
 
 const Where: React.FC<{ name: string }> = ({name}) => <p>{`${name} at ${useLocation().pathname}`}</p>;
 
 const mount = async (session: SessionResult, overrides: Partial<AuthClient> = {}, path: object | string = '/login'): Promise<AuthClient> => {
     const auth = fakeAuthClient(session, overrides);
-    renderInApp(<Routes>
+    renderWithProviders(<Routes>
         <Route path="/login" element={<SignIn/>}/>
         <Route path="/signup" element={<SignUp/>}/>
         <Route path="/secret" element={<Where name="secret"/>}/>
         <Route path="/" element={<Where name="projects"/>}/>
-    </Routes>, {path, auth});
+    </Routes>, {url: path, auth});
     await act(async () => undefined);
     return auth;
 };

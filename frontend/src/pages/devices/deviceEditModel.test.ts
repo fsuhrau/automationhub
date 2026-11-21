@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {
     addRow, applyEdit, EditForm, formOf, isDirty, keyErrors, newRowId, removeRow, setAlias, setRow, toRequest,
 } from './deviceEditModel';
-import {device} from './testKit';
+import {device} from './deviceFixtures';
 
 const form: EditForm = {
     alias: 'a',

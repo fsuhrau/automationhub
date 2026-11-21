@@ -1,7 +1,7 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {act, fireEvent, screen, waitFor} from '@testing-library/react';
 import {fakeSupport} from './control/fakes';
-import {BASE, controlled, loaded, PageWorld, renderPage} from './control/pageKit';
+import {BASE, controlled, loaded, PageWorld, renderPage} from './control/controlHarness';
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -23,7 +23,7 @@ const drag = (from: [number, number], to: [number, number]): void => {
     fireEvent.pointerUp(image(), {clientX: to[0], clientY: to[1], pointerId: 1});
 };
 
-const sentTo = (page: PageWorld, path: string): unknown[] => page.api.to('POST', `${BASE}/${path}`).map(c => c.data);
+const sentTo = (page: PageWorld, path: string): unknown[] => page.api.called(`POST ${BASE}/${path}`).map(c => c.data);
 
 describe('the control page: screenshots', () => {
     it('streams screenshots and taps through the REST API with the lease', async () => {
@@ -32,7 +32,7 @@ describe('the control page: screenshots', () => {
         expect(image()).toHaveAttribute('src', '/api/p1/device/7/stream?fps=2');
         drag([50, 100], [51, 100]);
         await waitFor(() => expect(sentTo(page, 'tap')).toEqual([{x: 500, y: 1000}]));
-        expect(page.api.to('POST', `${BASE}/tap`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
+        expect(page.api.called(`POST ${BASE}/tap`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
     });
 
     it('swipes when the pointer was dragged', async () => {

@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {act, fireEvent, render, screen} from '@testing-library/react';
 import DeviceLogStream from '../../components/DeviceLogStream';
-import {fakeSources} from './testKit';
+import {fakeSources} from '../../testing/fakeSse';
 
 const INFO = '11-06 13:51:05.123 1234 5678 I Unity: all fine';
 const WARN = '11-06 13:51:06.123 1234 5678 W Unity: careful';

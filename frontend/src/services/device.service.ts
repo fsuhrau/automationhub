@@ -1,6 +1,5 @@
 import {useMemo} from 'react';
-import http from '../http-common';
-import {ApiClient, createApiClient} from '../api/ApiClient';
+import {ApiClient} from '../api/ApiClient';
 import {useApiClient} from '../api/ApiClientProvider';
 import IDeviceData from '../types/device';
 import ITestRunData from '../types/test.run';
@@ -47,13 +46,3 @@ export const useDeviceService = (): DeviceService => {
     const api = useApiClient();
     return useMemo(() => deviceService(api), [api]);
 };
-
-const defaultService = deviceService(createApiClient(http));
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getAllDevices = (projectId: string, platform?: PlatformType): Promise<IDeviceData[]> =>
-    defaultService.list(projectId, platform);
-
-/** @deprecated legacy wrapper, removed in F13 */
-export const getDevice = (projectId: string, id: string): Promise<IDeviceData | undefined> =>
-    defaultService.get(projectId, id);

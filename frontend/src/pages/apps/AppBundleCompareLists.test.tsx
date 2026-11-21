@@ -3,7 +3,8 @@ import {screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBundleDetail} from '../../types/app';
 import {androidInfo, appleInfo, bundleInfo, detail, profile} from './appsFixtures';
-import {fakeApi, renderBundles} from './appsHarness';
+import {fakeApi} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 type Bundle = IAppBundleDetail;
 

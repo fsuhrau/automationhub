@@ -1,5 +1,5 @@
-import {AuthClient, SessionResult} from '../authClient';
-import {IUser} from '../../types/user';
+import {AuthClient, SessionResult} from '../app/authClient';
+import {IUser} from '../types/user';
 
 export const aUser: IUser = {
     id: 1, name: 'Ada Lovelace', email: 'ada@example.com', login: 'ada', company: '', role: 'admin', url: '', avatar: '',

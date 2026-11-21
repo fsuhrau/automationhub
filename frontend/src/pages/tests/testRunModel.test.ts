@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import IProtocolKeyData from '../../types/protocol.key';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {protocol, at} from './run/testkit/fixtures';
+import {protocol, at} from './run/harness/fixtures';
 import {
     between, buildRows, countResults, filterRows, formatDuration, isTopLevel, leaves, mergeKey, mergeProtocol, parseParameters,
     ResultCounts, runEnd, runStatus, splitTestName, testResult,

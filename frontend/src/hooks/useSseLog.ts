@@ -18,7 +18,8 @@ export interface SseLog<T> {
     connected: boolean,
 }
 
-const defaultSource: SseSourceFactory = channel => new EventSource(channel, {withCredentials: true});
+// the default of every hook that follows an SSE channel: it sends the session cookie
+export const defaultSseSource: SseSourceFactory = channel => new EventSource(channel, {withCredentials: true});
 
 const parseEntries = <T>(e: Event): T[] => {
     const data: T | T[] = JSON.parse((e as MessageEvent<string>).data);
@@ -39,7 +40,7 @@ const apply = <T>(prev: LogState<T>, channel: string, change: Partial<SseLog<T>>
 // whose id is already known are ignored; the list restarts when the channel
 // changes and the connection closes on unmount.
 export function useSseLog<T extends Identified>(channel: string, options: SseLogOptions = {}): SseLog<T> {
-    const {event = 'message', limit, createSource = defaultSource} = options;
+    const {event = 'message', limit, createSource = defaultSseSource} = options;
     const [state, setState] = useState<LogState<T>>(() => emptyState<T>(channel));
 
     useEffect(() => {

@@ -2,7 +2,8 @@ import {describe, expect, it} from 'vitest';
 import {fireEvent, screen} from '@testing-library/react';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
 import {DeviceStateType} from '../../types/deviceStateType';
-import {device, fakeApi} from './testKit';
+import {device} from './deviceFixtures';
+import {fakeApi} from '../../testing/fakeApi';
 import {open, withHistory} from './deviceShowKit';
 
 describe('DeviceShowPage', () => {

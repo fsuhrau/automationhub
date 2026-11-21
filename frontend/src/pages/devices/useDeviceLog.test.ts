@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {act, renderHook} from '@testing-library/react';
 import {useDeviceLog} from './useDeviceLog';
-import {fakeSources} from './testKit';
+import {fakeSources} from '../../testing/fakeSse';
 
 describe('useDeviceLog', () => {
     it('opens the stream, collects lines and goes live', () => {

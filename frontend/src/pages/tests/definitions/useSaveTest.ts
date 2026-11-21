@@ -9,7 +9,7 @@ import {TestType} from '../../../types/test.type.enum';
 import {canSubmit, TestForm, toRequest} from '../testEditModel';
 import {TestFormState} from './useTestForm';
 import {useAppRoutes} from './useAppRoutes';
-import {useTestService} from './useTestService';
+import {useTestService} from '../../../services/test.service';
 
 export interface SaveTest {
     // marks the form as tried and saves it when it may be saved

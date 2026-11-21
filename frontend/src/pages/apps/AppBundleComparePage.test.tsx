@@ -3,7 +3,8 @@ import {screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBinaryData, IAppBundleDetail} from '../../types/app';
 import {androidInfo, bundle, bundleInfo, detail} from './appsFixtures';
-import {failure, fakeApi, FakeApi, renderBundles} from './appsHarness';
+import {failure, fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 const older = detail(1, {info: bundleInfo({
     version: '1.0', android: androidInfo({permissions: [{name: 'android.permission.CAMERA'}], versionName: '1.0'}),

@@ -1,6 +1,6 @@
 // The test page without React: the results of a run in words and the picked
 // Unity tests grouped by class.
-import {ITestRunListEntry} from '../../../services/test.run.service';
+import {ITestRunListEntry} from '../../../types/test.run.list';
 
 type Counted = Pick<ITestRunListEntry, 'passed' | 'failed' | 'unstable' | 'open'>;
 

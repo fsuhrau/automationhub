@@ -2,8 +2,8 @@ import {describe, expect, it} from 'vitest';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IBaseline, IBaselineCandidate} from '../../types/protocol.baseline';
-import {at, performance} from './run/testkit/fixtures';
-import {base, login, openProtocol, url} from './run/testkit/protocolPage';
+import {at, performance} from './run/harness/fixtures';
+import {base, login, openProtocol, url} from './run/harness/protocolPage';
 
 const candidate: IBaselineCandidate = {
     protocolId: 40, testRunId: 1, testId: 2, startedAt: at(-500), testResult: 3, deviceId: 7, device: 'iPhone 12',

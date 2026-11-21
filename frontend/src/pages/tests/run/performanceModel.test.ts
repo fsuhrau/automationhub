@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {performance, protocol} from './testkit/fixtures';
+import {performance, protocol} from './harness/fixtures';
 import {averageOf, bundleLabel, checkpointRows, compare, measured, METRICS} from './performanceModel';
 
 describe('checkpointRows', () => {

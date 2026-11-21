@@ -2,28 +2,23 @@ import {act, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {Route, Routes, useLocation} from 'react-router-dom';
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import HubMainLayout from './HubMainLayout';
 import ApplicationPage from '../hooks/ApplicationProvider';
-import {renderInApp} from '../app/testing/renderInApp';
-import {resetSse} from '../app/testing/fakeSse';
-import {aDevice, aProject, anApp} from '../app/testing/seedHub';
-import {fakeAuthClient, signedIn} from '../app/testing/fakeAuth';
+import {fakeApi, FakeApi, Reply} from '../testing/fakeApi';
+import {fakeAuthClient, signedIn} from '../testing/fakeAuth';
+import {FakeSse, stubEventSource} from '../testing/fakeSse';
+import {aDevice, aProject, anApp} from '../testing/fixtures';
+import {renderWithProviders} from '../testing/renderWithProviders';
+import {AuthClient} from '../app/authClient';
 
-const services = vi.hoisted(() => ({
-    getProjects: vi.fn(),
-    getAllApps: vi.fn(),
-    getAllDevices: vi.fn(),
-    getNodes: vi.fn(),
-    getTest: vi.fn(),
-}));
-
-vi.mock('react-hooks-sse', async () => (await import('../app/testing/fakeSse')).fakeSseModule);
-vi.mock('../project/project.service', () => ({getProjects: services.getProjects}));
-vi.mock('../services/app.service', () => ({getAllApps: services.getAllApps}));
-vi.mock('../services/device.service', () => ({getAllDevices: services.getAllDevices}));
-vi.mock('../services/settings.service', () => ({getNodes: services.getNodes}));
-vi.mock('../services/test.service', () => ({getTest: services.getTest}));
+const masterReplies = (): Record<string, Reply> => ({
+    'GET /projects': [aProject('p1', 'Project One'), aProject('p2', 'Project Two')],
+    'GET /p1/apps': [anApp(1, 'Android app'), anApp(2, 'Other app')],
+    'GET /p1/devices': [aDevice({id: 5})],
+    'GET /p1/settings/nodes': [],
+    'GET /p1/app/2/test/5': {name: 'Smoke test'},
+});
 
 const Where: React.FC<{ name: string }> = ({name}) => <p>{`${name} at ${useLocation().pathname}${useLocation().search}`}</p>;
 
@@ -42,30 +37,41 @@ const layout = (): React.ReactElement => <Routes>
     </Route>
 </Routes>;
 
-const open = async (path: string, auth = fakeAuthClient(signedIn)): Promise<void> => {
-    renderInApp(layout(), {path, auth});
-    await act(async () => undefined);
+interface OpenOptions {
+    auth?: AuthClient,
+    // answers of the master that differ from masterReplies
+    replies?: Record<string, Reply>,
+}
+
+const mount = (path: string, {auth = fakeAuthClient(signedIn), replies = {}}: OpenOptions = {}): FakeApi => {
+    const api = fakeApi({...masterReplies(), ...replies});
+    renderWithProviders(layout(), {url: path, auth, api, sse});
+    return api;
 };
+
+const open = async (path: string, options?: OpenOptions): Promise<FakeApi> => {
+    const api = mount(path, options);
+    await act(async () => undefined);
+    return api;
+};
+
+const sse = new FakeSse();
 
 beforeEach(() => {
     localStorage.clear();
-    resetSse();
-    services.getProjects.mockResolvedValue([aProject('p1', 'Project One'), aProject('p2', 'Project Two')]);
-    services.getAllApps.mockResolvedValue([anApp(1, 'Android app'), anApp(2, 'Other app')]);
-    services.getAllDevices.mockResolvedValue([aDevice({id: 5})]);
-    services.getNodes.mockResolvedValue([]);
-    services.getTest.mockResolvedValue({name: 'Smoke test'});
+    stubEventSource(sse);
 });
+afterEach(() => vi.unstubAllGlobals());
 
 describe('project layout', () => {
     it('shows the loader, then the menu, the header and the page of the project', async () => {
-        renderInApp(layout(), {path: '/project/p1'});
+        const api = mount('/project/p1');
         expect(screen.getByRole('progressbar', {hidden: true})).toBeInTheDocument();
         await act(async () => undefined);
         expect(screen.getByText('overview at /project/p1')).toBeInTheDocument();
         expect(within(screen.getByRole('navigation', {name: 'breadcrumb'})).getByText('Overview')).toBeInTheDocument();
         expect(screen.getByTitle('Project One')).toBeInTheDocument();
-        expect(services.getProjects).toHaveBeenCalledTimes(1);
+        expect(api.called('GET /projects')).toHaveLength(1);
     });
 
     it('sends an unknown project to the project list', async () => {
@@ -88,13 +94,13 @@ describe('project layout', () => {
     });
 
     it('shows breadcrumbs for nested routes, with the name of the test', async () => {
-        await open('/project/p1/app:2/test/5');
+        const api = await open('/project/p1/app:2/test/5');
         const crumbs = within(screen.getByRole('navigation', {name: 'breadcrumb'}));
         expect(await crumbs.findByText('Smoke test')).toBeInTheDocument();
         expect(crumbs.getByText('Project One').closest('a')).toHaveAttribute('href', '/project/p1');
         expect(crumbs.getByText('Other app').closest('a')).toHaveAttribute('href', '/project/p1/app:2/tests');
         expect(crumbs.getByText('Tests')).toBeInTheDocument();
-        expect(services.getTest).toHaveBeenCalledWith('p1', 2, '5');
+        expect(api.called('GET /p1/app/2/test/5')).toHaveLength(1);
     });
 });
 
@@ -128,8 +134,7 @@ describe('project and app selection', () => {
     });
 
     it('points to the settings for a project without apps', async () => {
-        services.getAllApps.mockResolvedValue([]);
-        await open('/project/p1');
+        await open('/project/p1', {replies: {'GET /p1/apps': []}});
         expect(screen.getByText(/This project has no apps yet/)).toBeInTheDocument();
         await userEvent.click(screen.getByRole('link', {name: 'Add one in Settings'}));
         expect(screen.getByText('settings at /project/p1/settings?tab=apps')).toBeInTheDocument();
@@ -155,8 +160,7 @@ describe('menu collapse', () => {
 
     it('opens pages from the rail, and tells when there is no app to pick', async () => {
         localStorage.setItem('mainMenuCollapsed', 'true');
-        services.getAllApps.mockResolvedValue([]);
-        await open('/project/p1');
+        await open('/project/p1', {replies: {'GET /p1/apps': []}});
         expect(screen.getByRole('button', {name: 'Pick an app'})).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', {name: 'Settings'}));
         expect(screen.getByText('settings at /project/p1/settings')).toBeInTheDocument();
@@ -174,7 +178,7 @@ describe('account and small screens', () => {
 
     it('opens all projects and logs out from the account menu', async () => {
         const logout = vi.fn(async () => true);
-        await open('/project/p1', fakeAuthClient(signedIn, {logout}));
+        await open('/project/p1', {auth: fakeAuthClient(signedIn, {logout})});
         await userEvent.click(screen.getByRole('button', {name: 'Account menu'}));
         await userEvent.click(await screen.findByRole('menuitem', {name: 'Logout'}));
         expect(logout).toHaveBeenCalled();
@@ -200,7 +204,7 @@ describe('account and small screens', () => {
 
     it('logs out from the drawer', async () => {
         const logout = vi.fn(async () => true);
-        await open('/project/p1', fakeAuthClient(signedIn, {logout}));
+        await open('/project/p1', {auth: fakeAuthClient(signedIn, {logout})});
         await userEvent.click(screen.getByRole('button', {name: 'Open navigation', hidden: true}));
         await userEvent.click(await screen.findByRole('button', {name: 'Logout'}));
         expect(logout).toHaveBeenCalled();

@@ -5,7 +5,8 @@ import {IAppData} from '../../types/app';
 import IDeviceData from '../../types/device';
 import {PlatformType} from '../../types/platform.type.enum';
 import {androidApp, appleInfo, bundleInfo, detail, device, iosDetail, profile} from './appsFixtures';
-import {fakeApi, FakeApi, renderBundles} from './appsHarness';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 const iosApp = {...androidApp, platform: PlatformType.iOS} as IAppData;
 const DAY = 86400000;

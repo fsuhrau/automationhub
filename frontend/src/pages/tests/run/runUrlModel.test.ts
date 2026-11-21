@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {at} from './testkit/fixtures';
+import {at} from './harness/fixtures';
 import {replayQuery} from './runUrlModel';
 
 describe('replayQuery', () => {

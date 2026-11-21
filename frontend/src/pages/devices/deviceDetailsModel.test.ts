@@ -6,7 +6,7 @@ import {DeviceStateType} from '../../types/deviceStateType';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
 import {PlatformType} from '../../types/platform.type.enum';
 import ITestProtocolData from '../../types/test.protocol';
-import {device, node} from './testKit';
+import {device, node} from './deviceFixtures';
 
 const describeOwner = (owner: string): string => owner.replace('token:', '');
 

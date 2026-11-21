@@ -1,7 +1,6 @@
-import {screen} from '@testing-library/react';
 import ITestData from '../../../../types/test';
-import {createFakeApi, FakeApi, Reply} from './fakeApi';
-import {FakeEventSource} from './fakeEventSource';
+import {fakeApi, FakeApi, Reply} from '../../../../testing/fakeApi';
+import {FakeSse} from '../../../../testing/fakeSse';
 import {aTest, anApp} from './fixtures';
 import {renderTestsApp} from './renderTestsApp';
 
@@ -15,14 +14,14 @@ export const UNITY = 'GET /tests';
 
 export interface Opened {
     api: FakeApi,
-    sse: FakeEventSource,
+    sse: FakeSse,
 }
 
 // openEditor renders the edit page of a test (or the new test page without
 // one) with a fake master that also answers the pages saving leads to
 export const openEditor = (test: ITestData | null, routes: Record<string, Reply> = {}): Opened => {
-    const sse = new FakeEventSource();
-    const api = createFakeApi({
+    const sse = new FakeSse();
+    const api = fakeApi({
         [DEVICES]: [],
         [UNITY]: [],
         'GET /proj/app/1/tests': [],
@@ -37,5 +36,3 @@ export const openEditor = (test: ITestData | null, routes: Record<string, Reply>
     renderTestsApp(test ? `${TEST_PATH}/edit` : NEW_PATH, {api, apps: [anApp()], sse});
     return {api, sse};
 };
-
-export const location = (): string | null => screen.getByTestId('location').textContent;

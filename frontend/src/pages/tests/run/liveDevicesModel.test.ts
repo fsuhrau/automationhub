@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {device, protocol} from './testkit/fixtures';
+import {device, protocol} from './harness/fixtures';
 import {deviceCount, liveDevices} from './liveDevicesModel';
 
 const status = (deviceId: number, withDevice = true): never =>

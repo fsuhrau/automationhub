@@ -1,11 +1,10 @@
-import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {fireEvent, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {AxiosProgressEvent} from 'axios';
-import {MemoryRouter, useLocation} from 'react-router-dom';
-import {afterEach, describe, expect, it, vi} from 'vitest';
-import {ApiClientProvider} from '../api/ApiClientProvider';
-import {createFakeApi, failure, FakeApi, FakeRequest, Reply} from '../pages/tests/definitions/testing/fakeApi';
-import {aBundle, aParameter, anApp} from '../pages/tests/definitions/testing/fixtures';
+import {describe, expect, it, vi} from 'vitest';
+import {fakeApi, failure, FakeApi, Call, Reply} from '../testing/fakeApi';
+import {renderWithProviders} from '../testing/renderWithProviders';
+import {aBundle, aParameter, anApp} from '../pages/tests/definitions/harness/fixtures';
 import {IAppData} from '../types/app';
 import {PlatformType} from '../types/platform.type.enum';
 import RunTestDialog from './RunTestDialog';
@@ -18,23 +17,19 @@ const bundles = [aBundle({id: 1, version: '1.0'}), aBundle({id: 3, version: '1.2
 
 let api: FakeApi;
 let onClose = vi.fn();
-const Where: React.FC = () => <p data-testid="location">{useLocation().pathname}</p>;
 
 const show = (app: IAppData, routes: Record<string, Reply> = {}, test: {id: number, name: string} | null = {id: 7, name: 'Smoke'}): void => {
-    api = createFakeApi({[BUNDLES]: bundles, [RUN]: {id: 12}, ...routes});
+    api = fakeApi({[BUNDLES]: bundles, [RUN]: {id: 12}, ...routes});
     onClose = vi.fn();
-    render(<ApiClientProvider client={api.client}>
-        <MemoryRouter><Where/><RunTestDialog projectIdentifier="proj" app={app} test={test} onClose={onClose}/></MemoryRouter>
-    </ApiClientProvider>);
+    renderWithProviders(<RunTestDialog projectIdentifier="proj" app={app} test={test} onClose={onClose}/>, {api, probe: true});
 };
 const start = (): Promise<void> => userEvent.click(screen.getByRole('button', {name: 'Start run'}));
-const sent = (): unknown => api.calledWith(RUN)[0].data;
+const sent = (): unknown => api.called(RUN)[0].data;
 const file = (name: string): File => new File(['x'], name);
 const upload = (name = 'new.apk'): Promise<void> => userEvent.upload(fileInput(), file(name));
 const uploaded = aBundle({id: 9, version: '2.0'});
 const fileInput = (): HTMLInputElement => screen.getByLabelText('Bundle file');
 
-afterEach(() => api.restore());
 
 describe('RunTestDialog bundles', () => {
     it('installs the newest usable bundle by default and opens the new run', async () => {
@@ -64,7 +59,7 @@ describe('RunTestDialog bundles', () => {
         expect(await screen.findByText('No bundles yet; upload .apk to run the test.')).toBeInTheDocument();
         expect(screen.getByRole('button', {name: 'Start run'})).toBeDisabled();
         fireEvent.submit(screen.getByRole('button', {name: 'Start run'}).closest('form')!);
-        expect(api.calledWith(RUN)).toHaveLength(0);
+        expect(api.called(RUN)).toHaveLength(0);
     });
 
     it('shows that bundles are loading', async () => {
@@ -74,7 +69,7 @@ describe('RunTestDialog bundles', () => {
 
     it('shows when the bundles cannot be loaded', async () => {
         show(android(), {[BUNDLES]: () => {
-            throw failure(500, 'no bundles for you');
+            throw failure('no bundles for you', 500);
         }});
         expect(await screen.findByText('no bundles for you')).toBeInTheDocument();
     });
@@ -86,11 +81,11 @@ describe('RunTestDialog upload', () => {
         const gate = new Promise<void>(resolve => {
             finish = resolve;
         });
-        show(android(), {[UPLOAD]: async (r: FakeRequest) => {
-            r.config.onUploadProgress?.({loaded: 1, total: 2} as AxiosProgressEvent);
-            r.config.onUploadProgress?.({loaded: 5, total: 0} as AxiosProgressEvent);
+        show(android(), {[UPLOAD]: async (r: Call) => {
+            r.config?.onUploadProgress?.({loaded: 1, total: 2} as AxiosProgressEvent);
+            r.config?.onUploadProgress?.({loaded: 5, total: 0} as AxiosProgressEvent);
             await gate;
-            r.config.onUploadProgress?.({loaded: 2, total: 2} as AxiosProgressEvent);
+            r.config?.onUploadProgress?.({loaded: 2, total: 2} as AxiosProgressEvent);
             return uploaded;
         }});
         await screen.findByText('The test installs this build on its devices first.');
@@ -106,8 +101,8 @@ describe('RunTestDialog upload', () => {
     });
 
     it('says when the master reads the file after the upload', async () => {
-        show(android(), {[UPLOAD]: async (r: FakeRequest) => {
-            r.config.onUploadProgress?.({loaded: 2, total: 2} as AxiosProgressEvent);
+        show(android(), {[UPLOAD]: async (r: Call) => {
+            r.config?.onUploadProgress?.({loaded: 2, total: 2} as AxiosProgressEvent);
             await new Promise(() => undefined);
         }});
         await screen.findByText('The test installs this build on its devices first.');
@@ -123,12 +118,12 @@ describe('RunTestDialog upload errors', () => {
         await screen.findByText('The test installs this build on its devices first.');
         await userEvent.setup({applyAccept: false}).upload(fileInput(), file('new.txt'));
         expect(await screen.findByText('Hero takes .apk files.')).toBeInTheDocument();
-        expect(api.calledWith(UPLOAD)).toHaveLength(0);
+        expect(api.called(UPLOAD)).toHaveLength(0);
     });
 
     it.each([
-        ['an identical file', failure(409, 'conflict'), 'This exact file was uploaded before; pick it in the list.'],
-        ['another failure', failure(500, 'disk full'), 'disk full'],
+        ['an identical file', failure('conflict', 409), 'This exact file was uploaded before; pick it in the list.'],
+        ['another failure', failure('disk full', 500), 'disk full'],
     ])('shows the error of %s', async (_, error, message) => {
         show(android(), {[UPLOAD]: () => {
             throw error;
@@ -142,7 +137,7 @@ describe('RunTestDialog upload errors', () => {
         show(android());
         await screen.findByText('The test installs this build on its devices first.');
         fireEvent.change(fileInput(), {target: {files: []}});
-        expect(api.calledWith(UPLOAD)).toHaveLength(0);
+        expect(api.called(UPLOAD)).toHaveLength(0);
     });
 });
 
@@ -180,7 +175,7 @@ describe('RunTestDialog start', () => {
     it('shows the error when the run does not start and lets the user try again', async () => {
         let fail = true;
         show(anApp(), {[RUN]: () => {
-            if (fail) throw failure(409, 'no free device');
+            if (fail) throw failure('no free device', 409);
             return {id: 12};
         }});
         await userEvent.click(await screen.findByRole('button', {name: 'Start run'}));

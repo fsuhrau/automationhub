@@ -1,5 +1,7 @@
 import type {AxiosRequestConfig} from 'axios';
 import {ApiClient} from '../api/ApiClient';
+import {appService} from './app.service';
+import {deviceService} from './device.service';
 import {AppAction, AppRequest, DeviceControlApi, DeviceTarget, ElementRef, Point, Swipe} from '../types/device.control.api';
 
 export const LEASE_HEADER = 'X-Device-Lease';
@@ -21,12 +23,14 @@ export const screenshotUrl = (projectId: string, deviceId: number | string): str
 // change the device send the lease token in the lease header.
 export const deviceControlService = (api: ApiClient, {projectId, deviceId}: DeviceTarget): DeviceControlApi => {
     const device = base(projectId, deviceId);
+    const devices = deviceService(api);
+    const apps = appService(api);
     const send = (path: string, token: string, body?: unknown): Promise<void> =>
         api.post<unknown>(`${device}${path}`, body, withLease(token)).then(() => undefined);
     return {
-        device: () => api.get(device),
-        apps: () => api.get(`/${projectId}/apps`),
-        bundles: (appId: number) => api.get(`/${projectId}/app/${appId}/bundles`),
+        device: () => devices.get(projectId, String(deviceId)),
+        apps: () => apps.list(projectId),
+        bundles: (appId: number) => apps.bundles({projectId, appId}),
         lockStatus: () => api.get(`${device}/lock`),
         lock: () => api.post(`${device}/lock`),
         release: (token: string) => api.delete<unknown>(`${device}/lock`, withLease(token)).then(() => undefined),

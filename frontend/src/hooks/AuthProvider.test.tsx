@@ -5,7 +5,7 @@ import {MemoryRouter, useLocation} from 'react-router-dom';
 import {describe, expect, it, vi} from 'vitest';
 import {AuthProvider, useAuth} from './AuthProvider';
 import {AuthClient, SessionResult} from '../app/authClient';
-import {aUser, fakeAuthClient, noAuth, signedIn, signedOut} from '../app/testing/fakeAuth';
+import {aUser, fakeAuthClient, noAuth, signedIn, signedOut} from '../testing/fakeAuth';
 
 const Probe: React.FC = () => {
     const auth = useAuth();

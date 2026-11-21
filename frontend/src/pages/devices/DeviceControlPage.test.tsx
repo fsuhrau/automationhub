@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {act, fireEvent, screen} from '@testing-library/react';
 import {heldBy} from './control/fakes';
-import {BASE, loaded, renderPage, takeControl} from './control/pageKit';
+import {BASE, loaded, renderPage, takeControl} from './control/controlHarness';
 
 describe('the control page: the device', () => {
     it('shows the device, where it runs and a link to its details', async () => {
@@ -24,11 +24,11 @@ describe('the control page: the lease', () => {
         const page = renderPage();
         await loaded();
         await takeControl(page);
-        expect(page.api.to('POST', `${BASE}/lock`)).toHaveLength(1);
+        expect(page.api.called(`POST ${BASE}/lock`)).toHaveLength(1);
         expect(screen.getByRole('button', {name: 'Back'})).toBeEnabled();
         fireEvent.click(screen.getByRole('button', {name: /Give the device back/}));
         await screen.findByText('Take control to use the device.');
-        expect(page.api.to('DELETE', `${BASE}/lock`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
+        expect(page.api.called(`DELETE ${BASE}/lock`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
         expect(screen.getByRole('button', {name: 'Back'})).toBeDisabled();
     });
 
@@ -56,10 +56,10 @@ describe('the control page: the lease', () => {
         await loaded();
         await takeControl(page);
         fireEvent.click(screen.getByText('Screenshots'));
-        const before = page.api.to('GET', `${BASE}/lock`).length;
+        const before = page.api.called(`GET ${BASE}/lock`).length;
         fireEvent.click(screen.getByRole('button', {name: 'Home'}));
         expect(await screen.findByText('lease expired')).toBeInTheDocument();
         await act(async () => undefined);
-        expect(page.api.to('GET', `${BASE}/lock`).length).toBeGreaterThan(before);
+        expect(page.api.called(`GET ${BASE}/lock`).length).toBeGreaterThan(before);
     });
 });

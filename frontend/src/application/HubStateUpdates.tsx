@@ -3,10 +3,10 @@ import {useSSE} from 'react-hooks-sse';
 import {DeviceStatePayload, HubStateAction, HubStateActions} from "./HubStateActions";
 import {useParams} from "react-router-dom";
 import {useHubState} from "../hooks/HubStateProvider";
-import {getAllDevices} from "../services/device.service";
-import {getAllApps} from "../services/app.service";
-import {getNodes} from "../services/settings.service";
-import {getProjects} from "../project/project.service";
+import {useDeviceService} from "../services/device.service";
+import {useAppService} from "../services/app.service";
+import {useSettingsService} from "../services/settings.service";
+import {useProjectService} from "../project/project.service";
 import IProject from "../project/project";
 import {useError} from "../ErrorProvider";
 import {SSE_CONNECTED_EVENT} from "./sseSource";
@@ -48,12 +48,13 @@ const countEvents = {stateReducer: (count: number): number => count + 1};
 
 // reloads the device list once after a burst of events; 0 events do nothing
 export const useDeviceListReload = (projectIdentifier: string, dispatch: HubDispatch, events: number): void => {
+    const devicesApi = useDeviceService();
     useEffect(() => {
         if (events === 0) return;
         // a plugged in phone produces a few events at once; load the list once
         let cancelled = false;
         const timer = setTimeout(() => {
-            getAllDevices(projectIdentifier).then(devices => {
+            devicesApi.list(projectIdentifier).then(devices => {
                 if (!cancelled) {
                     dispatch({type: HubStateActions.UpdateDevices, payload: devices})
                 }
@@ -63,15 +64,16 @@ export const useDeviceListReload = (projectIdentifier: string, dispatch: HubDisp
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [events, projectIdentifier, dispatch]);
+    }, [events, projectIdentifier, dispatch, devicesApi]);
 };
 
 export const useNodesLoad = (projectIdentifier: string, dispatch: HubDispatch, events: number): void => {
+    const settings = useSettingsService();
     useEffect(() => {
-        getNodes(projectIdentifier).then(nodes => {
+        settings.nodes(projectIdentifier).then(nodes => {
             dispatch({type: HubStateActions.NodesUpdate, payload: nodes})
         }).catch(() => undefined);
-    }, [events, projectIdentifier, dispatch]);
+    }, [events, projectIdentifier, dispatch, settings]);
 };
 
 // applies the result of a load unless the effect that started it is gone
@@ -89,17 +91,18 @@ const applyUnlessCancelled = <T, >(
 
 // the project list is needed by every project page; load it once
 export const useProjectsLoad = (projects: IProject[] | null, dispatch: HubDispatch, setError: (e: object) => void): void => {
+    const projectApi = useProjectService();
     useEffect(() => {
         if (projects !== null) return;
         let cancelled = false;
-        applyUnlessCancelled(getProjects(), () => cancelled, {
+        applyUnlessCancelled(projectApi.list(), () => cancelled, {
             apply: payload => dispatch({type: HubStateActions.ProjectsUpdate, payload}),
             fail: setError,
         });
         return () => {
             cancelled = true;
         };
-    }, [projects, dispatch, setError]);
+    }, [projects, dispatch, setError, projectApi]);
 };
 
 // devices and apps belong to the project; reload both when it changes
@@ -108,21 +111,23 @@ export const useProjectDataLoad = (
     dispatch: HubDispatch,
     setError: (e: object) => void,
 ): void => {
+    const appApi = useAppService();
+    const devicesApi = useDeviceService();
     useEffect(() => {
         let cancelled = false;
         const isCancelled = (): boolean => cancelled;
-        applyUnlessCancelled(getAllApps(projectIdentifier), isCancelled, {
+        applyUnlessCancelled(appApi.list(projectIdentifier), isCancelled, {
             apply: payload => dispatch({type: HubStateActions.AppsUpdate, payload}),
             fail: setError,
         });
-        applyUnlessCancelled(getAllDevices(projectIdentifier), isCancelled, {
+        applyUnlessCancelled(devicesApi.list(projectIdentifier), isCancelled, {
             apply: payload => dispatch({type: HubStateActions.UpdateDevices, payload}),
             fail: setError,
         });
         return () => {
             cancelled = true;
         };
-    }, [projectIdentifier, dispatch, setError]);
+    }, [projectIdentifier, dispatch, setError, appApi, devicesApi]);
 };
 
 const collectChanges = (state: DeviceChanges, action: { data: DeviceStatePayload | null }): DeviceChanges => {

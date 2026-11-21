@@ -3,8 +3,8 @@ import {act, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {PlatformType} from '../../types/platform.type.enum';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {at, device, logEntry, protocol} from './run/testkit/fixtures';
-import {base, fullRun, openRun, runningRun, status} from './run/testkit/runPage';
+import {at, device, logEntry, protocol} from './run/harness/fixtures';
+import {base, fullRun, openRun, runningRun, status} from './run/harness/runPage';
 
 // the live screen and device log open streams of their own
 vi.mock('../../components/DeviceLiveScreen', async () => {
@@ -76,7 +76,7 @@ describe('a run that is executing: cancelling', () => {
         const {api} = openRun(runningRun(), {response: running, answers: {[cancel]: null}});
         await userEvent.click(await screen.findByRole('button', {name: 'Cancel run'}));
         expect(await screen.findByRole('button', {name: 'Cancelling…'})).toBeDisabled();
-        expect(api.requests.filter(r => r.key === cancel)).toHaveLength(1);
+        expect(api.calls.filter(r => r.key === cancel)).toHaveLength(1);
     });
 
     it('shows when the run cannot be cancelled', async () => {
@@ -112,11 +112,11 @@ describe('a run that is executing: devices', () => {
     it('waits for a device, asking the master again', async () => {
         const {api} = openRun(runningRun(), {response: {...running, devices: []}});
         expect(await screen.findByText('Waiting for the run to take a device…')).toBeInTheDocument();
-        api.requests.length = 0;
+        api.calls.length = 0;
         await act(async () => {
             await vi.advanceTimersByTimeAsync(3000);
         });
-        expect(api.requests.map(r => r.key)).toEqual([`GET ${base}/run/3`]);
+        expect(api.calls.map(r => r.key)).toEqual([`GET ${base}/run/3`]);
     });
 
     it('waits for the first device when the master does not say which are held', async () => {

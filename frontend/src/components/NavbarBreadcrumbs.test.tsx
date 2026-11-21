@@ -1,28 +1,24 @@
-import {act, screen} from '@testing-library/react';
+import {act, RenderResult, screen} from '@testing-library/react';
 import {Route, Routes} from 'react-router-dom';
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import NavbarBreadcrumbs from './NavbarBreadcrumbs';
-import {renderInApp} from '../app/testing/renderInApp';
-import {aDevice, aProject, anApp, SeedHub} from '../app/testing/seedHub';
+import {fakeApi, FakeApi} from '../testing/fakeApi';
+import {aDevice, aProject, anApp} from '../testing/fixtures';
+import {renderWithProviders} from '../testing/renderWithProviders';
 
-const getTest = vi.hoisted(() => vi.fn());
-vi.mock('../services/test.service', () => ({getTest}));
+const hub = {
+    projects: [aProject('p1', 'Project One')],
+    apps: [anApp(3, 'Android app')],
+    devices: [aDevice({id: 4, name: 'Pixel 7'}), aDevice({id: 5, name: 'raw name', alias: 'Lab phone'})],
+};
 
-const mount = async (path: string): Promise<ReturnType<typeof renderInApp>> => {
-    const view = renderInApp(
-        <SeedHub projects={[aProject('p1', 'Project One')]} apps={[anApp(3, 'Android app')]}
-            devices={[aDevice({id: 4, name: 'Pixel 7'}), aDevice({id: 5, name: 'raw name', alias: 'Lab phone'})]}>
-            <Routes><Route path="*" element={<NavbarBreadcrumbs/>}/></Routes>
-        </SeedHub>, {path});
+const mount = async (path: string, api: FakeApi = fakeApi()): Promise<RenderResult> => {
+    const view = renderWithProviders(<Routes><Route path="*" element={<NavbarBreadcrumbs/>}/></Routes>, {url: path, api, hub});
     await act(async () => undefined);
     return view;
 };
 
 const trail = (): string => screen.getByRole('navigation', {name: 'breadcrumb'}).textContent ?? '';
-
-beforeEach(() => {
-    getTest.mockReset();
-});
 
 describe('NavbarBreadcrumbs', () => {
     it('names the project, the app and the device from the hub state', async () => {
@@ -43,26 +39,25 @@ describe('NavbarBreadcrumbs', () => {
     });
 
     it('looks up the name of a test once', async () => {
-        getTest.mockResolvedValue({name: 'Smoke test'});
-        await mount('/project/p1/app:3/test/11');
+        const api = fakeApi({'GET /p1/app/3/test/11': {name: 'Smoke test'}});
+        await mount('/project/p1/app:3/test/11', api);
         expect(trail()).toContain('Smoke test');
         expect(trail()).toContain('Android app');
-        await mount('/project/p1/app:3/test/11/run/2');
-        expect(getTest).toHaveBeenCalledTimes(1);
+        await mount('/project/p1/app:3/test/11/run/2', api);
+        expect(api.called('GET /p1/app/3/test/11')).toHaveLength(1);
     });
 
     it('shows the number of a test whose name cannot be loaded', async () => {
-        getTest.mockRejectedValue(new Error('gone'));
-        await mount('/project/p1/app:3/test/12');
+        await mount('/project/p1/app:3/test/12', fakeApi({'GET /p1/app/3/test/12': new Error('gone')}));
         expect(trail()).toContain('Test 12');
     });
 
     it('does not update after it is gone', async () => {
         let resolve: (v: { name: string }) => void = () => undefined;
-        getTest.mockReturnValue(new Promise(r => {
+        const pending = new Promise<{ name: string }>(r => {
             resolve = r;
-        }));
-        const view = await mount('/project/p1/app:3/test/13');
+        });
+        const view = await mount('/project/p1/app:3/test/13', fakeApi({'GET /p1/app/3/test/13': () => pending}));
         view.unmount();
         await act(async () => resolve({name: 'late'}));
         expect(screen.queryByRole('navigation')).toBeNull();

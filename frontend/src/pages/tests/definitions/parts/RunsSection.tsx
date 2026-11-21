@@ -4,7 +4,7 @@ import {PlayArrowRounded} from '@mui/icons-material';
 import {Link as RouterLink} from 'react-router-dom';
 import {Section} from '../../../../components/common';
 import {TestRoutes} from '../../../../lib/routes';
-import {ITestRunListEntry} from '../../../../services/test.run.service';
+import {ITestRunListEntry} from '../../../../types/test.run.list';
 import {TestRuns} from '../useTestRuns';
 import {RunRow} from './RunRow';
 import {useAgoClock} from '../useAgoClock';

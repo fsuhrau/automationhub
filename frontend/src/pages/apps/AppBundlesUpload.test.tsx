@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event';
 import {AxiosProgressEvent} from 'axios';
 import {IAppBinaryData} from '../../types/app';
 import {bundle} from './appsFixtures';
-import {Call, failure, fakeApi, FakeApi, renderBundles, signalOf} from './appsHarness';
+import {Call, failure, fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderBundles, signalOf} from './appsHarness';
 
 const UPLOAD = 'POST /demo/app/3/upload';
 

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {at, entry, protocol} from './testkit/fixtures';
+import {at, entry, protocol} from './harness/fixtures';
 import {
     filterLog, formatRuntime, isError, isScreen, isStep, logAsText, mergeRunnerLog, sourceName, splitMessage, summarize,
 } from './logModel';

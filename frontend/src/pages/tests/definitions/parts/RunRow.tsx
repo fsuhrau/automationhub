@@ -1,7 +1,7 @@
 import React from 'react';
 import {Chip, CircularProgress, Link, Stack, TableCell, TableRow, Tooltip, Typography} from '@mui/material';
 import {Link as RouterLink, useNavigate} from 'react-router-dom';
-import {ITestRunListEntry} from '../../../../services/test.run.service';
+import {ITestRunListEntry} from '../../../../types/test.run.list';
 import {formatDateTime} from '../../../../components/DateTime';
 import {RunRoutes} from '../../../../lib/routes';
 import {ago} from '../../../apps/bundlesModel';

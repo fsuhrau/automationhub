@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import {act, fireEvent, screen} from '@testing-library/react';
-import {controlled, loaded, renderPage} from './control/pageKit';
+import {controlled, loaded, renderPage} from './control/controlHarness';
 
 const stage = (): HTMLElement => screen.getByLabelText('Device screen');
 const canvas = (): HTMLCanvasElement => stage().querySelector('canvas') as HTMLCanvasElement;

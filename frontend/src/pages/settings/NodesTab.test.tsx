@@ -2,12 +2,15 @@ import {expect, it} from 'vitest';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from './SettingsPage';
-import {apiError, createFakeApi, Handler, node, Opened, renderInProject, User} from './testKit';
+import {node} from './settingsFixtures';
+import {Reply, failure, fakeApi} from '../../testing/fakeApi';
+import {Opened, User} from '../../testing/opened';
+import {renderInProject} from './settingsHarness';
 
 const offline = node({id: 4, identifier: 'node-2', name: 'Linux box', status: 0});
 
-const open = async (handlers: Record<string, Handler> = {}): Promise<Opened> => {
-    const api = createFakeApi({'GET /p1/settings/nodes': () => [node(), offline], ...handlers});
+const open = async (handlers: Record<string, Reply> = {}): Promise<Opened> => {
+    const api = fakeApi({'GET /p1/settings/nodes': () => [node(), offline], ...handlers});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=nodes'});
     await screen.findByRole('table', {name: 'Nodes'});
     return {api, user: userEvent.setup()};
@@ -35,14 +38,14 @@ it('Settings > Nodes: lists the nodes with their status and copies an identifier
 });
 
 it('Settings > Nodes: says when there are no nodes', async () => {
-    const api = createFakeApi({'GET /p1/settings/nodes': () => []});
+    const api = fakeApi({'GET /p1/settings/nodes': () => []});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=nodes'});
     expect(await screen.findByText(/No nodes yet/)).toBeInTheDocument();
 });
 
 it('Settings > Nodes: shows the error when the nodes do not load', async () => {
-    const api = createFakeApi({'GET /p1/settings/nodes': () => {
-        throw apiError('nodes down');
+    const api = fakeApi({'GET /p1/settings/nodes': () => {
+        throw failure('nodes down');
     }});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=nodes'});
     expect(await screen.findByRole('alert')).toHaveTextContent('nodes down');
@@ -66,7 +69,7 @@ it('Settings > Nodes: asks for a name, then adds the node and shows its config o
 
 it('Settings > Nodes: shows the error when adding fails', async () => {
     const {user} = await open({'POST /p1/settings/node': () => {
-        throw apiError('duplicate');
+        throw failure('duplicate');
     }});
     await user.type(screen.getByLabelText('Name'), 'X');
     await user.click(screen.getByRole('button', {name: 'Add node'}));
@@ -84,7 +87,7 @@ it('Settings > Nodes > token and delete: issues a new token after a confirmation
 
 it('Settings > Nodes > token and delete: shows the error when issuing a token fails', async () => {
     const {user} = await open({'POST /p1/settings/nodes/3/token': () => {
-        throw apiError('cannot issue');
+        throw failure('cannot issue');
     }});
     await user.click(screen.getByRole('button', {name: 'New token for Mac mini QA'}));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', {name: 'Issue new token'}));

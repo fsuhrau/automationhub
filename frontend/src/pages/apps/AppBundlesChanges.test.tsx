@@ -3,7 +3,8 @@ import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBinaryData} from '../../types/app';
 import {bundle} from './appsFixtures';
-import {failure, fakeApi, FakeApi, renderBundles} from './appsHarness';
+import {failure, fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 // a master that keeps the bundles, so a list loaded after a change shows it
 const master = (store: { list: IAppBinaryData[] }, extra: Parameters<typeof fakeApi>[0] = {}): FakeApi =>

@@ -1,11 +1,10 @@
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {renderHook} from '@testing-library/react';
 import React from 'react';
-import http from '../http-common';
 import {ApiClientProvider} from '../api/ApiClientProvider';
 import {PlatformType} from '../types/platform.type.enum';
-import {deviceService, getAllDevices, getDevice, useDeviceService} from './device.service';
-import {fakeApi} from '../pages/devices/testKit';
+import {deviceService, useDeviceService} from './device.service';
+import {fakeApi} from '../testing/fakeApi';
 
 describe('deviceService', () => {
     it('lists the devices of a project, optionally of one platform', async () => {
@@ -63,18 +62,5 @@ describe('useDeviceService', () => {
         expect(result.current).toBe(first);
         void first.list('p1');
         expect(api.calls).toHaveLength(1);
-    });
-});
-
-describe('legacy wrappers', () => {
-    afterEach(() => vi.restoreAllMocks());
-
-    it('getAllDevices and getDevice go through the axios instance', async () => {
-        const get = vi.spyOn(http, 'get').mockResolvedValue({data: [{id: 1}]});
-        expect(await getAllDevices('p1', PlatformType.iOS)).toEqual([{id: 1}]);
-        expect(get).toHaveBeenCalledWith('/p1/devices', {params: {platform: PlatformType.iOS}});
-        get.mockResolvedValue({data: {id: 4}});
-        expect(await getDevice('p1', '4')).toEqual({id: 4});
-        expect(get).toHaveBeenLastCalledWith('/p1/device/4', undefined);
     });
 });

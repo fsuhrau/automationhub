@@ -3,7 +3,8 @@ import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {IAppBinaryData} from '../../types/app';
 import {bundle} from './appsFixtures';
-import {failure, fakeApi, FakeApi, renderBundles} from './appsHarness';
+import {failure, fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderBundles} from './appsHarness';
 
 // a master with a list of bundles that changes like the real one
 const master = (bundles: IAppBinaryData[], extra: Parameters<typeof fakeApi>[0] = {}): FakeApi =>

@@ -37,7 +37,7 @@ type Case = [string, (s: DeviceControlApi) => Promise<unknown>, unknown[]];
 
 // every call of the service: what it asks of the hub
 const CASES: Case[] = [
-    ['device', s => s.device(), ['get', base]],
+    ['device', s => s.device(), ['get', '/my project/device/7']],
     ['apps', s => s.apps(), ['get', '/my project/apps']],
     ['bundles', s => s.bundles(3), ['get', '/my project/app/3/bundles']],
     ['lockStatus', s => s.lockStatus(), ['get', `${base}/lock`]],

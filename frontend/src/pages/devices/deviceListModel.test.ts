@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {filterByPlatform, groupDevices, platformCounts, platformsOf} from './deviceListModel';
 import {PlatformType} from '../../types/platform.type.enum';
-import {device, node} from './testKit';
+import {device, node} from './deviceFixtures';
 
 const phone = device({id: 1, platformType: PlatformType.Android});
 const iphone = device({id: 2, platformType: PlatformType.iOS});

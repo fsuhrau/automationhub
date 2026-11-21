@@ -1,10 +1,10 @@
-import {render, screen} from '@testing-library/react';
+import {screen} from '@testing-library/react';
 import React from 'react';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {Route, Routes} from 'react-router-dom';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {HubStateProvider} from './HubStateProvider';
 import {parseAppParam, rememberApp, useSelectedApp} from './useSelectedApp';
-import {anApp, SeedHub} from '../app/testing/seedHub';
+import {anApp} from '../testing/fixtures';
+import {renderWithProviders} from '../testing/renderWithProviders';
 
 const Probe: React.FC = () => {
     const {app, inUrl} = useSelectedApp();
@@ -12,9 +12,7 @@ const Probe: React.FC = () => {
 };
 
 const mount = async (path: string, apps = [anApp(1, 'One'), anApp(2, 'Two')]): Promise<void> => {
-    render(<HubStateProvider><SeedHub apps={apps}><MemoryRouter initialEntries={[path]}>
-        <Routes><Route path="/project/:projectId/:appId?/*" element={<Probe/>}/></Routes>
-    </MemoryRouter></SeedHub></HubStateProvider>);
+    renderWithProviders(<Routes><Route path="/project/:projectId/:appId?/*" element={<Probe/>}/></Routes>, {url: path, hub: {apps}});
     await screen.findByText(/^app=/);
 };
 

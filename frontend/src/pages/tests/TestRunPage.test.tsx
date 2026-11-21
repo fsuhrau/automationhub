@@ -2,10 +2,12 @@ import {describe, expect, it} from 'vitest';
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {fakeApi, FakeSse} from './run/testkit/fakes';
-import {protocol, run} from './run/testkit/fixtures';
-import {renderAt} from './run/testkit/render';
-import {base, fullRun, location, openRun, url} from './run/testkit/runPage';
+import {fakeApi} from '../../testing/fakeApi';
+import {FakeSse} from '../../testing/fakeSse';
+import {protocol, run} from './run/harness/fixtures';
+import {renderAt} from './run/harness/render';
+import {base, fullRun, openRun, url} from './run/harness/runPage';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 describe('the test run page: the run', () => {
     it('shows the run, its status and its devices', async () => {
@@ -43,7 +45,7 @@ describe('the test run page: navigation', () => {
     it('moves to the run before', async () => {
         openRun(fullRun(), {answers: {[`GET ${base}/run/2`]: {testRun: fullRun({id: 2}), nextRunId: 3, prevRunId: null}}});
         await userEvent.click(await screen.findByText('Run 2'));
-        expect(location()).toBe('/project/p1/app:1/test/2/run/2');
+        expect(currentLocation()).toBe('/project/p1/app:1/test/2/run/2');
         expect(await screen.findByRole('heading', {level: 1})).toHaveTextContent('Run 2');
     });
 
@@ -57,7 +59,7 @@ describe('the test run page: navigation', () => {
     it('opens the protocol of a test row', async () => {
         openRun(fullRun());
         await userEvent.click(await screen.findByText('Shop'));
-        expect(location()).toBe(`${url}/2`);
+        expect(currentLocation()).toBe(`${url}/2`);
     });
 });
 
@@ -73,14 +75,14 @@ describe('the test run page: actions', () => {
         openRun(fullRun({recordings: [{id: 1} as never]}));
         expect((await screen.findByText('Replay')).closest('a')).toHaveAttribute('href', `${url}/replay`);
         await userEvent.click(screen.getByRole('button', {name: 'Replay Shop'}));
-        expect(location()).toBe(`${url}/replay?t=${new Date(protocol().startedAt).valueOf()}&device=7`);
+        expect(currentLocation()).toBe(`${url}/replay?t=${new Date(protocol().startedAt).valueOf()}&device=7`);
     });
 
     it('starts the test again and opens the new run', async () => {
         const {api} = openRun(fullRun(), {answers: {[`POST ${base}/run`]: run({id: 9})}});
         await userEvent.click(await screen.findByText('Run again'));
-        await waitFor(() => expect(location()).toBe('/project/p1/app:1/test/2/run/9'));
-        expect(api.requests.find(r => r.key === `POST ${base}/run`)?.data).toEqual({appBinaryId: 5, params: 'A=1;B=', startUrl: 'game://start'});
+        await waitFor(() => expect(currentLocation()).toBe('/project/p1/app:1/test/2/run/9'));
+        expect(api.calls.find(r => r.key === `POST ${base}/run`)?.data).toEqual({appBinaryId: 5, params: 'A=1;B=', startUrl: 'game://start'});
     });
 });
 
@@ -117,6 +119,6 @@ describe('the test run page: loading', () => {
         renderAt(url, {api, sse: new FakeSse()});
         expect(await screen.findByText('master is down')).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', {name: 'Retry'}));
-        await waitFor(() => expect(api.requests).toHaveLength(2));
+        await waitFor(() => expect(api.calls).toHaveLength(2));
     });
 });

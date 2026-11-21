@@ -1,9 +1,9 @@
 import {expect, it} from 'vitest';
-import React from 'react';
 import {act, renderHook, RenderHookResult, waitFor} from '@testing-library/react';
-import {ApiClientProvider} from '../../api/ApiClientProvider';
 import {bundle} from './appsFixtures';
-import {fakeApi, FakeApi, Handler, signalOf} from './appsHarness';
+import {Call, fakeApi, FakeApi} from '../../testing/fakeApi';
+import {wrapperOf} from '../../testing/renderWithProviders';
+import {signalOf} from './appsHarness';
 import {acceptFor} from './bundlesModel';
 import {BundleUploadOptions, BundleUploads, useBundleUpload} from './useBundleUpload';
 import {PlatformType} from '../../types/platform.type.enum';
@@ -15,13 +15,12 @@ interface Setup extends RenderHookResult<BundleUploads, unknown> {
     uploaded: number[],
 }
 
-const setup = (upload: Handler, over: Partial<BundleUploadOptions> = {}): Setup => {
+const setup = (upload: (call: Call) => unknown, over: Partial<BundleUploadOptions> = {}): Setup => {
     const api = fakeApi({'POST /p/app/1/upload': upload});
     const uploaded: number[] = [];
-    const wrapper = ({children}: { children: React.ReactNode }): React.ReactElement => <ApiClientProvider client={api}>{children}</ApiClientProvider>;
     const hook = renderHook(() => useBundleUpload({
         app: {projectId: 'p', appId: 1}, accept, onUploaded: b => uploaded.push(b.id), ...over,
-    }), {wrapper});
+    }), {wrapper: wrapperOf({api})});
     return {...hook, api, uploaded};
 };
 

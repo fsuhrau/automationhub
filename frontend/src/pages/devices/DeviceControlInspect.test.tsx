@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
-import {BASE, controlled, loaded, PageOptions, PageWorld, renderPage} from './control/pageKit';
+import {BASE, controlled, loaded, PageOptions, PageWorld, renderPage} from './control/controlHarness';
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -82,7 +82,7 @@ describe('the control page: the selected element', () => {
         fireEvent.click(screen.getByRole('tab', {name: 'Inspect'}));
         await selectButton();
         fireEvent.click(screen.getByRole('button', {name: 'Tap it'}));
-        await waitFor(() => expect(page.api.to('POST', `${BASE}/element/touch`).map(c => c.data)).toEqual([{elementId: 'b1'}]));
+        await waitFor(() => expect(page.api.called(`POST ${BASE}/element/touch`).map(c => c.data)).toEqual([{elementId: 'b1'}]));
     });
 
     it('cannot tap without control', async () => {

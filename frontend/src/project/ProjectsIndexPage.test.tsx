@@ -2,7 +2,10 @@ import {afterEach, expect, it, vi} from 'vitest';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProjectsIndexPage from './ProjectsIndexPage';
-import {app, apiError, createFakeApi, Handler, Opened, project, renderOutsideProject} from '../pages/settings/testKit';
+import {app, project} from '../pages/settings/settingsFixtures';
+import {Reply, failure, fakeApi} from '../testing/fakeApi';
+import {Opened} from '../testing/opened';
+import {currentLocation, renderAtRoot} from '../testing/renderWithProviders';
 
 vi.mock('../components/TopBar', () => ({default: () => <header>top bar</header>}));
 
@@ -11,9 +14,9 @@ afterEach(() => localStorage.clear());
 const alpha = project({id: 1, identifier: 'alpha', name: 'Alpha', apps: [app({id: 1, name: 'Game Android'})]});
 const bravo = project({id: 2, identifier: 'bravo', name: 'Bravo', apps: ['a', 'b', 'c', 'd', 'e', 'f'].map((n, i) => app({id: 10 + i, name: `App ${n}`}))});
 
-const open = (projects = [alpha, bravo], handlers: Record<string, Handler> = {}): Opened => {
-    const api = createFakeApi({'GET /projects': () => projects, ...handlers});
-    renderOutsideProject(<ProjectsIndexPage/>, api);
+const open = (projects = [alpha, bravo], handlers: Record<string, Reply> = {}): Opened => {
+    const api = fakeApi({'GET /projects': () => projects, ...handlers});
+    renderAtRoot(<ProjectsIndexPage/>, {api});
     return {api, user: userEvent.setup()};
 };
 
@@ -69,7 +72,7 @@ it('ProjectsIndexPage without projects, and errors: invites to create the first 
 it('ProjectsIndexPage without projects, and errors: shows the error and loads again on retry', async () => {
     let fail = true;
     const {api, user} = open([alpha], {'GET /projects': () => {
-        if (fail) throw apiError('master is down');
+        if (fail) throw failure('master is down');
         return [alpha];
     }});
     expect(await screen.findByText('master is down')).toBeInTheDocument();
@@ -79,7 +82,7 @@ it('ProjectsIndexPage without projects, and errors: shows the error and loads ag
     expect(api.bodies('GET /projects')).toHaveLength(2);
 });
 
-const openDialog = async (handlers: Record<string, Handler> = {}): Promise<Opened & { dialog: HTMLElement }> => {
+const openDialog = async (handlers: Record<string, Reply> = {}): Promise<Opened & { dialog: HTMLElement }> => {
     const result = open([alpha], handlers);
     await screen.findByRole('heading', {name: 'Alpha'});
     await result.user.click(screen.getByRole('button', {name: 'New project'}));
@@ -92,7 +95,7 @@ it('ProjectsIndexPage > new project: previews the identifier, creates the projec
     await user.type(within(dialog).getByLabelText('Name'), ' Heroes of History ');
     expect(within(dialog).getByText('heroes-of-history')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', {name: 'Create project'}));
-    expect(await screen.findByText('at /project/heroes-of-history/settings?tab=apps')).toBeInTheDocument();
+    await waitFor(() => expect(currentLocation()).toBe('/project/heroes-of-history/settings?tab=apps'));
     expect(api.bodies('POST /project')).toEqual([{name: 'Heroes of History'}]);
 });
 
@@ -105,7 +108,7 @@ it('ProjectsIndexPage > new project: asks for a name first', async () => {
 
 it('ProjectsIndexPage > new project: shows the master\'s error in the dialog, and can be cancelled', async () => {
     const {user, dialog} = await openDialog({'POST /project': () => {
-        throw apiError('quota reached');
+        throw failure('quota reached');
     }});
     await user.type(within(dialog).getByLabelText('Name'), 'X');
     await user.click(within(dialog).getByRole('button', {name: 'Create project'}));

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {aBundle, aParameter} from '../testing/fixtures';
+import {aBundle, aParameter} from '../harness/fixtures';
 import {CONFLICT_MESSAGE, defaultParams, paramsString, readyToStart, ReadyState, uploadFailure, withUploads} from './runTestModel';
 
 const ready = (over: Partial<ReadyState> = {}): ReadyState =>

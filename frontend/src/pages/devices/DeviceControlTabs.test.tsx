@@ -1,13 +1,13 @@
 import {describe, expect, it} from 'vitest';
 import {fireEvent, screen, waitFor, within} from '@testing-library/react';
-import {BASE, controlled, loaded, PageWorld, renderPage} from './control/pageKit';
+import {BASE, controlled, loaded, PageWorld, renderPage} from './control/controlHarness';
 
 const choose = async (select: string, option: string): Promise<void> => {
     fireEvent.mouseDown(screen.getByRole('combobox', {name: select}));
     fireEvent.click(await within(screen.getByRole('listbox')).findByText(option));
 };
 
-const sent = (page: PageWorld, path: string): unknown[] => page.api.to('POST', `${BASE}/${path}`).map(c => c.data);
+const sent = (page: PageWorld, path: string): unknown[] => page.api.called(`POST ${BASE}/${path}`).map(c => c.data);
 
 describe('the control page: the system log', () => {
     const openLog = async (): Promise<PageWorld> => {
@@ -44,7 +44,7 @@ describe('the control page: the system log', () => {
         fireEvent.click(await within(screen.getByRole('listbox')).findByText('last 1000 lines'));
         fireEvent.click(screen.getByRole('button', {name: 'Load'}));
         await screen.findByText('2 lines');
-        expect(page.api.to('GET', `${BASE}/logs`)[0].config?.params).toEqual({lines: 1000});
+        expect(page.api.called(`GET ${BASE}/logs`)[0].config?.params).toEqual({lines: 1000});
     });
 });
 
@@ -63,7 +63,7 @@ describe('the control page: the app', () => {
         await waitFor(() => expect(screen.getByRole('button', {name: 'Start'})).toBeEnabled());
         fireEvent.click(screen.getByRole('button', {name: 'Start'}));
         await waitFor(() => expect(sent(page, 'app/start')).toEqual([{binaryId: 12, clearData: false}]));
-        expect(page.api.to('POST', `${BASE}/app/start`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
+        expect(page.api.called(`POST ${BASE}/app/start`)[0].config?.headers).toEqual({'X-Device-Lease': 'tok-1'});
     });
 });
 
@@ -86,7 +86,7 @@ describe('the control page: app actions', () => {
         const page = renderPage();
         await loaded();
         await choose('App', 'Game iOS');
-        await waitFor(() => expect(page.api.to('GET', '/p1/app/2/bundles')).toHaveLength(1));
+        await waitFor(() => expect(page.api.called('GET /p1/app/2/bundles')).toHaveLength(1));
         expect(screen.getByRole('combobox', {name: 'App'})).toHaveTextContent('Game iOS');
     });
 

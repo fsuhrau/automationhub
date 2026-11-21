@@ -1,7 +1,8 @@
 import {expect, it, vi} from 'vitest';
 import {screen, within} from '@testing-library/react';
 import SettingsPage from './SettingsPage';
-import {apiError, createFakeApi, FakeApi, renderInProject} from './testKit';
+import {FakeApi, failure, fakeApi} from '../../testing/fakeApi';
+import {renderInProject} from './settingsHarness';
 
 const auth = vi.hoisted(() => ({user: null as { name: string } | null}));
 vi.mock('../../hooks/AuthProvider', () => ({useAuth: () => ({user: auth.user})}));
@@ -12,7 +13,7 @@ const users = [
 ];
 
 const open = (handler: () => unknown): FakeApi => {
-    const api = createFakeApi({'GET /p1/settings/users': handler});
+    const api = fakeApi({'GET /p1/settings/users': handler});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=people'});
     return api;
 };
@@ -41,7 +42,7 @@ it('Settings > People: says when the hub has no accounts', async () => {
 
 it('Settings > People: shows the error when the accounts do not load', async () => {
     open(() => {
-        throw apiError('not allowed');
+        throw failure('not allowed');
     });
     expect(await screen.findByRole('alert')).toHaveTextContent('not allowed');
 });

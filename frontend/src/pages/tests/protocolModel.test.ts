@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {TestResultState as S} from '../../types/test.result.state.enum';
-import {at, protocol} from './run/testkit/fixtures';
+import {at, protocol} from './run/harness/fixtures';
 import {earlierRuns, neighbours, runnerOf} from './protocolModel';
 import {buildRows, leaves} from './testRunModel';
 

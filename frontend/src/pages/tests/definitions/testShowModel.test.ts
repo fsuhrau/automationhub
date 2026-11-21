@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {aFunction} from './testing/fixtures';
+import {aFunction} from './harness/fixtures';
 import {methodsByClass, runResults} from './testShowModel';
 
 describe('runResults', () => {

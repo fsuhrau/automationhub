@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {act, renderHook, RenderHookResult} from '@testing-library/react';
 import {Location, useLocation} from 'react-router-dom';
 import {IBaselineCandidate} from '../../../types/protocol.baseline';
-import {wrapperOf} from './testkit/wrapper';
+import {wrapperOf} from '../../../testing/renderWithProviders';
 import {ProtocolQuery, useProtocolQuery} from './useProtocolQuery';
 
 interface Probe {

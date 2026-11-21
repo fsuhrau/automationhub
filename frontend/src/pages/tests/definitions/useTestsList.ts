@@ -2,7 +2,7 @@ import {errorMessage} from '../../../lib/errorMessage';
 import {useLoader} from '../../../hooks/useLoader';
 import {useTestRunChanges} from '../../../hooks/useTestRunChanges';
 import ITestData from '../../../types/test';
-import {useTestService} from './useTestService';
+import {useTestService} from '../../../services/test.service';
 
 export interface TestsList {
     // null while loading

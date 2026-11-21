@@ -1,5 +1,6 @@
 import {TestResultState} from "../types/test.result.state.enum";
-import {OverridableStringUnion} from "@mui/types";
+
+export type TestStatusChipColor = 'success' | 'error' | 'default' | 'warning';
 
 export const getTestStatusText = (state: TestResultState): string => {
     switch (state) {
@@ -29,7 +30,7 @@ export const getTestStatusColor = (state: TestResultState): string => {
     return 'green'
 }
 
-export const getTestStatusChipColor = (state: TestResultState): any => {
+export const getTestStatusChipColor = (state: TestResultState): TestStatusChipColor => {
     switch (state) {
         case TestResultState.TestResultSuccess:
             return 'success';

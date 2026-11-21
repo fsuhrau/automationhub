@@ -1,7 +1,9 @@
 import {describe, expect, it} from 'vitest';
 import {fireEvent, screen} from '@testing-library/react';
 import DevicePageLoader from './DevicePageLoader';
-import {device, fakeApi, renderPage} from './testKit';
+import {device} from './deviceFixtures';
+import {fakeApi} from '../../testing/fakeApi';
+import {renderPage} from './deviceHarness';
 
 const open = (api = fakeApi({}), edit = false): ReturnType<typeof renderPage> =>
     renderPage(<DevicePageLoader edit={edit}/>, {api, route: 'device/:deviceId', url: '/project/p1/device/1'});

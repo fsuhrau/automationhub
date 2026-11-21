@@ -2,7 +2,9 @@ import {describe, expect, it} from 'vitest';
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import DeviceEditPage from './DeviceEditPage';
 import IDeviceData from '../../types/device';
-import {device, fakeApi, FakeApi, renderPage} from './testKit';
+import {device} from './deviceFixtures';
+import {fakeApi, FakeApi} from '../../testing/fakeApi';
+import {renderPage} from './deviceHarness';
 
 const stored = device({alias: 'Old', customParameter: [{id: 7, key: 'PIN', value: '1234'}]});
 

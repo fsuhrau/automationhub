@@ -2,7 +2,10 @@ import {beforeEach, expect, it, vi} from 'vitest';
 import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
-import {apiError, createFakeApi, Handler, Opened, project, renderOutsideProject} from '../settings/testKit';
+import {project} from '../settings/settingsFixtures';
+import {Reply, failure, fakeApi} from '../../testing/fakeApi';
+import {Opened} from '../../testing/opened';
+import {renderAtRoot} from '../../testing/renderWithProviders';
 
 vi.mock('../../components/TopBar', () => ({default: () => <header>top bar</header>}));
 
@@ -21,12 +24,12 @@ beforeEach(() => {
     auth.value = {authState: 'authenticated', user: {name: 'Anna', login: 'anna', email: 'a@x.io', avatar: ''}, logOut};
 });
 
-const open = async (handlers: Record<string, Handler> = {}): Promise<Opened> => {
-    const api = createFakeApi({
+const open = async (handlers: Record<string, Reply> = {}): Promise<Opened> => {
+    const api = fakeApi({
         'GET /me': () => profile, 'GET /me/tokens': () => [token, used],
         'GET /projects': () => [project(), project({id: 2, identifier: 'p2', name: 'Second'})], ...handlers,
     });
-    renderOutsideProject(<ProfilePage/>, api);
+    renderAtRoot(<ProfilePage/>, {api});
     return {api, user: userEvent.setup()};
 };
 
@@ -56,14 +59,14 @@ it('ProfilePage: says when there are no personal tokens', async () => {
 
 it('ProfilePage: shows the error of the tokens in the toast', async () => {
     await open({'GET /me/tokens': () => {
-        throw apiError('tokens unavailable');
+        throw failure('tokens unavailable');
     }});
     expect(await screen.findByRole('alert')).toHaveTextContent('tokens unavailable');
 });
 
 it('ProfilePage: warns when the profile does not load and offers no tokens', async () => {
     await open({'GET /me': () => {
-        throw apiError('profile unavailable');
+        throw failure('profile unavailable');
     }});
     expect(await screen.findByText('profile unavailable')).toBeInTheDocument();
     expect(screen.queryByText('Personal access tokens')).toBeNull();
@@ -115,7 +118,7 @@ it('ProfilePage > create and revoke tokens: sends the expiry as the end of the p
 
 it('ProfilePage > create and revoke tokens: shows the error and keeps the form when creating fails', async () => {
     const {user} = await open({'POST /me/tokens': () => {
-        throw apiError('too many tokens');
+        throw failure('too many tokens');
     }});
     await user.type(await screen.findByLabelText('Name'), 'x');
     await user.click(screen.getByRole('button', {name: 'Create token'}));
@@ -157,7 +160,7 @@ it('ProfilePage > create and revoke tokens: drops the shown token when it is rev
 
 it('ProfilePage > create and revoke tokens: keeps the dialog and shows the error when revoking fails', async () => {
     const {user} = await open({'DELETE /me/tokens/5': () => {
-        throw apiError('cannot revoke');
+        throw failure('cannot revoke');
     }});
     await user.click(await screen.findByRole('button', {name: 'Revoke claude-code'}));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', {name: 'Revoke token'}));

@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {act, renderHook} from '@testing-library/react';
-import {entry} from './testkit/fixtures';
+import {entry} from './harness/fixtures';
 import {useLogView} from './useLogView';
 
 const log = Array.from({length: 600}, (_, i) => ({...entry({id: i + 1, message: i === 599 ? 'last boom' : `line ${i}`, level: i === 599 ? 'error' : 'info'})}));

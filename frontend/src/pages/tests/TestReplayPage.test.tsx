@@ -1,13 +1,13 @@
 import {fireEvent, screen} from '@testing-library/react';
 import {afterEach, beforeEach, expect, it, vi} from 'vitest';
-import {active, advance, click, clockText, loaded, restoreAll, row, stubMedia} from './replay/renderReplay';
+import {active, advance, click, clockText, loaded, RUN, restoreAll, row, stubMedia} from './replay/renderReplay';
 
 beforeEach(stubMedia);
 afterEach(restoreAll);
 
 it('loads the run through the api client and shows header, log and video', async () => {
-    const get = await loaded();
-    expect(get).toHaveBeenCalledWith('/p1/app/2/test/3/run/7');
+    const api = await loaded();
+    expect(api.called(RUN)).toHaveLength(1);
     expect(screen.getByRole('heading', {level: 1})).toHaveTextContent('Checkout · Run 7 · Replay');
     expect(screen.getByLabelText('Screen of Lab phone')).toBeInTheDocument();
     expect(clockText()).toBe('0:00.0 / 0:10.0');

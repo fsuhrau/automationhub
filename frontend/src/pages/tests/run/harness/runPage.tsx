@@ -1,10 +1,10 @@
 // Setup shared by the tests of the test run page.
-import {screen} from '@testing-library/react';
 import {IAppBinaryData} from '../../../../types/app';
 import {PlatformType} from '../../../../types/platform.type.enum';
 import ITestRunData from '../../../../types/test.run';
 import {TestResultState as S} from '../../../../types/test.result.state.enum';
-import {fakeApi, FakeApi, FakeSse} from './fakes';
+import {fakeApi, FakeApi} from '../../../../testing/fakeApi';
+import {FakeSse} from '../../../../testing/fakeSse';
 import {at, device, logEntry, protocol, run} from './fixtures';
 import {renderAt} from './render';
 
@@ -59,4 +59,3 @@ export const openRun = (loaded: ITestRunData, {response = {}, answers = {}, at: 
     return {api, sse};
 };
 
-export const location = (): string => screen.getByLabelText('location').textContent ?? '';

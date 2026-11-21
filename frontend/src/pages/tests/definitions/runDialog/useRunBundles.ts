@@ -2,7 +2,7 @@ import {useMemo, useState} from 'react';
 import {useAsyncAction} from '../../../../hooks/useAsyncAction';
 import {useLoader} from '../../../../hooks/useLoader';
 import {errorMessage} from '../../../../lib/errorMessage';
-import {getAppBundles, uploadBundle, usableBundles} from '../../../../services/app.service';
+import {useAppService, usableBundles} from '../../../../services/app.service';
 import {IAppBinaryData, IAppData} from '../../../../types/app';
 import {acceptFor, accepts} from '../../../apps/bundlesModel';
 import {uploadFailure, withUploads} from './runTestModel';
@@ -21,9 +21,10 @@ export interface RunBundles {
 // useRunBundles lists the bundles a run can install, the newest chosen by
 // default, and uploads a new one. Without needsBundle nothing is loaded.
 export const useRunBundles = (projectId: string, app: IAppData, needsBundle: boolean): RunBundles => {
+    const service = useAppService();
     const accept = acceptFor(app.platform);
     const {data, error: loadError} = useLoader(
-        () => needsBundle ? getAppBundles(projectId, app.id) : null, [projectId, app.id, needsBundle]);
+        () => needsBundle ? service.bundles({projectId, appId: app.id}) : null, [service, projectId, app.id, needsBundle]);
     const [uploads, setUploads] = useState<IAppBinaryData[]>([]);
     const [chosen, setChosen] = useState<number | '' | null>(null);
     const [progress, setProgress] = useState<number | null>(null);
@@ -33,7 +34,7 @@ export const useRunBundles = (projectId: string, app: IAppData, needsBundle: boo
         if (!accepts(accept, file.name)) throw new Error(`${app.name} takes ${accept.label} files.`);
         setProgress(0);
         try {
-            const bundle = await uploadBundle(file, projectId, app.id, setProgress);
+            const bundle = await service.upload({projectId, appId: app.id}, file, {onProgress: setProgress});
             setUploads(list => [bundle, ...list]);
             setChosen(bundle.id);
         } catch (e) {

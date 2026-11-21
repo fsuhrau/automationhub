@@ -3,13 +3,16 @@ import {screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import dayjs, {Dayjs} from 'dayjs';
 import SettingsPage from './SettingsPage';
-import {accessToken, apiError, createFakeApi, Handler, Opened, renderInProject} from './testKit';
+import {accessToken} from './settingsFixtures';
+import {Reply, failure, fakeApi} from '../../testing/fakeApi';
+import {Opened} from '../../testing/opened';
+import {renderInProject} from './settingsHarness';
 
 const expired = accessToken({id: 6, name: 'Old', token: 'zzzzzzzzzzzz', expiresAt: new Date('2020-01-01')});
 const valid = accessToken({expiresAt: new Date('2999-01-01')});
 
-const open = async (handlers: Record<string, Handler> = {}): Promise<Opened> => {
-    const api = createFakeApi({'GET /p1/settings/access_tokens': () => [valid, expired], ...handlers});
+const open = async (handlers: Record<string, Reply> = {}): Promise<Opened> => {
+    const api = fakeApi({'GET /p1/settings/access_tokens': () => [valid, expired], ...handlers});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=tokens'});
     await screen.findByRole('table', {name: 'Access tokens'});
     return {api, user: userEvent.setup()};
@@ -37,14 +40,14 @@ it('Settings > Access tokens: shows and hides a token and copies it', async () =
 });
 
 it('Settings > Access tokens: says when there are no tokens', async () => {
-    const api = createFakeApi({'GET /p1/settings/access_tokens': () => []});
+    const api = fakeApi({'GET /p1/settings/access_tokens': () => []});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=tokens'});
     expect(await screen.findByText('No tokens yet.')).toBeInTheDocument();
 });
 
 it('Settings > Access tokens: shows the error when the tokens do not load', async () => {
-    const api = createFakeApi({'GET /p1/settings/access_tokens': () => {
-        throw apiError('no tokens for you');
+    const api = fakeApi({'GET /p1/settings/access_tokens': () => {
+        throw failure('no tokens for you');
     }});
     renderInProject(<SettingsPage/>, {api, url: '/project/p1/settings?tab=tokens'});
     expect(await screen.findByRole('alert')).toHaveTextContent('no tokens for you');
@@ -84,7 +87,7 @@ it('Settings > Access tokens > create: sends the expiry that was picked', async 
 
 it('Settings > Access tokens > create: shows the error and keeps the form when creating fails', async () => {
     const {user} = await open({'POST /p1/settings/access_token': () => {
-        throw apiError('quota reached');
+        throw failure('quota reached');
     }});
     await user.type(screen.getByLabelText('Name'), 'X');
     await user.click(screen.getByRole('button', {name: 'Create token'}));
@@ -126,7 +129,7 @@ it('Settings > Access tokens > revoke: keeps the command of another token when o
 
 it('Settings > Access tokens > revoke: can be cancelled, and shows the error when it fails', async () => {
     const {user} = await open({'DELETE /p1/settings/access_token/5': () => {
-        throw apiError('in use');
+        throw failure('in use');
     }});
     await user.click(screen.getAllByRole('button', {name: 'Revoke CI nightly'})[0]);
     let dialog = await screen.findByRole('dialog');

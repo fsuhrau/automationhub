@@ -1,9 +1,9 @@
 import {describe, expect, it} from 'vitest';
 import {renderHook, RenderHookResult} from '@testing-library/react';
 import {TestResultState as S} from '../../../types/test.result.state.enum';
-import {FakeSse} from './testkit/fakes';
-import {at, entry, protocol} from './testkit/fixtures';
-import {wrapperOf} from './testkit/wrapper';
+import {FakeSse} from '../../../testing/fakeSse';
+import {at, entry, protocol} from './harness/fixtures';
+import {wrapperOf} from '../../../testing/renderWithProviders';
 import ITestProtocolData from '../../../types/test.protocol';
 import {ProtocolStream, useProtocolStream} from './useProtocolStream';
 

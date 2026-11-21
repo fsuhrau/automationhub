@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import React from 'react';
 import {describe, expect, it, vi} from 'vitest';
 import {AppProviders} from './providers';
-import {fakeApi} from './testing/fakeApi';
+import {fakeApi} from '../testing/fakeApi';
 import {useApiClient} from '../api/ApiClientProvider';
 import {useError} from '../ErrorProvider';
 import {useHubState} from '../hooks/HubStateProvider';
@@ -23,7 +23,7 @@ const Probe: React.FC = () => {
 
 describe('AppProviders', () => {
     it('gives the pages the client it is given', async () => {
-        render(<AppProviders client={fakeApi({'/x': 'from fake'})}><Probe/></AppProviders>);
+        render(<AppProviders client={fakeApi({'GET /x': 'from fake'})}><Probe/></AppProviders>);
         expect(await screen.findByText('answer=from fake error=null projects=null')).toBeInTheDocument();
     });
 

@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import NavigateNextRoundedIcon from '@mui/icons-material/NavigateNextRounded';
 import {Link as RouterLink, useLocation} from 'react-router-dom';
 import {useHubState} from '../hooks/HubStateProvider';
-import {getTest} from '../services/test.service';
+import {useTestService} from '../services/test.service';
 import {buildCrumbs, Crumb, CrumbNames, parseTestPath} from './breadcrumbs';
 import {HubState} from '../application/HubState';
 
@@ -28,6 +28,7 @@ const testKey = (project: string, appId: number, testId: number | string): strin
 
 const useTestName = (pathname: string): void => {
     const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
+    const service = useTestService();
     const target = parseTestPath(pathname);
     const project = target?.project;
     const appId = target?.appId;
@@ -37,7 +38,7 @@ const useTestName = (pathname: string): void => {
         const key = testKey(project, appId, testId);
         if (testNames.has(key)) return;
         let active = true;
-        getTest(project, appId, testId)
+        service.get({projectId: project, appId}, String(testId))
             .then(test => {
                 testNames.set(key, test.name);
                 if (active) forceUpdate();
@@ -46,7 +47,7 @@ const useTestName = (pathname: string): void => {
         return () => {
             active = false;
         };
-    }, [project, appId, testId]);
+    }, [project, appId, testId, service]);
 };
 
 const deviceName = (state: HubState, id: number): string | undefined => {

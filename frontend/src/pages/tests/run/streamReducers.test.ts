@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {TestResultState as S} from '../../../types/test.result.state.enum';
-import {at, entry, protocol} from './testkit/fixtures';
+import {at, entry, protocol} from './harness/fixtures';
 import {addEntry, addKey, lastEndedId, mergeOwnProtocol} from './streamReducers';
 
 describe('addEntry', () => {

@@ -2,7 +2,8 @@
 import {screen} from '@testing-library/react';
 import ITestProtocolData from '../../../../types/test.protocol';
 import {TestResultState as S} from '../../../../types/test.result.state.enum';
-import {fakeApi, FakeApi, FakeSse} from './fakes';
+import {fakeApi, FakeApi} from '../../../../testing/fakeApi';
+import {FakeSse} from '../../../../testing/fakeSse';
 import {at, entry, performance, protocol, run} from './fixtures';
 import {renderAt} from './render';
 
@@ -57,5 +58,4 @@ export const openProtocol = (main: ITestProtocolData, others: ITestProtocolData[
     return {api, sse};
 };
 
-export const location = (): string => screen.getByLabelText('location').textContent ?? '';
 export const tab = (name: RegExp): HTMLElement => screen.getByRole('tab', {name});

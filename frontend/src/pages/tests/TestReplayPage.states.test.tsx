@@ -1,8 +1,8 @@
 import {fireEvent, screen, within} from '@testing-library/react';
-import {afterEach, beforeEach, expect, it, vi} from 'vitest';
-import {ApiClient} from '../../api/ApiClient';
+import {afterEach, beforeEach, expect, it} from 'vitest';
+import {fakeApi} from '../../testing/fakeApi';
 import ITestRunData from '../../types/test.run';
-import {clockText, loaded, renderReplay, restoreAll, stubMedia} from './replay/renderReplay';
+import {clockText, loaded, renderReplay, restoreAll, RUN, stubMedia} from './replay/renderReplay';
 import {logEntry, protocol, recording, run, T0} from './replay/testFixtures';
 
 beforeEach(stubMedia);
@@ -51,7 +51,7 @@ it('devices: switches the device and keeps the time in the url', async () => {
     expect(within(group).getByRole('button', {name: 'Lab phone'})).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', {name: 'Ahead 5 seconds'}));
     fireEvent.click(within(group).getByRole('button', {name: 'iphone'}));
-    expect(screen.getByTestId('where')).toHaveTextContent(`device=6&t=${T0 + 5000}`);
+    expect(screen.getByTestId('location')).toHaveTextContent(`device=6&t=${T0 + 5000}`);
     expect(screen.getByText('This device has no recording.', {selector: 'p'})).toBeInTheDocument();
     expect(screen.getByText(/Turn on "Record the session"/)).toBeInTheDocument();
 });
@@ -85,11 +85,15 @@ it('empty: replays the log alone when no device exists', async () => {
 });
 
 it('error: shows the error and retries', async () => {
-    const get = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue({testRun: run()}) as ApiClient['get'];
-    renderReplay(get);
+    let asked = 0;
+    const api = fakeApi({[RUN]: () => {
+        if (asked++ === 0) throw new Error('boom');
+        return {testRun: run()};
+    }});
+    renderReplay(api);
     expect(await screen.findByText('boom')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', {name: 'Retry'}));
     expect(await screen.findByRole('heading', {level: 1})).toBeInTheDocument();
-    expect(get).toHaveBeenCalledTimes(2);
+    expect(api.called(RUN)).toHaveLength(2);
 });
 

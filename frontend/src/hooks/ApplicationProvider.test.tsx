@@ -2,10 +2,10 @@ import {render, screen} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import {beforeEach, describe, expect, it} from 'vitest';
-import {HubStateProvider} from './HubStateProvider';
 import {ProjectProvider} from './ProjectProvider';
 import ApplicationPage, {useApplicationContext} from './ApplicationProvider';
-import {aProject, anApp, SeedHub} from '../app/testing/seedHub';
+import {aProject, anApp} from '../testing/fixtures';
+import {renderWithProviders} from '../testing/renderWithProviders';
 import {rememberApp} from './useSelectedApp';
 import {IAppData} from '../types/app';
 
@@ -16,14 +16,12 @@ const Page: React.FC = () => {
 };
 
 const mount = (path: string, apps?: IAppData[]): void => {
-    render(<HubStateProvider><SeedHub projects={[aProject('p')]} apps={apps}><MemoryRouter initialEntries={[path]}>
-        <Routes>
-            <Route path="/project/:project_identifier/settings" element={<Page/>}/>
-            <Route path="/project/:project_identifier/:appId" element={<ProjectProvider><ApplicationPage/></ProjectProvider>}>
-                <Route path="tests" element={<Page/>}/>
-            </Route>
-        </Routes>
-    </MemoryRouter></SeedHub></HubStateProvider>);
+    renderWithProviders(<Routes>
+        <Route path="/project/:project_identifier/settings" element={<Page/>}/>
+        <Route path="/project/:project_identifier/:appId" element={<ProjectProvider><ApplicationPage/></ProjectProvider>}>
+            <Route path="tests" element={<Page/>}/>
+        </Route>
+    </Routes>, {url: path, hub: {projects: [aProject('p')], apps}});
 };
 
 beforeEach(() => localStorage.clear());

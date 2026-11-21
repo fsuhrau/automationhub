@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import IProtocolKeyData from '../../../types/protocol.key';
 import {IBaseline} from '../../../types/protocol.baseline';
-import {entry, performance, protocol} from './testkit/fixtures';
+import {entry, performance, protocol} from './harness/fixtures';
 import {LogEntry, summarize} from './logModel';
 import {comparisonOf, mergedKeys, ownErrors, phasesOf, pickedBaseline, relatedKeys, tabFromQuery} from './protocolViewModel';
 

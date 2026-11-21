@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {createAuthClient} from './authClient';
-import {aUser} from './testing/fakeAuth';
+import {aUser} from '../testing/fakeAuth';
 
 const json = (body: unknown, init: ResponseInit = {}): Response =>
     new Response(JSON.stringify(body), {...init, headers: {'content-type': 'application/json'}});

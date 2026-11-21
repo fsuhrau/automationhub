@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {act, renderHook} from '@testing-library/react';
-import {fakeApi} from './testkit/fakes';
-import {wrapperOf} from './testkit/wrapper';
+import {fakeApi} from '../../../testing/fakeApi';
+import {wrapperOf} from '../../../testing/renderWithProviders';
 import {useHeldDevices} from './useHeldDevices';
 
 const run = {projectId: 'p1', appId: 1, testId: 2, runId: 3};
@@ -29,7 +29,7 @@ describe('useHeldDevices', () => {
         await poll();
         expect(result.current).toEqual([7]);
         await poll();
-        expect(api.requests).toHaveLength(1);
+        expect(api.calls).toHaveLength(1);
     });
 
     it('treats an answer without devices as none held', async () => {
@@ -37,7 +37,7 @@ describe('useHeldDevices', () => {
         const {result} = renderHook(() => useHeldDevices([], true, run), {wrapper: wrapperOf({api})});
         await poll();
         expect(result.current).toEqual([]);
-        expect(api.requests).toHaveLength(1);
+        expect(api.calls).toHaveLength(1);
     });
 
     it('keeps polling after a failed request', async () => {
@@ -45,7 +45,7 @@ describe('useHeldDevices', () => {
         renderHook(() => useHeldDevices([], true, run), {wrapper: wrapperOf({api})});
         await poll();
         await poll();
-        expect(api.requests).toHaveLength(2);
+        expect(api.calls).toHaveLength(2);
     });
 
     it.each([
@@ -56,7 +56,7 @@ describe('useHeldDevices', () => {
         const api = fakeApi({[key]: {devices: [1]}});
         const {result} = renderHook(() => useHeldDevices(initial, running, run), {wrapper: wrapperOf({api})});
         await poll();
-        expect(api.requests).toHaveLength(0);
+        expect(api.calls).toHaveLength(0);
         expect(result.current).toEqual(initial);
     });
 });

@@ -1,14 +1,10 @@
-import {afterEach, expect, it, vi} from 'vitest';
+import {expect, it, vi} from 'vitest';
 import {AxiosProgressEvent} from 'axios';
 import {ApiClient} from '../api/ApiClient';
 import {bundle} from '../pages/apps/appsFixtures';
 import {AppParameter, IAppData} from '../types/app';
+import {ParameterRequest} from '../types/settings.requests';
 import {appService, bundleIconUrl, usableBundles} from './app.service';
-
-const http = vi.hoisted(() => ({
-    get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn(),
-}));
-vi.mock('../http-common', () => ({default: http}));
 
 interface Seen {
     method: string,
@@ -39,16 +35,14 @@ interface UploadRequest {
 
 const ref = {projectId: 'p', appId: 3, id: 7};
 
-afterEach(() => vi.clearAllMocks());
-
 type Service = ReturnType<typeof appService>;
 
 it.each([
     {call: (s: Service) => s.list('p'), method: 'get', url: '/p/apps'},
     {call: (s: Service) => s.get('p', '3'), method: 'get', url: '/p/app/3'},
-    {call: (s: Service) => s.create('p', {} as IAppData), method: 'post', url: '/p/app'},
+    {call: (s: Service) => s.create('p', {name: 'n', platform: 1, identifier: 'i'}), method: 'post', url: '/p/app'},
     {call: (s: Service) => s.update('p', 3, {} as IAppData), method: 'put', url: '/p/app/3'},
-    {call: (s: Service) => s.addParameter('p', 3, {} as AppParameter), method: 'post', url: '/p/app/3/parameter'},
+    {call: (s: Service) => s.addParameter('p', 3, {} as ParameterRequest), method: 'post', url: '/p/app/3/parameter'},
     {call: (s: Service) => s.updateParameter('p', 3, {id: 9} as AppParameter), method: 'put', url: '/p/app/3/parameter/9'},
     {call: (s: Service) => s.removeParameter('p', 3, 9), method: 'delete', url: '/p/app/3/parameter/9'},
     {call: (s: Service) => s.find({name: 'x'}), method: 'get', url: '/apps'},
@@ -106,26 +100,4 @@ it('keeps the bundles that still have a file, newest first', () => {
 
 it('serves the icon of a bundle under the api', () => {
     expect(bundleIconUrl({projectId: 'a b', appId: 1}, 2)).toBe('/api/a%20b/app/1/bundle/2/icon');
-});
-
-it('keeps the old functions working over the real client until they are removed', async () => {
-    const legacy = await import('./app.service');
-    http.get.mockResolvedValue({data: []});
-    http.post.mockResolvedValue({data: 'created'});
-    http.put.mockResolvedValue({data: 'saved'});
-    http.delete.mockResolvedValue({data: undefined});
-    expect(await legacy.getAllApps('p')).toEqual([]);
-    expect(await legacy.getAppBundles('p', 3)).toEqual([]);
-    expect(await legacy.createApp('p', {} as IAppData)).toBe('created');
-    expect(await legacy.updateApp('p', 3, {} as IAppData)).toBe('saved');
-    expect(await legacy.addAppParameter('p', 3, {} as AppParameter)).toBe('created');
-    expect(await legacy.updateAppParameter('p', 3, 9, {name: 'n'} as AppParameter)).toBe('saved');
-    await legacy.removeAppParameter('p', 3, 9);
-    const progress = vi.fn();
-    await legacy.uploadBundle(new File(['x'], 'a.apk'), 'p', 3, progress);
-    expect(http.put).toHaveBeenCalledWith('/p/app/3/parameter/9', {name: 'n', id: 9}, undefined);
-    expect(http.delete).toHaveBeenCalledWith('/p/app/3/parameter/9', undefined);
-    expect(http.post.mock.calls.at(-1)?.[0]).toBe('/p/app/3/upload');
-    http.post.mock.calls.at(-1)?.[2].onUploadProgress({loaded: 1, total: 2});
-    expect(progress).toHaveBeenCalledWith(0.5);
 });

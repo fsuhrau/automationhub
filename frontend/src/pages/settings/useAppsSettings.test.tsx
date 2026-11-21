@@ -1,19 +1,14 @@
-import React from 'react';
 import {expect, it} from 'vitest';
 import {act, renderHook, RenderHookResult, waitFor} from '@testing-library/react';
-import {ApiClientProvider} from '../../api/ApiClientProvider';
-import {ErrorProvider} from '../../ErrorProvider';
-import {HubStateProvider} from '../../hooks/HubStateProvider';
-import {createFakeApi, FakeApi} from './testKit';
+import {wrapperOf} from '../../testing/renderWithProviders';
+import {FakeApi, fakeApi} from '../../testing/fakeApi';
 import {parameterForm} from './settingsModel';
 import {AppsSettings, useAppsSettings} from './useAppsSettings';
 
 // without a project context the hook falls back to the empty identifier
 const setup = (): { api: FakeApi } & RenderHookResult<AppsSettings, unknown> => {
-    const api = createFakeApi({'GET //apps': () => []});
-    const wrapper = ({children}: { children: React.ReactNode }): React.ReactElement =>
-        <ErrorProvider><ApiClientProvider client={api.client}><HubStateProvider>{children}</HubStateProvider></ApiClientProvider></ErrorProvider>;
-    return {api, ...renderHook(() => useAppsSettings(), {wrapper})};
+    const api = fakeApi({'GET //apps': () => []});
+    return {api, ...renderHook(() => useAppsSettings(), {wrapper: wrapperOf({api})})};
 };
 
 it('useAppsSettings without an app: has no apps and no selection', async () => {

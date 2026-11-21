@@ -19,7 +19,18 @@ Run them in this directory.
 
 ## Size limits
 
-`max-lines` 200, `max-lines-per-function` 40, `complexity` 10 and `max-params` 3 are errors for the
-globs in the `refactored` list at the top of `eslint.config.js`, and warnings everywhere else. A package
-that refactors a folder adds its glob (for example `'src/api/**'`) to that list.
-`src/shared-theme/**` and `src/theme/**` are exempt.
+`max-lines` 200, `max-lines-per-function` 40, `complexity` 10 and `max-params` 3 are errors for all of
+`src`. `src/shared-theme/**` and `src/theme/**` are exempt: they come from a template, and their other
+lint findings are warnings.
+
+Tests are the one exception: `max-lines` and `max-lines-per-function` are off for `*.test.ts(x)` and
+`src/testing/**`, because a `describe` block holds many cases and the kit builds fixtures. Every other rule
+(`complexity`, `max-params`, types, hooks) still applies to them.
+
+## Test kit
+
+`src/testing/` is the one kit the tests share: `fakeApi` (an `ApiClient` that answers by `"METHOD /url"`
+and records the calls), `FakeSse` and `fakeSources` (the hub event stream and the streams hooks open
+themselves), `fakeAuthClient`, the hub-state seed `SeedHub` and `renderWithProviders` / `wrapperOf`
+(the providers and router of the app over fakes). A page keeps only its route tree and fixtures
+(`*Harness.tsx`, `*Fixtures.ts`). The kit is excluded from the coverage report.

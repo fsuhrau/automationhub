@@ -1,12 +1,10 @@
 import {useCallback, useEffect, useState} from 'react';
-import {SseSourceFactory} from '../../hooks/useSseLog';
+import {defaultSseSource, SseSourceFactory} from '../../hooks/useSseLog';
 import {addLines, clearLines, dropped, failed, initialLog, LogState, opened} from './deviceLogModel';
 
 export interface DeviceLog extends LogState {
     clear: () => void,
 }
-
-const defaultSource: SseSourceFactory = url => new EventSource(url, {withCredentials: true});
 
 const dataOf = (e: Event): string => (e as MessageEvent<string>).data;
 
@@ -14,7 +12,7 @@ const dataOf = (e: Event): string => (e as MessageEvent<string>).data;
 // "lines" (a list of lines) and "failure" ({message}) without ids, so
 // useSseLog (which dedupes by id) doesn't fit. The state restarts when the
 // url changes and the connection closes on unmount.
-export function useDeviceLog(url: string, createSource: SseSourceFactory = defaultSource): DeviceLog {
+export function useDeviceLog(url: string, createSource: SseSourceFactory = defaultSseSource): DeviceLog {
     const [state, setState] = useState<LogState>(() => initialLog(url));
 
     useEffect(() => {

@@ -1,12 +1,13 @@
 import {fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {TestType} from '../../types/test.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
-import {failure, FakeApi} from './definitions/testing/fakeApi';
-import {aDevice, aFunction, aTest} from './definitions/testing/fixtures';
-import {DEVICES, location, openEditor, UPDATE} from './definitions/testing/editSupport';
+import {failure, FakeApi} from '../../testing/fakeApi';
+import {aDevice, aFunction, aTest} from './definitions/harness/fixtures';
+import {DEVICES, openEditor, UPDATE} from './definitions/harness/editSupport';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 let api: FakeApi;
 const edit = async (test = aTest(), routes = {}): Promise<void> => {
@@ -15,13 +16,12 @@ const edit = async (test = aTest(), routes = {}): Promise<void> => {
 };
 const nameField = (): HTMLElement => screen.getByRole('textbox', {name: 'Name'});
 const save = (): Promise<void> => userEvent.click(screen.getByRole('button', {name: 'Save'}));
-const body = (): unknown => api.calledWith(UPDATE)[0].data;
+const body = (): unknown => api.called(UPDATE)[0].data;
 const picked = (): Promise<void> => userEvent.click(screen.getByRole('radio', {name: /Picked devices/}));
 const devices = [aDevice({id: 5, alias: 'Lab phone'}), aDevice({id: 6, name: 'Pixel'})];
 const device = (deviceId: number): NonNullable<ReturnType<typeof aTest>['testConfig']['devices']>[number] =>
     ({deviceId, testConfigId: 1, createdAt: new Date(), updatedAt: new Date(), deletedAt: new Date()});
 
-afterEach(() => api.restore());
 
 describe('EditTestPage', () => {
     it('shows the test with nothing to save yet', async () => {
@@ -36,7 +36,7 @@ describe('EditTestPage', () => {
         await userEvent.type(nameField(), ' 2');
         expect(screen.getByText('Unity test · unsaved changes')).toBeInTheDocument();
         await save();
-        await waitFor(() => expect(location()).toBe('/project/proj/app:1/test/7'));
+        await waitFor(() => expect(currentLocation()).toBe('/project/proj/app:1/test/7'));
         expect(body()).toEqual({
             name: 'Smoke 2', executionType: TestExecutionType.Concurrent, allDevices: true, devices: [], unityTestCategoryType: UnityTestCategory.RunAllTests,
             categories: '', testFunctions: [], recordSession: false,
@@ -47,15 +47,15 @@ describe('EditTestPage', () => {
         await edit();
         await userEvent.type(nameField(), 'x');
         fireEvent.keyDown(nameField(), {key: 's', ctrlKey: true});
-        await waitFor(() => expect(api.calledWith(UPDATE)).toHaveLength(1));
+        await waitFor(() => expect(api.called(UPDATE)).toHaveLength(1));
         fireEvent.keyDown(nameField(), {key: 'a', ctrlKey: true});
-        expect(api.calledWith(UPDATE)).toHaveLength(1);
+        expect(api.called(UPDATE)).toHaveLength(1);
     });
 
     it('does not save without a change', async () => {
         await edit();
         fireEvent.submit(nameField().closest('form')!);
-        expect(api.calledWith(UPDATE)).toHaveLength(0);
+        expect(api.called(UPDATE)).toHaveLength(0);
     });
 
 });
@@ -67,12 +67,12 @@ describe('EditTestPage validation and errors', () => {
         await save();
         expect(await screen.findAllByText('The test needs a name.')).toHaveLength(2);
         expect(screen.getByRole('button', {name: 'Save'})).toBeDisabled();
-        expect(api.calledWith(UPDATE)).toHaveLength(0);
+        expect(api.called(UPDATE)).toHaveLength(0);
     });
 
     it('shows the save error and lets the user save again', async () => {
         await edit(aTest(), {[UPDATE]: () => {
-            throw failure(500, 'disk full');
+            throw failure('disk full', 500);
         }});
         await userEvent.type(nameField(), 'x');
         await save();
@@ -162,7 +162,7 @@ describe('EditTestPage missing devices', () => {
 
     it('shows the error when the devices cannot be loaded', async () => {
         await edit(aTest(), {[DEVICES]: () => {
-            throw failure(500, 'no devices today');
+            throw failure('no devices today', 500);
         }});
         expect(await screen.findByRole('alert')).toHaveTextContent('no devices today');
     });
@@ -172,7 +172,7 @@ describe('EditTestPage leaving', () => {
     it('leaves a clean form without asking', async () => {
         await edit();
         await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
-        expect(location()).toBe('/project/proj/app:1/test/7');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7');
     });
 
     it('asks before changes are thrown away', async () => {
@@ -182,10 +182,10 @@ describe('EditTestPage leaving', () => {
         expect(await screen.findByText("The changes to Smoke aren't saved yet.")).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', {name: 'Keep editing'}));
         await waitFor(() => expect(screen.queryByText('Discard your changes?')).not.toBeInTheDocument());
-        expect(location()).toBe('/project/proj/app:1/test/7/edit');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7/edit');
         await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
         await userEvent.click(await screen.findByRole('button', {name: 'Discard'}));
-        expect(location()).toBe('/project/proj/app:1/test/7');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/7');
     });
 
 });
@@ -216,7 +216,7 @@ describe('TestPageLoader', () => {
     it('shows the load error and loads again on retry', async () => {
         let fail = true;
         api = openEditor(aTest(), {'GET /proj/app/1/test/7': () => {
-            if (fail) throw failure(500, 'test is gone');
+            if (fail) throw failure('test is gone', 500);
             return aTest();
         }}).api;
         expect(await screen.findByText('test is gone')).toBeInTheDocument();

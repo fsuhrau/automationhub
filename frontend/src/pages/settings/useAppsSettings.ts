@@ -3,7 +3,7 @@ import {HubStateActions} from '../../application/HubState';
 import {AsyncAction} from '../../hooks/useAsyncAction';
 import {useHubState} from '../../hooks/HubStateProvider';
 import {useProjectContext} from '../../hooks/ProjectProvider';
-import {useAppsSettingsService} from '../../services/settings.service';
+import {useAppService} from '../../services/app.service';
 import {AppParameter, IAppData} from '../../types/app';
 import {NewAppRequest} from '../../types/settings.requests';
 import {ParameterForm, parameterRequest, sortApps} from './settingsModel';
@@ -27,7 +27,7 @@ export interface AppsSettings {
 export function useAppsSettings(): AppsSettings {
     const {state, dispatch} = useHubState();
     const {projectIdentifier: pid} = useProjectContext();
-    const service = useAppsSettingsService();
+    const service = useAppService();
     const [selectedId, select] = useState<number | null>(null);
     useHubLoad(() => service.list(pid), payload => ({type: HubStateActions.AppsUpdate, payload}), [pid]);
     const apps = useMemo(() => sortApps(state.apps ?? []), [state.apps]);
@@ -35,13 +35,13 @@ export function useAppsSettings(): AppsSettings {
 
     const rename = useReportedAction(async (name: string): Promise<boolean> => {
         if (!app) return false;
-        await service.update({projectId: pid, appId: app.id}, {...app, name});
+        await service.update(pid, app.id, {...app, name});
         dispatch({type: HubStateActions.AppAttributeUpdate, payload: {appId: app.id, attribute: 'name', value: name}});
         return true;
     });
     const removeParameter = useReportedAction(async (parameter: AppParameter): Promise<boolean> => {
         if (!app) return false;
-        await service.removeParameter({projectId: pid, appId: app.id}, parameter.id);
+        await service.removeParameter(pid, app.id, parameter.id);
         dispatch({type: HubStateActions.DeleteAppParameter, payload: {appId: app.id, id: parameter.id}});
         return true;
     });
@@ -55,10 +55,10 @@ export function useAppsSettings(): AppsSettings {
         if (!app) return false;
         const body = parameterRequest(form);
         if (parameter) {
-            const updated = await service.updateParameter({projectId: pid, appId: app.id}, parameter.id, body);
+            const updated = await service.updateParameter(pid, app.id, {...body, id: parameter.id});
             dispatch({type: HubStateActions.UpdateAppParameter, payload: {...updated, appId: app.id}});
         } else {
-            const added = await service.addParameter({projectId: pid, appId: app.id}, body);
+            const added = await service.addParameter(pid, app.id, body);
             dispatch({type: HubStateActions.AddAppParameter, payload: {...added, appId: app.id}});
         }
         return true;

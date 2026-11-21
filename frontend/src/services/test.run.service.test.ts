@@ -1,11 +1,9 @@
-import {AxiosAdapter} from 'axios';
-import {afterEach, describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {renderHook} from '@testing-library/react';
-import http from '../http-common';
-import {fakeApi} from '../pages/tests/run/testkit/fakes';
-import {wrapperOf} from '../pages/tests/run/testkit/wrapper';
-import {at, run} from '../pages/tests/run/testkit/fixtures';
-import {getRun, getRunsPage, testRunService, useTestRunService} from './test.run.service';
+import {fakeApi} from '../testing/fakeApi';
+import {wrapperOf} from '../testing/renderWithProviders';
+import {at, run} from '../pages/tests/run/harness/fixtures';
+import {testRunService, useTestRunService} from './test.run.service';
 
 const test = {projectId: 'p1', appId: 1, testId: 2};
 const ref = {...test, runId: 3, protocolId: 4};
@@ -15,13 +13,13 @@ describe('testRunService', () => {
     it('pages through the runs with a limit and the run to start before', async () => {
         const api = fakeApi({[`GET ${base}/runs`]: {runs: [], more: true}});
         await expect(testRunService(api).runsPage(test, {before: 9})).resolves.toEqual({runs: [], more: true});
-        expect(api.requests[0].config?.params).toEqual({limit: 25, before: 9});
+        expect(api.calls[0].config?.params).toEqual({limit: 25, before: 9});
     });
 
     it('asks for the default limit without paging', async () => {
         const api = fakeApi({[`GET ${base}/runs`]: {runs: [], more: false}});
         await testRunService(api).runsPage(test);
-        expect(api.requests[0].config?.params).toEqual({limit: 25});
+        expect(api.calls[0].config?.params).toEqual({limit: 25});
     });
 
     it('turns the plain list of an older master into a page, newest first', async () => {
@@ -50,7 +48,7 @@ describe('testRunService: baselines and actions', () => {
         const service = testRunService(api);
         await service.baselines(ref, {q: 'x', tag: 't', anyDevice: true, limit: 5});
         await service.baselines(ref, {});
-        expect(api.requests.map(r => r.config?.params)).toEqual([{q: 'x', tag: 't', anyDevice: 'true', limit: 5}, {}]);
+        expect(api.calls.map(r => r.config?.params)).toEqual([{q: 'x', tag: 't', anyDevice: 'true', limit: 5}, {}]);
     });
 
     it('loads a baseline on the given device', async () => {
@@ -58,7 +56,7 @@ describe('testRunService: baselines and actions', () => {
         const service = testRunService(api);
         expect(await service.baseline(ref, 8, 7)).toBe('baseline');
         await service.baseline(ref, 8);
-        expect(api.requests.map(r => r.config?.params)).toEqual([{deviceId: 7}, {}]);
+        expect(api.calls.map(r => r.config?.params)).toEqual([{deviceId: 7}, {}]);
     });
 
     it('starts and cancels runs', async () => {
@@ -66,9 +64,9 @@ describe('testRunService: baselines and actions', () => {
         const service = testRunService(api);
         const data = {appBinaryId: 5, startUrl: '', params: ''};
         expect(await service.execute(test, data)).toBe('started');
-        expect(api.requests[0].data).toEqual(data);
+        expect(api.calls[0].data).toEqual(data);
         await service.cancel(ref);
-        expect(api.requests[1].key).toBe(`POST ${base}/run/3/cancel`);
+        expect(api.calls[1].key).toBe(`POST ${base}/run/3/cancel`);
     });
 });
 
@@ -80,34 +78,5 @@ describe('useTestRunService', () => {
         rerender();
         expect(result.current).toBe(first);
         expect(await result.current.run(ref)).toBe('run');
-    });
-});
-
-describe('the legacy wrappers', () => {
-    const original = http.defaults.adapter;
-    afterEach(() => {
-        http.defaults.adapter = original;
-    });
-
-    const answer = (data: unknown): string[] => {
-        const urls: string[] = [];
-        const adapter: AxiosAdapter = async config => {
-            urls.push(`${config.url}?${new URLSearchParams(config.params).toString()}`);
-            return {data, status: 200, statusText: '', headers: {}, config};
-        };
-        http.defaults.adapter = adapter;
-        return urls;
-    };
-
-    it('getRunsPage pages with before and limit', async () => {
-        const urls = answer({runs: [], more: false});
-        await getRunsPage('p1', 1, 2, 9, 10);
-        expect(urls).toEqual(['/p1/app/1/test/2/runs?limit=10&before=9']);
-    });
-
-    it('getRun loads a run', async () => {
-        const urls = answer({testRun: {}});
-        await expect(getRun('p1', 1, '2', '3')).resolves.toEqual({testRun: {}});
-        expect(urls).toEqual(['/p1/app/1/test/2/run/3?']);
     });
 });

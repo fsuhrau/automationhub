@@ -1,5 +1,5 @@
-import {cleanup, render, screen, waitFor} from '@testing-library/react';
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {render, screen, waitFor} from '@testing-library/react';
+import {describe, expect, it, vi} from 'vitest';
 import React from 'react';
 import {InternalAxiosRequestConfig} from 'axios';
 import axiosInstance from '../http-common';
@@ -23,8 +23,6 @@ const Consumer: React.FC = () => {
 };
 
 describe('useApiClient', () => {
-    afterEach(cleanup);
-
     it('returns the injected client inside the provider', async () => {
         const client = fakeClient();
         render(<ApiClientProvider client={client}><Consumer/></ApiClientProvider>);

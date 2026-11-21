@@ -2,7 +2,9 @@ import {describe, expect, it, vi} from 'vitest';
 import {fireEvent, screen} from '@testing-library/react';
 import DeviceShowPage from './DeviceShowPage';
 import {DeviceStateType} from '../../types/deviceStateType';
-import {device, fakeApi, renderPage} from './testKit';
+import {device} from './deviceFixtures';
+import {fakeApi} from '../../testing/fakeApi';
+import {renderPage} from './deviceHarness';
 
 vi.mock('../../hooks/AuthProvider', () => ({useAuth: () => ({user: {name: 'anna'}})}));
 

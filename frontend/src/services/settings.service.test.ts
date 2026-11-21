@@ -1,8 +1,6 @@
 import {expect, it, vi} from 'vitest';
-import {InternalAxiosRequestConfig} from 'axios';
-import axiosInstance from '../http-common';
 import {ApiClient} from '../api/ApiClient';
-import {appsSettingsService, getNodes, settingsService} from './settings.service';
+import {settingsService} from './settings.service';
 
 const fakeClient = (): ApiClient => ({
     get: vi.fn().mockResolvedValue('got'),
@@ -40,41 +38,4 @@ it('settingsService: deletes tokens and nodes', async () => {
     await service.deleteNode('p', 4);
     expect(api.delete).toHaveBeenNthCalledWith(1, '/p/settings/access_token/3');
     expect(api.delete).toHaveBeenNthCalledWith(2, '/p/settings/nodes/4');
-});
-
-it('appsSettingsService: lists and creates apps of a project', async () => {
-    const api = fakeClient();
-    const service = appsSettingsService(api);
-    await service.list('p');
-    await service.create('p', {name: 'A', platform: 1, identifier: 'id'});
-    expect(api.get).toHaveBeenCalledWith('/p/apps');
-    expect(api.post).toHaveBeenCalledWith('/p/app', {name: 'A', platform: 1, identifier: 'id'});
-});
-
-it('appsSettingsService: updates an app and changes its parameters', async () => {
-    const api = fakeClient();
-    const service = appsSettingsService(api);
-    const app = {projectId: 'p', appId: 2};
-    const body = {name: 'N', type: {type: 'string' as const, defaultValue: ''}};
-    await service.update(app, {id: 2} as never);
-    await service.addParameter(app, body);
-    await service.updateParameter(app, 5, body);
-    await service.removeParameter(app, 5);
-    expect(api.put).toHaveBeenNthCalledWith(1, '/p/app/2', {id: 2});
-    expect(api.post).toHaveBeenCalledWith('/p/app/2/parameter', body);
-    expect(api.put).toHaveBeenNthCalledWith(2, '/p/app/2/parameter/5', body);
-    expect(api.delete).toHaveBeenCalledWith('/p/app/2/parameter/5');
-});
-
-it('legacy getNodes: reads the nodes through the shared axios instance', async () => {
-    const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
-        ({data: [{id: 1}], status: 200, statusText: '', headers: {}, config}));
-    const original = axiosInstance.defaults.adapter;
-    axiosInstance.defaults.adapter = adapter;
-    try {
-        await expect(getNodes('p')).resolves.toEqual([{id: 1}]);
-        expect(adapter.mock.calls[0][0].url).toBe('/p/settings/nodes');
-    } finally {
-        axiosInstance.defaults.adapter = original;
-    }
 });

@@ -2,10 +2,13 @@ import {expect, it} from 'vitest';
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from './SettingsPage';
-import {apiError, createFakeApi, Handler, Opened, project, renderInProject} from './testKit';
+import {project} from './settingsFixtures';
+import {Reply, failure, fakeApi} from '../../testing/fakeApi';
+import {Opened} from '../../testing/opened';
+import {renderInProject} from './settingsHarness';
 
-const open = (url: string, handlers: Record<string, Handler> = {}): Opened => {
-    const api = createFakeApi({
+const open = (url: string, handlers: Record<string, Reply> = {}): Opened => {
+    const api = fakeApi({
         'GET /p1/apps': () => [], 'GET /p1/settings/access_tokens': () => [],
         'GET /p1/settings/nodes': () => [], 'GET /p1/settings/users': () => [], ...handlers,
     });
@@ -89,7 +92,7 @@ it('Settings > Project: does nothing when the form is submitted unchanged', asyn
 
 it('Settings > Project: shows the master\'s error and keeps the draft when renaming fails', async () => {
     const {user} = open('/project/p1/settings', {'PUT /project/p1': () => {
-        throw apiError('name taken');
+        throw failure('name taken');
     }});
     const name = await screen.findByLabelText('Name');
     await user.type(name, '2');

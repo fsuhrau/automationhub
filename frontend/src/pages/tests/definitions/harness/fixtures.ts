@@ -2,7 +2,7 @@ import IAppFunctionData from '../../../../types/app.function';
 import {AppParameter, IAppBinaryData, IAppData} from '../../../../types/app';
 import IDeviceData from '../../../../types/device';
 import ITestData, {IRunSummary} from '../../../../types/test';
-import {ITestRunListEntry} from '../../../../services/test.run.service';
+import {ITestRunListEntry} from '../../../../types/test.run.list';
 import {PlatformType} from '../../../../types/platform.type.enum';
 import {TestExecutionType} from '../../../../types/test.execution.type.enum';
 import {TestType} from '../../../../types/test.type.enum';

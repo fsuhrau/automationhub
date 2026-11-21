@@ -1,10 +1,10 @@
 import {render, screen} from '@testing-library/react';
 import React from 'react';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {Route, Routes} from 'react-router-dom';
 import {beforeEach, describe, expect, it} from 'vitest';
-import {HubStateProvider} from './HubStateProvider';
 import {ProjectProvider, useProjectContext} from './ProjectProvider';
-import {aProject, SeedHub} from '../app/testing/seedHub';
+import {aProject} from '../testing/fixtures';
+import {renderWithProviders} from '../testing/renderWithProviders';
 import IProject from '../project/project';
 
 const Probe: React.FC = () => {
@@ -13,12 +13,10 @@ const Probe: React.FC = () => {
 };
 
 const mount = (path: string, projects?: IProject[]): void => {
-    render(<HubStateProvider><SeedHub projects={projects}><MemoryRouter initialEntries={[path]}>
-        <Routes>
-            <Route path="/" element={<p>project list</p>}/>
-            <Route path="/project/:project_identifier" element={<ProjectProvider><Probe/></ProjectProvider>}/>
-        </Routes>
-    </MemoryRouter></SeedHub></HubStateProvider>);
+    renderWithProviders(<Routes>
+        <Route path="/" element={<p>project list</p>}/>
+        <Route path="/project/:project_identifier" element={<ProjectProvider><Probe/></ProjectProvider>}/>
+    </Routes>, {url: path, hub: {projects}});
 };
 
 beforeEach(() => localStorage.clear());

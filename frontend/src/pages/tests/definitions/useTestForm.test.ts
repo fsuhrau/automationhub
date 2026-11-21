@@ -2,7 +2,7 @@ import {act, renderHook} from '@testing-library/react';
 import {describe, expect, it} from 'vitest';
 import {TestType} from '../../../types/test.type.enum';
 import {UnityTestCategory} from '../../../types/unity.test.category.type.enum';
-import {aTest} from './testing/fixtures';
+import {aTest} from './harness/fixtures';
 import {useTestForm} from './useTestForm';
 
 describe('useTestForm', () => {

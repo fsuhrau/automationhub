@@ -1,9 +1,10 @@
 import {screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {afterEach, describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {TestType} from '../../types/test.type.enum';
-import {failure, FakeApi} from './definitions/testing/fakeApi';
-import {CREATE, location, openEditor} from './definitions/testing/editSupport';
+import {failure, FakeApi} from '../../testing/fakeApi';
+import {CREATE, openEditor} from './definitions/harness/editSupport';
+import {currentLocation} from '../../testing/renderWithProviders';
 
 let api: FakeApi;
 const open = async (routes = {}): Promise<void> => {
@@ -13,7 +14,6 @@ const open = async (routes = {}): Promise<void> => {
 const name = (): HTMLElement => screen.getByRole('textbox', {name: 'Name'});
 const create = (): Promise<void> => userEvent.click(screen.getByRole('button', {name: 'Create test'}));
 
-afterEach(() => api.restore());
 
 describe('new test', () => {
     it('starts as a Unity test on all devices with the name in focus', async () => {
@@ -29,15 +29,15 @@ describe('new test', () => {
         await open();
         await userEvent.type(name(), 'Smoke tests');
         await create();
-        await waitFor(() => expect(location()).toBe('/project/proj/app:1/test/21'));
-        expect(api.calledWith(CREATE)[0].data).toMatchObject({type: TestType.Unity, name: 'Smoke tests', allDevices: true, devices: [], testFunctions: []});
+        await waitFor(() => expect(currentLocation()).toBe('/project/proj/app:1/test/21'));
+        expect(api.called(CREATE)[0].data).toMatchObject({type: TestType.Unity, name: 'Smoke tests', allDevices: true, devices: [], testFunctions: []});
     });
 
     it('needs a name', async () => {
         await open();
         await create();
         expect(await screen.findAllByText('The test needs a name.')).toHaveLength(2);
-        expect(api.calledWith(CREATE)).toHaveLength(0);
+        expect(api.called(CREATE)).toHaveLength(0);
     });
 
 });
@@ -45,18 +45,18 @@ describe('new test', () => {
 describe('new test errors and leaving', () => {
     it('shows the error when creating fails', async () => {
         await open({[CREATE]: () => {
-            throw failure(400, 'name taken');
+            throw failure('name taken', 400);
         }});
         await userEvent.type(name(), 'Smoke');
         await create();
         expect(await screen.findByRole('alert')).toHaveTextContent('name taken');
-        expect(location()).toBe('/project/proj/app:1/test/new');
+        expect(currentLocation()).toBe('/project/proj/app:1/test/new');
     });
 
     it('goes back to the list from a clean form', async () => {
         await open();
         await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
-        expect(location()).toBe('/project/proj/app:1/tests');
+        expect(currentLocation()).toBe('/project/proj/app:1/tests');
     });
 
     it('asks before a new test is thrown away', async () => {
@@ -65,6 +65,6 @@ describe('new test errors and leaving', () => {
         await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
         expect(await screen.findByText("The new test isn't created yet.")).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', {name: 'Discard'}));
-        expect(location()).toBe('/project/proj/app:1/tests');
+        expect(currentLocation()).toBe('/project/proj/app:1/tests');
     });
 });
