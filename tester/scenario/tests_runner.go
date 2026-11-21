@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
@@ -28,6 +29,9 @@ type testsRunner struct {
 
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+
+	// execTest runs one test on one device
+	execTest func(dev base.DeviceMap, task action.TestStart, method string)
 }
 
 func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, publisher sse.Publisher, projectId string, appId uint) *testsRunner {
@@ -37,6 +41,7 @@ func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, publisher s
 		ctx:        ctx,
 		cancelFunc: cancelFunc,
 	}
+	testRunner.execTest = testRunner.runTest
 	testRunner.Init(deviceManager, nodeUrl, db, projectId, appId)
 	return testRunner
 }
@@ -66,6 +71,7 @@ func (tr *testsRunner) Cancel(runId string) error {
 func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, startupUrl string) {
 	defer tr.Finished()
 	defer tr.TestSessionFinished()
+	defer tr.recoverRun()
 
 	// lock devices
 	devices := tr.LockDevices(devs)
@@ -98,8 +104,8 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 	connectedDevices, err := tr.StartApp(tr.ctx, tr.appParams, devices, func(d device.Device) {
 		go tr.executeSequence(d, 0, tr.Config.Scenario.Steps)
 	}, nil)
-	if err == sync.TimeoutError {
-		tr.LogError("Timeout while stating app")
+	if !tr.checkStarted(connectedDevices, err) {
+		return
 	}
 
 	var testList []models.UnityTestFunction
@@ -122,7 +128,19 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 	}
 
 	tr.LogInfo("Execute Tests")
+	tr.scheduleTests(connectedDevices, testList)
 
+	tr.LogInfo("Stop apps")
+	for _, d := range connectedDevices {
+		if err := base.StopAndClearApp(d.Device, &tr.appParams); err != nil {
+			tr.LogError("Unable to stop app: %v", err)
+		}
+	}
+}
+
+// scheduleTests hands every test to the connected devices, as the execution
+// type of the config says, and waits until all are done.
+func (tr *testsRunner) scheduleTests(connectedDevices []base.DeviceMap, testList []models.UnityTestFunction) {
 	group := sync.NewExtendedWaitGroup(tr.ctx)
 
 	switch tr.Config.ExecutionType {
@@ -142,6 +160,7 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 				Assembly: t.Assembly,
 				Class:    t.Class,
 				Method:   t.Method,
+				Env:      tr.env,
 			}
 			for i := range workers {
 				group.Add(1)
@@ -176,12 +195,24 @@ func (tr *testsRunner) exec(devs []models.Device, appData *models.AppBinary, sta
 		group.Wait()
 		close(parallelWorker)
 	}
+}
 
-	tr.LogInfo("Stop apps")
-	for _, d := range connectedDevices {
-		if err := base.StopAndClearApp(d.Device, &tr.appParams); err != nil {
-			tr.LogError("Unable to stop app: %v", err)
-		}
+// checkStarted reports whether the run can go on after the app start.
+func (tr *testsRunner) checkStarted(connected []base.DeviceMap, err error) bool {
+	if errors.Is(err, sync.TimeoutError) {
+		tr.LogError("Timeout while stating app")
+	}
+	if len(connected) == 0 {
+		tr.FailRun("no device connected, the tests can't run")
+		return false
+	}
+	return true
+}
+
+// recoverRun turns a panic of the run into a failed run; defer it directly.
+func (tr *testsRunner) recoverRun() {
+	if err := recover(); err != nil {
+		tr.FailRun("test execution failed, recovered: %v", err)
 	}
 }
 
@@ -219,7 +250,7 @@ func (tr *testsRunner) workerFunction(channel workerChannel, dev base.DeviceMap,
 			if len(methodParts) > 1 {
 				method = methodParts[1]
 			}
-			tr.runTest(dev, task, method)
+			tr.execTest(dev, task, method)
 			group.Done()
 		case <-tr.ctx.Done():
 			tr.LogInfo("Test run cancelled by context")

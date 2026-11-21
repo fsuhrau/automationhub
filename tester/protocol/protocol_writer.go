@@ -118,28 +118,29 @@ func (w *ProtocolWriter) SessionID() string {
 	return w.run.SessionID
 }
 
+// resultCounts tallies the results of a run's protocols.
+type resultCounts struct {
+	failed, succeeded, unstable int
+}
+
+func (c *resultCounts) add(state models.TestResultState) {
+	switch state {
+	case models.TestResultSuccess:
+		c.succeeded++
+	case models.TestResultUnstable:
+		c.unstable++
+	default:
+		// a failed or still open result is no success
+		c.failed++
+	}
+}
+
 func (w *ProtocolWriter) Close() {
-	var (
-		failedCount   int
-		successCount  int
-		unstableCount int
-	)
+	var c resultCounts
 
-	for i := len(w.protocols) - 1; i > 0; i-- {
+	for i := len(w.protocols) - 1; i >= 0; i-- {
 		w.protocols[i].Close()
-
-		switch w.protocols[i].p.TestResult {
-		case models.TestResultOpen:
-			fallthrough
-		case models.TestResultSuccess:
-			successCount++
-		case models.TestResultUnstable:
-			unstableCount++
-		case models.TestResultFailed:
-			failedCount++
-		default:
-			panic("unhandled default case")
-		}
+		c.add(w.protocols[i].p.TestResult)
 	}
 
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{
@@ -148,10 +149,10 @@ func (w *ProtocolWriter) Close() {
 		TestName:  w.testName,
 		ProjectID: w.projectId,
 		AppID:     w.appId,
-		Success:   !w.failed && failedCount == 0 && unstableCount == 0,
-		Succeeded: successCount,
-		Unstable:  unstableCount,
-		Failed:    failedCount,
+		Success:   !w.failed && c.failed == 0 && c.unstable == 0,
+		Succeeded: c.succeeded,
+		Unstable:  c.unstable,
+		Failed:    c.failed,
 	})
 }
 
