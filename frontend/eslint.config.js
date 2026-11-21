@@ -23,6 +23,16 @@ const refactored = [
     'src/application/HubState*',
     'src/hooks/HubStateProvider*',
     'src/types/**',
+    // F4-F12 feature packages (wave 3); each package validates its own files
+    'src/App.tsx',
+    'src/app/**',
+    'src/application/**',
+    'src/components/**',
+    'src/hooks/**',
+    'src/pages/**',
+    'src/project/**',
+    'src/router/**',
+    'src/services/**',
 ];
 
 // Generated-looking theme files are data tables and stay exempt.
