@@ -44,7 +44,7 @@ linters:
           - revive
           - gochecknoglobals
           - gochecknoinits
-        path-except: '^(scripts/|events/|hub/action/|internal/testkit/|app/|tester/recording/|apperr/|endpoints/httpx/|endpoints/api/apitest/|endpoints/api/(event_[^/]*|sse)\.go$|storage/migrations/|storage/(database|device)\.go$|device/[^/]+\.go$|device/generic/|device/appproto/|device/remote/|device/luascript/|device/(android|ios)device/lua_script_handler\.go$|hub/middleware/|hub/session/)'
+        path-except: '^(scripts/|events/|hub/action/|internal/testkit/|app/|tester/recording/|apperr/|endpoints/httpx/|endpoints/api/apitest/|endpoints/api/(event_[^/]*|sse)\.go$|storage/migrations/|storage/(database|device|device_notifier|device_update)\.go$|device/[^/]+\.go$|device/generic/|device/appproto/|device/remote/|device/luascript/|device/(android|ios)device/lua_script_handler\.go$|hub/middleware/|hub/session/)'
       # Generated code and tests are exempt from funlen.
       - linters:
           - funlen

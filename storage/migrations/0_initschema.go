@@ -5,93 +5,27 @@ import (
 	"gorm.io/gorm"
 )
 
+// schemaModels lists every model in creation order.
+func schemaModels() []any {
+	return []any{
+		&models.Company{}, &models.Project{}, &models.AccessToken{}, &models.User{},
+		&models.UserAuth{}, &models.App{}, &models.AppParameter{}, &models.AppBinary{},
+		&models.Node{}, &models.Device{}, &models.ConnectionParameter{},
+		&models.DeviceParameter{}, &models.CustomParameter{}, &models.DeviceLog{},
+		&models.Test{}, &models.TestConfig{}, &models.TestConfigDevice{},
+		&models.TestConfigScenario{}, &models.ScenarioStep{}, &models.TestConfigUnity{},
+		&models.UnityTestFunction{}, &models.TestProtocol{}, &models.ProtocolEntry{},
+		&models.ProtocolPerformanceEntry{}, &models.TestRun{}, &models.TestRunLogEntry{},
+		&models.TestRunDeviceStatus{}, &models.TestRunRecording{}, &models.ProtocolKey{},
+	}
+}
+
+// InitSchema creates the full schema of a new database.
 func InitSchema(tx *gorm.DB) error {
-	if err := tx.AutoMigrate(&models.Company{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.Project{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.AccessToken{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.User{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.UserAuth{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.App{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.AppParameter{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.AppBinary{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.Node{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.Device{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.ConnectionParameter{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.DeviceParameter{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.CustomParameter{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.DeviceLog{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.Test{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestConfig{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestConfigDevice{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestConfigScenario{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.ScenarioStep{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestConfigUnity{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.UnityTestFunction{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestProtocol{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.ProtocolEntry{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.ProtocolPerformanceEntry{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestRun{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestRunLogEntry{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestRunDeviceStatus{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.TestRunRecording{}); err != nil {
-		return err
-	}
-	if err := tx.AutoMigrate(&models.ProtocolKey{}); err != nil {
-		return err
+	for _, model := range schemaModels() {
+		if err := tx.AutoMigrate(model); err != nil {
+			return err
+		}
 	}
 	return nil
 }

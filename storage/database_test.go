@@ -62,8 +62,6 @@ func TestMigrateAddsPersonalTokenColumns(t *testing.T) {
 // An existing database gets the info column of bundles, and new and old
 // bundles read and write it.
 func TestMigrateAddsBundleInfo(t *testing.T) {
-	db = nil
-	t.Cleanup(func() { db = nil })
 	path := filepath.Join(t.TempDir(), "hub.db")
 	old, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
@@ -110,8 +108,6 @@ func TestMigrateAddsBundleInfo(t *testing.T) {
 // Existing hubs get the record option on their tests (off) and the table of
 // recordings.
 func TestMigrateAddsSessionRecording(t *testing.T) {
-	db = nil
-	t.Cleanup(func() { db = nil })
 	path := filepath.Join(t.TempDir(), "hub.db")
 	old, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
@@ -143,5 +139,90 @@ func TestMigrateAddsSessionRecording(t *testing.T) {
 	}
 	if !conn.Migrator().HasTable(&models.TestRunRecording{}) {
 		t.Fatal("recordings table missing")
+	}
+}
+
+func sqliteConfig(t *testing.T) config.Database {
+	return config.Database{SQLite: &config.SQLite{Path: filepath.Join(t.TempDir(), "hub.db")}}
+}
+
+// A new database gets every model's table with its key columns.
+func TestOpenCreatesFullSchema(t *testing.T) {
+	db, err := Open(sqliteConfig(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantColumns := []struct {
+		model   any
+		columns []string
+	}{
+		{&models.Company{}, []string{"id", "name"}},
+		{&models.Project{}, []string{"id", "name", "company_id"}},
+		{&models.AccessToken{}, []string{"id", "token", "user_id", "hint", "last_used_at", "project_id", "expires_at"}},
+		{&models.User{}, []string{"id", "name", "role"}},
+		{&models.UserAuth{}, []string{"id"}},
+		{&models.App{}, []string{"id", "name", "project_id"}},
+		{&models.AppParameter{}, []string{"id", "app_id", "name", "type"}},
+		{&models.AppBinary{}, []string{"id", "app_id", "name", "info", "archived_at"}},
+		{&models.Node{}, []string{"id"}},
+		{&models.Device{}, []string{"id", "device_identifier", "name", "manager", "os", "os_version"}},
+		{&models.ConnectionParameter{}, []string{"id", "device_id", "ip", "port"}},
+		{&models.DeviceParameter{}, []string{"id", "device_id", "key", "value"}},
+		{&models.CustomParameter{}, []string{"id", "device_id", "key", "value"}},
+		{&models.DeviceLog{}, []string{"id", "device_id", "status", "payload"}},
+		{&models.Test{}, []string{"id", "app_id", "name"}},
+		{&models.TestConfig{}, []string{"id", "test_id", "record_session"}},
+		{&models.TestConfigDevice{}, []string{"id"}},
+		{&models.TestConfigScenario{}, []string{"id"}},
+		{&models.ScenarioStep{}, []string{"id"}},
+		{&models.TestConfigUnity{}, []string{"id"}},
+		{&models.UnityTestFunction{}, []string{"id"}},
+		{&models.TestProtocol{}, []string{"id"}},
+		{&models.ProtocolEntry{}, []string{"id"}},
+		{&models.ProtocolPerformanceEntry{}, []string{"id"}},
+		{&models.TestRun{}, []string{"id", "test_id"}},
+		{&models.TestRunLogEntry{}, []string{"id"}},
+		{&models.TestRunDeviceStatus{}, []string{"id"}},
+		{&models.TestRunRecording{}, []string{"id"}},
+		{&models.ProtocolKey{}, []string{"id"}},
+	}
+	for _, w := range wantColumns {
+		if !db.Migrator().HasTable(w.model) {
+			t.Errorf("table of %T missing", w.model)
+			continue
+		}
+		for _, c := range w.columns {
+			if !db.Migrator().HasColumn(w.model, c) {
+				t.Errorf("%T: column %s missing", w.model, c)
+			}
+		}
+	}
+}
+
+func TestOpenErrors(t *testing.T) {
+	broken := sqliteConfig(t)
+	seed, err := gorm.Open(sqlite.Open(broken.SQLite.Path), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// a migrations table without id makes the migration runner fail
+	seed.Exec("CREATE TABLE migrations (other VARCHAR(255))")
+	sqlDB, _ := seed.DB()
+	_ = sqlDB.Close()
+
+	tests := []struct {
+		name string
+		cfg  config.Database
+	}{
+		{"no database configured", config.Database{}},
+		{"postgres unreachable", config.Database{Postgres: &config.Postgres{Host: "127.0.0.1", Port: "1", User: "u", Database: "d"}}},
+		{"migration fails", broken},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if db, err := Open(tt.cfg); err == nil || db != nil {
+				t.Fatalf("db=%v err=%v, want error", db, err)
+			}
+		})
 	}
 }

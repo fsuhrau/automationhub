@@ -20,15 +20,21 @@ type deviceStore struct {
 	mu      sync.Mutex // guards devices cache and serializes writes
 	devices map[string]models.Devices
 	db      *gorm.DB
+	notify  DeviceNotifier
 }
 
+// NewDeviceStore returns a store that announces changes on the event bus.
 func NewDeviceStore(db *gorm.DB) *deviceStore {
-	store := &deviceStore{
+	return NewDeviceStoreWithNotifier(db, busNotifier{})
+}
+
+// NewDeviceStoreWithNotifier returns a store that announces changes to n.
+func NewDeviceStoreWithNotifier(db *gorm.DB, n DeviceNotifier) *deviceStore {
+	return &deviceStore{
 		db:      db,
 		devices: make(map[string]models.Devices),
+		notify:  n,
 	}
-
-	return store
 }
 
 func (d *deviceStore) GetDevices(manager string) (models.Devices, error) {
@@ -95,100 +101,6 @@ func (d *deviceStore) NewDevice(manager string, dev models.Device) error {
 	}
 
 	d.devices[manager] = append(d.devices[manager], &dev)
-	events.DeviceListChanged.Trigger(events.DeviceListChangedPayload{DeviceID: dev.ID, Added: true})
-	return nil
-}
-
-func (d *deviceStore) Update(manager string, dev device.Device) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	deviceData, err := d.getDevice(manager, dev.DeviceID())
-	if err != nil {
-		return err
-	}
-
-	needsUpdate := false
-	if deviceData.Name != dev.DeviceName() {
-		deviceData.Name = dev.DeviceName()
-		needsUpdate = true
-	}
-	if deviceData.OS != dev.DeviceOSName() {
-		deviceData.OS = dev.DeviceOSName()
-		needsUpdate = true
-	}
-	if deviceData.OSVersion != dev.DeviceOSVersion() {
-		deviceData.OSVersion = dev.DeviceOSVersion()
-		needsUpdate = true
-	}
-
-	parameter := dev.DeviceParameter()
-	if parameter != nil {
-		for key, value := range parameter {
-			found := false
-			for i, param := range deviceData.DeviceParameter {
-				if param.Key == key {
-					if param.Value != value {
-						deviceData.DeviceParameter[i].Value = value
-						needsUpdate = true
-					}
-					found = true
-					break
-				}
-			}
-			if !found {
-				deviceData.DeviceParameter = append(deviceData.DeviceParameter, models.DeviceParameter{Key: key, Value: value})
-				needsUpdate = true
-			}
-		}
-	}
-
-	if deviceData.Manager != manager {
-		deviceData.Manager = manager
-		needsUpdate = true
-	}
-
-	statusUpdate := false
-	if deviceData.Status != dev.DeviceState() {
-		deviceData.Status = dev.DeviceState()
-		statusUpdate = true
-	}
-
-	if !needsUpdate && !statusUpdate {
-		return nil
-	}
-
-	if err := d.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Updates(deviceData).Error; err != nil {
-			return err
-		}
-		if statusUpdate {
-			return tx.Create(&models.DeviceLog{
-				DeviceID: deviceData.ID,
-				Status:   dev.DeviceState(),
-				Payload:  "",
-			}).Error
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	if needsUpdate {
-		events.DeviceListChanged.Trigger(events.DeviceListChangedPayload{DeviceID: deviceData.ID})
-	}
-	if statusUpdate {
-		events.DeviceStatusChanged.Trigger(events.DeviceStatusChangedPayload{
-			DeviceID:    deviceData.ID,
-			DeviceState: uint(dev.DeviceState()),
-		})
-
-		for i := range d.devices[manager] {
-			if d.devices[manager][i].DeviceIdentifier == dev.DeviceID() {
-				d.devices[manager][i].Status = dev.DeviceState()
-				break
-			}
-		}
-	}
+	d.notify.DeviceListChanged(events.DeviceListChangedPayload{DeviceID: dev.ID, Added: true})
 	return nil
 }
