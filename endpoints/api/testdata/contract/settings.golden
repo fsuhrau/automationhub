@@ -121,9 +121,9 @@ GET /api/proj/settings/nodes/1
 
 == node status unknown
 GET /api/proj/settings/nodes/99
-500 application/json; charset=utf-8
+404 application/json; charset=utf-8
 {
-  "message": "record not found"
+  "message": "node 99 not found: record not found"
 }
 
 == node delete

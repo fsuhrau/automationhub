@@ -1,62 +1,10 @@
 package api
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-
-	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/authentication"
-	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
-
-// resolveControlDevice returns the live device for :device_id within the project.
-func (s *Service) resolveControlDevice(c *gin.Context) (device.Device, bool) {
-	project := httpx.Project(c)
-	if project == nil {
-		s.error(c, http.StatusNotFound, fmt.Errorf("project not found"))
-		return nil, false
-	}
-	model, ok := s.findProjectDevice(c, project)
-	if !ok {
-		return nil, false
-	}
-	dev, _ := s.devicesManager.GetDevice(model.DeviceIdentifier)
-	if dev == nil {
-		s.error(c, http.StatusConflict, fmt.Errorf("device %s is not connected", model.DeviceIdentifier))
-		return nil, false
-	}
-	return dev, true
-}
-
-// resolveControlApp loads an app bundle that belongs to the project.
-func (s *Service) resolveControlApp(c *gin.Context, binaryID uint) (*app.Parameter, error) {
-	project := httpx.Project(c)
-	if project == nil {
-		return nil, fmt.Errorf("project not found")
-	}
-	var binary models.AppBinary
-	err := s.db.Preload("App").
-		Joins("JOIN apps ON apps.id = app_binaries.app_id").
-		Where("apps.project_id = ?", project.ID).
-		First(&binary, "app_binaries.id = ?", binaryID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("app bundle %d not found", binaryID)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if binary.Archived() {
-		return nil, fmt.Errorf("app bundle %d is archived; upload its file again to install it", binaryID)
-	}
-	params := base.GetParams(&binary, "")
-	return &params, nil
-}
 
 func (s *Service) serveMCP(c *gin.Context, project *models.Project) {
 	s.mcp.ServeHTTP(c.Writer, c.Request, project, requestOwner(c))

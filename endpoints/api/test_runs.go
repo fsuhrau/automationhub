@@ -1,16 +1,14 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/events"
-	"github.com/fsuhrau/automationhub/storage/apps"
+	appsvc "github.com/fsuhrau/automationhub/service/app"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/fsuhrau/automationhub/tester/base"
@@ -208,77 +206,14 @@ func (s *Service) projectTestRun(project *models.Project, runID uint) (*models.T
 	return &run, err
 }
 
-// restoreBundle puts the file of an archived bundle back, from an upload of
-// the same file; the bundle keeps its id, tags and runs.
-func (s *Service) restoreBundle(bundle *models.AppBinary, filePath string) (*models.AppBinary, error) {
-	target := bundleFile(bundle.AppPath)
-	if target == "" {
-		_ = os.Remove(filePath)
-		return nil, fmt.Errorf("archived bundle %d has no file path to restore to", bundle.ID)
-	}
-	if err := os.Rename(filePath, target); err != nil {
-		return nil, fmt.Errorf("unable to store file: %w", err)
-	}
-	if err := s.db.Model(bundle).Update("archived_at", nil).Error; err != nil {
-		return nil, err
-	}
-	bundle.ArchivedAt = nil
-	_ = os.Remove(archivedIconFile(bundle.AppPath))
-	return bundle, nil
-}
-
 // StoreBundle analyses an uploaded app file, moves it into the app storage and
-// creates the bundle entry. filePath must be inside apps.AppStoragePath.
+// creates the bundle entry. filePath must be inside apps.AppStoragePath. An
+// identical bundle comes back with ErrBundleExists.
 func (s *Service) StoreBundle(application *models.App, filePath string) (*models.AppBinary, error) {
-	analyser := app.NewAnalyser(filePath)
-	if err := analyser.AnalyseFile(); err != nil {
-		_ = os.Remove(filePath)
-		return nil, fmt.Errorf("unable to analyse app: %w", err)
+	scope := appsvc.Scope{ProjectID: application.ProjectID, AppID: application.ID}
+	bundle, err := s.appService().StoreBundle(context.Background(), scope, filePath)
+	if errors.Is(err, appsvc.ErrBundleExists) {
+		return bundle, ErrBundleExists
 	}
-	params := analyser.GetParameter()
-
-	var existing models.AppBinary
-	if err := s.db.First(&existing, "hash = ? AND app_id = ?", params.App.Hash, application.ID).Error; err == nil {
-		if existing.Archived() {
-			return s.restoreBundle(&existing, filePath)
-		}
-		_ = os.Remove(filePath)
-		return &existing, ErrBundleExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	filename := filepath.Base(filePath)
-	ext := filepath.Ext(filename)
-	params.App.AppPath = fmt.Sprintf("%s_%s%s", strings.TrimSuffix(filename, ext), params.App.Hash, ext)
-	if err := os.Rename(filePath, filepath.Join(apps.AppStoragePath, params.App.AppPath)); err != nil {
-		return nil, fmt.Errorf("unable to store file: %w", err)
-	}
-
-	var launchActivity, executable string
-	if params.App.Android != nil {
-		launchActivity = params.App.Android.LaunchActivity
-	}
-	if params.App.Executable != nil {
-		executable = params.App.Executable.Executable
-	}
-
-	bundle := models.AppBinary{
-		AppPath:    params.App.AppPath,
-		Hash:       params.App.Hash,
-		Name:       params.Name,
-		Identifier: params.Identifier,
-		AppID:      application.ID,
-		Version:    params.Version,
-		Android:    models.Android{LaunchActivity: launchActivity},
-		Executable: models.Executable{Executable: executable},
-		Platform:   params.Platform,
-		Additional: params.App.Additional,
-		Size:       params.App.Size,
-		Info:       params.Info,
-	}
-	if err := s.db.Create(&bundle).Error; err != nil {
-		return nil, fmt.Errorf("unable to create app bundle: %w", err)
-	}
-	return &bundle, nil
+	return bundle, err
 }

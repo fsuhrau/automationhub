@@ -1,12 +1,29 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	devicesapi "github.com/fsuhrau/automationhub/endpoints/api/devices"
+	devicesvc "github.com/fsuhrau/automationhub/service/device"
+	"github.com/fsuhrau/automationhub/storage/devicestore"
+	"github.com/fsuhrau/automationhub/tester/unity"
+	"github.com/gin-gonic/gin"
+)
+
+// deviceHandler builds the device service on this service's database, pool
+// and leases. extractParams and defaultNaN stay here until the endpoints
+// that own them move to services.
+func (s *Service) deviceHandler() *devicesapi.Handler {
+	return devicesapi.New(devicesvc.New(devicesvc.Deps{
+		Repo:    devicestore.New(s.db),
+		Devices: s.devicesManager,
+		Leases:  s.control,
+		NewExecutor: func() devicesvc.Executor {
+			return unity.NewExecutor(s.devicesManager, nil)
+		},
+		ExtractParams: extractParams,
+		CleanProtocol: defaultNaN,
+	}))
+}
 
 func (s *Service) registerDeviceRoutes(projectApi *gin.RouterGroup) {
-	projectApi.GET("/device/:device_id", s.WithProject(s.getDevice))
-	projectApi.DELETE("/device/:device_id", s.WithProject(s.deleteDevice))
-	projectApi.POST("/device/:device_id/unlock", s.WithProject(s.unlockDevice))
-	projectApi.PUT("/device/:device_id", s.WithProject(s.updateDevice))
-	projectApi.POST("/device/:device_id/tests", s.WithProject(s.deviceRunTests))
-	projectApi.GET("/devices", s.WithProject(s.getDevices))
+	s.deviceHandler().Register(projectApi)
 }

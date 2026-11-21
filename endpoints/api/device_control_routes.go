@@ -6,5 +6,6 @@ import (
 )
 
 func (s *Service) registerDeviceControlRoutes(projectApi *gin.RouterGroup) {
-	controlapi.NewHandler(s.control, s.resolveControlDevice, s.resolveControlApp, requestOwner, s.nodeUrl).WithAllowedOrigins(s.cfg.Cors).Register(projectApi)
+	devices := s.deviceHandler()
+	controlapi.NewHandler(s.control, devices.ResolveControlDevice, devices.ResolveControlApp, requestOwner, s.nodeUrl).WithAllowedOrigins(s.cfg.Cors).Register(projectApi)
 }

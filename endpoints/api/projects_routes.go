@@ -1,10 +1,13 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	projectsapi "github.com/fsuhrau/automationhub/endpoints/api/projects"
+	"github.com/fsuhrau/automationhub/service/project"
+	"github.com/fsuhrau/automationhub/storage/projectstore"
+	"github.com/gin-gonic/gin"
+)
 
 func (s *Service) registerProjectRoutes(api *gin.RouterGroup) {
-	api.GET("/projects", s.getProjects)
-	api.POST("/project", s.createProject)
-	api.DELETE("/project/:project_id", s.deleteProject)
-	api.PUT("/project/:project_id", s.updateProject)
+	svc := project.New(project.Deps{Repo: projectstore.New(s.db)})
+	projectsapi.New(svc).Register(api)
 }

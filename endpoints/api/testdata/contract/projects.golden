@@ -251,9 +251,9 @@ PUT /api/project/proj
 
 == update unknown
 PUT /api/project/nope
-500 application/json; charset=utf-8
+404 application/json; charset=utf-8
 {
-  "message": "record not found"
+  "message": "project nope not found: record not found"
 }
 
 == delete
@@ -263,16 +263,16 @@ DELETE /api/project/1
 
 == delete unknown
 DELETE /api/project/99
-500 application/json; charset=utf-8
+404 application/json; charset=utf-8
 {
-  "message": "record not found"
+  "message": "project 99 not found: record not found"
 }
 
 == delete by identifier
 DELETE /api/project/proj
-500 application/json; charset=utf-8
+400 application/json; charset=utf-8
 {
-  "message": "SQL logic error: no such column: proj (1)"
+  "message": "invalid project_id \"proj\""
 }
 
 == data traversal

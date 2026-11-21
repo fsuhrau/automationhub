@@ -146,7 +146,7 @@ POST /api/proj/device/1/unlock
 
 == run tests invalid signature
 POST /api/proj/device/1/tests
-404 application/json; charset=utf-8
+400 application/json; charset=utf-8
 {
   "message": "invalid method signature"
 }
