@@ -2,7 +2,9 @@
 // bundle file, and whether the project's devices can install it.
 import IDeviceData from '../../types/device';
 import {PlatformType} from '../../types/platform.type.enum';
-import {BundleInfo} from '../../types/bundle.info';
+import {BundleRun, IAppBundleDetail} from '../../types/app';
+import {AndroidInfo, AppleInfo, BundleInfo, Engine, ProvisioningProfile} from '../../types/bundle.info';
+import {bundleVersion} from './bundlesModel';
 
 // Android version of an API level
 const ANDROID_VERSIONS: Record<number, string> = {
@@ -82,37 +84,47 @@ export const commonName = (subject: string): string => {
 
 export type Fit = { ok: boolean, reasons: string[] };
 
+const tooOld = (version: string, min: string | undefined): boolean => !!min && !!version && compareVersions(version, min) < 0;
+
+const androidReasons = (android: AndroidInfo, version: string): string[] => {
+    const min = androidVersionOf(android.minSdk);
+    return tooOld(version, min) ? [`needs Android ${min}, device has ${version}`] : [];
+};
+
+const buildTargetReasons = (apple: AppleInfo, simulator: boolean): string[] => {
+    const platform = apple.platform ?? '';
+    if (simulator && platform === 'iphoneos') return ['built for devices, not the simulator'];
+    if (!simulator && platform === 'iphonesimulator') return ['built for the simulator'];
+    return [];
+};
+
+const profileReasons = (profile: ProvisioningProfile | undefined, device: IDeviceData): string[] => {
+    if (!profile) return [];
+    if (profile.kind === 'app-store') return ['App Store builds install from TestFlight or the store only'];
+    const udids = (profile.devices ?? []).map(d => d.toLowerCase());
+    const known = profile.allDevices || udids.includes((device.deviceIdentifier ?? '').toLowerCase());
+    return known ? [] : ['not in the provisioning profile'];
+};
+
+const appleReasons = (apple: AppleInfo, device: IDeviceData): string[] => {
+    const simulator = device.platformType === PlatformType.IOSSimulator;
+    const version = device.osVersion ?? '';
+    const reasons = buildTargetReasons(apple, simulator);
+    if (tooOld(version, apple.minOs)) {
+        reasons.push(`needs ${device.platformType === PlatformType.Mac ? 'macOS' : 'iOS'} ${apple.minOs}, device has ${version}`);
+    }
+    // only a real iPhone or iPad needs a profile that knows it
+    if (!simulator && device.platformType === PlatformType.iOS) reasons.push(...profileReasons(apple.profile, device));
+    return reasons;
+};
+
 // deviceFit says whether a project device can install and run the bundle,
 // with every reason it can't
 export const deviceFit = (info: BundleInfo, device: IDeviceData): Fit => {
-    const reasons: string[] = [];
-    const version = device.osVersion ?? '';
-    if (info.android) {
-        const min = androidVersionOf(info.android.minSdk);
-        if (min && version && compareVersions(version, min) < 0) {
-            reasons.push(`needs Android ${min}, device has ${version}`);
-        }
-    }
-    if (info.apple) {
-        const simulator = device.platformType === PlatformType.IOSSimulator;
-        const platform = info.apple.platform ?? '';
-        if (simulator && platform === 'iphoneos') reasons.push('built for devices, not the simulator');
-        if (!simulator && platform === 'iphonesimulator') reasons.push('built for the simulator');
-        const min = info.apple.minOs;
-        if (min && version && compareVersions(version, min) < 0) {
-            reasons.push(`needs ${device.platformType === PlatformType.Mac ? 'macOS' : 'iOS'} ${min}, device has ${version}`);
-        }
-        const profile = info.apple.profile;
-        if (!simulator && device.platformType === PlatformType.iOS && profile && !profile.allDevices && profile.kind !== 'app-store') {
-            const udids = (profile.devices ?? []).map(d => d.toLowerCase());
-            if (!udids.includes((device.deviceIdentifier ?? '').toLowerCase())) {
-                reasons.push('not in the provisioning profile');
-            }
-        }
-        if (!simulator && device.platformType === PlatformType.iOS && profile?.kind === 'app-store') {
-            reasons.push('App Store builds install from TestFlight or the store only');
-        }
-    }
+    const reasons = [
+        ...(info.android ? androidReasons(info.android, device.osVersion ?? '') : []),
+        ...(info.apple ? appleReasons(info.apple, device) : []),
+    ];
     return {ok: reasons.length === 0, reasons};
 };
 
@@ -142,3 +154,55 @@ export const entitlementValue = (v: unknown): string => {
     if (v !== null && typeof v === 'object') return JSON.stringify(v);
     return String(v);
 };
+
+// engineLabel is the game engine of a bundle in one line: "Unity · 2022.3 · IL2CPP"
+export const engineLabel = (engine: Engine | undefined): string | undefined =>
+    engine && [engine.name, engine.version, engine.backend].filter(Boolean).join(' · ');
+
+// bundleTitle is what to call a bundle on its page
+export const bundleTitle = (b: IAppBundleDetail): string => b.info?.displayName || b.name || b.identifier || `Bundle #${b.id}`;
+
+// buildOf is the build number of a bundle when it says more than the version
+export const buildOf = (b: IAppBundleDetail): string | undefined => {
+    const build = b.info?.build;
+    return build && build !== bundleVersion(b) ? build : undefined;
+};
+
+// runSummary counts the results of a test run that used a bundle, as text
+export const runSummary = (r: BundleRun): string => {
+    if (r.passed + r.failed + r.unstable === 0) return '';
+    return `${r.passed} passed${r.failed ? `, ${r.failed} failed` : ''}${r.unstable ? `, ${r.unstable} unstable` : ''}`;
+};
+
+export interface Badge {
+    label: string,
+    // warnings stand out, the rest is outlined
+    warn?: boolean,
+    outlined?: boolean,
+}
+
+type BadgeRule = (b: IAppBundleDetail) => Badge | undefined;
+
+const badgeRules: BadgeRule[] = [
+    b => b.info?.format ? {label: `.${b.info.format}`, outlined: true} : undefined,
+    b => b.info?.engine ? {label: engineLabel(b.info.engine) ?? '', outlined: true} : undefined,
+    b => b.info?.android?.debuggable ? {label: 'debuggable', warn: true} : undefined,
+    b => b.info?.signing?.certificates?.some(c => c.debug) ? {label: 'debug signed', warn: true} : undefined,
+    b => {
+        const kind = b.info?.apple?.profile?.kind;
+        return kind ? {label: PROFILE_KINDS[kind] ?? kind, outlined: true} : undefined;
+    },
+];
+
+// badgesOf are the chips under the title of a bundle: what it is, what is
+// risky about it, and its tags
+export const badgesOf = (b: IAppBundleDetail, tags: string[]): Badge[] => [
+    ...badgeRules.map(rule => rule(b)).filter((x): x is Badge => x !== undefined),
+    ...tags.map(label => ({label})),
+];
+
+// shareOf is the part of the whole a size makes up, 0..1
+export const shareOf = (size: number, total: number): number => total > 0 ? size / total : 0;
+
+// barWidth is the width in percent of the bar of a size next to the longest; never invisible
+export const barWidth = (size: number, max: number): number => Math.max(0.5, size / max * 100);
