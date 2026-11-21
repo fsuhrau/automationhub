@@ -25,7 +25,12 @@ func runStateSetup(t *testing.T) (*Service, *gin.Engine) {
 		&models.ProtocolPerformanceEntry{}, &models.AppBinary{}, &models.Device{}); err != nil {
 		t.Fatal(err)
 	}
-	db.Create(&models.Test{Name: "smoke"})
+	if err := db.AutoMigrate(&models.App{}); err != nil {
+		t.Fatal(err)
+	}
+	app := models.App{Name: "game"}
+	db.Create(&app)
+	db.Create(&models.Test{AppID: app.ID, Name: "smoke"})
 	for i := 0; i < 3; i++ {
 		db.Create(&models.TestRun{TestID: 1})
 	}
@@ -33,8 +38,8 @@ func runStateSetup(t *testing.T) (*Service, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	s := &Service{db: db, runTracker: runs.NewTracker(nil)}
 	r := gin.New()
-	r.GET("/run/:test_id/:run_id", func(c *gin.Context) { s.getTestRun(c, nil, nil) })
-	r.GET("/last/:test_id", func(c *gin.Context) { s.getLastTestRun(c, nil, nil) })
+	r.GET("/run/:test_id/:run_id", func(c *gin.Context) { s.getTestRun(c, nil, &app) })
+	r.GET("/last/:test_id", func(c *gin.Context) { s.getLastTestRun(c, nil, &app) })
 	return s, r
 }
 
@@ -105,10 +110,12 @@ func TestProtocolHistoryAverages(t *testing.T) {
 	var current models.TestProtocol
 	db.Where("test_run_id = 3 and parent_test_protocol_id is not null").First(&current)
 
+	var app models.App
+	db.First(&app)
 	r := gin.New()
-	r.GET("/run/:run_id/:protocol_id", func(c *gin.Context) { s.getTestRunProtocol(c, nil, nil) })
+	r.GET("/run/:test_id/:run_id/:protocol_id", func(c *gin.Context) { s.getTestRunProtocol(c, nil, &app) })
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/3/%d", current.ID), nil))
+	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/1/3/%d", current.ID), nil))
 	if w.Code != http.StatusOK {
 		t.Fatalf("%d %s", w.Code, w.Body)
 	}
@@ -135,7 +142,7 @@ func TestProtocolHistoryAverages(t *testing.T) {
 	var first models.TestProtocol
 	db.Where("test_run_id = 1 and parent_test_protocol_id is not null").First(&first)
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/1/%d", first.ID), nil))
+	r.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/run/1/1/%d", first.ID), nil))
 	run = models.TestRun{}
 	_ = json.Unmarshal(w.Body.Bytes(), &run)
 	if run.Protocols[0].HistAvgFPS != 0 || len(run.Protocols[0].TestProtocolHistory) != 0 {

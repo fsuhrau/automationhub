@@ -595,9 +595,72 @@ func (s *Service) runDevices(runID uint) []uint {
 	return runner.LockedDevices()
 }
 
-func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
+// appTestIDs selects the tests of one app; histories only look at runs of
+// these, so they never mix in another project's data
+const appTestIDs = "(select t.id from tests t where t.app_id = ? and t.deleted_at is null)"
 
-	testId := c.Param("test_id")
+// idParam reads a numeric id from the path; anything else is a 400
+func (s *Service) idParam(c *gin.Context, name string) (uint, bool) {
+	id, err := strconv.ParseUint(c.Param(name), 10, 64)
+	if err != nil {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("invalid %s %q", name, c.Param(name)))
+		return 0, false
+	}
+	return uint(id), true
+}
+
+// lookupFailed answers a failed lookup: 404 when the row does not exist
+// (or belongs to somebody else), 500 for a database error
+func (s *Service) lookupFailed(c *gin.Context, what string, err error) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		s.error(c, http.StatusNotFound, fmt.Errorf("%s %s not found", what, c.Param(what+"_id")))
+		return
+	}
+	s.error(c, http.StatusInternalServerError, err)
+}
+
+// scopedTestID is the id of the path's test when it belongs to the app
+func (s *Service) scopedTestID(c *gin.Context, application *models.App) (uint, bool) {
+	id, ok := s.idParam(c, "test_id")
+	if !ok {
+		return 0, false
+	}
+	var test models.Test
+	if err := s.db.Select("id").First(&test, "id = ? AND app_id = ?", id, application.ID).Error; err != nil {
+		s.lookupFailed(c, "test", err)
+		return 0, false
+	}
+	return test.ID, true
+}
+
+// scopedRunID is the id of the path's run when it belongs to the test
+func (s *Service) scopedRunID(c *gin.Context, testID uint) (uint, bool) {
+	id, ok := s.idParam(c, "run_id")
+	if !ok {
+		return 0, false
+	}
+	var run models.TestRun
+	if err := s.db.Select("id").First(&run, "id = ? AND test_id = ?", id, testID).Error; err != nil {
+		s.lookupFailed(c, "run", err)
+		return 0, false
+	}
+	return run.ID, true
+}
+
+// scopedRun resolves the path's test and run, both inside the app
+func (s *Service) scopedRun(c *gin.Context, application *models.App) (testID, runID uint, ok bool) {
+	if testID, ok = s.scopedTestID(c, application); !ok {
+		return 0, 0, false
+	}
+	runID, ok = s.scopedRunID(c, testID)
+	return testID, runID, ok
+}
+
+func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, application *models.App) {
+	testId, ok := s.scopedTestID(c, application)
+	if !ok {
+		return
+	}
 
 	var resp Response
 	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).Where("test_id = ?", testId).Order("id desc").First(&resp.TestRun).Error; err != nil {
@@ -621,8 +684,10 @@ func (s *Service) getLastTestRun(c *gin.Context, project *models.Project, applic
 }
 
 func (s *Service) getTestRun(c *gin.Context, project *models.Project, application *models.App) {
-	testId := c.Param("test_id")
-	runId := c.Param("run_id")
+	testId, runId, ok := s.scopedRun(c, application)
+	if !ok {
+		return
+	}
 
 	var resp Response
 	if err := s.db.Preload("DeviceStatus").Preload("DeviceStatus.Device").Preload("Protocols").Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Log").Preload("AppBinary").Preload("Test").Preload("Test.TestConfig").Preload("Protocols.Performance").Preload("Recordings", func(db *gorm.DB) *gorm.DB { return db.Order("started_at") }).Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).First(&resp.TestRun, runId).Error; err != nil {
@@ -632,7 +697,7 @@ func (s *Service) getTestRun(c *gin.Context, project *models.Project, applicatio
 
 	for i := range resp.TestRun.DeviceStatus {
 		var histStatus []models.TestRunDeviceStatus
-		if err := s.db.Where("device_id = ? and test_run_id in (select tr.id from test_runs tr where tr.id < ? order by tr.id desc limit ?)", resp.TestRun.DeviceStatus[i].DeviceID, resp.TestRun.DeviceStatus[i].TestRunID, AVG_HISTORY_LIMIT).Find(&histStatus).Error; err != nil {
+		if err := s.db.Where("device_id = ? and test_run_id in (select tr.id from test_runs tr where tr.id < ? and tr.test_id in "+appTestIDs+" order by tr.id desc limit ?)", resp.TestRun.DeviceStatus[i].DeviceID, resp.TestRun.DeviceStatus[i].TestRunID, application.ID, AVG_HISTORY_LIMIT).Find(&histStatus).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}
@@ -688,8 +753,14 @@ func defaultNaN(protocol *models.TestProtocol) {
 }
 
 func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, application *models.App) {
-	runId := c.Param("run_id")
-	protocolId := c.Param("protocol_id")
+	_, runId, ok := s.scopedRun(c, application)
+	if !ok {
+		return
+	}
+	protocolId, ok := s.idParam(c, "protocol_id")
+	if !ok {
+		return
+	}
 
 	var run models.TestRun
 	if err := s.db.Preload("Protocols", "id = ?", protocolId).Preload("Protocols.Device").Preload("Protocols.Entries").Preload("Protocols.Performance").Preload("Protocols.Keys", func(db *gorm.DB) *gorm.DB { return db.Order("key") }).Preload("Log").Preload("AppBinary").Preload("Test").First(&run, runId).Error; err != nil {
@@ -707,6 +778,7 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 		current := &run.Protocols[0]
 		var histProtocols []models.TestProtocol
 		if err := s.db.Where("device_id = ? and test_name = ? and test_run_id < ?", current.DeviceID, current.TestName, run.ID).
+			Where("test_run_id in (select tr.id from test_runs tr where tr.test_id in "+appTestIDs+")", application.ID).
 			Where("exists (select 1 from protocol_performance_entries pe where pe.test_protocol_id = test_protocols.id and pe.deleted_at is null)").
 			Order("id desc").Limit(AVG_HISTORY_LIMIT).Preload("Performance").Find(&histProtocols).Error; err != nil {
 			s.error(c, http.StatusInternalServerError, err)
@@ -736,5 +808,9 @@ func (s *Service) getTestRunProtocol(c *gin.Context, project *models.Project, ap
 
 func (s *Service) getData(c *gin.Context) {
 	name := c.Param("name")
+	if !filepath.IsLocal(name) {
+		s.error(c, http.StatusBadRequest, fmt.Errorf("invalid data name %q", name))
+		return
+	}
 	c.File(filepath.Join(apps.TestDataPath, name))
 }
