@@ -26,8 +26,10 @@ type Service struct {
 	connMu         sync.Mutex
 	c              *websocket.Conn
 	dialing        atomic.Bool
+	rpcServer      *rpc.Server
 }
 
+//nolint:revive // argument-limit: the constructor signature is fixed by its callers in cmd/ and hub/
 func New(logger *logrus.Logger, db *gorm.DB, rpcNode *node.RPCNode, dm manager.Devices, config config.Service, managers []string, reconnect node.ConnectionHandler) *Service {
 	return &Service{
 		logger:         logger.WithField("Service", "NodeAPI"),
@@ -38,10 +40,11 @@ func New(logger *logrus.Logger, db *gorm.DB, rpcNode *node.RPCNode, dm manager.D
 		managers:       managers,
 		reconnect:      reconnect,
 		rpcNode:        rpcNode,
+		rpcServer:      rpc.NewServer(),
 	}
 }
 
 func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	// register self as rpc server
-	return rpc.Register(s.rpcNode)
+	return s.rpcServer.Register(s.rpcNode)
 }

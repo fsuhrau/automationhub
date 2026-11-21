@@ -2,7 +2,6 @@ package master
 
 import (
 	"fmt"
-	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/node"
@@ -12,13 +11,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  protocol.SocketFrameSize,
-	WriteBufferSize: protocol.SocketFrameSize,
-}
-
 func (s *nodeMaster) Connect(c *gin.Context) {
-	conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := s.wsUpgrader.Upgrade(c.Writer, c.Request, nil)
 	fmt.Println("Update Connection")
 	if err != nil {
 		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
@@ -54,15 +48,10 @@ func (s *nodeMaster) handleNode(conn *websocket.Conn, c *gin.Context) {
 	})
 }
 
-var videoUpgrader = websocket.Upgrader{
-	ReadBufferSize:  4 << 10,
-	WriteBufferSize: 4 << 10,
-}
-
 // Video accepts the websocket a node opens to deliver a device video stream
 // the master asked for (see videostream.Rendezvous).
 func (s *nodeMaster) Video(c *gin.Context) {
-	conn, err := videoUpgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := s.videoUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}

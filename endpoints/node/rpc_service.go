@@ -4,15 +4,9 @@ import (
 	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
-	"github.com/matishsiao/goInfo"
-	"net/http"
-	"net/rpc"
 	"net/url"
-	"os"
 	"time"
 )
-
-var rpcServer = rpc.DefaultServer
 
 func (s *Service) ConnectAndServe() {
 	// only one dial at a time; a running ServeCodec of an older connection is
@@ -33,11 +27,6 @@ func (s *Service) ConnectAndServe() {
 
 	// proxyURL, _ := url.Parse("http://10.35.111.236:8888")
 
-	headers := http.Header{}
-	if s.cfg.Auth.Token != nil {
-		headers.Set("X-Auth-Token", s.cfg.Auth.Token.AuthToken)
-	}
-
 	dialer := websocket.Dialer{
 		// Proxy:             http.ProxyURL(proxyURL),
 		HandshakeTimeout:  45 * time.Second,
@@ -45,32 +34,25 @@ func (s *Service) ConnectAndServe() {
 		WriteBufferSize:   protocol.SocketFrameSize,
 		EnableCompression: true,
 	}
-	c, _, err := dialer.Dial(serverURL.String(), headers)
+	c, _, err := dialer.Dial(serverURL.String(), s.authHeaders())
 	if err != nil {
 		s.logger.Errorf("connect to master failed: %v", err)
 		return
 	}
 
-	gi, _ := goInfo.GetInfo()
-	if err := s.registerNode(c, s.cfg.Identifier, gi.Hostname, gi.OS, os.Getenv("PATH"), s.cfg.Port, s.managers); err != nil {
+	if err := s.announce(c); err != nil {
 		s.logger.Errorf("register node failed: %v", err)
 		_ = c.Close()
 		return
 	}
 
-	s.connMu.Lock()
-	s.c = c
-	s.connMu.Unlock()
+	s.setConn(c)
 	dialDone = true
 	s.dialing.Store(false)
 
-	rpcServer.ServeCodec(jsonrpc.NewServerCodec(c))
+	s.rpcServer.ServeCodec(jsonrpc.NewServerCodec(c))
 
-	s.connMu.Lock()
-	if s.c == c {
-		s.c = nil
-	}
-	s.connMu.Unlock()
+	s.clearConn(c)
 }
 
 func (s *Service) closeConnection() {

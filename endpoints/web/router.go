@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/gin-gonic/gin"
@@ -8,10 +9,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"sync"
 )
-
-var once sync.Once
 
 type wf struct {
 	cfg         config.Service
@@ -22,17 +20,26 @@ type wf struct {
 
 func New(db *gorm.DB, config config.Service) *wf {
 	return &wf{
-		cfg: config,
-		db:  db,
+		cfg:        config,
+		db:         db,
+		filesystem: http.FS(Content),
 	}
 }
 
+func (s *wf) loadIndex() error {
+	f, err := s.filesystem.Open("/data/index.html")
+	if err != nil {
+		return fmt.Errorf("open index.html: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+	s.indexBuffer, err = io.ReadAll(f)
+	if err != nil {
+		return fmt.Errorf("read index.html: %w", err)
+	}
+	return nil
+}
+
 func (s *wf) IndexRoute(context *gin.Context) {
-	once.Do(func() {
-		file := "/data/index.html"
-		f, _ := s.filesystem.Open(file)
-		s.indexBuffer, _ = io.ReadAll(f)
-	})
 	context.Data(200, "text/html", s.indexBuffer)
 }
 
@@ -43,7 +50,9 @@ func (s *wf) StaticRoute(context *gin.Context) {
 }
 
 func (s *wf) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
-	s.filesystem = http.FS(Content)
+	if err := s.loadIndex(); err != nil {
+		return err
+	}
 
 	uploads := auth.Group("/upload")
 	uploads.Static("/", apps.AppStoragePath)

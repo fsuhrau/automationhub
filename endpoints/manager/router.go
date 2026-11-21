@@ -14,15 +14,11 @@ import (
 	"net/http"
 )
 
-var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  protocol.SocketFrameSize,
-	WriteBufferSize: protocol.SocketFrameSize,
-}
-
 type Service struct {
 	logger         *logrus.Entry
 	devicesManager manager.Devices
 	cfg            config.Service
+	upgrader       websocket.Upgrader
 }
 
 func New(logger *logrus.Logger, devicesManager manager.Devices, cfg config.Service) *Service {
@@ -30,11 +26,15 @@ func New(logger *logrus.Logger, devicesManager manager.Devices, cfg config.Servi
 		logger:         logger.WithField("Service", "Devices"),
 		cfg:            cfg,
 		devicesManager: devicesManager,
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  protocol.SocketFrameSize,
+			WriteBufferSize: protocol.SocketFrameSize,
+		},
 	}
 }
 
 func (s *Service) socketHandler(c *gin.Context, w http.ResponseWriter, r *http.Request) {
-	conn, err := wsupgrader.Upgrade(w, r, nil)
+	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
 		return
@@ -57,47 +57,45 @@ func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	return nil
 }
 
-func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
+type registerRequest struct {
+	Type          string
+	DeviceID      string
+	IP            string
+	Version       string
+	OS            string
+	TargetVersion string
+	Name          string
+	DeviceModel   string
+	RAM           float32
+	GPU           string
+	SOC           string
+	ProjectDir    string
+}
 
-	type Request struct {
-		Type          string
-		DeviceID      string
-		IP            string
-		Version       string
-		OS            string
-		TargetVersion string
-		Name          string
-		DeviceModel   string
-		RAM           float32
-		GPU           string
-		SOC           string
-		ProjectDir    string
+func (r registerRequest) registerData(ip net.IP, conn *websocket.Conn) device.RegisterData {
+	return device.RegisterData{
+		DeviceOSVersion: r.Version,
+		Name:            r.Name,
+		DeviceOS:        r.OS,
+		DeviceID:        r.DeviceID,
+		TargetVersion:   r.TargetVersion,
+		ManagerType:     r.Type,
+		GPU:             r.GPU,
+		RAM:             r.RAM,
+		SOC:             r.SOC,
+		DeviceModel:     r.DeviceModel,
+		ProjectDir:      r.ProjectDir,
+		DeviceIP:        ip,
+		Conn:            conn,
 	}
+}
 
-	clientIp := net.ParseIP(c.ClientIP())
-
-	var req Request
-
+func (s *Service) registerDevices(msg []byte, conn *websocket.Conn, c *gin.Context) {
+	var req registerRequest
 	if err := json.Unmarshal(msg, &req); err != nil {
 		return
 	}
 
-	register := device.RegisterData{
-		DeviceOSVersion: req.Version,
-		Name:            req.Name,
-		DeviceOS:        req.OS,
-		DeviceID:        req.DeviceID,
-		TargetVersion:   req.TargetVersion,
-		ManagerType:     req.Type,
-		GPU:             req.GPU,
-		RAM:             req.RAM,
-		SOC:             req.SOC,
-		DeviceModel:     req.DeviceModel,
-		ProjectDir:      req.ProjectDir,
-		DeviceIP:        clientIp,
-		Conn:            conn,
-	}
-
+	register := req.registerData(net.ParseIP(c.ClientIP()), conn)
 	_, _ = s.devicesManager.RegisterDevice(register)
-
 }

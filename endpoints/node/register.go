@@ -6,14 +6,23 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func (rpc *Service) registerNode(c *websocket.Conn, identifier, hostname, os, path string, port int32, managers []string) error {
+type nodeInfo struct {
+	identifier string
+	hostname   string
+	os         string
+	path       string
+	port       int32
+	managers   []string
+}
+
+func (s *Service) registerNode(c *websocket.Conn, info nodeInfo) error {
 	request := node.RegisterNodeRequest{
-		Identifier:           identifier,
-		Hostname:             hostname,
-		OperationSystem:      os,
-		EnvironmentVariables: path,
-		Managers:             managers,
-		Port:                 port,
+		Identifier:           info.identifier,
+		Hostname:             info.hostname,
+		OperationSystem:      info.os,
+		EnvironmentVariables: info.path,
+		Managers:             info.managers,
+		Port:                 info.port,
 	}
 	data, err := proto.Marshal(&request)
 	if err != nil {
