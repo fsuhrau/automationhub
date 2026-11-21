@@ -40,7 +40,7 @@ func profileSetup(t *testing.T) (*gin.Engine, *gorm.DB) {
 			c.Set(token.AuthTokenKey, uint(1))
 		}
 	})
-	s.registerProfile(r.Group("/api"))
+	s.registerProfileRoutes(r.Group("/api"))
 	return r, db
 }
 

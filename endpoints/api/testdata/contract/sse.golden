@@ -1,0 +1,8 @@
+== stream
+GET /api/sse
+200
+
+== stream trailing slash
+GET /api/sse/
+200
+

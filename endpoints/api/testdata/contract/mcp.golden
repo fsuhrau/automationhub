@@ -1,0 +1,21 @@
+== post
+POST /api/proj/mcp
+400 text/plain; charset=utf-8
+Accept must contain both 'application/json' and 'text/event-stream'
+
+== get stream
+GET /api/proj/mcp
+400
+
+== delete session
+DELETE /api/proj/mcp
+400 text/plain; charset=utf-8
+Bad Request: DELETE requires an Mcp-Session-Id header
+
+== upload unknown
+PUT /api/proj/mcp/uploads/none
+404 application/json
+{
+  "message": "upload not found or expired; call begin_upload again"
+}
+

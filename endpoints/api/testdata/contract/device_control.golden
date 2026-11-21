@@ -1,0 +1,135 @@
+== get lock
+GET /api/proj/device/1/lock
+200 application/json; charset=utf-8
+{
+  "locked": false,
+  "lockedByTest": false
+}
+
+== lock
+POST /api/proj/device/1/lock
+200 application/json; charset=utf-8
+{
+  "deviceId": "dev-1",
+  "token": "<generated>",
+  "owner": "anonymous",
+  "acquiredAt": "<time>",
+  "lastUsed": "<time>",
+  "expiresAt": "<time>"
+}
+
+== release without lease
+DELETE /api/proj/device/1/lock
+409 application/json; charset=utf-8
+{
+  "message": "device lease is invalid or expired"
+}
+
+== screenshot
+GET /api/proj/device/1/screenshot
+200 text/plain; charset=utf-8
+
+
+== stream
+GET /api/proj/device/1/stream
+200
+
+== video
+GET /api/proj/device/1/video
+400
+
+== hierarchy
+GET /api/proj/device/1/hierarchy
+409 application/json; charset=utf-8
+{
+  "message": "no app connected to the device (dev-1); start the app first"
+}
+
+== logs
+GET /api/proj/device/1/logs
+200 application/json; charset=utf-8
+{
+  "lines": []
+}
+
+== logs stream
+GET /api/proj/device/1/logs/stream
+200
+
+== tap
+POST /api/proj/device/1/tap
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== swipe
+POST /api/proj/device/1/swipe
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== text
+POST /api/proj/device/1/text
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== key
+POST /api/proj/device/1/key
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== element touch
+POST /api/proj/device/1/element/touch
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== element value
+POST /api/proj/device/1/element/value
+428 application/json; charset=utf-8
+{
+  "message": "lock the device for control first"
+}
+
+== app install
+POST /api/proj/device/1/app/install
+400 application/json; charset=utf-8
+{
+  "message": "Key: 'appRequest.BinaryID' Error:Field validation for 'BinaryID' failed on the 'required' tag"
+}
+
+== app start
+POST /api/proj/device/1/app/start
+400 application/json; charset=utf-8
+{
+  "message": "Key: 'appRequest.BinaryID' Error:Field validation for 'BinaryID' failed on the 'required' tag"
+}
+
+== app stop
+POST /api/proj/device/1/app/stop
+400 application/json; charset=utf-8
+{
+  "message": "Key: 'appRequest.BinaryID' Error:Field validation for 'BinaryID' failed on the 'required' tag"
+}
+
+== device not connected
+GET /api/proj/device/1/lock
+409 application/json; charset=utf-8
+{
+  "message": "device dev-1 is not connected"
+}
+
+== unknown device
+POST /api/proj/device/99/tap
+404 application/json; charset=utf-8
+{
+  "message": "device 99 not found"
+}
+

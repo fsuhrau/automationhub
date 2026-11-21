@@ -26,7 +26,7 @@ func TestSettingsRefuseAccessTokens(t *testing.T) {
 	s := &Service{db: db}
 	r := gin.New()
 	session := func(c *gin.Context) { c.Next() } // a signed in browser
-	s.registerSettings(r.Group("/api", token.SessionHandler(db, session)))
+	s.registerSettingsRoutes(r.Group("/api", token.SessionHandler(db, session)))
 
 	do := func(method, path, tok string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, path, strings.NewReader(`{"name":"x"}`))

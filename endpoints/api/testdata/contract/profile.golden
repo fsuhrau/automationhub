@@ -1,0 +1,63 @@
+== me
+GET /api/me
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "name": "Alice",
+  "login": "",
+  "email": ""
+}
+
+== me signed out
+GET /api/me
+404 application/json; charset=utf-8
+{
+  "message": "no signed in user; personal access tokens need a login (configure authentication on the master)"
+}
+
+== tokens
+GET /api/me/tokens
+200 application/json; charset=utf-8
+[]
+
+== tokens signed out
+GET /api/me/tokens
+404 application/json; charset=utf-8
+{
+  "message": "no signed in user; personal access tokens need a login (configure authentication on the master)"
+}
+
+== token create
+POST /api/me/tokens
+201 application/json; charset=utf-8
+{
+  "id": 2,
+  "name": "laptop",
+  "hint": "<generated>",
+  "createdAt": "<time>",
+  "expiresAt": null,
+  "lastUsedAt": null,
+  "token": "<generated>"
+}
+
+== token create without name
+POST /api/me/tokens
+400 application/json; charset=utf-8
+{
+  "message": "name is required"
+}
+
+== token delete unknown
+DELETE /api/me/tokens/99
+404 application/json; charset=utf-8
+{
+  "message": "token not found"
+}
+
+== token delete refused
+DELETE /api/me/tokens/1
+403 application/json; charset=utf-8
+{
+  "message": "tokens can only be managed from a browser session"
+}
+

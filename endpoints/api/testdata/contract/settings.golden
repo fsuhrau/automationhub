@@ -1,0 +1,166 @@
+== users
+GET /api/proj/settings/users
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "name": "Alice",
+    "role": "user",
+    "auth": null,
+    "companies": null,
+    "projects": null
+  }
+]
+
+== tokens
+GET /api/proj/settings/access_tokens
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "projectId": 1,
+    "project": null,
+    "nodeId": null,
+    "node": null,
+    "userId": null,
+    "hint": "<generated>",
+    "lastUsedAt": null,
+    "name": "ci",
+    "token": "<generated>",
+    "expiresAt": null
+  }
+]
+
+== token create
+POST /api/proj/settings/access_token
+201 application/json; charset=utf-8
+{
+  "id": 2,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "projectId": 1,
+  "project": null,
+  "nodeId": null,
+  "node": null,
+  "userId": null,
+  "hint": "<generated>",
+  "lastUsedAt": null,
+  "name": "deploy",
+  "token": "<generated>",
+  "expiresAt": null
+}
+
+== token create without name
+POST /api/proj/settings/access_token
+400 application/json; charset=utf-8
+{
+  "message": "the token needs a name"
+}
+
+== token delete
+DELETE /api/proj/settings/access_token/1
+200 
+
+
+== token delete unknown
+DELETE /api/proj/settings/access_token/99
+404 application/json; charset=utf-8
+{
+  "message": "token 99 not found"
+}
+
+== node create
+POST /api/proj/settings/node
+201 application/json; charset=utf-8
+{
+  "id": 2,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "<uuid>",
+  "name": "Build node",
+  "status": 0,
+  "token": "<generated>"
+}
+
+== node create without name
+POST /api/proj/settings/node
+400 application/json; charset=utf-8
+{
+  "message": "the node needs a name"
+}
+
+== nodes
+GET /api/proj/settings/nodes
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "identifier": "node-1",
+    "name": "Node",
+    "status": 0
+  }
+]
+
+== node status
+GET /api/proj/settings/nodes/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "node-1",
+  "name": "Node",
+  "status": 0
+}
+
+== node status unknown
+GET /api/proj/settings/nodes/99
+500 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== node delete
+DELETE /api/proj/settings/nodes/1
+200 
+
+
+== node token
+POST /api/proj/settings/nodes/1/token
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "node-1",
+  "name": "Node",
+  "status": 0,
+  "token": "<generated>"
+}
+
+== node token without name
+POST /api/proj/settings/nodes/1/token
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "node-1",
+  "name": "Node",
+  "status": 0,
+  "token": "<generated>"
+}
+
+== token auth refused
+GET /api/proj/settings/users
+403 application/json; charset=utf-8
+{
+  "message": "tokens can only be managed from a browser session"
+}
+

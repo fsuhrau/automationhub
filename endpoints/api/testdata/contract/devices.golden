@@ -1,0 +1,302 @@
+== list
+GET /api/proj/devices
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "companyId": 0,
+    "deviceIdentifier": "dev-1",
+    "alias": "",
+    "nodeId": 0,
+    "node": null,
+    "deviceType": 0,
+    "name": "Pixel",
+    "manager": "android_device",
+    "os": "",
+    "osVersion": "",
+    "osInfos": "",
+    "targetVersion": "",
+    "deviceParameter": null,
+    "statusLog": null,
+    "connectionType": 0,
+    "connectionParameter": null,
+    "isAcknowledged": false,
+    "status": 1,
+    "isLocked": false,
+    "dev": null,
+    "connection": null,
+    "platformType": 1,
+    "customParameter": null
+  }
+]
+
+== list by platform
+GET /api/proj/devices?platform=android
+200 application/json; charset=utf-8
+[]
+
+== get
+GET /api/proj/device/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "companyId": 0,
+  "deviceIdentifier": "dev-1",
+  "alias": "",
+  "nodeId": 0,
+  "node": null,
+  "deviceType": 0,
+  "name": "Pixel",
+  "manager": "android_device",
+  "os": "",
+  "osVersion": "",
+  "osInfos": "",
+  "targetVersion": "",
+  "deviceParameter": [],
+  "statusLog": null,
+  "connectionType": 0,
+  "connectionParameter": null,
+  "isAcknowledged": false,
+  "status": 1,
+  "isLocked": false,
+  "dev": null,
+  "connection": null,
+  "platformType": 1,
+  "customParameter": []
+}
+
+== get unknown
+GET /api/proj/device/99
+404 application/json; charset=utf-8
+{
+  "message": "device 99 not found"
+}
+
+== update
+PUT /api/proj/device/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "companyId": 0,
+  "deviceIdentifier": "dev-1",
+  "alias": "Lab",
+  "nodeId": 0,
+  "node": null,
+  "deviceType": 0,
+  "name": "Pixel",
+  "manager": "android_device",
+  "os": "",
+  "osVersion": "",
+  "osInfos": "",
+  "targetVersion": "",
+  "deviceParameter": [],
+  "statusLog": null,
+  "connectionType": 0,
+  "connectionParameter": null,
+  "isAcknowledged": false,
+  "status": 0,
+  "isLocked": false,
+  "dev": null,
+  "connection": null,
+  "platformType": 1,
+  "customParameter": [
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "deviceId": 1,
+      "device": null,
+      "key": "a",
+      "value": "b"
+    }
+  ]
+}
+
+== update duplicate keys
+PUT /api/proj/device/1
+400 application/json; charset=utf-8
+{
+  "message": "custom parameter \"a\" is there twice"
+}
+
+== delete
+DELETE /api/proj/device/1
+200 
+
+
+== delete unknown
+DELETE /api/proj/device/99
+404 application/json; charset=utf-8
+{
+  "message": "device 99 not found"
+}
+
+== unlock
+POST /api/proj/device/1/unlock
+404 application/json; charset=utf-8
+{
+  "message": "device dev-1 is not connected"
+}
+
+== run tests invalid signature
+POST /api/proj/device/1/tests
+404 application/json; charset=utf-8
+{
+  "message": "invalid method signature"
+}
+
+== protocols
+GET /api/proj/device/1/protocols?limit=5
+200 application/json; charset=utf-8
+[
+  {
+    "id": 2,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testRunId": 2,
+    "testRun": {
+      "id": 2,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "testId": 1,
+      "test": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "appId": 1,
+        "app": null,
+        "name": "Smoke",
+        "testConfig": {
+          "id": 0,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "testId": 0,
+          "test": null,
+          "executionType": 0,
+          "type": 0,
+          "allDevices": false,
+          "devices": null,
+          "unity": null,
+          "scenario": null,
+          "recordSession": false
+        },
+        "testRuns": null,
+        "last": null
+      },
+      "appBinaryId": 1,
+      "appBinary": null,
+      "startUrl": "",
+      "sessionId": "session",
+      "parameter": "",
+      "protocols": null,
+      "log": null,
+      "deviceStatus": null
+    },
+    "deviceId": 1,
+    "testName": "Suite Case",
+    "startedAt": "<time>",
+    "testResult": 3
+  },
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testRunId": 1,
+    "testRun": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "testId": 1,
+      "test": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "appId": 1,
+        "app": null,
+        "name": "Smoke",
+        "testConfig": {
+          "id": 0,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "testId": 0,
+          "test": null,
+          "executionType": 0,
+          "type": 0,
+          "allDevices": false,
+          "devices": null,
+          "unity": null,
+          "scenario": null,
+          "recordSession": false
+        },
+        "testRuns": null,
+        "last": null
+      },
+      "appBinaryId": 1,
+      "appBinary": null,
+      "startUrl": "",
+      "sessionId": "session",
+      "parameter": "",
+      "protocols": null,
+      "log": null,
+      "deviceStatus": null
+    },
+    "deviceId": 1,
+    "testName": "Suite Case",
+    "startedAt": "<time>",
+    "testResult": 3
+  }
+]
+
+== protocols unknown device
+GET /api/proj/device/99/protocols
+404 application/json; charset=utf-8
+{
+  "message": "device 99 not found"
+}
+
+== overview
+GET /api/proj/overview
+200 application/json; charset=utf-8
+{
+  "apps": 1,
+  "tests": 1,
+  "bundles": 1,
+  "bundleStorage": 0,
+  "failing": [],
+  "running": [],
+  "latest": [
+    {
+      "id": 2,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke",
+      "appId": 1
+    },
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke",
+      "appId": 1
+    }
+  ]
+}
+

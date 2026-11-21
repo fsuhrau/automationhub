@@ -1,0 +1,313 @@
+== runs
+GET /api/proj/app/1/test/1/runs
+200 application/json; charset=utf-8
+{
+  "runs": [
+    {
+      "id": 2,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "parameter": "",
+      "bundle": {
+        "id": 1,
+        "name": "app.apk",
+        "version": "1.0"
+      },
+      "endedAt": null
+    },
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "parameter": "",
+      "bundle": {
+        "id": 1,
+        "name": "app.apk",
+        "version": "1.0"
+      },
+      "endedAt": null
+    }
+  ],
+  "more": false
+}
+
+== runs limited
+GET /api/proj/app/1/test/1/runs?limit=1&before=2
+200 application/json; charset=utf-8
+{
+  "runs": [
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "parameter": "",
+      "bundle": {
+        "id": 1,
+        "name": "app.apk",
+        "version": "1.0"
+      },
+      "endedAt": null
+    }
+  ],
+  "more": false
+}
+
+== runs unknown test
+GET /api/proj/app/1/test/99/runs
+404 application/json; charset=utf-8
+{
+  "message": "test 99 not found"
+}
+
+== last
+GET /api/proj/app/1/test/1/runs/last
+200 application/json; charset=utf-8
+{
+  "testRun": {
+    "id": 2,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testId": 1,
+    "test": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "appId": 1,
+      "app": null,
+      "name": "Smoke",
+      "testConfig": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testId": 1,
+        "test": null,
+        "executionType": 0,
+        "type": 0,
+        "allDevices": true,
+        "devices": null,
+        "unity": null,
+        "scenario": null,
+        "recordSession": false
+      },
+      "testRuns": null,
+      "last": null
+    },
+    "appBinaryId": 1,
+    "appBinary": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "appId": 1,
+      "app": null,
+      "name": "app.apk",
+      "platform": "android",
+      "version": "1.0",
+      "appPath": "",
+      "identifier": "com.example.app",
+      "additional": "",
+      "hash": "abc",
+      "size": 0,
+      "tags": "release",
+      "android": {
+        "LaunchActivity": ""
+      },
+      "executable": {
+        "Executable": ""
+      }
+    },
+    "startUrl": "",
+    "sessionId": "session",
+    "parameter": "",
+    "protocols": [
+      {
+        "id": 2,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testRunId": 2,
+        "deviceId": 1,
+        "device": {
+          "id": 1,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "companyId": 0,
+          "deviceIdentifier": "dev-1",
+          "alias": "",
+          "nodeId": 0,
+          "node": null,
+          "deviceType": 0,
+          "name": "Pixel",
+          "manager": "android_device",
+          "os": "",
+          "osVersion": "",
+          "osInfos": "",
+          "targetVersion": "",
+          "deviceParameter": null,
+          "statusLog": null,
+          "connectionType": 0,
+          "connectionParameter": null,
+          "isAcknowledged": false,
+          "status": 0,
+          "isLocked": false,
+          "dev": null,
+          "connection": null,
+          "platformType": 1,
+          "customParameter": null
+        },
+        "testName": "Suite Case",
+        "startedAt": "<time>",
+        "testResult": 3
+      }
+    ],
+    "log": [],
+    "deviceStatus": []
+  },
+  "prevRunId": 1,
+  "nextRunId": 0,
+  "state": "not_running",
+  "devices": []
+}
+
+== last unknown test
+GET /api/proj/app/1/test/99/runs/last
+404 application/json; charset=utf-8
+{
+  "message": "test 99 not found"
+}
+
+== run
+GET /api/proj/app/1/test/1/run/1
+200 application/json; charset=utf-8
+{
+  "testRun": {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testId": 1,
+    "test": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "appId": 1,
+      "app": null,
+      "name": "Smoke",
+      "testConfig": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testId": 1,
+        "test": null,
+        "executionType": 0,
+        "type": 0,
+        "allDevices": true,
+        "devices": null,
+        "unity": null,
+        "scenario": null,
+        "recordSession": false
+      },
+      "testRuns": null,
+      "last": null
+    },
+    "appBinaryId": 1,
+    "appBinary": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "appId": 1,
+      "app": null,
+      "name": "app.apk",
+      "platform": "android",
+      "version": "1.0",
+      "appPath": "",
+      "identifier": "com.example.app",
+      "additional": "",
+      "hash": "abc",
+      "size": 0,
+      "tags": "release",
+      "android": {
+        "LaunchActivity": ""
+      },
+      "executable": {
+        "Executable": ""
+      }
+    },
+    "startUrl": "",
+    "sessionId": "session",
+    "parameter": "",
+    "protocols": [
+      {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testRunId": 1,
+        "deviceId": 1,
+        "device": {
+          "id": 1,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "companyId": 0,
+          "deviceIdentifier": "dev-1",
+          "alias": "",
+          "nodeId": 0,
+          "node": null,
+          "deviceType": 0,
+          "name": "Pixel",
+          "manager": "android_device",
+          "os": "",
+          "osVersion": "",
+          "osInfos": "",
+          "targetVersion": "",
+          "deviceParameter": null,
+          "statusLog": null,
+          "connectionType": 0,
+          "connectionParameter": null,
+          "isAcknowledged": false,
+          "status": 0,
+          "isLocked": false,
+          "dev": null,
+          "connection": null,
+          "platformType": 1,
+          "customParameter": null
+        },
+        "testName": "Suite Case",
+        "startedAt": "<time>",
+        "testResult": 3
+      }
+    ],
+    "log": [],
+    "deviceStatus": []
+  },
+  "prevRunId": 0,
+  "nextRunId": 2,
+  "state": "not_running",
+  "devices": []
+}
+
+== run unknown
+GET /api/proj/app/1/test/1/run/99
+404 application/json; charset=utf-8
+{
+  "message": "run 99 not found"
+}
+
+== run invalid id
+GET /api/proj/app/1/test/1/run/abc
+400 application/json; charset=utf-8
+{
+  "message": "invalid run_id \"abc\""
+}
+

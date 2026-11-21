@@ -4,20 +4,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fsuhrau/automationhub/storage/apps"
-	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fsuhrau/automationhub/endpoints/httpx"
+	"github.com/fsuhrau/automationhub/storage/apps"
+	"github.com/fsuhrau/automationhub/storage/models"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (s *Service) ResolveApp(context *gin.Context) {
 	appId := context.Param("app_id")
 
-	p, _ := context.Get("project")
+	p, _ := context.Get(httpx.ProjectKey)
 	project := p.(*models.Project)
 
 	var application models.App
@@ -25,14 +27,14 @@ func (s *Service) ResolveApp(context *gin.Context) {
 		s.error(context, http.StatusNotFound, err)
 		return
 	}
-	context.Set("app", &application)
+	context.Set(httpx.AppKey, &application)
 }
 
 func (s *Service) WithApp(wrapperFunction func(*gin.Context, *models.Project, *models.App)) func(*gin.Context) {
 	return func(context *gin.Context) {
-		p, _ := context.Get("project")
+		p, _ := context.Get(httpx.ProjectKey)
 		project := p.(*models.Project)
-		a, _ := context.Get("app")
+		a, _ := context.Get(httpx.AppKey)
 		application := a.(*models.App)
 		wrapperFunction(context, project, application)
 	}

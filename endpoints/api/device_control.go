@@ -8,26 +8,16 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/authentication"
 	"github.com/fsuhrau/automationhub/device"
-	controlapi "github.com/fsuhrau/automationhub/endpoints/control"
+	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func (s *Service) registerDeviceControl(projectApi *gin.RouterGroup) {
-	controlapi.NewHandler(s.control, s.resolveControlDevice, s.resolveControlApp, requestOwner, s.nodeUrl).WithAllowedOrigins(s.cfg.Cors).Register(projectApi)
-}
-
-func projectFromContext(c *gin.Context) *models.Project {
-	p, _ := c.Get("project")
-	project, _ := p.(*models.Project)
-	return project
-}
-
 // resolveControlDevice returns the live device for :device_id within the project.
 func (s *Service) resolveControlDevice(c *gin.Context) (device.Device, bool) {
-	project := projectFromContext(c)
+	project := httpx.Project(c)
 	if project == nil {
 		s.error(c, http.StatusNotFound, fmt.Errorf("project not found"))
 		return nil, false
@@ -46,7 +36,7 @@ func (s *Service) resolveControlDevice(c *gin.Context) (device.Device, bool) {
 
 // resolveControlApp loads an app bundle that belongs to the project.
 func (s *Service) resolveControlApp(c *gin.Context, binaryID uint) (*app.Parameter, error) {
-	project := projectFromContext(c)
+	project := httpx.Project(c)
 	if project == nil {
 		return nil, fmt.Errorf("project not found")
 	}

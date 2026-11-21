@@ -1,0 +1,119 @@
+== list
+GET /api/proj/apps
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "projectId": 1,
+    "project": null,
+    "name": "App",
+    "identifier": "com.example.app",
+    "platform": 1,
+    "parameter": [
+      {
+        "type": "string",
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "appId": 1,
+        "app": null,
+        "name": "level"
+      }
+    ]
+  }
+]
+
+== create
+POST /api/proj/app
+200 application/json; charset=utf-8
+{
+  "id": 2,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "projectId": 1,
+  "project": null,
+  "name": "Second",
+  "identifier": "com.example.two",
+  "platform": 2,
+  "parameter": null
+}
+
+== create without name
+POST /api/proj/app
+400 application/json; charset=utf-8
+{
+  "message": "the app needs a name"
+}
+
+== update
+PUT /api/proj/app/1/
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "projectId": 1,
+  "project": null,
+  "name": "Renamed",
+  "identifier": "com.example.app",
+  "platform": 1,
+  "parameter": [
+    {
+      "type": "string",
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "appId": 1,
+      "app": null,
+      "name": "level"
+    }
+  ]
+}
+
+== unknown app
+PUT /api/proj/app/99/
+404 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== parameter add
+POST /api/proj/app/1/parameter
+400 application/json; charset=utf-8
+{
+  "message": "the parameter's type isn't valid"
+}
+
+== parameter add malformed
+POST /api/proj/app/1/parameter
+400 application/json; charset=utf-8
+{
+  "message": "unexpected EOF"
+}
+
+== parameter update
+PUT /api/proj/app/1/parameter/1
+400 application/json; charset=utf-8
+{
+  "message": "the parameter's type isn't valid"
+}
+
+== parameter update unknown
+PUT /api/proj/app/1/parameter/99
+404 application/json; charset=utf-8
+{
+  "message": "parameter 99 not found"
+}
+
+== parameter remove
+DELETE /api/proj/app/1/parameter/1
+200 application/json; charset=utf-8
+null
+
+== parameter remove unknown
+DELETE /api/proj/app/1/parameter/99
+200 application/json; charset=utf-8
+null
+

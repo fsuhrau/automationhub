@@ -2,11 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"strings"
 )
 
 func (s *Service) ResolveProject(context *gin.Context) {
@@ -16,12 +18,12 @@ func (s *Service) ResolveProject(context *gin.Context) {
 		s.error(context, http.StatusNotFound, err)
 		return
 	}
-	context.Set("project", &project)
+	context.Set(httpx.ProjectKey, &project)
 }
 
 func (s *Service) WithProject(wrapperFunction func(*gin.Context, *models.Project)) func(*gin.Context) {
 	return func(context *gin.Context) {
-		p, _ := context.Get("project")
+		p, _ := context.Get(httpx.ProjectKey)
 		project := p.(*models.Project)
 		wrapperFunction(context, project)
 	}

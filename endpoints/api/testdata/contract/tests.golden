@@ -1,0 +1,192 @@
+== list
+GET /api/proj/app/1/tests
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "appId": 1,
+    "app": null,
+    "name": "Smoke",
+    "testConfig": {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "testId": 1,
+      "test": null,
+      "executionType": 0,
+      "type": 0,
+      "allDevices": true,
+      "devices": [],
+      "unity": null,
+      "scenario": null,
+      "recordSession": false
+    },
+    "testRuns": null,
+    "last": null,
+    "recentRuns": [
+      {
+        "id": 2,
+        "createdAt": "<time>",
+        "state": "not_running",
+        "status": "passed",
+        "passed": 1,
+        "failed": 0,
+        "unstable": 0,
+        "open": 0
+      },
+      {
+        "id": 1,
+        "createdAt": "<time>",
+        "state": "not_running",
+        "status": "passed",
+        "passed": 1,
+        "failed": 0,
+        "unstable": 0,
+        "open": 0
+      }
+    ]
+  }
+]
+
+== get
+GET /api/proj/app/1/test/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "Smoke",
+  "testConfig": {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testId": 1,
+    "test": null,
+    "executionType": 0,
+    "type": 0,
+    "allDevices": true,
+    "devices": [],
+    "unity": null,
+    "scenario": null,
+    "recordSession": false
+  },
+  "testRuns": null,
+  "last": null
+}
+
+== get unknown
+GET /api/proj/app/1/test/99
+404 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== get invalid id
+GET /api/proj/app/1/test/abc
+404 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== create
+POST /api/proj/app/1/test
+201 application/json; charset=utf-8
+{
+  "id": 2,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "Regression",
+  "testConfig": {
+    "id": 0,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testId": 0,
+    "test": null,
+    "executionType": 0,
+    "type": 0,
+    "allDevices": false,
+    "devices": null,
+    "unity": null,
+    "scenario": null,
+    "recordSession": false
+  },
+  "testRuns": null,
+  "last": null
+}
+
+== create other type
+POST /api/proj/app/1/test
+400 application/json; charset=utf-8
+{
+  "message": "only Unity tests can be created here"
+}
+
+== update
+PUT /api/proj/app/1/test/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "Smoke 2",
+  "testConfig": {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "testId": 1,
+    "test": null,
+    "executionType": 0,
+    "type": 0,
+    "allDevices": true,
+    "devices": [],
+    "unity": null,
+    "scenario": null,
+    "recordSession": false
+  },
+  "testRuns": null,
+  "last": null
+}
+
+== update without name
+PUT /api/proj/app/1/test/1
+400 application/json; charset=utf-8
+{
+  "message": "the test needs a name"
+}
+
+== run unknown test
+POST /api/proj/app/1/test/99/run
+404 application/json; charset=utf-8
+{
+  "message": "not found: test 99"
+}
+
+== run invalid test id
+POST /api/proj/app/1/test/abc/run
+400 application/json; charset=utf-8
+{
+  "message": "invalid test id"
+}
+
+== cancel finished run
+POST /api/proj/app/1/test/1/run/1/cancel
+404 application/json; charset=utf-8
+{
+  "message": "not found: no active runner for test run 1"
+}
+
+== cancel invalid run id
+POST /api/proj/app/1/test/1/run/abc/cancel
+400 application/json; charset=utf-8
+{
+  "message": "invalid run id"
+}
+

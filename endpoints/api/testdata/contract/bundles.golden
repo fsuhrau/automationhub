@@ -1,0 +1,209 @@
+== list
+GET /api/proj/app/1/bundles
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "appId": 1,
+    "app": null,
+    "name": "app.apk",
+    "platform": "android",
+    "version": "1.0",
+    "appPath": "",
+    "identifier": "com.example.app",
+    "additional": "",
+    "hash": "abc",
+    "size": 0,
+    "tags": "release",
+    "android": {
+      "LaunchActivity": ""
+    },
+    "executable": {
+      "Executable": ""
+    },
+    "runCount": 2
+  }
+]
+
+== get
+GET /api/proj/app/1/bundle/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "app.apk",
+  "platform": "android",
+  "version": "1.0",
+  "appPath": "",
+  "identifier": "com.example.app",
+  "additional": "",
+  "hash": "abc",
+  "size": 0,
+  "tags": "release",
+  "android": {
+    "LaunchActivity": ""
+  },
+  "executable": {
+    "Executable": ""
+  },
+  "runCount": 2,
+  "runs": [
+    {
+      "id": 2,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke"
+    },
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke"
+    }
+  ]
+}
+
+== get unknown
+GET /api/proj/app/1/bundle/99
+404 application/json; charset=utf-8
+{
+  "message": "bundle 99 not found"
+}
+
+== icon
+GET /api/proj/app/1/bundle/1/icon
+404 application/json; charset=utf-8
+{
+  "message": "the bundle has no icon"
+}
+
+== read again
+POST /api/proj/app/1/bundle/1/read
+409 application/json; charset=utf-8
+{
+  "message": "bundle 1 has no file"
+}
+
+== archive
+POST /api/proj/app/1/bundle/1/archive
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "app.apk",
+  "platform": "android",
+  "version": "1.0",
+  "appPath": "",
+  "identifier": "com.example.app",
+  "additional": "",
+  "hash": "abc",
+  "size": 0,
+  "tags": "release",
+  "android": {
+    "LaunchActivity": ""
+  },
+  "executable": {
+    "Executable": ""
+  },
+  "archivedAt": "<time>",
+  "runCount": 2,
+  "runs": [
+    {
+      "id": 2,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke"
+    },
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "state": "not_running",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "unstable": 0,
+      "open": 0,
+      "testId": 1,
+      "testName": "Smoke"
+    }
+  ]
+}
+
+== update tags
+PUT /api/proj/app/1/bundle/1
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "appId": 1,
+  "app": null,
+  "name": "app.apk",
+  "platform": "android",
+  "version": "1.0",
+  "appPath": "",
+  "identifier": "com.example.app",
+  "additional": "",
+  "hash": "abc",
+  "size": 0,
+  "tags": "beta",
+  "android": {
+    "LaunchActivity": ""
+  },
+  "executable": {
+    "Executable": ""
+  }
+}
+
+== update unknown
+PUT /api/proj/app/1/bundle/99
+404 application/json; charset=utf-8
+{
+  "message": "bundle 99 not found"
+}
+
+== delete
+DELETE /api/proj/app/1/bundle/1
+200 
+
+
+== delete unknown
+DELETE /api/proj/app/1/bundle/99
+404 application/json; charset=utf-8
+{
+  "message": "bundle 99 not found"
+}
+
+== upload without file
+POST /api/proj/app/1/upload
+400 application/json; charset=utf-8
+{
+  "message": "get form err: request Content-Type isn't multipart/form-data"
+}
+

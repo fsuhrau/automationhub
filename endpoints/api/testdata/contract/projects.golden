@@ -1,0 +1,294 @@
+== stats
+GET /api/stats
+200 application/json; charset=utf-8
+{
+  "appsCount": 1,
+  "appsStorageSize": 0,
+  "databaseSize": 0,
+  "systemMemoryUsage": 0,
+  "systemUptime": 0,
+  "testsLastProtocols": [
+    {
+      "id": 2,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "testRunId": 2,
+      "testRun": {
+        "id": 2,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testId": 1,
+        "test": {
+          "id": 1,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "appId": 1,
+          "app": null,
+          "name": "Smoke",
+          "testConfig": {
+            "id": 0,
+            "createdAt": "<time>",
+            "deletedAt": null,
+            "testId": 0,
+            "test": null,
+            "executionType": 0,
+            "type": 0,
+            "allDevices": false,
+            "devices": null,
+            "unity": null,
+            "scenario": null,
+            "recordSession": false
+          },
+          "testRuns": null,
+          "last": null
+        },
+        "appBinaryId": 1,
+        "appBinary": null,
+        "startUrl": "",
+        "sessionId": "session",
+        "parameter": "",
+        "protocols": null,
+        "log": null,
+        "deviceStatus": null
+      },
+      "deviceId": 1,
+      "device": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "companyId": 0,
+        "deviceIdentifier": "dev-1",
+        "alias": "",
+        "nodeId": 0,
+        "node": null,
+        "deviceType": 0,
+        "name": "Pixel",
+        "manager": "android_device",
+        "os": "",
+        "osVersion": "",
+        "osInfos": "",
+        "targetVersion": "",
+        "deviceParameter": null,
+        "statusLog": null,
+        "connectionType": 0,
+        "connectionParameter": null,
+        "isAcknowledged": false,
+        "status": 0,
+        "isLocked": false,
+        "dev": null,
+        "connection": null,
+        "platformType": 1,
+        "customParameter": null
+      },
+      "testName": "Suite Case",
+      "startedAt": "<time>",
+      "testResult": 3
+    },
+    {
+      "id": 1,
+      "createdAt": "<time>",
+      "deletedAt": null,
+      "testRunId": 1,
+      "testRun": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "testId": 1,
+        "test": {
+          "id": 1,
+          "createdAt": "<time>",
+          "deletedAt": null,
+          "appId": 1,
+          "app": null,
+          "name": "Smoke",
+          "testConfig": {
+            "id": 0,
+            "createdAt": "<time>",
+            "deletedAt": null,
+            "testId": 0,
+            "test": null,
+            "executionType": 0,
+            "type": 0,
+            "allDevices": false,
+            "devices": null,
+            "unity": null,
+            "scenario": null,
+            "recordSession": false
+          },
+          "testRuns": null,
+          "last": null
+        },
+        "appBinaryId": 1,
+        "appBinary": null,
+        "startUrl": "",
+        "sessionId": "session",
+        "parameter": "",
+        "protocols": null,
+        "log": null,
+        "deviceStatus": null
+      },
+      "deviceId": 1,
+      "device": {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "companyId": 0,
+        "deviceIdentifier": "dev-1",
+        "alias": "",
+        "nodeId": 0,
+        "node": null,
+        "deviceType": 0,
+        "name": "Pixel",
+        "manager": "android_device",
+        "os": "",
+        "osVersion": "",
+        "osInfos": "",
+        "targetVersion": "",
+        "deviceParameter": null,
+        "statusLog": null,
+        "connectionType": 0,
+        "connectionParameter": null,
+        "isAcknowledged": false,
+        "status": 0,
+        "isLocked": false,
+        "dev": null,
+        "connection": null,
+        "platformType": 1,
+        "customParameter": null
+      },
+      "testName": "Suite Case",
+      "startedAt": "<time>",
+      "testResult": 3
+    }
+  ],
+  "testsLastFailed": [],
+  "deviceCount": 1,
+  "deviceBooted": 0
+}
+
+== list
+GET /api/projects
+200 application/json; charset=utf-8
+[
+  {
+    "id": 1,
+    "createdAt": "<time>",
+    "deletedAt": null,
+    "identifier": "proj",
+    "name": "Project",
+    "companyId": 0,
+    "accessTokens": null,
+    "users": null,
+    "apps": [
+      {
+        "id": 1,
+        "createdAt": "<time>",
+        "deletedAt": null,
+        "projectId": 1,
+        "project": null,
+        "name": "App",
+        "identifier": "com.example.app",
+        "platform": 1,
+        "parameter": [
+          {
+            "type": "string",
+            "id": 1,
+            "createdAt": "<time>",
+            "deletedAt": null,
+            "appId": 1,
+            "app": null,
+            "name": "level"
+          }
+        ]
+      }
+    ]
+  }
+]
+
+== create
+POST /api/project
+201 application/json; charset=utf-8
+{
+  "id": 2,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "new-project",
+  "name": "New Project",
+  "companyId": 0,
+  "accessTokens": null,
+  "users": null,
+  "apps": null
+}
+
+== create without name
+POST /api/project
+400 application/json; charset=utf-8
+{
+  "message": "the project needs a name"
+}
+
+== create malformed
+POST /api/project
+400 application/json; charset=utf-8
+{
+  "message": "unexpected EOF"
+}
+
+== update
+PUT /api/project/proj
+200 application/json; charset=utf-8
+{
+  "id": 1,
+  "createdAt": "<time>",
+  "deletedAt": null,
+  "identifier": "proj",
+  "name": "Renamed",
+  "companyId": 0,
+  "accessTokens": null,
+  "users": null,
+  "apps": null
+}
+
+== update unknown
+PUT /api/project/nope
+500 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== delete
+DELETE /api/project/1
+200 
+
+
+== delete unknown
+DELETE /api/project/99
+500 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+
+== delete by identifier
+DELETE /api/project/proj
+500 application/json; charset=utf-8
+{
+  "message": "SQL logic error: no such column: proj (1)"
+}
+
+== data traversal
+GET /api/data/..%2Fsecret
+404 text/plain
+404 page not found
+
+== data missing
+GET /api/data/missing.txt
+404 text/plain; charset=utf-8
+404 page not found
+
+== unknown project
+GET /api/nope/apps
+404 application/json; charset=utf-8
+{
+  "message": "record not found"
+}
+

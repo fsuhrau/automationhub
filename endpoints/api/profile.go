@@ -43,14 +43,6 @@ func personalToken(t models.AccessToken) PersonalToken {
 	return PersonalToken{ID: t.ID, Name: t.Name, Hint: t.Hint, CreatedAt: t.CreatedAt, ExpiresAt: t.ExpiresAt, LastUsedAt: t.LastUsedAt}
 }
 
-func (s *Service) registerProfile(api *gin.RouterGroup) {
-	me := api.Group("/me")
-	me.GET("", s.getProfile)
-	me.GET("/tokens", s.getPersonalTokens)
-	me.POST("/tokens", s.createPersonalToken)
-	me.DELETE("/tokens/:token_id", s.deletePersonalToken)
-}
-
 // currentUser resolves the stored user of the request. Sessions only carry
 // name, login and email: the name is unique, the login is the provider user
 // id for OAuth2 logins.
