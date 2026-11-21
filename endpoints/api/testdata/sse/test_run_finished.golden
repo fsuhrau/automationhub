@@ -1,0 +1,2 @@
+test_run_4102_finished {"projectId":"p","appId":2,"testRunId":4102,"testName":"n","success":true,"succeeded":1,"unstable":0,"failed":0,"testRun":"run"}
+test_runs {"projectId":"p","appId":2,"testRunId":4102,"state":"finished"}

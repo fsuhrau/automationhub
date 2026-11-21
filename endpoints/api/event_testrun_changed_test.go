@@ -16,7 +16,7 @@ func (r eventRecorder) PublishEvent(e sse.Event) { r <- e }
 // list runs through the "test_runs" channel.
 func TestTestRunStartAndFinishArePublished(t *testing.T) {
 	r := make(eventRecorder, 8)
-	RegisterEventTestRunChangedListener(r)
+	registerTestRunChangeBridges(r)
 
 	events.TestRunStarted.Trigger(events.TestRunStartedPayload{ProjectID: "p", AppID: 2, TestID: 3, TestRunID: 41})
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{ProjectID: "p", AppID: 2, TestRunID: 41})

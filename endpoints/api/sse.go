@@ -10,18 +10,8 @@ func (s *Service) PublishEvent(event sse.Event) {
 }
 
 func (s *Service) initSSE(api *gin.RouterGroup) {
-	RegisterEventDeviceStatusListener(s)
-	RegisterEventDeviceListListener(s)
+	registerSSEBridges(s)
 	RegisterEventDeviceLockListener(s)
-	RegisterEventAppCreatedListener(s)
-	RegisterEventTestCreatedListener(s)
-	RegisterNewTestProtocolListener(s)
-	RegisterNewTestProtocolLogListener(s)
-	RegisterNewTestLogEntryListener(s)
-	RegisterProtocolKeyListener(s)
-	RegisterEventTestRunFinishedListener(s)
-	RegisterEventTestRunChangedListener(s)
-	RegisterNodeStatusListener(s)
 
 	sseApi := api.Group("/sse")
 	// with and without trailing slash, so clients don't get a redirect first

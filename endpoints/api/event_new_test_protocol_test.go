@@ -26,7 +26,7 @@ func TestNewProtocolEventEncodesWithLiveDevice(t *testing.T) {
 	protocol.ID = 3
 
 	r := make(eventRecorder, 1)
-	RegisterNewTestProtocolListener(r)
+	registerProtocolBridges(r)
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: 7, Protocol: protocol})
 
 	var e sse.Event
