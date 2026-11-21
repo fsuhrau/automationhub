@@ -59,22 +59,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 	)
 
 	if cfg.Auth.AuthenticationRequired() {
-		if cfg.Auth.OAuth2 != nil {
-			oauth2.Setup(db, cfg.Auth.OAuth2.RedirectUrl, cfg.Auth.OAuth2.AuthUrl, cfg.Auth.OAuth2.TokenUrl, cfg.Auth.OAuth2.UserUrl, cfg.Auth.OAuth2.Credentials, cfg.Auth.Github.Scopes, []byte(cfg.Auth.Github.Secret))
-			sessionFunc = oauth2.Session("session")
-			sessionHandler = oauth2.SessionHandler()
-			authRoutes = oauth2.Routes
-		} else if cfg.Auth.Github != nil {
-			github.Setup(db, cfg.Auth.Github.RedirectUrl, cfg.Auth.Github.Credentials, cfg.Auth.Github.Scopes, []byte(cfg.Auth.Github.Secret))
-			sessionFunc = github.Session("session")
-			sessionHandler = github.SessionHandler()
-			authRoutes = github.Routes
-		} else if cfg.Auth.Password != nil {
-			password.Setup(db, []byte(cfg.Auth.Password.Secret))
-			sessionFunc = password.Session("session")
-			sessionHandler = password.SessionHandler()
-			authRoutes = password.Routes
-		}
+		sessionFunc, sessionHandler, authRoutes = setupAuth(db, cfg.Auth)
 	} else {
 		router.GET("/auth/session", func(context *gin.Context) {
 			context.JSON(200, gin.H{"status": "ok"})
@@ -95,6 +80,29 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 	}
 
 	return &Service{logger: logger, deviceManager: devices, publicRouter: router, authenticatedRouter: authRouter, cfg: cfg, sd: sd, db: db}
+}
+
+// setupAuth configures the first configured authentication provider
+// (OAuth2, GitHub, password) and returns its session middleware, session
+// handler and routes.
+func setupAuth(db *gorm.DB, auth config.Auth) (sessionFunc, sessionHandler gin.HandlerFunc, authRoutes func(*gin.Engine)) {
+	if auth.OAuth2 != nil {
+		oauth2.Setup(db, auth.OAuth2.RedirectUrl, auth.OAuth2.AuthUrl, auth.OAuth2.TokenUrl, auth.OAuth2.UserUrl, auth.OAuth2.Credentials, auth.OAuth2.Scopes, []byte(auth.OAuth2.Secret))
+		sessionFunc = oauth2.Session("session")
+		sessionHandler = oauth2.SessionHandler()
+		authRoutes = oauth2.Routes
+	} else if auth.Github != nil {
+		github.Setup(db, auth.Github.RedirectUrl, auth.Github.Credentials, auth.Github.Scopes, []byte(auth.Github.Secret))
+		sessionFunc = github.Session("session")
+		sessionHandler = github.SessionHandler()
+		authRoutes = github.Routes
+	} else if auth.Password != nil {
+		password.Setup(db, []byte(auth.Password.Secret))
+		sessionFunc = password.Session("session")
+		sessionHandler = password.SessionHandler()
+		authRoutes = password.Routes
+	}
+	return
 }
 
 func newRouter(logger *logrus.Logger) *gin.Engine {

@@ -51,9 +51,9 @@ type Password struct {
 
 type Auth struct {
 	Token    *Token    `yaml:"token,omitempty" mapstructure:"token"`
-	Password *Password `yaml:"token,omitempty" mapstructure:"password"`
+	Password *Password `yaml:"password,omitempty" mapstructure:"password"`
 	OAuth2   *OAuth2   `yaml:"oauth2,omitempty" mapstructure:"oauth2"`
-	Github   *Github   `yaml:"github,omitempty" mapstrucutre:"github"`
+	Github   *Github   `yaml:"github,omitempty" mapstructure:"github"`
 }
 
 func (a *Auth) AuthenticationRequired() bool {
