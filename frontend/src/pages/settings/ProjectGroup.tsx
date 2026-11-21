@@ -1,30 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Box, Button, Stack, TextField, Typography} from '@mui/material';
-import {updateProject} from '../../project/project.service';
-import IProject from '../../project/project';
-import {HubStateActions} from '../../application/HubState';
-import {useHubState} from '../../hooks/HubStateProvider';
+import {CopyButton, Section} from '../../components/common';
 import {useProjectContext} from '../../hooks/ProjectProvider';
-import {useError} from '../../ErrorProvider';
-import {CopyButton, messageOf, Section} from './parts';
+import {useProjectName} from './useProjectName';
 
 // ProjectGroup renames the project and shows its identifier
 const ProjectGroup: React.FC = () => {
-    const {dispatch} = useHubState();
-    const {project, projectIdentifier} = useProjectContext();
-    const {setError} = useError();
-    const [name, setName] = useState(project.name);
-    const [saving, setSaving] = useState(false);
-    useEffect(() => setName(project.name), [project.name]);
-
-    const changed = name.trim() !== project.name && name.trim() !== '';
-    const save = () => {
-        if (!changed) return;
-        setSaving(true);
-        updateProject(projectIdentifier, {...project, name: name.trim()} as IProject).then(() => {
-            dispatch({type: HubStateActions.ProjectAttributeUpdate, payload: {projectIdentifier, attribute: 'name', value: name.trim()}});
-        }).catch(e => setError(messageOf(e))).finally(() => setSaving(false));
-    };
+    const {projectIdentifier} = useProjectContext();
+    const {name, setName, changed, saving, save, undo} = useProjectName();
+    const empty = name.trim() === '';
 
     return <Section title="Project" description="How the project is called, and how tools address it.">
         <Stack spacing={2.5} sx={{maxWidth: 640}}>
@@ -33,10 +17,10 @@ const ProjectGroup: React.FC = () => {
                 save();
             }}>
                 <Stack direction="row" spacing={1} alignItems="flex-start">
-                    <TextField size="small" fullWidth label="Name" value={name} onChange={e => setName(e.target.value)}
-                               error={name.trim() === ''} helperText={name.trim() === '' ? 'A name is needed.' : 'Shown in the menu and on the project list.'}/>
+                    <TextField size="small" fullWidth={true} label="Name" value={name} onChange={e => setName(e.target.value)}
+                        error={empty} helperText={empty ? 'A name is needed.' : 'Shown in the menu and on the project list.'}/>
                     {changed && <Button type="submit" variant="contained" disabled={saving}>Save</Button>}
-                    {changed && <Button onClick={() => setName(project.name)}>Undo</Button>}
+                    {changed && <Button onClick={undo}>Undo</Button>}
                 </Stack>
             </Box>
             <Box>

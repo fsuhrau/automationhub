@@ -1,5 +1,9 @@
-// Settings without React: the app parameter form and its checks (the same
-// rules the master has), token display, and a node's config.
+// Settings without React: the new app form, the app parameter form and its
+// checks (the same rules the master has), token display, and a node's config.
+
+import {AppParameter, IAppData} from '../../types/app';
+import {getPlatformName, PlatformType} from '../../types/platform.type.enum';
+import {ParameterRequest} from '../../types/settings.requests';
 
 export type ParameterKind = 'string' | 'option';
 
@@ -44,7 +48,7 @@ export const parameterErrors = (f: ParameterForm, others: ParameterLike[], selfI
 };
 
 // parameterRequest is the body the master stores
-export const parameterRequest = (f: ParameterForm) => ({
+export const parameterRequest = (f: ParameterForm): ParameterRequest => ({
     name: f.name.trim(),
     type: f.kind === 'option'
         ? {type: 'option', defaultValue: f.defaultValue, options: tidyOptions(f.options)}
@@ -60,3 +64,37 @@ export const nodeConfig = (identifier: string, token: string, master: string): s
 
 export const isExpired = (expiresAt: Date | string | null | undefined, now: number): boolean =>
     !!expiresAt && new Date(expiresAt).valueOf() < now;
+
+// platforms that install a bundle need its identifier
+export const needsIdentifier = (p: PlatformType): boolean =>
+    p === PlatformType.Android || p === PlatformType.iOS || p === PlatformType.Mac;
+
+export const identifierLabel = (p: PlatformType): string => p === PlatformType.Android ? 'Package name' : 'Bundle identifier';
+
+// the identifier is asked for where the hub starts and stops the app by it
+export const asksIdentifier = (p: PlatformType): boolean =>
+    needsIdentifier(p) || p === PlatformType.Windows || p === PlatformType.Linux;
+
+export const platformLabel = (p: PlatformType): string => p === PlatformType.Editor ? 'Unity editor' : getPlatformName(p);
+
+export interface NewAppErrors {
+    name?: string,
+    identifier?: string,
+}
+
+export const newAppErrors = (name: string, platform: PlatformType, identifier: string): NewAppErrors => {
+    const errors: NewAppErrors = {};
+    if (name.trim() === '') errors.name = 'A name is needed.';
+    if (needsIdentifier(platform) && identifier.trim() === '') {
+        errors.identifier = `The ${identifierLabel(platform).toLowerCase()} is needed to install bundles.`;
+    }
+    return errors;
+};
+
+// sortApps lists apps by platform, then by name
+export const sortApps = (apps: IAppData[]): IAppData[] =>
+    [...apps].sort((a, b) => a.platform - b.platform || a.name.localeCompare(b.name));
+
+// parameterChoices are the options of a choice parameter, none for text
+export const parameterChoices = (p: AppParameter): string[] =>
+    p.type.type === 'option' ? (p.type as { options?: string[] }).options ?? [] : [];

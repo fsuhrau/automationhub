@@ -1,18 +1,27 @@
+import {useMemo} from 'react';
+import {ApiClient, createApiClient} from '../api/ApiClient';
+import {useApiClient} from '../api/ApiClientProvider';
 import http from '../http-common';
-import IProject from "./project";
+import IProject from './project';
 
-export const getProjects = (): Promise<IProject[]> => {
-    return http.get('/projects').then(response => response.data)
+export interface ProjectService {
+    list: () => Promise<IProject[]>,
+    update: (id: string, data: IProject) => Promise<IProject>,
+    create: (data: Pick<IProject, 'name'>) => Promise<IProject>,
+    remove: (id: string) => Promise<void>,
+}
+
+export const projectService = (api: ApiClient): ProjectService => ({
+    list: () => api.get('/projects'),
+    update: (id, data) => api.put(`/project/${id}`, data),
+    create: (data) => api.post('/project', data),
+    remove: (id) => api.delete(`/project/${id}`),
+});
+
+export const useProjectService = (): ProjectService => {
+    const api = useApiClient();
+    return useMemo(() => projectService(api), [api]);
 };
 
-export const updateProject = (id: string, data: IProject): Promise<IProject> => {
-    return http.put(`/project/${id}`, data).then(response => response.data)
-};
-
-export const createProject = (data: IProject): Promise<IProject> => {
-    return http.post('/project', data).then(response => response.data)
-};
-
-export const deleteProject = (id: string): Promise<void> => {
-    return http.delete(`/project/${id}`)
-};
+/** @deprecated legacy wrapper, removed in F13 */
+export const getProjects = (): Promise<IProject[]> => projectService(createApiClient(http)).list();

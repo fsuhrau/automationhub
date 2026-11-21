@@ -1,36 +1,28 @@
-import http from '../http-common';
+import {useMemo} from 'react';
 import {Dayjs} from 'dayjs';
+import {ApiClient} from '../api/ApiClient';
+import {useApiClient} from '../api/ApiClientProvider';
+import {ICreatedPersonalToken, IPersonalToken, IProfile} from '../types/profile.token';
 
-export interface IProfile {
-    id: number,
-    name: string,
-    login: string,
-    email: string,
+export interface ProfileService {
+    profile: () => Promise<IProfile>,
+    tokens: () => Promise<IPersonalToken[]>,
+    // an expiry is the end of that day
+    createToken: (name: string, expiresAt: Dayjs | null) => Promise<ICreatedPersonalToken>,
+    deleteToken: (id: number) => Promise<void>,
 }
 
-export interface IPersonalToken {
-    id: number,
-    name: string,
-    // last characters of the token, for recognizing it
-    hint: string,
-    createdAt: string,
-    expiresAt: string | null,
-    lastUsedAt: string | null,
-}
+export const profileService = (api: ApiClient): ProfileService => ({
+    profile: () => api.get('/me'),
+    tokens: () => api.get('/me/tokens'),
+    createToken: (name, expiresAt) =>
+        api.post('/me/tokens', {name, expiresAt: expiresAt ? expiresAt.endOf('day').toISOString() : null}),
+    deleteToken: async (id) => {
+        await api.delete(`/me/tokens/${id}`);
+    },
+});
 
-// the value is only returned once, when the token is created
-export interface ICreatedPersonalToken extends IPersonalToken {
-    token: string,
-}
-
-export const getProfile = (): Promise<IProfile> =>
-    http.get('/me').then(r => r.data);
-
-export const getPersonalTokens = (): Promise<IPersonalToken[]> =>
-    http.get('/me/tokens').then(r => r.data);
-
-export const createPersonalToken = (name: string, expiresAt: Dayjs | null): Promise<ICreatedPersonalToken> =>
-    http.post('/me/tokens', {name, expiresAt: expiresAt ? expiresAt.endOf('day').toISOString() : null}).then(r => r.data);
-
-export const deletePersonalToken = (id: number): Promise<void> =>
-    http.delete(`/me/tokens/${id}`).then(() => undefined);
+export const useProfileService = (): ProfileService => {
+    const api = useApiClient();
+    return useMemo(() => profileService(api), [api]);
+};

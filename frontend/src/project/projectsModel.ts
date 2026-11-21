@@ -37,9 +37,19 @@ export const matchesProject = (p: ProjectLike, text: string): boolean => {
 export const sortProjects = <T extends ProjectLike>(projects: T[], last: string | null): T[] =>
     [...projects].sort((a, b) => (a.identifier === last ? -1 : b.identifier === last ? 1 : a.name.localeCompare(b.name)));
 
+// visibleProjects are the projects matching the search, the last opened first
+export const visibleProjects = <T extends ProjectLike>(projects: T[], last: string | null, search: string): T[] =>
+    sortProjects(projects, last).filter(p => matchesProject(p, search));
+
+// the project list has a search box above this many projects
+export const SEARCH_FROM = 6;
+
+// the apps a project card names before "and n more"
+export const APPS_SHOWN = 4;
+
 const LAST_KEY = 'lastProject';
 
-export const rememberProject = (identifier: string) => {
+export const rememberProject = (identifier: string): void => {
     try {
         localStorage.setItem(LAST_KEY, identifier);
     } catch {
