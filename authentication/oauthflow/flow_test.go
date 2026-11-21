@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/internal/testkit"
@@ -117,20 +118,82 @@ func TestEnsureUser(t *testing.T) {
 	u := users{db: db, provider: "fake"}
 	p := Profile{ProviderUserID: "7", Name: "Ada", Email: "ada@example.com"}
 
-	for i := 0; i < 2; i++ {
-		if err := u.ensure(p); err != nil {
-			t.Fatal(err)
-		}
+	first, err := u.ensure(p)
+	if err != nil || first.ID == 0 || first.Name != "Ada" {
+		t.Fatalf("created %+v, %v", first, err)
+	}
+	again, err := u.ensure(p)
+	if err != nil || again.ID != first.ID {
+		t.Fatalf("second login got %+v, %v; want user %d", again, err, first.ID)
 	}
 	var n int64
 	db.Model(&models.UserAuth{}).Where("provider_user_id = ? AND email = ?", "7", "ada@example.com").Count(&n)
 	if n != 1 {
 		t.Errorf("%d accounts, want 1", n)
 	}
+}
 
-	// a different provider user with a taken name can't be created
-	if err := u.ensure(Profile{ProviderUserID: "8", Name: "Ada"}); err == nil {
-		t.Error("expected the name conflict to fail")
+// A taken display name never refuses or takes over a login: the new account
+// gets a free name of its own.
+func TestEnsureUserWithATakenName(t *testing.T) {
+	db := testkit.DB(t)
+	admin := testkit.User(db, testkit.WithName[models.User]("admin"))
+	u := users{db: db, provider: "fake"}
+
+	got, err := u.ensure(Profile{ProviderUserID: "8", Login: "mallory", Name: "admin"})
+
+	if err != nil || got.ID == admin.ID || got.Name != "admin (fake)" {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+}
+
+func TestEnsureUserFailures(t *testing.T) {
+	tests := map[string]struct {
+		setup func(db *gorm.DB)
+		p     Profile
+	}{
+		"auth already taken by an email": {func(db *gorm.DB) {
+			db.Create(&models.User{Name: "Ada", Auth: []models.UserAuth{{Provider: "fake", ProviderUserID: "7", Email: "a@x"}}})
+		}, Profile{ProviderUserID: "8", Name: "Bob", Email: "a@x"}},
+		"no auth table": {func(db *gorm.DB) { _ = db.Migrator().DropTable(&models.UserAuth{}) }, Profile{ProviderUserID: "8"}},
+		"no user table": {func(db *gorm.DB) { _ = db.Migrator().DropTable(&models.User{}) }, Profile{ProviderUserID: "8"}},
+		"every name taken": {func(db *gorm.DB) {
+			var all []models.User
+			for _, name := range nameCandidates(Profile{Name: "Ada"}, "fake") {
+				all = append(all, models.User{Name: name})
+			}
+			db.Create(&all)
+		}, Profile{ProviderUserID: "8", Name: "Ada"}},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			db := testkit.DB(t)
+			tc.setup(db)
+			if got, err := (users{db: db, provider: "fake"}).ensure(tc.p); err == nil {
+				t.Fatalf("expected an error, got %+v", got)
+			}
+		})
+	}
+}
+
+func TestNameCandidates(t *testing.T) {
+	tests := []struct {
+		name string
+		p    Profile
+		want []string
+	}{
+		{"display name", Profile{Name: "Ada", Login: "ada", ProviderUserID: "7"}, []string{"Ada", "Ada (github)", "Ada (github 2)", "Ada (github 3)"}},
+		{"login", Profile{Login: "ada", ProviderUserID: "7"}, []string{"ada", "ada (github)", "ada (github 2)"}},
+		{"provider user id", Profile{ProviderUserID: "7"}, []string{"7", "7 (github)", "7 (github 2)"}},
+		{"nothing", Profile{}, []string{"github", "github (github)", "github (github 2)"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := nameCandidates(tc.p, "github")
+			if len(got) != maxNameCounter+1 || !slices.Equal(got[:len(tc.want)], tc.want) {
+				t.Fatalf("got %d names, start %q", len(got), got[:len(tc.want)])
+			}
+		})
 	}
 }
 
@@ -152,7 +215,8 @@ func TestEnsureUserSurvivesAParallelCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := (users{db: db, provider: "fake"}).ensure(p); err != nil {
-		t.Errorf("parallel create reported as error: %v", err)
+	got, err := (users{db: db, provider: "fake"}).ensure(p)
+	if err != nil || got.Name != "Ada" {
+		t.Errorf("parallel create reported as error: %+v, %v", got, err)
 	}
 }

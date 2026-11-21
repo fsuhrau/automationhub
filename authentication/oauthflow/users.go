@@ -14,36 +14,41 @@ type users struct {
 	provider string
 }
 
-// ensure creates the account of profile when the provider's user is new.
-func (u users) ensure(p Profile) error {
-	found, err := u.exists(p)
-	if err != nil || found {
-		return err
+// ensure returns the account of profile and creates it when the provider's
+// user is new. Accounts are matched by the provider's user id only.
+func (u users) ensure(p Profile) (*models.User, error) {
+	found, err := u.find(p)
+	if err != nil || found != nil {
+		return found, err
+	}
+	name, err := u.freeName(p)
+	if err != nil {
+		return nil, err
 	}
 	user := models.User{
-		Name: p.Name,
+		Name: name,
 		Auth: []models.UserAuth{{ProviderUserID: p.ProviderUserID, Email: p.Email, Provider: u.provider}},
 	}
 	createErr := u.db.Create(&user).Error
 	if createErr == nil {
-		return nil
+		return &user, nil
 	}
 	// a parallel login of the same user may have created it first
-	if found, err := u.exists(p); err == nil && found {
-		return nil
+	if found, err := u.find(p); err == nil && found != nil {
+		return found, nil
 	}
-	return fmt.Errorf("create user: %w", createErr)
+	return nil, fmt.Errorf("create user: %w", createErr)
 }
 
-// exists tells whether the provider's user has an account.
-func (u users) exists(p Profile) (bool, error) {
+// find returns the account of the provider's user, nil if there is none.
+func (u users) find(p Profile) (*models.User, error) {
 	var auth models.UserAuth
-	err := u.db.First(&auth, "provider = ? and provider_user_id = ?", u.provider, p.ProviderUserID).Error
+	err := u.db.Preload("User").First(&auth, "provider = ? and provider_user_id = ?", u.provider, p.ProviderUserID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, nil
+		return nil, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("find user: %w", err)
+		return nil, fmt.Errorf("find user: %w", err)
 	}
-	return true, nil
+	return auth.User, nil
 }

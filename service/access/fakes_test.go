@@ -39,7 +39,7 @@ func (f *fakeRepo) FindUser(_ context.Context, who authentication.User) (*models
 		return nil, err
 	}
 	for i := range f.users {
-		if f.users[i].Name == who.Name {
+		if f.users[i].ID == who.ID {
 			return &f.users[i], nil
 		}
 	}

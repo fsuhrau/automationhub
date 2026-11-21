@@ -1,6 +1,7 @@
 package password
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -156,5 +157,31 @@ func TestRegistrationProblem(t *testing.T) {
 		if got := c.r.problem(); !strings.Contains(got, c.want) || (c.want == "" && got != "") {
 			t.Errorf("%s: %q", name, got)
 		}
+	}
+}
+
+// Signing in by registering or by logging in puts the hub user id into the
+// session: it is what identifies the user.
+func TestSignInCarriesTheHubUserID(t *testing.T) {
+	r, gdb := setupRegister(t)
+	gdb.Create(&models.User{Name: "First"})
+	register := post(r, "/auth/register", `{"name":"Ada","email":"ada@example.com","password":"long enough"}`)
+	var ada models.User
+	gdb.First(&ada, "name = ?", "Ada")
+	want := fmt.Sprintf(`"id":%d,`, ada.ID)
+
+	login := post(r, "/auth/login", `{"email":"ada@example.com","password":"long enough"}`)
+
+	if ada.ID < 2 || !strings.Contains(register.Body.String(), want) || !strings.Contains(login.Body.String(), want) {
+		t.Fatalf("want %s: register %s, login %s", want, register.Body, login.Body)
+	}
+	session := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/auth/session", nil)
+	for _, c := range login.Result().Cookies() {
+		req.AddCookie(c)
+	}
+	r.ServeHTTP(session, req)
+	if !strings.Contains(session.Body.String(), want) {
+		t.Fatalf("session without the id: %s", session.Body)
 	}
 }

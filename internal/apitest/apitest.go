@@ -32,7 +32,8 @@ type Env struct {
 	// config of WithConfig names them.
 	Paths config.Paths
 
-	t testing.TB
+	t   testing.TB
+	cfg *settings
 }
 
 type settings struct {
@@ -68,7 +69,7 @@ func New(t testing.TB, opts ...Option) *Env {
 		opt(&cfg)
 	}
 	cfg.cfg.Paths = withTempFolders(t, cfg.cfg.Paths)
-	env := &Env{DB: testkit.DB(t), Devices: &testkit.FakeDeviceManager{}, Nodes: &testkit.FakeNodes{}, Paths: cfg.cfg.Paths, t: t}
+	env := &Env{DB: testkit.DB(t), Devices: &testkit.FakeDeviceManager{}, Nodes: &testkit.FakeNodes{}, Paths: cfg.cfg.Paths, t: t, cfg: &cfg}
 	logger := logrus.New()
 	logger.SetOutput(io.Discard)
 	built := wiring.BuildAPI(wiring.Infra{DB: env.DB, Devices: env.Devices, Nodes: env.Nodes, Config: cfg.cfg, Logger: logger})
@@ -104,6 +105,10 @@ func (s *settings) authenticate(c *gin.Context) {
 		c.Set(token.AuthTokenKey, s.tokenOwner)
 	}
 }
+
+// SignInAs makes the following requests come from the browser session of
+// the user, in place of the one the environment started with.
+func (e *Env) SignInAs(user authentication.User) { e.cfg.user = &user }
 
 // Do sends a request to the router; a non-nil body is sent as JSON.
 func (e *Env) Do(method, path string, body any) *httptest.ResponseRecorder {

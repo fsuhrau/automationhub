@@ -32,6 +32,7 @@ func Run(t *testing.T, c Case) {
 		"signed in user":                signedInUserPassesLoginRoute,
 		"concurrent logins":             concurrentLoginsDoNotInterfere,
 		"session answers":               sessionAnswersNameTheMethod,
+		"display name is not identity":  displayNameDoesNotSelectTheAccount,
 	}
 	for name, run := range scenarios {
 		t.Run(name, func(t *testing.T) { run(t, c) })

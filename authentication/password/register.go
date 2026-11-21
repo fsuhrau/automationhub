@@ -92,7 +92,7 @@ func (p *Provider) register(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
-	authUser := authentication.User{Login: user.Name, Name: user.Name, Email: req.Email}
+	authUser := authentication.User{ID: user.ID, Login: user.Name, Name: user.Name, Email: req.Email}
 	p.guard.SignIn(ctx, authUser)
 	ctx.JSON(http.StatusOK, gin.H{"user": authUser})
 }

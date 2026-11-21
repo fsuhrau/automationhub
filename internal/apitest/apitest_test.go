@@ -3,6 +3,7 @@ package apitest_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/authentication"
@@ -36,7 +37,7 @@ func TestRequestSendsThePreparedRequest(t *testing.T) {
 }
 
 func TestWithUserSignsTheRequestsIn(t *testing.T) {
-	env := apitest.New(t, apitest.WithUser(authentication.User{Name: "Alice"}))
+	env := apitest.New(t, apitest.WithUser(authentication.User{ID: 1, Name: "Alice"}))
 	testkit.User(env.DB, testkit.WithName[models.User]("Alice"))
 
 	if rec := env.Do(http.MethodGet, "/api/me", nil); rec.Code != http.StatusOK {
@@ -57,5 +58,18 @@ func TestNewExposesTheFakesAndRoutes(t *testing.T) {
 
 	if env.Devices == nil || env.Nodes == nil || len(env.Router.Routes()) == 0 {
 		t.Fatal("env is not wired")
+	}
+}
+
+func TestSignInAsChangesTheUserOfTheNextRequests(t *testing.T) {
+	env := apitest.New(t, apitest.WithUser(authentication.User{ID: 1, Name: "Alice"}))
+	testkit.User(env.DB, testkit.WithName[models.User]("Alice"))
+	testkit.User(env.DB, testkit.WithName[models.User]("Bob"))
+	env.SignInAs(authentication.User{ID: 2, Name: "Alice"})
+
+	rec := env.Do(http.MethodGet, "/api/me", nil)
+
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"name":"Bob"`) {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body)
 	}
 }

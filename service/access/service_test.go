@@ -45,7 +45,7 @@ func TestNewUsesTheRealGeneratorsByDefault(t *testing.T) {
 	}
 	repo.users = []models.User{{Model: models.Model{ID: 1}, Name: "Alice"}}
 	future := time.Now().Add(time.Hour)
-	personal, err := svc.CreatePersonalToken(ctx(), authentication.User{Name: "Alice"}, access.NewToken{Name: "x", ExpiresAt: &future})
+	personal, err := svc.CreatePersonalToken(ctx(), authentication.User{ID: 1, Name: "Alice"}, access.NewToken{Name: "x", ExpiresAt: &future})
 	if err != nil || !strings.HasPrefix(personal.Plain, "ahp_") {
 		t.Fatalf("personal token %+v, %v", personal, err)
 	}

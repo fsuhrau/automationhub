@@ -53,7 +53,7 @@ func projectCases() []contractCase {
 
 func settingsCases() []contractCase {
 	s := p + "/settings"
-	user := apitest.WithUser(authentication.User{Name: "Alice"})
+	user := apitest.WithUser(authentication.User{ID: 1, Name: "Alice"})
 	return []contractCase{
 		{name: "users", route: "GET /api/:project_id/settings/users", path: s + "/users"},
 		{name: "tokens", route: "GET /api/:project_id/settings/access_tokens", path: s + "/access_tokens"},
@@ -74,7 +74,7 @@ func settingsCases() []contractCase {
 }
 
 func profileCases() []contractCase {
-	user := apitest.WithUser(authentication.User{Name: "Alice"})
+	user := apitest.WithUser(authentication.User{ID: 1, Name: "Alice"})
 	return []contractCase{
 		{name: "me", route: "GET /api/me", path: "/api/me", opts: []apitest.Option{user}},
 		{name: "me signed out", route: "GET /api/me", path: "/api/me"},

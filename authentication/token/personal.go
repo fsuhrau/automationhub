@@ -67,7 +67,7 @@ func authenticatePersonal(db *gorm.DB, ctx *gin.Context, token *models.AccessTok
 	if err := db.Preload("Auth").First(&user, *token.UserID).Error; err != nil {
 		return false
 	}
-	authUser := authentication.User{Login: user.Name, Name: user.Name, Role: user.Role}
+	authUser := authentication.User{ID: user.ID, Login: user.Name, Name: user.Name, Role: user.Role}
 	for _, a := range user.Auth {
 		if a.Email != "" {
 			authUser.Email = a.Email

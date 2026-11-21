@@ -39,10 +39,12 @@ func (g *Guard) Middleware(name string) gin.HandlerFunc {
 	return sessions.Sessions(name, g.store)
 }
 
-// User returns the signed-in user of the request.
+// User returns the signed-in user of the request. A session without a hub
+// user id (a cookie from before sessions carried it) names nobody, so its
+// holder is signed out and has to sign in again.
 func (g *Guard) User(ctx *gin.Context) (authentication.User, bool) {
 	user, ok := sessions.Default(ctx).Get(authentication.SessionKey).(authentication.User)
-	return user, ok
+	return user, ok && user.ID != 0
 }
 
 // SignIn makes user the signed-in user of the request and of the session.

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,7 +36,7 @@ func server(db *gorm.DB) *gin.Engine {
 		v, _ := c.Get(authentication.UserKey)
 		switch u := v.(type) {
 		case authentication.User:
-			c.String(http.StatusOK, "user:"+u.Name+":"+u.Email)
+			c.String(http.StatusOK, fmt.Sprintf("user:%d:%s:%s", u.ID, u.Name, u.Email))
 		case string:
 			c.String(http.StatusOK, "token:"+u)
 		}
@@ -82,7 +83,7 @@ func TestPersonalTokenActsAsUser(t *testing.T) {
 	r := server(db)
 
 	w := get(r, "/api/game/x", plain)
-	if w.Code != http.StatusOK || w.Body.String() != "user:Fabian:f@example.com" {
+	if w.Code != http.StatusOK || w.Body.String() != fmt.Sprintf("user:%d:Fabian:f@example.com", user.ID) {
 		t.Fatalf("personal token: %d %s", w.Code, w.Body)
 	}
 	// works in any project, like the session of the user

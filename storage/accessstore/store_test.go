@@ -121,9 +121,10 @@ func TestUsersAndFindUser(t *testing.T) {
 		who  authentication.User
 		want string
 	}{
-		{"by name", authentication.User{Name: "Alice"}, "Alice"},
-		{"by login", authentication.User{Name: "Unknown", Login: "bob-login"}, "Bob"},
-		{"by email", authentication.User{Email: "alice@example.com"}, "Alice"},
+		{"first user", authentication.User{ID: 1}, "Alice"},
+		{"second user", authentication.User{ID: 2}, "Bob"},
+		// labels of the session never select the account
+		{"name of another user", authentication.User{ID: 2, Name: "Alice", Email: "alice@example.com"}, "Bob"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -133,10 +134,25 @@ func TestUsersAndFindUser(t *testing.T) {
 			}
 		})
 	}
-	for _, who := range []authentication.User{{}, {Name: "Nobody", Login: "x", Email: "y"}} {
+	unknown := []authentication.User{
+		{},
+		{ID: 99},
+		// no id: not found by name, login or email, however well they match
+		{Name: "Alice", Login: "bob-login", Email: "alice@example.com"},
+	}
+	for _, who := range unknown {
 		_, err := store.FindUser(ctx(), who)
 		wantKind(t, err, apperr.KindNotFound)
 	}
+}
+
+func TestFindUserReportsDatabaseFailures(t *testing.T) {
+	store, db := setup(t)
+	_ = db.Migrator().DropTable(&models.User{})
+
+	_, err := store.FindUser(ctx(), authentication.User{ID: 1})
+
+	wantKind(t, err, apperr.KindInternal)
 }
 
 func TestNodeLifecycle(t *testing.T) {

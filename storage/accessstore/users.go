@@ -16,37 +16,16 @@ func (s *Store) Users(ctx context.Context) ([]models.User, error) {
 	return users, storeerr.Map(err, "users")
 }
 
-// FindUser loads the stored user of a session. Sessions only carry name,
-// login and email: the name is unique, the login is the provider user id
-// for OAuth2 logins.
+// FindUser loads the stored user of a session by its hub user id. Names,
+// logins and emails are labels the user may choose, so they never select an
+// account; a session without an id finds nobody.
 func (s *Store) FindUser(ctx context.Context, who authentication.User) (*models.User, error) {
-	db := s.db.WithContext(ctx)
-	if who.Name != "" {
-		var user models.User
-		if err := db.First(&user, "name = ?", who.Name).Error; err == nil {
-			return &user, nil
-		}
+	if who.ID == 0 {
+		return nil, storeerr.Map(gorm.ErrRecordNotFound, "user")
 	}
-	for _, q := range []struct{ query, value string }{
-		{"provider_user_id = ?", who.Login},
-		{"email = ?", who.Email},
-	} {
-		if user := userByAuth(db, q.query, q.value); user != nil {
-			return user, nil
-		}
+	var user models.User
+	if err := s.db.WithContext(ctx).First(&user, who.ID).Error; err != nil {
+		return nil, storeerr.Map(err, "user")
 	}
-	return nil, storeerr.Map(gorm.ErrRecordNotFound, "user")
-}
-
-// userByAuth finds the user that owns the login method matching the query,
-// nil if there is none.
-func userByAuth(db *gorm.DB, query, value string) *models.User {
-	if value == "" {
-		return nil
-	}
-	var auth models.UserAuth
-	if err := db.Preload("User").First(&auth, query, value).Error; err != nil {
-		return nil
-	}
-	return auth.User
+	return &user, nil
 }

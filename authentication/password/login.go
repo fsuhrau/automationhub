@@ -35,6 +35,7 @@ func (p *Provider) login(ctx *gin.Context) {
 		return
 	}
 	user := authentication.User{
+		ID:    account.User.ID,
 		Login: account.User.Name,
 		Role:  account.User.Name,
 		Name:  account.User.Name,

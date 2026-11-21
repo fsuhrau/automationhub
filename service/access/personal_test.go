@@ -10,7 +10,7 @@ import (
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
-func alice() authentication.User { return authentication.User{Name: "Alice"} }
+func alice() authentication.User { return authentication.User{ID: 1, Name: "Alice"} }
 
 func personalRepo() *fakeRepo {
 	return &fakeRepo{

@@ -38,10 +38,10 @@ func TestProfile(t *testing.T) {
 		user authentication.User
 		want profile.ProfileResponse
 	}{
-		{"by name", authentication.User{Name: "Alice", Login: "al", Email: "a@x"}, profile.ProfileResponse{ID: 1, Name: "Alice", Login: "al", Email: "a@x"}},
-		// an OAuth2 session without a stored name resolves by its login
-		{"by login", authentication.User{Name: "Unknown Name", Login: "bob-login"}, profile.ProfileResponse{ID: 2, Name: "Bob", Login: "bob-login"}},
-		{"by email", authentication.User{Email: "alice@example.com"}, profile.ProfileResponse{ID: 1, Name: "Alice", Email: "alice@example.com"}},
+		{"by id", authentication.User{ID: 1, Name: "Alice", Login: "al", Email: "a@x"}, profile.ProfileResponse{ID: 1, Name: "Alice", Login: "al", Email: "a@x"}},
+		// the name, login and email of a session are labels: they never select the account
+		{"name of another user", authentication.User{ID: 2, Name: "Alice", Login: "bob-login"}, profile.ProfileResponse{ID: 2, Name: "Bob", Login: "bob-login"}},
+		{"email of another user", authentication.User{ID: 2, Email: "alice@example.com"}, profile.ProfileResponse{ID: 2, Name: "Bob", Email: "alice@example.com"}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -51,6 +51,16 @@ func TestProfile(t *testing.T) {
 				t.Fatalf("%d %+v", rec.Code, got)
 			}
 		})
+	}
+}
+
+// A session that carries no user id, e.g. an old cookie, resolves to nobody,
+// whatever name, login or email it has.
+func TestSessionWithoutIDHasNoProfile(t *testing.T) {
+	env := newEnv(t, apitest.WithUser(authentication.User{Name: "Alice", Login: "bob-login", Email: "alice@example.com"}))
+
+	if rec := env.Do("GET", "/api/me", nil); rec.Code != http.StatusNotFound {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
 	}
 }
 
@@ -72,7 +82,7 @@ func TestSignedOut(t *testing.T) {
 }
 
 func TestPersonalTokens(t *testing.T) {
-	env := newEnv(t, apitest.WithUser(authentication.User{Name: "Alice"}))
+	env := newEnv(t, apitest.WithUser(authentication.User{ID: 1, Name: "Alice"}))
 
 	rec := env.Do("POST", "/api/me/tokens", map[string]string{"name": "claude"})
 	if rec.Code != http.StatusCreated {
@@ -104,7 +114,7 @@ func TestPersonalTokens(t *testing.T) {
 
 // Only the owner sees and revokes a personal token.
 func TestPersonalTokensBelongToTheirUser(t *testing.T) {
-	env := newEnv(t, apitest.WithUser(authentication.User{Name: "Bob"}))
+	env := newEnv(t, apitest.WithUser(authentication.User{ID: 2, Name: "Bob"}))
 	alice := uint(1)
 	theirs := models.AccessToken{UserID: &alice, Name: "alices", Token: "sha256:a"}
 	env.DB.Create(&theirs)
@@ -117,8 +127,21 @@ func TestPersonalTokensBelongToTheirUser(t *testing.T) {
 	}
 }
 
+// A session with the name of Alice but the id of Bob creates the token for Bob.
+func TestPersonalTokenGoesToTheSessionUserNotTheNamesake(t *testing.T) {
+	env := newEnv(t, apitest.WithUser(authentication.User{ID: 2, Name: "Alice"}))
+
+	rec := env.Do("POST", "/api/me/tokens", map[string]string{"name": "x"})
+
+	var stored models.AccessToken
+	env.DB.First(&stored, testkit.Decode[profile.CreatedPersonalToken](t, rec).ID)
+	if rec.Code != http.StatusCreated || stored.UserID == nil || *stored.UserID != 2 {
+		t.Fatalf("%d, token of user %v", rec.Code, stored.UserID)
+	}
+}
+
 func TestPersonalTokenRules(t *testing.T) {
-	env := newEnv(t, apitest.WithUser(authentication.User{Name: "Alice"}))
+	env := newEnv(t, apitest.WithUser(authentication.User{ID: 1, Name: "Alice"}))
 	tests := []struct {
 		name, body string
 	}{
@@ -140,7 +163,7 @@ func TestPersonalTokenRules(t *testing.T) {
 
 // A leaked access token can't create new tokens or revoke the owner's.
 func TestAccessTokensCannotManageTokens(t *testing.T) {
-	env := newEnv(t, apitest.WithUser(authentication.User{Name: "Alice"}), apitest.WithAccessToken(1))
+	env := newEnv(t, apitest.WithUser(authentication.User{ID: 1, Name: "Alice"}), apitest.WithAccessToken(1))
 	if rec := env.Do("POST", "/api/me/tokens", map[string]string{"name": "x"}); rec.Code != http.StatusForbidden {
 		t.Fatalf("token created with a token: %d", rec.Code)
 	}

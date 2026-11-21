@@ -56,12 +56,13 @@ func (f *Flow) callback(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "failed to get user"})
 		return
 	}
-	if err := f.users.ensure(profile); err != nil {
+	user, err := f.users.ensure(profile)
+	if err != nil {
 		logrus.Errorf("[%s] %v", f.strategy.Name(), err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
-	f.guard.SignIn(ctx, authentication.User{Login: profile.Login, Name: profile.Name, URL: profile.URL})
+	f.guard.SignIn(ctx, authentication.User{ID: user.ID, Login: profile.Login, Name: user.Name, URL: profile.URL})
 	if to := f.strategy.SuccessRedirect(); to != "" {
 		ctx.Redirect(http.StatusTemporaryRedirect, to)
 	}

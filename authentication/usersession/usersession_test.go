@@ -31,6 +31,10 @@ func newRouter(opts Options) (*gin.Engine, *Guard) {
 	g.Register(r)
 	r.GET("/private", g.RequireUser(), func(c *gin.Context) { c.String(http.StatusOK, "in") })
 	r.POST("/signin", func(c *gin.Context) {
+		g.SignIn(c, authentication.User{ID: 1, Login: "ada", Name: "Ada"})
+		c.String(http.StatusOK, "ok")
+	})
+	r.POST("/signin-legacy", func(c *gin.Context) {
 		g.SignIn(c, authentication.User{Login: "ada", Name: "Ada"})
 		c.String(http.StatusOK, "ok")
 	})
@@ -96,12 +100,25 @@ func TestSaveFailuresAreLogged(t *testing.T) {
 	ctx.Request = httptest.NewRequest("POST", "/", nil)
 	ctx.Set(sessions.DefaultKey, failingSession{values: map[interface{}]interface{}{}})
 
-	g.SignIn(ctx, authentication.User{Login: "ada"})
+	g.SignIn(ctx, authentication.User{ID: 1, Login: "ada"})
 	if _, ok := g.User(ctx); !ok {
 		t.Error("the user should be signed in for the request even if saving fails")
 	}
 	g.Logout(ctx)
 	if _, ok := g.User(ctx); ok {
 		t.Error("logout should remove the user")
+	}
+}
+
+// A cookie from before sessions carried the hub user id names no user: the
+// holder is signed out and has to sign in again.
+func TestSessionWithoutUserIDIsSignedOut(t *testing.T) {
+	r, _ := newRouter(Options{Method: "m", LoginURL: "/in"})
+	legacy := do(r, "POST", "/signin-legacy", nil).Result().Cookies()
+
+	for _, path := range []string{"/private", "/auth/session"} {
+		if w := do(r, "GET", path, legacy); w.Code != http.StatusUnauthorized {
+			t.Errorf("%s with a legacy cookie: %d %s", path, w.Code, w.Body)
+		}
 	}
 }
