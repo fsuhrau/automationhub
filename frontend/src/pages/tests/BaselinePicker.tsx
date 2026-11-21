@@ -1,39 +1,20 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControlLabel,
-    InputAdornment,
-    List,
-    ListItemButton,
-    Stack,
-    Switch,
-    TextField,
-    Typography,
+    Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, InputAdornment, Stack, Switch, TextField, Typography,
 } from '@mui/material';
 import {SearchRounded} from '@mui/icons-material';
-import {getBaselines, IBaselineCandidate} from '../../services/test.run.service';
-import {useLoader} from '../../hooks/useLoader';
-import {formatDateTime} from '../../components/DateTime';
-import {parseTags} from '../apps/bundlesModel';
-import {averageOf, bundleLabel, Metric} from './protocolModel';
+import {IBaselineCandidate} from '../../types/protocol.baseline';
+import {ProtocolRef} from '../../types/test.run.refs';
+import {Metric} from './run/performanceModel';
+import {Candidates} from './run/parts/BaselineCandidates';
+import {BaselineCandidates, useBaselineCandidates} from './run/useBaselineCandidates';
 
 interface BaselinePickerProps {
     open: boolean,
     onClose: () => void,
     onPick: (c: IBaselineCandidate) => void,
-    projectIdentifier: string,
-    appId: number,
-    testId: number,
-    runId: number,
-    protocolId: number,
+    // the protocol that is compared
+    refs: ProtocolRef,
     // the device of the protocol; runs on others are marked
     deviceId: number | null | undefined,
     // the run compared with now, if one is picked
@@ -41,94 +22,47 @@ interface BaselinePickerProps {
     metrics: Metric[],
 }
 
-// BaselinePicker lists the other runs of the test that measured performance,
-// to pick one to compare with: by bundle name, version, tag or run id, on the
-// same device or on any
 // the master lists this many by default
 const SHOWN = 50;
 
-const BaselinePicker: React.FC<BaselinePickerProps> = (props) => {
-    const {open, onClose, onPick, projectIdentifier, appId, testId, runId, protocolId, deviceId, selectedRunId, metrics} = props;
-    const [text, setText] = useState('');
-    const [q, setQ] = useState('');
-    const [tag, setTag] = useState<string | null>(null);
-    const [anyDevice, setAnyDevice] = useState(false);
+const SearchBar: React.FC<{ search: BaselineCandidates }> = ({search}) =>
+    <Stack direction={{xs: 'column', sm: 'row'}} spacing={1.5} alignItems={{sm: 'center'}} useFlexGap={true}>
+        <TextField size="small" autoFocus={true} fullWidth={true} value={search.text} onChange={e => search.setText(e.target.value)}
+            placeholder="Bundle name, version, tag, parameter or run id" aria-label="Search runs"
+            slotProps={{input: {startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small"/></InputAdornment>}}}/>
+        <FormControlLabel sx={{flexShrink: 0, mr: 0}} label="Any device"
+            control={<Switch checked={search.anyDevice} onChange={e => search.setAnyDevice(e.target.checked)}/>}/>
+    </Stack>;
 
-    // search once typing pauses
-    useEffect(() => {
-        const t = setTimeout(() => setQ(text.trim()), 300);
-        return () => clearTimeout(t);
-    }, [text]);
+const TagChips: React.FC<{ search: BaselineCandidates }> = ({search}) => {
+    const tags = search.list?.tags ?? [];
+    if (tags.length === 0) return null;
+    return <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap={true} aria-label="Bundle tags">
+        {tags.map(t => <Chip key={t} size="small" label={t} color={search.tag === t ? 'primary' : 'default'}
+            variant={search.tag === t ? 'filled' : 'outlined'}
+            onClick={() => search.setTag(search.tag === t ? null : t)}/>)}
+    </Stack>;
+};
 
-    const {data, error, loading, retry} = useLoader(
-        () => open ? getBaselines(projectIdentifier, appId, testId, runId, protocolId, {q, tag: tag ?? undefined, anyDevice}) : null,
-        [open, projectIdentifier, appId, testId, runId, protocolId, q, tag, anyDevice]);
-    const shown = metrics.slice(0, 3);
-
-    return <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" aria-labelledby="baseline-title">
+// BaselinePicker lists the other runs of the test that measured performance,
+// to pick one to compare with: by bundle name, version, tag or run id, on the
+// same device or on any
+const BaselinePicker: React.FC<BaselinePickerProps> = ({open, onClose, onPick, refs, deviceId, selectedRunId, metrics}) => {
+    const search = useBaselineCandidates(open, refs);
+    const count = search.list?.candidates.length ?? 0;
+    return <Dialog open={open} onClose={onClose} fullWidth={true} maxWidth="md" aria-labelledby="baseline-title">
         <DialogTitle id="baseline-title">Compare with another run</DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers={true}>
             <Stack spacing={1.5}>
-                <Stack direction={{xs: 'column', sm: 'row'}} spacing={1.5} alignItems={{sm: 'center'}} useFlexGap>
-                    <TextField size="small" autoFocus fullWidth value={text} onChange={e => setText(e.target.value)}
-                               placeholder="Bundle name, version, tag, parameter or run id"
-                               aria-label="Search runs"
-                               slotProps={{input: {startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small"/></InputAdornment>}}}/>
-                    <FormControlLabel sx={{flexShrink: 0, mr: 0}} label="Any device"
-                                      control={<Switch checked={anyDevice} onChange={e => setAnyDevice(e.target.checked)}/>}/>
-                </Stack>
-                {(data?.tags.length ?? 0) > 0 && <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap aria-label="Bundle tags">
-                    {data!.tags.map(t => <Chip key={t} size="small" label={t}
-                                               color={tag === t ? 'primary' : 'default'} variant={tag === t ? 'filled' : 'outlined'}
-                                               onClick={() => setTag(tag === t ? null : t)}/>)}
-                </Stack>}
-
-                {error ? <Alert severity="error" action={<Button size="small" onClick={retry}>Retry</Button>}>
-                        The runs could not be loaded.
-                    </Alert>
-                    : !data ? <Box sx={{display: 'flex', justifyContent: 'center', py: 4}}><CircularProgress size={24}/></Box>
-                        : data.candidates.length === 0
-                            ? <Typography variant="body2" color="text.secondary" sx={{py: 2}}>
-                                No other run of this test measured performance{tag ? ` with a bundle tagged ${tag}` : ''}{q ? ` matching "${q}"` : ''}
-                                {anyDevice ? '.' : ' on this device. Try any device.'}
-                            </Typography>
-                            : <List dense disablePadding sx={{opacity: loading ? 0.6 : 1}} aria-label="Runs to compare with">
-                                {data.candidates.map(c => {
-                                    const tags = parseTags(c.bundle?.tags);
-                                    const selected = c.testRunId === selectedRunId;
-                                    return <ListItemButton key={c.protocolId} selected={selected} onClick={() => onPick(c)}
-                                                           sx={{borderRadius: 1, alignItems: 'flex-start', gap: 2}}>
-                                        <Box sx={{flex: 1, minWidth: 0}}>
-                                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                                                <Typography variant="body2" sx={{fontWeight: 600}}>
-                                                    Run {c.testRunId}{c.testRunId > runId && ' (later)'}
-                                                </Typography>
-                                                <Typography variant="body2">{bundleLabel(c.bundle) || 'unknown bundle'}</Typography>
-                                                {tags.map(t => <Chip key={t} size="small" label={t} variant="outlined"/>)}
-                                            </Stack>
-                                            <Typography variant="caption" color="text.secondary" sx={{wordBreak: 'break-word'}}>
-                                                {formatDateTime(c.startedAt, 'YYYY/MM/DD HH:mm')}
-                                                {c.device && <> · {c.device}{c.deviceId !== deviceId && ' (other device)'}</>}
-                                                {c.parameter && <> · {c.parameter}</>}
-                                            </Typography>
-                                        </Box>
-                                        <Stack direction="row" spacing={2} sx={{flexShrink: 0, display: {xs: 'none', sm: 'flex'}}}>
-                                            {shown.map(m => {
-                                                const v = averageOf(c, m.key);
-                                                return <Box key={m.key} sx={{textAlign: 'right', minWidth: 64}}>
-                                                    <Typography variant="caption" color="text.secondary" component="div">{m.label}</Typography>
-                                                    <Typography variant="body2" sx={{fontFamily: 'monospace'}}>{v ? m.format(v) : '–'}</Typography>
-                                                </Box>;
-                                            })}
-                                        </Stack>
-                                    </ListItemButton>;
-                                })}
-                            </List>}
+                <SearchBar search={search}/>
+                <TagChips search={search}/>
+                <Candidates search={search} selectedRunId={selectedRunId} runId={Number(refs.runId)} deviceId={deviceId}
+                    metrics={metrics} onPick={onPick}/>
             </Stack>
         </DialogContent>
         <DialogActions>
-            {data && data.candidates.length >= SHOWN && <Typography variant="caption" color="text.secondary" sx={{mr: 'auto', pl: 1}}>
-                The newest {data.candidates.length}; search to find older runs.
+            {count >= SHOWN && <Typography variant="caption" color="text.secondary" sx={{mr: 'auto', pl: 1}}>
+                The newest {count}; search to find older runs.
             </Typography>}
             <Button onClick={onClose}>Cancel</Button>
         </DialogActions>

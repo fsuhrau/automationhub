@@ -7,8 +7,6 @@ import {TestResultState} from '../../types/test.result.state.enum';
 
 import type {RunLifecycle} from '../../types/run.lifecycle';
 
-export type {RunLifecycle} from '../../types/run.lifecycle';
-
 export const isTopLevel = (p: ITestProtocolData): boolean =>
     p.parentTestProtocolId === null || p.parentTestProtocolId === undefined || p.parentTestProtocolId === 0;
 
@@ -128,7 +126,7 @@ export type ResultFilter = TestResultState | 'all';
 // and the text, and filters its children the same way.
 export const filterRows = (rows: TestRow[], result: ResultFilter, text: string): TestRow[] => {
     const needle = text.trim().toLowerCase();
-    const matches = (r: TestRow) => (result === 'all' || r.result === result)
+    const matches = (r: TestRow): boolean => (result === 'all' || r.result === result)
         && (needle === '' || r.name.toLowerCase().includes(needle) || r.suite.toLowerCase().includes(needle));
     return rows.flatMap(r => {
         if (r.children.length === 0) {
