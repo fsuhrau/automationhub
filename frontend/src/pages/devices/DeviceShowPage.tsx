@@ -30,7 +30,7 @@ const DeviceShowPage: React.FC<DeviceShowPageProps> = ({device: stored, createLo
     const {projectIdentifier} = useProjectContext();
     const {device, node} = useLiveDevice(stored);
     const {user} = useAuth();
-    const avail = availability(device, owner => describeController(owner).label, user?.name);
+    const avail = availability(device, describeController, user?.id);
     const links = routes.project(projectIdentifier).device(device.id);
     const shot = useScreenshot(projectIdentifier, device.id);
     const actions = useDeviceActions(device.id);

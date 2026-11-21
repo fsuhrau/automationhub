@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest';
+import {describeController} from '../../components/DeviceController';
 import {
-    alertSeverity, availability, connectionAddress, mergeLiveDevice, recentTestLink, resolveNode, showsLog,
+    alertSeverity, availability, connectionAddress, DeviceLiveState, mergeLiveDevice, recentTestLink, resolveNode, showsLog,
 } from './deviceDetailsModel';
 import {DeviceStateType} from '../../types/deviceStateType';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
@@ -8,7 +9,7 @@ import {PlatformType} from '../../types/platform.type.enum';
 import ITestProtocolData from '../../types/test.protocol';
 import {device, node} from './deviceFixtures';
 
-const describeOwner = (owner: string): string => owner.replace('token:', '');
+const describeOwner = describeController;
 
 describe('availability', () => {
     it.each([
@@ -32,13 +33,29 @@ describe('availability', () => {
 
     it('names who controls the device', () => {
         const held = {status: DeviceStateType.Booted, isLocked: true, lockedBy: 'token:ci'};
-        expect(availability(held, describeOwner, 'anna')).toMatchObject({label: 'Controlled by ci', tone: 'warning', canControl: true});
+        expect(availability(held, describeOwner, 3)).toMatchObject({label: 'Controlled by token ci', tone: 'warning', canControl: true});
         expect(availability({...held, status: DeviceStateType.Shutdown}, describeOwner).canControl).toBe(false);
     });
 
-    it('says the signed-in user controls it', () => {
-        const held = {status: DeviceStateType.Locked, isLocked: true, lockedBy: 'anna'};
-        expect(availability(held, describeOwner, 'anna')).toMatchObject({label: 'Controlled by you', tone: 'success', canUnlock: true});
+    const heldBy = (lockedBy: string): DeviceLiveState => ({status: DeviceStateType.Locked, isLocked: true, lockedBy});
+
+    it('says the signed-in user controls it, by user id', () => {
+        expect(availability(heldBy('anna (user:3)'), describeOwner, 3))
+            .toMatchObject({label: 'Controlled by you', tone: 'success', canUnlock: true});
+        expect(availability(heldBy('user:3'), describeOwner, 3).label).toBe('Controlled by you');
+    });
+
+    it('does not take the same name with another id for you', () => {
+        expect(availability(heldBy('anna (user:4)'), describeOwner, 3))
+            .toMatchObject({label: 'Controlled by anna', tone: 'warning'});
+    });
+
+    it.each(['token:3', 'anna', 'anonymous', 'mcp:anna (user:3):sess1'])('never takes %s for you', owner => {
+        expect(availability(heldBy(owner), describeOwner, 3).tone).toBe('warning');
+    });
+
+    it('knows nobody when no user is signed in', () => {
+        expect(availability(heldBy('anna (user:3)'), describeOwner).tone).toBe('warning');
     });
 });
 

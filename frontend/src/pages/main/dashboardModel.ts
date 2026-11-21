@@ -16,7 +16,7 @@ export interface Readiness {
 
 // how many devices can run a test now, and how many someone holds
 export const readiness = (devices: DeviceLiveState[]): Readiness => {
-    const states = devices.map(d => availability(d, owner => describeController(owner).label));
+    const states = devices.map(d => availability(d, describeController));
     return {
         ready: states.filter(a => a.label === 'Ready').length,
         inUse: states.filter(a => a.canUnlock).length,

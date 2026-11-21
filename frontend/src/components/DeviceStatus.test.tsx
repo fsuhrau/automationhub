@@ -32,13 +32,25 @@ describe('DeviceStatus', () => {
 
 describe('describeController', () => {
     it.each([
-        ['anna', 'anna', false],
-        ['token:ci', 'token ci', false],
-        ['mcp:anna:sess1', 'agent of anna', true],
-        ['mcp:token:ci:sess1', 'agent of token ci', true],
-        ['mcp:anna', 'agent of anna', true],
-    ])('%s is %s', (owner, label, agent) => {
-        expect(describeController(owner)).toEqual({label, agent});
+        ['anna', {label: 'anna', agent: false}],
+        ['anna (user:7)', {label: 'anna', agent: false, userId: 7}],
+        ['Ada Lovelace (user:12)', {label: 'Ada Lovelace', agent: false, userId: 12}],
+        ['user:7', {label: 'user:7', agent: false, userId: 7}],
+        ['evil (user:1) (user:7)', {label: 'evil (user:1)', agent: false, userId: 7}],
+        ['anna (user:x)', {label: 'anna (user:x)', agent: false}],
+        ['anna (user:)', {label: 'anna (user:)', agent: false}],
+        ['anna(user:7)', {label: 'anna(user:7)', agent: false}],
+        ['user:', {label: 'user:', agent: false}],
+        ['anonymous', {label: 'anonymous', agent: false}],
+        ['token:ci', {label: 'token ci', agent: false}],
+        ['mcp:anna:sess1', {label: 'agent of anna', agent: true}],
+        ['mcp:anna (user:7):sess1', {label: 'agent of anna', agent: true, userId: 7}],
+        ['mcp:user:7:sess1', {label: 'agent of user:7', agent: true, userId: 7}],
+        ['mcp:token:ci:sess1', {label: 'agent of token ci', agent: true}],
+        ['mcp:anna', {label: 'agent of anna', agent: true}],
+    ])('%s is %j', (owner, info) => {
+        expect(describeController(owner)).toMatchObject(info);
+        expect(describeController(owner).userId).toBe((info as {userId?: number}).userId);
     });
 });
 
@@ -53,6 +65,19 @@ describe('DeviceController', () => {
         const icon = screen.getByLabelText('Controlled by token ci');
         fireEvent.mouseOver(icon);
         expect(await screen.findByText('Lease owner: token:ci')).toBeInTheDocument();
+    });
+
+    it('shows a signed-in user without the user id suffix', async () => {
+        render(<DeviceController owner="anna (user:7)"/>);
+        fireEvent.mouseOver(screen.getByLabelText('Controlled by anna'));
+        expect(await screen.findByText('Controlled by anna')).toBeInTheDocument();
+        expect(screen.queryByText(/Lease owner/)).toBeNull();
+    });
+
+    it('shows the lease owner of an agent acting for a user', async () => {
+        render(<DeviceController owner="mcp:anna (user:7):s1"/>);
+        fireEvent.mouseOver(screen.getByLabelText('Controlled by agent of anna'));
+        expect(await screen.findByText('Lease owner: mcp:anna (user:7):s1')).toBeInTheDocument();
     });
 
     it('shows a person without a lease owner line', async () => {

@@ -8,6 +8,7 @@ import {DeviceType} from '../../types/device.type.enum';
 import {DeviceConnectionType} from '../../types/device.connection.type.enum';
 import {PlatformType} from '../../types/platform.type.enum';
 import {routes} from '../../lib/routes';
+import {DeviceControllerInfo} from '../../components/DeviceController';
 
 export const DEVICE_TYPES: Record<DeviceType, string> = {
     [DeviceType.Phone]: 'Phone',
@@ -102,25 +103,32 @@ const BY_STATUS: Partial<Record<DeviceStateType, Availability>> = {
 
 const isUp = (status: DeviceStateType): boolean => status === DeviceStateType.Booted || status === DeviceStateType.Locked;
 
-const controlled = (d: DeviceLiveState & { lockedBy: string }, describe: (owner: string) => string, me?: string): Availability => {
+type Describe = (owner: string) => DeviceControllerInfo;
+
+// only a person's own lease is "you": agents, tokens and anonymous never are
+const isYou = (owner: DeviceControllerInfo, meId?: number): boolean =>
+    meId !== undefined && !owner.agent && owner.userId === meId;
+
+const controlled = (d: DeviceLiveState & { lockedBy: string }, describe: Describe, meId?: number): Availability => {
     const control = {canControl: isUp(d.status), canUnlock: true};
-    if (me && describe(d.lockedBy) === me) {
+    const owner = describe(d.lockedBy);
+    if (isYou(owner, meId)) {
         return {
             ...control, tone: 'success', label: 'Controlled by you',
             detail: "You control the device live. Release it on the live control page when you're done.",
         };
     }
     return {
-        ...control, tone: 'warning', label: `Controlled by ${describe(d.lockedBy)}`,
+        ...control, tone: 'warning', label: `Controlled by ${owner.label}`,
         detail: 'Someone controls the device live. Tests wait until the control ends.',
     };
 };
 
 // availability turns the device's live state into one answer; describe
-// names a lease owner (a person, a token or an agent), me is the signed-in
-// user's name
-export const availability = (d: DeviceLiveState, describe: (owner: string) => string, me?: string): Availability => {
-    if (d.lockedBy) return controlled({...d, lockedBy: d.lockedBy}, describe, me);
+// parses a lease owner (a person, a token or an agent), meId is the
+// signed-in user's id
+export const availability = (d: DeviceLiveState, describe: Describe, meId?: number): Availability => {
+    if (d.lockedBy) return controlled({...d, lockedBy: d.lockedBy}, describe, meId);
     if (d.isLocked || d.status === DeviceStateType.Locked) return IN_USE;
     return BY_STATUS[d.status] ?? UNKNOWN;
 };
