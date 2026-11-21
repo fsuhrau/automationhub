@@ -1,5 +1,7 @@
 // The device edit form: its rows, what makes it invalid (the same rules the
-// master checks), and whether anything changed.
+// master checks), whether anything changed, and the changes of its rows.
+import IDeviceData from '../../types/device';
+import {DeviceUpdate} from '../../types/device.requests';
 
 export interface ParameterRow {
     // stable key for React; rows are edited, added and removed by it
@@ -32,7 +34,7 @@ export const keyErrors = (rows: ParameterRow[]): Map<number, string> => {
     return errors;
 };
 
-const comparable = (f: EditForm) => JSON.stringify({
+const comparable = (f: EditForm): string => JSON.stringify({
     alias: f.alias.trim(),
     parameters: f.parameters.map(p => [p.id ?? null, p.key.trim(), p.value]),
 });
@@ -40,7 +42,33 @@ const comparable = (f: EditForm) => JSON.stringify({
 export const isDirty = (initial: EditForm, current: EditForm): boolean => comparable(initial) !== comparable(current);
 
 // toRequest is the body of the device update
-export const toRequest = (f: EditForm) => ({
+export const toRequest = (f: EditForm): DeviceUpdate => ({
     alias: f.alias.trim(),
     customParameter: f.parameters.map(p => ({...(p.id ? {id: p.id} : {}), key: p.key.trim(), value: p.value})),
 });
+
+let rowCounter = 0;
+
+// a key for a new row, unique for the session
+export const newRowId = (): string => `row-${rowCounter++}`;
+
+// the form of a stored device, one row per custom parameter
+export const formOf = (device: IDeviceData, rowId: () => string = newRowId): EditForm => ({
+    alias: device.alias ?? '',
+    parameters: (device.customParameter ?? []).map(p => ({rowId: rowId(), id: p.id, key: p.key, value: p.value})),
+});
+
+export const setAlias = (form: EditForm, alias: string): EditForm => ({...form, alias});
+
+export const setRow = (form: EditForm, rowId: string, change: Partial<ParameterRow>): EditForm =>
+    ({...form, parameters: form.parameters.map(p => p.rowId === rowId ? {...p, ...change} : p)});
+
+export const addRow = (form: EditForm, rowId: string): EditForm =>
+    ({...form, parameters: [...form.parameters, {rowId, key: '', value: ''}]});
+
+export const removeRow = (form: EditForm, rowId: string): EditForm =>
+    ({...form, parameters: form.parameters.filter(p => p.rowId !== rowId)});
+
+// the listed device keeps its live state; only what was edited changes
+export const applyEdit = (listed: IDeviceData, saved: IDeviceData): IDeviceData =>
+    ({...listed, alias: saved.alias, customParameter: saved.customParameter});

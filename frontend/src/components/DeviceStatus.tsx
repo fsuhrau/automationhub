@@ -51,9 +51,9 @@ const DeviceStatus: React.FC<{ state: DeviceStateType, platform?: PlatformType, 
         return <>{label}</>;
     }
     return (
-        <Tooltip title={<Box sx={{maxWidth: 360}}>{hint}</Box>} arrow placement="left">
+        <Tooltip title={<Box sx={{maxWidth: 360}}>{hint}</Box>} arrow={true} placement="left">
             <Stack direction="row" spacing={0.5} alignItems="center" component="span"
-                   sx={{display: 'inline-flex', cursor: 'help', color: state === DeviceStateType.Unauthorized ? 'warning.main' : 'inherit'}}>
+                sx={{display: 'inline-flex', cursor: 'help', color: state === DeviceStateType.Unauthorized ? 'warning.main' : 'inherit'}}>
                 <Typography variant="body2" component="span" color="inherit">{label}</Typography>
                 <InfoOutlined fontSize="inherit"/>
             </Stack>

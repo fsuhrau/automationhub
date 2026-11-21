@@ -37,7 +37,7 @@ const DeviceController: React.FC<{ owner?: string }> = ({owner}) => {
     const Icon = agent ? SmartToy : Person;
     return (
         <Tooltip title={<><b>Controlled by {label}</b>{owner !== label && <><br/>Lease owner: {owner}</>}</>}
-                 arrow placement="left">
+            arrow={true} placement="left">
             <Icon fontSize="small" color="warning" sx={{cursor: 'help'}} aria-label={`Controlled by ${label}`}/>
         </Tooltip>
     );
