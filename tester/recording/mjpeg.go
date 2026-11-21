@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"image/jpeg"
-	"os"
 )
 
 // mjpegWriter appends JPEG frames to one file and writes a line per frame to
@@ -12,19 +11,19 @@ import (
 // its offset and its length. The index is written as frames arrive, so a
 // recording stays readable when the master stops in the middle of it.
 type mjpegWriter struct {
-	f, index      *os.File
+	f, index      File
 	pos           int64
 	frames        int
 	last          int64
 	width, height int
 }
 
-func newMJPEGWriter(path, indexPath string) (*mjpegWriter, error) {
-	f, err := os.Create(path)
+func newMJPEGWriter(fs FileSystem, path, indexPath string) (*mjpegWriter, error) {
+	f, err := fs.Create(path)
 	if err != nil {
 		return nil, err
 	}
-	index, err := os.Create(indexPath)
+	index, err := fs.Create(indexPath)
 	if err != nil {
 		_ = f.Close()
 		return nil, err
@@ -51,6 +50,8 @@ func (w *mjpegWriter) WriteFrame(data []byte, time int64) error {
 	w.last = time
 	return nil
 }
+
+func (w *mjpegWriter) dimensions() (width, height int) { return w.width, w.height }
 
 func (w *mjpegWriter) Size() int64 { return w.pos }
 

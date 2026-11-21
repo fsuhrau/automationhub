@@ -152,7 +152,7 @@ func mp4Box(t *testing.T, data []byte, path ...string) []byte {
 func TestMP4Writer(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "a.mp4")
 	sps := testSPS(720, 1280)
-	w, err := newMP4Writer(path, sps, testPPS)
+	w, err := newMP4Writer(osFS{}, path, h264Config{sps: sps, pps: testPPS})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,6 @@ func testJPEG(t *testing.T) []byte {
 // MJPEG frames go into one file with an index line per frame; when the
 // stream ends the recorder opens it again and starts the next segment.
 func TestRecorderMJPEG(t *testing.T) {
-	restartDelay = time.Millisecond
 	dir := t.TempDir()
 	db := testDB(t)
 	frame := testJPEG(t)
@@ -367,7 +366,7 @@ func TestRecorderMJPEG(t *testing.T) {
 	dev := &fakeDevice{streams: make(chan *fakeStream, 2)}
 	dev.streams <- first
 	dev.streams <- second
-	r := Start(dev, Options{Dir: dir, DB: db, RunID: 1, DeviceID: 2, Log: &testLog{}})
+	r := Start(dev, Options{Deps: Deps{Clock: newFakeClock()}, Dir: dir, DB: db, RunID: 1, DeviceID: 2, Log: &testLog{}})
 
 	waitFor(t, func() bool { return len(first.packets) == 0 })
 	time.Sleep(20 * time.Millisecond)

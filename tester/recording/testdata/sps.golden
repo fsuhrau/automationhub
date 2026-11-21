@@ -1,0 +1,42 @@
+baseline 320x240
+  6742001fda0507e8
+  320x240 err=<nil>
+main poc0 640x480
+  674d001f92740501ed
+  640x480 err=<nil>
+main poc1 with offsets
+  674d001fd48569a02d0f68
+  720x480 err=<nil>
+main interlaced 720x576
+  674d001fda02d09340
+  720x576 err=<nil>
+high 420 cropped 1920x1080
+  6764001facb403c0113f2c
+  1920x1080 err=<nil>
+high 422 cropped
+  677a001fbcb405a1ee990b
+  714x473 err=<nil>
+high 444 interlaced cropped
+  67f4001f919680b47ba642c0
+  717x466 err=<nil>
+high with scaling lists
+  6764001fada482ea482ea482ea482eb40a0fd0
+  320x240 err=<nil>
+high 444 scaling lists
+  6764001f91a00168141fa0
+  320x240 err=<nil>
+truncated after the level
+  674200f0
+  0x0 err=sps too short
+truncated in the scaling matrix
+  6764001fad88
+  0x0 err=sps too short
+truncated in the cropping
+  6742001fda0507f4a0
+  0x0 err=sps too short
+truncated in the offsets cycle
+  6742001fd30193
+  0x0 err=sps too short
+short  err=sps too short
+short 670102 err=sps too short
+emulation 6742000003da0507e8 320x240 err=<nil>
