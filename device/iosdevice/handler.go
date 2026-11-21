@@ -3,26 +3,21 @@ package iosdevice
 import (
 	"context"
 	"fmt"
-	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/device/generic"
-	"github.com/fsuhrau/automationhub/hub/node"
-	"github.com/fsuhrau/automationhub/storage"
-	"github.com/fsuhrau/automationhub/storage/models"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/danielpaulus/go-ios/ios"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/device/remote"
+	"github.com/fsuhrau/automationhub/modules/webdriver"
+	"github.com/fsuhrau/automationhub/storage"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	Manager = "ios_device"
-)
-
-var (
-	DeviceListTimeoutSecs = 2
 )
 
 type IOSDevice struct {
@@ -51,12 +46,18 @@ const fallbackPollInterval = time.Minute
 // it is read again after this delay.
 const settleDelay = 3 * time.Second
 
+// Handler manages the iOS devices of this host. The embedded registry gives
+// GetDevices and HasDevice.
 type Handler struct {
-	mu            sync.Mutex // guards devices and lastPoll
-	refreshMu     sync.Mutex // serializes refreshes
-	devices       map[string]*Device
+	generic.Registry[*Device]
+	deps          Deps
 	wdaConfig     *config.WebDriver
 	deviceStorage storage.Device
+
+	refreshMu sync.Mutex // serializes refreshes
+	mu        sync.Mutex // guards lastPoll and stopWatch
+	lastPoll  time.Time
+	stopWatch context.CancelFunc
 
 	masterURL      string
 	nodeIdentifier string
@@ -64,19 +65,33 @@ type Handler struct {
 
 	notifyChange func() // set by the device manager, may be nil
 	tracking     atomic.Bool
-	lastPoll     time.Time
-	stopWatch    context.CancelFunc
 }
 
+// NewHandler creates the handler with the go-ios and xcodebuild defaults. It
+// adds the hook that reads the WebDriverAgent URL from the go-ios log output to
+// the standard logger; use NewHandlerWithDeps to wire the hook yourself.
 func NewHandler(cfg config.Manager, ds storage.Device) *Handler {
-	return &Handler{devices: make(map[string]*Device), deviceStorage: ds, wdaConfig: cfg.WebDriver}
+	hook := &webdriver.WDAConnectHook{}
+	logrus.AddHook(hook)
+	return NewHandlerWithDeps(cfg, ds, Deps{Hook: hook})
+}
+
+// NewHandlerWithDeps creates the handler with its collaborators, see Deps. It
+// doesn't register the hook with a logger; add Hook() to it.
+func NewHandlerWithDeps(cfg config.Manager, ds storage.Device, deps Deps) *Handler {
+	return &Handler{deps: deps.withDefaults(), deviceStorage: ds, wdaConfig: cfg.WebDriver}
+}
+
+// Hook is the log hook that reads the WebDriverAgent URL of go-ios. It must be
+// added to the logger the go-ios library logs to, e.g. logrus.AddHook.
+func (m *Handler) Hook() *webdriver.WDAConnectHook {
+	return m.deps.Hook
 }
 
 // newDevice creates a device that starts WebDriverAgent with the manager's
 // config.
-func (m *Handler) newDevice(dev *Device) *Device {
-	dev.wdaConfig = m.wdaConfig
-	return dev
+func (m *Handler) newDevice(id string) *Device {
+	return newDevice(id, m.wdaConfig, m.deps)
 }
 
 // SetChangeNotifier implements device.ChangeNotifying.
@@ -102,218 +117,39 @@ func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) erro
 	if err != nil {
 		return err
 	}
-
 	for i := range devs {
-		deviceId := devs[i].DeviceIdentifier
-		dev := m.newDevice(&Device{deviceID: deviceId})
+		dev := m.newDevice(devs[i].DeviceIdentifier)
 		dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
-		m.devices[deviceId] = dev
+		m.wireRemote(dev)
+		m.Add(dev)
 	}
 	return nil
 }
 
-// Start subscribes to usbmuxd attach/detach events, so iPhones show up and
-// disappear right away instead of with the next poll.
-func (m *Handler) Start() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	m.mu.Lock()
-	m.stopWatch = cancel
-	m.mu.Unlock()
-	go watchUsbmux(ctx, openUsbmuxListener, func() {
-		m.refreshAndNotify()
-		// read again once a freshly attached device is ready
-		time.AfterFunc(settleDelay, func() {
-			if ctx.Err() == nil {
-				m.refreshAndNotify()
-			}
-		})
-	}, m.tracking.Store)
-	return nil
+// wireRemote sends the logs and app actions of the device to the master.
+func (m *Handler) wireRemote(d *Device) {
+	d.SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, d.ID, m.authToken))
+	d.AddActionHandler(remote.NewActionHandler(m.masterURL, m.nodeIdentifier, d.ID, m.authToken))
 }
 
-func (m *Handler) refreshAndNotify() {
-	if err := m.RefreshDevices(true); err != nil {
-		logrus.Debugf("ios device refresh: %v", err)
-	}
-	m.changed()
-}
-
-func (m *Handler) Stop() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.stopWatch != nil {
-		m.stopWatch()
-		m.stopWatch = nil
-	}
-	return nil
-}
-
+// StartDevice starts WebDriverAgent on the device.
 func (m *Handler) StartDevice(deviceID string) error {
-	m.mu.Lock()
-	var dev *Device
-	for _, v := range m.devices {
-		if v.deviceID == deviceID {
-			dev = v
-			break
-		}
-	}
-
-	m.mu.Unlock()
-	if dev != nil {
-		return dev.StartXCUITestRunner()
-	}
-
-	return device.DeviceNotFoundError
+	return m.withDevice(deviceID, (*Device).StartXCUITestRunner)
 }
 
+// StopDevice ends WebDriverAgent on the device.
 func (m *Handler) StopDevice(deviceID string) error {
-	m.mu.Lock()
-	var dev *Device
-	for _, v := range m.devices {
-		if v.deviceID == deviceID {
-			dev = v
-			break
-		}
-	}
-
-	m.mu.Unlock()
-	if dev != nil {
-		return dev.StopXCUITestRunner()
-	}
-
-	return device.DeviceNotFoundError
+	return m.withDevice(deviceID, (*Device).StopXCUITestRunner)
 }
 
-func (m *Handler) GetDevices() ([]device.Device, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	devices := make([]device.Device, 0, len(m.devices))
-	for _, d := range m.devices {
-		devices = append(devices, d)
+func (m *Handler) withDevice(deviceID string, fn func(*Device) error) error {
+	dev, ok := m.Get(deviceID)
+	if !ok {
+		return device.DeviceNotFoundError
 	}
-	return devices, nil
-}
-
-// RefreshDevices reads the attached devices from usbmuxd and lockdown. While
-// the usbmuxd event subscription is up, unforced calls only run as a safety
-// net every fallbackPollInterval.
-func (m *Handler) RefreshDevices(force bool) error {
-	m.mu.Lock()
-	skip := !force && m.tracking.Load() && time.Since(m.lastPoll) < fallbackPollInterval
-	if !skip {
-		m.lastPoll = time.Now()
-	}
-	m.mu.Unlock()
-	if skip {
-		return nil
-	}
-
-	m.refreshMu.Lock()
-	defer m.refreshMu.Unlock()
-
-	deviceList, err := ios.ListDevices()
-	if err != nil {
-		return err
-	}
-
-	// read the device values without holding the device lock (lockdown calls)
-	type attached struct {
-		serial string
-		values *ios.GetAllValuesResponse
-		err    error
-	}
-	var found []attached
-	for _, entry := range deviceList.DeviceList {
-		values, err := ios.GetValues(entry)
-		if err != nil {
-			found = append(found, attached{serial: entry.Properties.SerialNumber, err: err})
-			continue
-		}
-		found = append(found, attached{serial: entry.Properties.SerialNumber, values: &values})
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	lastUpdate := time.Now().UTC()
-	for _, a := range found {
-		dev, known := m.devices[a.serial]
-		if a.err != nil {
-			// attached but lockdown refuses: not trusted yet, or locked with a passcode
-			logrus.Debugf("ios device %s not readable: %v", a.serial, a.err)
-			if !known {
-				dev = m.newDevice(&Device{deviceID: a.serial, deviceName: a.serial, deviceOSName: "iOS"})
-				m.devices[a.serial] = dev
-				m.registerNewDevice(dev, nil)
-			}
-			dev.deviceID = a.serial
-			dev.lastUpdateAt = lastUpdate
-			dev.SetDeviceState("StateUnauthorized")
-			m.deviceStorage.Update(m.Name(), dev)
-			continue
-		}
-		if known {
-			dev.deviceID = a.serial
-			dev.lastUpdateAt = lastUpdate
-			dev.UpdateDeviceInfos(*a.values)
-			dev.SetDeviceState("StateBooted")
-			m.deviceStorage.Update(m.Name(), dev)
-			continue
-		}
-		dev = m.newDevice(&Device{deviceID: a.serial, lastUpdateAt: lastUpdate})
-		dev.UpdateDeviceInfos(*a.values)
-		dev.SetDeviceState("StateBooted")
-		m.devices[a.serial] = dev
-		m.registerNewDevice(dev, a.values)
-	}
-
-	// known devices that aren't attached (unplugged, network devices away)
-	for _, dev := range m.devices {
-		if dev.lastUpdateAt != lastUpdate {
-			dev.SetDeviceState("StateRemoteDisconnected")
-			m.deviceStorage.Update(m.Name(), dev)
-		}
-	}
-	return nil
-}
-
-// registerNewDevice stores a newly seen device and wires its remote logging.
-func (m *Handler) registerNewDevice(d *Device, values *ios.GetAllValuesResponse) {
-	dev := models.Device{
-		DeviceIdentifier: d.deviceID,
-		DeviceType:       models.DeviceTypePhone,
-		Name:             d.deviceName,
-		Manager:          Manager,
-		PlatformType:     models.PlatformTypeiOS,
-		OS:               d.deviceOSName,
-		OSVersion:        d.deviceOSVersion,
-		ConnectionParameter: &models.ConnectionParameter{
-			ConnectionType: models.ConnectionTypeUSB,
-		},
-	}
-	if values != nil {
-		dev.Name = values.Value.DeviceName
-		dev.OS = values.Value.ProductName
-	}
-	d.SetLogWriter(generic.NewRemoteLogWriter(m.masterURL, m.nodeIdentifier, d.deviceID, m.authToken))
-	d.AddActionHandler(node.NewRemoteActionHandler(m.masterURL, m.nodeIdentifier, d.deviceID, m.authToken))
-	m.deviceStorage.NewDevice(m.Name(), dev)
-	m.deviceStorage.Update(m.Name(), d)
-	d.SetConfig(&dev)
-}
-
-func (m *Handler) HasDevice(dev device.Device) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, device := range m.devices {
-		if device == dev {
-			return true
-		}
-	}
-	return false
+	return fn(dev)
 }
 
 func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
-	return nil, fmt.Errorf("register device not implemented")
+	return nil, fmt.Errorf("register device: %w", device.ErrUnsupported)
 }

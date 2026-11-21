@@ -6,12 +6,20 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/modules/webdriver"
 )
 
-var wdaButtons = map[string]string{
-	"home":        "home",
-	"volume_up":   "volumeUp",
-	"volume_down": "volumeDown",
+// wdaButton maps a key name to the hardware button WebDriverAgent presses.
+func wdaButton(key string) (string, bool) {
+	switch strings.ToLower(key) {
+	case "home":
+		return "home", true
+	case "volume_up":
+		return "volumeUp", true
+	case "volume_down":
+		return "volumeDown", true
+	}
+	return "", false
 }
 
 func (d *Device) requireWebDriver() error {
@@ -44,6 +52,8 @@ func (d *Device) Tap(x, y int) error {
 }
 
 // Swipe implements device.InputCapable. Coordinates are screenshot pixels.
+//
+//nolint:revive // argument-limit: the signature is fixed by device.InputCapable
 func (d *Device) Swipe(fromX, fromY, toX, toY int, duration time.Duration) error {
 	if err := d.requireWebDriver(); err != nil {
 		return err
@@ -52,7 +62,9 @@ func (d *Device) Swipe(fromX, fromY, toX, toY int, duration time.Duration) error
 		duration = 300 * time.Millisecond
 	}
 	scale := d.pointScale()
-	return d.webDriver.Drag(float64(fromX)/scale, float64(fromY)/scale, float64(toX)/scale, float64(toY)/scale, duration.Seconds())
+	from := webdriver.Point{X: float64(fromX) / scale, Y: float64(fromY) / scale}
+	to := webdriver.Point{X: float64(toX) / scale, Y: float64(toY) / scale}
+	return d.webDriver.Drag(from, to, duration.Seconds())
 }
 
 // InputText implements device.InputCapable; it types into the focused element.
@@ -68,7 +80,7 @@ func (d *Device) PressKey(key string) error {
 	if err := d.requireWebDriver(); err != nil {
 		return err
 	}
-	button, ok := wdaButtons[strings.ToLower(key)]
+	button, ok := wdaButton(key)
 	if !ok {
 		return fmt.Errorf("key %q: %w", key, device.ErrUnsupported)
 	}

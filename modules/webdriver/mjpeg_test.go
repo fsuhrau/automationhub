@@ -66,12 +66,12 @@ func TestMjpegURL(t *testing.T) {
 		"http://[fe80::1]:8100/":    "http://[fe80::1]:9100/",
 		"http://localhost:8100/wda": "http://localhost:9100/",
 	} {
-		got, err := New(address).MjpegURL(DefaultMjpegServerPort)
+		got, err := New(address, nil).MjpegURL(DefaultMjpegServerPort)
 		if err != nil || got != want {
 			t.Errorf("MjpegURL(%q) = %q, %v; want %q", address, got, err, want)
 		}
 	}
-	if _, err := New("not a url").MjpegURL(9100); err == nil {
+	if _, err := New("not a url", nil).MjpegURL(9100); err == nil {
 		t.Error("expected an error for an address without host")
 	}
 }
@@ -82,13 +82,13 @@ func TestOpenMjpegReadsFramesFromAnHTTP10Server(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	go func() {
 		conn, err := ln.Accept()
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		_, _ = conn.Read(make([]byte, 4096))
 		// the exact response header of FBMjpegServer
 		_, _ = io.WriteString(conn, "HTTP/1.0 200 OK\r\nServer: WDA MJPEG Server\r\nConnection: close\r\nMax-Age: 0\r\nExpires: 0\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\nContent-Type: multipart/x-mixed-replace; boundary=--BoundaryString\r\n\r\n")
@@ -98,7 +98,7 @@ func TestOpenMjpegReadsFramesFromAnHTTP10Server(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 	for i := 0; i < 2; i++ {
 		got, err := stream.ReadFrame()
 		if err != nil || !bytes.Equal(got, frame) {
@@ -124,7 +124,7 @@ func TestScreenAndUpdateSettings(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	c := New(srv.URL)
+	c := New(srv.URL, nil)
 	c.sessionId = "s1"
 	screen, err := c.Screen()
 	if err != nil || screen != (ScreenInfo{Width: 390, Height: 844, Scale: 3}) {
@@ -138,5 +138,29 @@ func TestScreenAndUpdateSettings(t *testing.T) {
 	}
 	if !c.Alive(time.Second) {
 		t.Fatal("Alive() = false")
+	}
+}
+
+func TestMjpegReaderRejectsAnInvalidContentLength(t *testing.T) {
+	for _, header := range []string{"Content-Length: abc", "Content-Length: -4"} {
+		r := NewMjpegReader(strings.NewReader("--b\r\n" + header + "\r\n\r\n"))
+		if _, err := r.ReadFrame(); err == nil || !strings.Contains(err.Error(), "invalid MJPEG Content-Length") {
+			t.Errorf("%q: err = %v", header, err)
+		}
+	}
+}
+
+func TestMjpegReaderReportsBrokenStreams(t *testing.T) {
+	for name, body := range map[string]string{
+		"truncated frame":         "--b\r\nContent-Length: 10\r\n\r\nabc",
+		"jpeg without end":        "--b\r\nContent-Type: image/jpeg\r\n\r\n\xff\xd8abc",
+		"jpeg too large":          "--b\r\n\r\nx: y\r\n\r\n\xff\xd8" + strings.Repeat("a", maxMjpegFrame+10),
+		"headers end early":       "--b\r\nContent-Type: image/jpeg\r\n",
+		"header line too long":    "--b\r\n" + strings.Repeat("h", 70<<10),
+		"nothing before the part": "",
+	} {
+		if _, err := NewMjpegReader(strings.NewReader(body)).ReadFrame(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
 	}
 }

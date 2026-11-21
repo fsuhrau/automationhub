@@ -7,17 +7,20 @@ import (
 	"path"
 )
 
+// Client talks to a WebDriverAgent server.
 type Client struct {
 	httpClient *http.Client
 	address    string
 	sessionId  string
 }
 
-func New(address string) *Client {
-	return &Client{
-		httpClient: &http.Client{},
-		address:    address,
+// New creates a client of the WebDriverAgent at address. It sends its requests
+// with httpClient; a nil httpClient gets a client without timeout.
+func New(address string, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = &http.Client{}
 	}
+	return &Client{httpClient: httpClient, address: address}
 }
 
 func (c *Client) getUrl(format string, data ...any) string {

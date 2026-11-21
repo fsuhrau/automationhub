@@ -1,48 +1,15 @@
 package webdriver
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-)
-
+// SendText types the text into the focused element, one key per character.
 func (c *Client) SendText(value string) error {
-	type request struct {
-		Value []string `json:"value"`
+	keys := make([]string, 0, len(value))
+	for _, r := range value {
+		keys = append(keys, string(r))
 	}
-
-	var v []string
-	for i := range value {
-		v = append(v, string(value[i]))
-	}
-	requestJson, _ := json.Marshal(request{
-		Value: v,
-	})
-	requestBody := bytes.NewBuffer(requestJson)
-
-	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/keys"), requestBody)
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var result Element
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(respBody, &wdaError)
-		return fmt.Errorf("unable to send keys: %s", wdaError.Value.Error)
-	}
-	return nil
+	return c.post("send keys", "/wda/keys", map[string][]string{"value": keys})
 }
 
 // PressButton presses a hardware button: "home", "volumeUp" or "volumeDown".
 func (c *Client) PressButton(name string) error {
-	if _, _, err := c.postJSON("/wda/pressButton", map[string]string{"name": name}); err != nil {
-		return fmt.Errorf("unable to press button: %w", err)
-	}
-	return nil
+	return c.post("press button", "/wda/pressButton", map[string]string{"name": name})
 }

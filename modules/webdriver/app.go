@@ -1,12 +1,6 @@
 package webdriver
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-)
+import "net/http"
 
 type AppInfoValue struct {
 	ProcessArguments struct {
@@ -24,115 +18,31 @@ type AppInfo struct {
 	SessionId string       `json:"sessionId"`
 }
 
+// Launch starts the app; arguments are passed to it as launch arguments.
 func (c *Client) Launch(bundleIdentifier string, shouldWaitForQuiescence bool, arguments []string) error {
-	type request struct {
-		ShouldWaitForQuiescence int      `json:"shouldWaitForQuiescence"`
-		BundleID                string   `json:"bundleId"`
-		Arguments               []string `json:"arguments"`
-	}
-
-	type response struct {
-		SessionID string       `json:"sessionId"`
-		Value     SessionValue `json:"value"`
-	}
-
 	shouldWait := 0
 	if shouldWaitForQuiescence {
 		shouldWait = 1
 	}
-
-	jsonBody, _ := json.Marshal(request{
-		BundleID:                bundleIdentifier,
-		ShouldWaitForQuiescence: shouldWait,
-		Arguments:               arguments,
-	})
-
-	requestBody := bytes.NewBuffer(jsonBody)
-	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/apps/launch"), requestBody)
-	if err != nil {
-		return err
+	body := map[string]any{
+		"bundleId":                bundleIdentifier,
+		"shouldWaitForQuiescence": shouldWait,
+		"arguments":               arguments,
 	}
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-
-	// Fetch Request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	// Read Response Body
-	respBody, _ := io.ReadAll(resp.Body)
-
-	var res response
-	if err := json.Unmarshal(respBody, &res); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(respBody, &wdaError)
-		return fmt.Errorf("unable to launch: %s", wdaError.Value.Error)
-	}
-	return nil
+	return c.call(call{"launch", http.MethodPost, c.getSessionUrl("/wda/apps/launch"), body}, nil)
 }
 
+// Terminate stops the app.
 func (c *Client) Terminate(bundleIdentifier string) error {
-	type request struct {
-		BundleID string `json:"bundleId"`
-	}
-
-	type response struct {
-		SessionID string      `json:"sessionId"`
-		Value     interface{} `json:"value"`
-	}
-
-	jsonBody, _ := json.Marshal(request{
-		BundleID: bundleIdentifier,
-	})
-
-	requestBody := bytes.NewBuffer(jsonBody)
-	req, err := http.NewRequest("POST", c.getSessionUrl("/wda/apps/terminate"), requestBody)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-
-	// Fetch Request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	// Read Response Body
-	respBody, _ := io.ReadAll(resp.Body)
-
-	var r response
-	if err := json.Unmarshal(respBody, &r); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(respBody, &wdaError)
-		return fmt.Errorf("unable to terminate: %s", wdaError.Value.Error)
-	}
-	return nil
+	body := map[string]string{"bundleId": bundleIdentifier}
+	return c.call(call{"terminate", http.MethodPost, c.getSessionUrl("/wda/apps/terminate"), body}, nil)
 }
 
+// ActiveAppInfo describes the app in the foreground.
 func (c *Client) ActiveAppInfo() (*AppInfo, error) {
-
-	req, err := http.NewRequest("GET", c.getSessionUrl("/wda/activeAppInfo"), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-
-	// Fetch Request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read Response Body
-	respBody, _ := io.ReadAll(resp.Body)
-
 	var res AppInfo
-	if err := json.Unmarshal(respBody, &res); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(respBody, &wdaError)
-		return nil, fmt.Errorf("unable to get app info: %s", wdaError.Value.Error)
+	if err := c.call(call{"get app info", http.MethodGet, c.getSessionUrl("/wda/activeAppInfo"), nil}, &res); err != nil {
+		return nil, err
 	}
 	return &res, nil
 }

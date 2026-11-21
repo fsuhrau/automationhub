@@ -1,71 +1,36 @@
 package webdriver
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
+	"errors"
 	"net/http"
 )
 
-func (c *Client) GetAlertText() (string, error) {
-
-	type response struct {
-		SessionId string `json:"sessionId"`
-		Value     string `json:"value"`
-	}
-
-	req, err := http.NewRequest("GET", c.getSessionUrl("/alert/text"), nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	responseBody, _ := io.ReadAll(resp.Body)
-
-	var r response
-	if err := json.Unmarshal(responseBody, &r); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(responseBody, &wdaError)
-		return "", fmt.Errorf("unable to get alert text: %s", wdaError.Value.Error)
-	}
-	fmt.Println(string(responseBody))
-	if len(r.Value) == 0 {
-		return "", fmt.Errorf("there is no alert text")
-	}
-	return r.Value, err
+type alertResponse struct {
+	SessionId string `json:"sessionId"`
+	Value     string `json:"value"`
 }
 
-func (c *Client) AcceptAlert(accept bool) (string, error) {
-
-	type response struct {
-		SessionId string `json:"sessionId"`
-		Value     string `json:"value"`
+// GetAlertText returns the text of the visible alert.
+func (c *Client) GetAlertText() (string, error) {
+	var r alertResponse
+	if err := c.call(call{"get alert text", http.MethodGet, c.getSessionUrl("/alert/text"), nil}, &r); err != nil {
+		return "", err
 	}
+	if len(r.Value) == 0 {
+		return "", errors.New("there is no alert text")
+	}
+	return r.Value, nil
+}
 
+// AcceptAlert accepts the visible alert, or dismisses it when accept is false.
+func (c *Client) AcceptAlert(accept bool) (string, error) {
 	action := "accept"
 	if !accept {
 		action = "dismiss"
 	}
-
-	req, err := http.NewRequest("POST", c.getSessionUrl("/alert/%s", action), nil)
-	if err != nil {
+	var r alertResponse
+	if err := c.call(call{"accept/dismiss alert", http.MethodPost, c.getSessionUrl("/alert/%s", action), nil}, &r); err != nil {
 		return "", err
 	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	responseBody, _ := io.ReadAll(resp.Body)
-
-	var r response
-	if err := json.Unmarshal(responseBody, &r); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(responseBody, &wdaError)
-		return "", fmt.Errorf("unable to accept/dissmiss alert: %s", wdaError.Value.Error)
-	}
-	return r.Value, err
+	return r.Value, nil
 }

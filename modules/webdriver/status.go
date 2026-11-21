@@ -1,11 +1,6 @@
 package webdriver
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-)
+import "net/http"
 
 type Build struct {
 	Time                    string `json:"time"`
@@ -26,23 +21,11 @@ type Status struct {
 	Value     StatusValue `json:"value"`
 }
 
+// Status asks the server for its state.
 func (c *Client) Status() (*Status, error) {
-	req, err := http.NewRequest("GET", c.getUrl("/status"), nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, _ := io.ReadAll(resp.Body)
-
 	var status Status
-	if err := json.Unmarshal(body, &status); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(body, &wdaError)
-		return nil, fmt.Errorf("unable to get status: %s", wdaError.Value.Error)
+	if err := c.call(call{"get status", http.MethodGet, c.getUrl("/status"), nil}, &status); err != nil {
+		return nil, err
 	}
-	return &status, err
+	return &status, nil
 }

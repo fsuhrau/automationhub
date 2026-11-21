@@ -61,11 +61,11 @@ func TestWatchUsbmuxRefreshesOnEventsAndReconnects(t *testing.T) {
 	var mu sync.Mutex
 	done := make(chan struct{})
 	go func() {
-		watchUsbmux(ctx, open, func() { changes.Add(1) }, func(up bool) {
+		watchUsbmux(ctx, usbEvents{open: open, onChange: func() { changes.Add(1) }, connected: func(up bool) {
 			mu.Lock()
 			states = append(states, up)
 			mu.Unlock()
-		})
+		}})
 		close(done)
 	}()
 

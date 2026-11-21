@@ -1,12 +1,6 @@
 package webdriver
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-)
+import "net/http"
 
 type SettingValue struct {
 	ShouldUseCompactResponses    bool   `json:"shouldUseCompactResponses"`
@@ -39,39 +33,16 @@ type Settings struct {
 	Value     map[string]interface{} `json:"value"`
 }
 
+// GetSettings reads the Appium settings of the session.
 func (c *Client) GetSettings() (*Settings, error) {
-	req, err := http.NewRequest("GET", c.getSessionUrl("/appium/settings"), nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, _ := io.ReadAll(resp.Body)
-
 	var settings Settings
-	if err := json.Unmarshal(body, &settings); err != nil {
-		var wdaError WDAError
-		_ = json.Unmarshal(body, &wdaError)
-		return nil, fmt.Errorf("unable to get settings: %s", wdaError.Value.Error)
+	if err := c.call(call{"get settings", http.MethodGet, c.getSessionUrl("/appium/settings"), nil}, &settings); err != nil {
+		return nil, err
 	}
-	return &settings, err
+	return &settings, nil
 }
 
+// SetSettings writes the Appium settings of the session.
 func (c *Client) SetSettings(settings Settings) error {
-	jsonRequest, _ := json.Marshal(settings)
-	body := bytes.NewBuffer(jsonRequest)
-	req, err := http.NewRequest("POST", c.getSessionUrl("/appium/settings"), body)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	_, err = c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return c.post("set settings", "/appium/settings", settings)
 }

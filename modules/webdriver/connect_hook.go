@@ -10,19 +10,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	serverRegex = regexp.MustCompile(`ServerURLHere->(.*)<-ServerURLHere`)
-	WDAHook     *WDAConnectHook
-)
-
-func init() {
-	WDAHook = &WDAConnectHook{}
-	logrus.AddHook(WDAHook)
-}
+var serverRegex = regexp.MustCompile(`ServerURLHere->(.*)<-ServerURLHere`)
 
 // WDAConnectHook picks the WebDriverAgent server URL out of the go-ios log
 // output. go-ios logs the URL without the device id, so startups are
 // serialized through Await: only one device waits for a URL at a time.
+//
+// The hook only sees the log output once it is registered with a logger, e.g.
+// logrus.AddHook(hook). The zero value is ready to use.
 type WDAConnectHook struct {
 	startMu sync.Mutex // serializes Await calls
 
@@ -63,8 +58,9 @@ func (hook *WDAConnectHook) Fire(entry *logrus.Entry) error {
 }
 
 // Await runs start and waits for the server URL it logs. start calls fail
-// when the runner stops before it reported the URL, which ends the wait.
-func (hook *WDAConnectHook) Await(timeout time.Duration, start func(fail func(error))) (string, error) {
+// when the runner stops before it reported the URL, which ends the wait. The
+// wait gives up after timeout, measured with after (time.After or a clock's).
+func (hook *WDAConnectHook) Await(timeout time.Duration, after func(time.Duration) <-chan time.Time, start func(fail func(error))) (string, error) {
 	hook.startMu.Lock()
 	defer hook.startMu.Unlock()
 
@@ -91,7 +87,7 @@ func (hook *WDAConnectHook) Await(timeout time.Duration, start func(fail func(er
 		return address, nil
 	case err := <-failed:
 		return "", fmt.Errorf("WebDriverAgent runner failed to start: %w", err)
-	case <-time.After(timeout):
+	case <-after(timeout):
 		return "", fmt.Errorf("WebDriverAgent did not report its server URL within %v", timeout)
 	}
 }
