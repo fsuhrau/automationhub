@@ -57,6 +57,7 @@ type request struct {
 	Value       string  `json:"value,omitempty"`
 }
 
+//nolint:revive // argument-limit: signature is fixed by the platform handlers that call it
 func NewRemoteLogWriter(masterURL, nodeIdentifier, deviceId string, authToken *string) *RemoteLogWriter {
 	return &RemoteLogWriter{masterURL: masterURL, node: nodeIdentifier, deviceId: deviceId, authToken: authToken}
 }
@@ -84,7 +85,7 @@ func (w *RemoteLogWriter) sendLog(log *request) error {
 	if err != nil {
 		return fmt.Errorf("failed to send log data: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received non-OK response: %v", resp.Status)
@@ -115,6 +116,7 @@ func (w *RemoteLogWriter) Error(source, format string, params ...interface{}) {
 	}
 }
 
+//nolint:revive // argument-limit: signature is fixed by device.LogWriter
 func (w *RemoteLogWriter) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	log := &request{
 		Source:      "performance",

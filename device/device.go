@@ -1,11 +1,8 @@
 package device
 
 import (
-	"context"
 	"errors"
 	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/hub/action"
-	"time"
 )
 
 type DeviceConfig struct {
@@ -31,56 +28,18 @@ type AppDataClearer interface {
 	ClearAppData(*app.Parameter) error
 }
 
+// Device is the composite of every role a device can play. G33 removes the
+// optional roles from it; consumers then reach them with As.
 type Device interface {
-	DeviceID() string
-	DeviceState() State
-	DeviceOSName() string
-	DeviceOSVersion() string
-	DeviceName() string
-	DeviceParameter() map[string]string
-	DeviceType() int
-	PlatformType() int
+	Identity
+	AppManager
+	AppConnection
+	Locker
+	TestLogger
 
-	TargetVersion() string
-
-	// IsAppBundleAvailable(*app.Parameter) (bool, error)
-	IsAppInstalled(*app.Parameter) (bool, error)
-	InstallApp(*app.Parameter) error
-	UninstallApp(*app.Parameter) error
-
-	NewContext() context.Context
-	Cancel()
-	ConnectionTimeout() time.Duration
-	SetConnection(*Connection)
-	Connection() *Connection
-	IsAppConnected() bool
-
-	StartApp(deviceConfig *DeviceConfig, appParams *app.Parameter, sessionId string, nodeUrl string) error
-	StopApp(*app.Parameter) error
-	Send([]byte) error
-
-	StartRecording(string) error
-	StopRecording() error
-
-	GetScreenshot() ([]byte, int, int, error)
-
-	HasFeature(string) bool
-	Execute(string)
-	Lock() error
-	Unlock() error
-	IsLocked() bool
-
-	SetLogWriter(LogWriter)
-	GetLogWriter() LogWriter
-	Data(string, string)
-	SetKey(key, value string)
-	LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string)
-	Log(string, string, ...interface{})
-	Error(string, string, ...interface{})
-	Exception(string, string, ...interface{})
-	AddActionHandler(action.ActionHandler)
-	RemoveActionHandler(action.ActionHandler)
-	ActionHandlers() []action.ActionHandler
-	RunNativeScript(data []byte)
-	Passed(result bool)
+	Recorder
+	Screenshotter
+	FeatureExecutor
+	NativeScripter
+	ActionHandlerRegistry
 }

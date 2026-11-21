@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"io"
 	"time"
 )
 
+//nolint:gochecknoglobals,staticcheck // sentinel error is part of the package API; ErrFoo names are used by the platforms
 var (
 	DeviceDisconnectedError = fmt.Errorf("device disconnected")
 )
@@ -29,8 +30,8 @@ type Connection struct {
 	Logger              *logrus.Entry
 	Connection          *websocket.Conn
 	ResponseChannel     chan ResponseData
-	ActionChannel       chan action.Response
-	ConnectionParameter *action.Connect
+	ActionChannel       chan appproto.Response
+	ConnectionParameter *appproto.Connect
 }
 
 func (c *Connection) HandleMessages(ctx context.Context) {

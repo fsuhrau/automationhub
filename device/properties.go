@@ -10,8 +10,5 @@ type Properties struct {
 }
 
 func (p *Properties) AreValid() bool {
-	if len(p.App) == 0 {
-		return false
-	}
-	return true
+	return len(p.App) != 0
 }

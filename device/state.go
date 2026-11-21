@@ -36,6 +36,30 @@ func StateToString(state State) string {
 	return ""
 }
 
+// ParseState maps a state name, as the platforms store it and the nodes send
+// it, to its State. Unknown names give StateUnknown. StateLocked and StateNone
+// have no name on the wire.
+//
+// This is the union of the platform mappings that exist today (androiddevice,
+// iosdevice, iossim, macos, web, node, unityeditor). They all map an unknown
+// name to StateUnknown, except unityeditor: it maps it to StateShutdown (G27
+// switches it to ParseState).
+func ParseState(name string) State {
+	switch name {
+	case "StateShutdown":
+		return StateShutdown
+	case "StateRemoteDisconnected":
+		return StateRemoteDisconnected
+	case "StateBooted":
+		return StateBooted
+	case "StateNodeDisconnected":
+		return StateNodeDisconnected
+	case "StateUnauthorized":
+		return StateUnauthorized
+	}
+	return StateUnknown
+}
+
 type ConnectionState uint8
 
 const (

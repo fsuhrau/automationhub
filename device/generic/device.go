@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/sirupsen/logrus"
 	"sync"
@@ -14,6 +14,7 @@ const (
 	AttributePin = "PIN"
 )
 
+//nolint:gochecknoglobals,staticcheck // sentinel errors are part of the package API; ErrFoo names are used by the platforms
 var (
 	DeviceLockedError   = fmt.Errorf("can't lock device, device is already locked")
 	DeviceUnlockedError = fmt.Errorf("can't unlock device, device was not locked")
@@ -24,7 +25,7 @@ type Device struct {
 	mu            sync.Mutex
 	con           *device.Connection
 	writer        device.LogWriter
-	actionHandler []action.ActionHandler
+	actionHandler []appproto.ActionHandler
 	locked        bool
 	Config        *models.Device `json:"config"`
 	ctx           context.Context
@@ -145,6 +146,7 @@ func (d *Device) TestProtocolId() *uint {
 	return nil
 }
 
+//nolint:revive // argument-limit: signature is fixed by device.TestLogger
 func (d *Device) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	if d.writer != nil {
 		d.writer.LogPerformance(checkpoint, cpu, fps, mem, vertexCount, triangles, other)
@@ -199,18 +201,18 @@ func (d *Device) Exception(source, format string, params ...interface{}) {
 	}
 }
 
-func (d *Device) AddActionHandler(handler action.ActionHandler) {
+func (d *Device) AddActionHandler(handler appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.actionHandler = append(d.actionHandler, handler)
 }
 
-func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
+func (d *Device) RemoveActionHandler(handler appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for i := range d.actionHandler {
 		if d.actionHandler[i] == handler {
-			handlers := make([]action.ActionHandler, 0, len(d.actionHandler)-1)
+			handlers := make([]appproto.ActionHandler, 0, len(d.actionHandler)-1)
 			handlers = append(handlers, d.actionHandler[:i]...)
 			d.actionHandler = append(handlers, d.actionHandler[i+1:]...)
 			return
@@ -220,8 +222,8 @@ func (d *Device) RemoveActionHandler(handler action.ActionHandler) {
 
 // ActionHandlers returns a snapshot of the registered handlers that is safe to
 // iterate while handlers are added or removed.
-func (d *Device) ActionHandlers() []action.ActionHandler {
+func (d *Device) ActionHandlers() []appproto.ActionHandler {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return append([]action.ActionHandler(nil), d.actionHandler...)
+	return append([]appproto.ActionHandler(nil), d.actionHandler...)
 }
