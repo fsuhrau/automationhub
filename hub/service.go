@@ -8,6 +8,7 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/middleware"
 	"github.com/fsuhrau/automationhub/modules/hooks"
 	"github.com/fsuhrau/automationhub/modules/hooks/notifier"
 	"github.com/fsuhrau/automationhub/modules/hooks/slack"
@@ -49,7 +50,7 @@ func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg c
 	logger.Formatter = new(prefixed.TextFormatter)
 	router := newRouter(logger)
 
-	router.Use(cors.New(corsConfig(cfg.Cors)))
+	router.Use(cors.New(middleware.CORSConfig(cfg.Cors)))
 
 	var (
 		sessionFunc    gin.HandlerFunc
@@ -107,8 +108,8 @@ func setupAuth(db *gorm.DB, auth config.Auth) (sessionFunc, sessionHandler gin.H
 
 func newRouter(logger *logrus.Logger) *gin.Engine {
 	r := gin.New()
-	r.Use(Recovery())
-	r.Use(Logger(logger.WithFields(logrus.Fields{"prefix": "service"})))
+	r.Use(middleware.Recovery())
+	r.Use(middleware.Logger(logger.WithFields(logrus.Fields{"prefix": "service"})))
 	return r
 }
 

@@ -1,4 +1,4 @@
-package hub
+package middleware
 
 import (
 	"net/http"
@@ -13,7 +13,7 @@ func corsStatus(t *testing.T, origins []string, host, origin string) int {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(cors.New(corsConfig(origins))) // panics on an invalid config
+	r.Use(cors.New(CORSConfig(origins))) // panics on an invalid config
 	r.GET("/api/ping", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 	req := httptest.NewRequest(http.MethodGet, "http://"+host+"/api/ping", nil)

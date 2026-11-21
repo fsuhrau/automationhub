@@ -1,4 +1,4 @@
-package hub
+package middleware
 
 import (
 	"net"
@@ -8,12 +8,12 @@ import (
 	"github.com/gin-contrib/cors"
 )
 
-// corsConfig allows the origins listed under `cors` in the config. Without
+// CORSConfig allows the origins listed under `cors` in the config. Without
 // that list it allows only pages served from this machine (localhost on any
 // port, such as the web UI dev server); the embedded web UI is same-origin
 // and needs no entry. cors.New refuses an empty origin list, so the master
 // would not start without this default.
-func corsConfig(origins []string) cors.Config {
+func CORSConfig(origins []string) cors.Config {
 	cfg := cors.Config{
 		AllowCredentials: true,
 		AllowMethods:     []string{"POST, OPTIONS, GET, PUT", "DELETE"},
