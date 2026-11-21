@@ -1,6 +1,6 @@
 package events
 
-var TestRunFinished testRunFinished
+var TestRunFinished = NewBus[TestRunFinishedPayload]() //nolint:gochecknoglobals // event bus registry (concept C4)
 
 type TestRunFinishedPayload struct {
 	ProjectID string      `json:"projectId"`
@@ -12,18 +12,4 @@ type TestRunFinishedPayload struct {
 	Unstable  int         `json:"unstable"`
 	Failed    int         `json:"failed"`
 	TestRun   interface{} `json:"testRun"`
-}
-
-type testRunFinished struct {
-	handlers []interface{ Handle(TestRunFinishedPayload) }
-}
-
-func (u *testRunFinished) Register(handler interface{ Handle(TestRunFinishedPayload) }) {
-	u.handlers = append(u.handlers, handler)
-}
-
-func (u testRunFinished) Trigger(payload TestRunFinishedPayload) {
-	for _, handler := range u.handlers {
-		go handler.Handle(payload)
-	}
 }

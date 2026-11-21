@@ -5,30 +5,14 @@ import "github.com/fsuhrau/automationhub/device"
 // DeviceLockChanged is triggered when a device was locked or unlocked, e.g.
 // by a test run or the unlock button. The lock state is not stored, so the UI
 // learns about it only through this event.
-var DeviceLockChanged deviceLockChanged
+var DeviceLockChanged = NewBus[DeviceLockChangedPayload]() //nolint:gochecknoglobals // event bus registry (concept C4)
 
 type DeviceLockChangedPayload struct {
 	DeviceIdentifier string `json:"deviceIdentifier"`
 	Locked           bool   `json:"locked"`
 }
 
-type deviceLockChanged struct {
-	handlers []interface {
-		Handle(DeviceLockChangedPayload)
-	}
-}
-
-func (u *deviceLockChanged) Register(handler interface {
-	Handle(DeviceLockChangedPayload)
-}) {
-	u.handlers = append(u.handlers, handler)
-}
-
-func (u deviceLockChanged) Trigger(payload DeviceLockChangedPayload) {
-	for _, handler := range u.handlers {
-		go handler.Handle(payload)
-	}
-}
+// NOTE(G30): moves to hub/device manager
 
 // LockDevice locks dev and announces the change. Use it instead of dev.Lock
 // so the device pool shows the lock without a reload.

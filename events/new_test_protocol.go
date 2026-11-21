@@ -1,22 +1,8 @@
 package events
 
-var NewTestProtocol newTestProtocol
+var NewTestProtocol = NewBus[NewTestProtocolPayload]() //nolint:gochecknoglobals // event bus registry (concept C4)
 
 type NewTestProtocolPayload struct {
 	TestRunID uint        `json:"testRunId"`
 	Protocol  interface{} `json:"protocol"`
-}
-
-type newTestProtocol struct {
-	handlers []interface{ Handle(NewTestProtocolPayload) }
-}
-
-func (u *newTestProtocol) Register(handler interface{ Handle(NewTestProtocolPayload) }) {
-	u.handlers = append(u.handlers, handler)
-}
-
-func (u newTestProtocol) Trigger(payload NewTestProtocolPayload) {
-	for _, handler := range u.handlers {
-		go handler.Handle(payload)
-	}
 }
