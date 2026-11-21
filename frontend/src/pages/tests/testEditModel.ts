@@ -2,6 +2,7 @@
 // from saving (the same rules the master checks), unsaved changes, and the
 // Unity test functions it picks.
 import IAppFunctionData from '../../types/app.function';
+import {UpdateTestData} from '../../types/test.requests';
 import {TestExecutionType} from '../../types/test.execution.type.enum';
 import {UnityTestCategory} from '../../types/unity.test.category.type.enum';
 
@@ -69,6 +70,44 @@ export const addFunctions = (picked: IAppFunctionData[], add: IAppFunctionData[]
     return out;
 };
 
+// mergeCategories adds the categories in text (comma separated) to the
+// named ones, without doubles
+export const mergeCategories = (named: string[], text: string): string[] =>
+    splitCategories([...named, ...splitCategories(text)].join(','));
+
+// toggled is the set with key in it (on) or without it
+export const toggled = (keys: Set<string>, key: string, on: boolean): Set<string> => {
+    const next = new Set(keys);
+    if (on) next.add(key); else next.delete(key);
+    return next;
+};
+
+// noChoicesText says why the list of Unity tests to add is empty
+export const noChoicesText = (available: number, search: string): string => {
+    if (available === 0) return 'Unity reported no tests.';
+    return search ? 'No test matches.' : 'Every test is picked.';
+};
+
+export interface SaveState {
+    creating: boolean,
+    dirty: boolean,
+    // a save was tried
+    tried: boolean,
+    valid: boolean,
+}
+
+// canSubmit is whether a save goes through: valid, and for a known test
+// something changed
+export const canSubmit = ({creating, dirty, valid}: SaveState): boolean => valid && (creating || dirty);
+
+export const saveDisabled = ({creating, dirty, tried, valid}: SaveState): boolean => (!creating && !dirty) || (tried && !valid);
+
+export const saveHint = (s: SaveState): string => {
+    if (!s.creating && !s.dirty) return 'Nothing to save yet';
+    if (s.tried && !s.valid) return 'Fix the marked fields first';
+    return `${s.creating ? 'Create' : 'Save'} (⌘S / Ctrl+S)`;
+};
+
 export interface FormErrors {
     name?: string,
     devices?: string,
@@ -85,14 +124,14 @@ export const validate = (f: TestForm, unity: boolean): FormErrors => {
     return errors;
 };
 
-const comparable = (f: TestForm) => JSON.stringify([
+const comparable = (f: TestForm): string => JSON.stringify([
     f.name.trim(), f.executionType, f.allDevices, f.allDevices ? [] : [...f.devices].sort((a, b) => a - b),
     f.mode, [...f.categories].sort(), f.functions.map(functionKey).sort(), f.recordSession,
 ]);
 
 export const isDirty = (a: TestForm, b: TestForm): boolean => comparable(a) !== comparable(b);
 
-export const toRequest = (f: TestForm) => ({
+export const toRequest = (f: TestForm): UpdateTestData => ({
     name: f.name.trim(),
     executionType: f.executionType,
     allDevices: f.allDevices,

@@ -63,25 +63,31 @@ export interface TestConfigLike {
     unity?: { testCategoryType: UnityTestCategory, testFunctions?: unknown[] | null, categories?: string } | null,
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+type UnityConfig = NonNullable<TestConfigLike['unity']>;
+
+// describeUnity says which Unity tests a test runs
+const describeUnity = (unity: UnityConfig): string => {
+    switch (unity.testCategoryType) {
+        case UnityTestCategory.RunAllTests:
+            return 'all tests';
+        case UnityTestCategory.RunAllOfCategory:
+            return unity.categories ? `category ${unity.categories}` : 'a category';
+        default:
+            return plural(unity.testFunctions?.length ?? 0, 'test', 'tests');
+    }
+};
+
+const describeDevices = (c: TestConfigLike): string =>
+    c.allDevices ? 'on all devices' : `on ${plural(c.devices?.length ?? 0, 'device', 'devices')}`;
 
 // describeConfig says in one line what a test runs and where:
 // "Unity · all tests · on all devices · one device after the other"
 export const describeConfig = (c: TestConfigLike): string => {
     const parts: string[] = [TestType[c.type] ?? 'Test'];
-    if (c.type === TestType.Unity && c.unity) {
-        switch (c.unity.testCategoryType) {
-            case UnityTestCategory.RunAllTests:
-                parts.push('all tests');
-                break;
-            case UnityTestCategory.RunAllOfCategory:
-                parts.push(c.unity.categories ? `category ${c.unity.categories}` : 'a category');
-                break;
-            default:
-                parts.push(plural(c.unity.testFunctions?.length ?? 0, 'test', 'tests'));
-        }
-    }
-    parts.push(c.allDevices ? 'on all devices' : `on ${plural(c.devices?.length ?? 0, 'device', 'devices')}`);
+    if (c.type === TestType.Unity && c.unity) parts.push(describeUnity(c.unity));
+    parts.push(describeDevices(c));
     parts.push(c.executionType === TestExecutionType.Simultaneously ? 'devices at the same time' : 'one device after the other');
     return parts.join(' · ');
 };
