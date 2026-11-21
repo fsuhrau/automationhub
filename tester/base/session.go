@@ -1,34 +1,44 @@
 package base
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/protocol"
 	"github.com/gofrs/uuid"
 )
 
-func (tr *TestRunner) NewSessionID() string {
+func newSessionID() string {
 	u, _ := uuid.NewV4()
-	return fmt.Sprintf("%s", u)
+	return u.String()
 }
 
-func (tr *TestRunner) InitNewTestSession(appBinaryId uint, startURL, params string) error {
-	sessionID := tr.NewSessionID()
-	tr.TestRun = models.TestRun{
-		TestID:      tr.Test.ID,
-		AppBinaryID: appBinaryId,
-		SessionID:   sessionID,
-		StartURL:    startURL,
-		Parameter:   params,
-	}
-	if err := tr.DB.Create(&tr.TestRun).Error; err != nil {
-		return err
-	}
+// Session is what a run is started with.
+type Session struct {
+	AppBinaryID uint
+	StartURL    string
+	// Parameter are the environment lines of the run.
+	Parameter string
+}
 
-	tr.ProtocolWriter = protocol.NewProtocolWriter(tr.DB, tr.ProjectId, tr.AppId, tr.Test.Name, &tr.TestRun)
+// InitNewTestSession creates the run of the test and its protocol writer.
+func (r *Runner) InitNewTestSession(ctx context.Context, session Session) error {
+	r.TestRun = models.TestRun{
+		TestID:      r.Test.ID,
+		AppBinaryID: session.AppBinaryID,
+		SessionID:   newSessionID(),
+		StartURL:    session.StartURL,
+		Parameter:   session.Parameter,
+	}
+	if err := r.Store.CreateRun(ctx, &r.TestRun); err != nil {
+		return fmt.Errorf("init test session: %w", err)
+	}
+	r.ProtocolWriter = protocol.NewProtocolWriter(r.DB, r.ProjectID, r.AppID, r.Test.Name, &r.TestRun)
 	return nil
 }
 
-func (tr *TestRunner) TestSessionFinished() {
-	tr.ProtocolWriter.Close()
+// TestSessionFinished closes the protocols and announces the result.
+func (r *Runner) TestSessionFinished() {
+	r.ProtocolWriter.Close()
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,18 +33,18 @@ func (d *appDevice) StopApp(*app.Parameter) error {
 func (d *appDevice) Log(string, string, ...interface{}) {}
 
 // appSocket opens a websocket like an app's connection; the returned channel
-// gets the server side's read error once the socket is closed
-func appSocket(t *testing.T) (*websocket.Conn, <-chan error) {
+// is closed once the server side noticed that the socket is closed
+func appSocket(t *testing.T) (*websocket.Conn, <-chan struct{}) {
 	t.Helper()
-	closed := make(chan error, 1)
+	closed := make(chan struct{})
 	upgrader := websocket.Upgrader{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			return
 		}
-		_, _, err = conn.ReadMessage()
-		closed <- err
+		_, _, _ = conn.ReadMessage()
+		close(closed)
 	}))
 	t.Cleanup(srv.Close)
 	ws, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http"), nil)
@@ -88,8 +89,7 @@ func TestDropAppConnectionWithoutConnection(t *testing.T) {
 
 // A cancel waits until the run released its devices, but not forever.
 func TestWaitFinished(t *testing.T) {
-	var tr TestRunner
-	tr.Init(nil, "", nil, "", 0)
+	tr := NewRunner(Deps{}, models.TestTypeUnity, func(*Runner) Strategy { return nil })
 	if tr.WaitFinished(10 * time.Millisecond) {
 		t.Fatal("finished before the run ended")
 	}

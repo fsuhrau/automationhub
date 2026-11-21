@@ -37,6 +37,7 @@ func NewExecutor(devices manager.Devices, protocolWriter *protocol.ProtocolWrite
 	return executor
 }
 
+//nolint:revive // implements the Executor of service/device, its signature is fixed
 func (e *testExecutor) Execute(ctx context.Context, dev device.Device, test action.TestStart, timeout time.Duration) error {
 	// set up before registering the handler, so responses always see a group
 	e.wg = sync.NewExtendedWaitGroup(ctx)

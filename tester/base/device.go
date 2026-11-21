@@ -3,13 +3,12 @@ package base
 import (
 	"context"
 	"fmt"
+	"slices"
+
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
-	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/utils/sync"
-	"github.com/sirupsen/logrus"
-	"slices"
 )
 
 // Unavailable says why a device can't run tests right now, or "" when it
@@ -46,68 +45,74 @@ func deviceLabel(d models.Device) string {
 
 // LockDevices locks the devices that can run tests; the others are skipped
 // with a line in the run log.
-func (tr *TestRunner) LockDevices(devs []models.Device) []DeviceMap {
+func (r *Runner) LockDevices(devs []models.Device) []DeviceMap {
 	var devices []DeviceMap
 	for _, d := range devs {
-		if reason := Unavailable(d); reason != "" {
-			tr.LogError("skipping device %s: %s", deviceLabel(d), reason)
-			continue
-		}
-		dev := d.Dev.(device.Device)
-		tr.LogInfo("locking device: %s", dev.DeviceID())
-		if err := events.LockDevice(dev); err == nil {
-			devices = append(devices, DeviceMap{
-				Device: dev,
-				Model:  d,
-			})
-			tr.lockedMu.Lock()
-			tr.locked = append(tr.locked, d.ID)
-			tr.lockedMu.Unlock()
-		} else {
-			tr.LogError("locking device %s failed: %v", dev.DeviceID(), err)
+		if dm, ok := r.lockDevice(d); ok {
+			devices = append(devices, dm)
 		}
 	}
 	return devices
 }
 
-func (tr *TestRunner) UnlockDevices(devices []DeviceMap) {
-	for i := range devices {
-		tr.DeviceManager.Stop(devices[i].Device)
-		_ = events.UnlockDevice(devices[i].Device)
-		tr.lockedMu.Lock()
-		tr.locked = slices.DeleteFunc(tr.locked, func(id uint) bool { return id == devices[i].Model.ID })
-		tr.lockedMu.Unlock()
+func (r *Runner) lockDevice(d models.Device) (DeviceMap, bool) {
+	if reason := Unavailable(d); reason != "" {
+		r.LogError("skipping device %s: %s", deviceLabel(d), reason)
+		return DeviceMap{}, false
+	}
+	dev := d.Dev.(device.Device)
+	r.LogInfo("locking device: %s", dev.DeviceID())
+	if err := events.SetDeviceLock(events.DeviceLockChanged, dev, true); err != nil {
+		r.LogError("locking device %s failed: %v", dev.DeviceID(), err)
+		return DeviceMap{}, false
+	}
+	r.lockedMu.Lock()
+	r.locked = append(r.locked, d.ID)
+	r.lockedMu.Unlock()
+	return DeviceMap{Device: dev, Model: d}, true
+}
+
+// UnlockDevices stops and unlocks the devices.
+func (r *Runner) UnlockDevices(devices []DeviceMap) {
+	for _, d := range devices {
+		_ = r.Devices.Stop(d.Device)
+		_ = events.SetDeviceLock(events.DeviceLockChanged, d.Device, false)
+		r.lockedMu.Lock()
+		r.locked = slices.DeleteFunc(r.locked, func(id uint) bool { return id == d.Model.ID })
+		r.lockedMu.Unlock()
 	}
 }
 
 // LockedDevices returns the IDs of the devices the run holds right now, so
 // the run page can show their screens.
-func (tr *TestRunner) LockedDevices() []uint {
-	tr.lockedMu.Lock()
-	defer tr.lockedMu.Unlock()
-	return slices.Clone(tr.locked)
+func (r *Runner) LockedDevices() []uint {
+	r.lockedMu.Lock()
+	defer r.lockedMu.Unlock()
+	return slices.Clone(r.locked)
 }
 
-func (tr *TestRunner) StartDevices(ctx context.Context, devices []DeviceMap) error {
-
-	wg := sync.NewExtendedWaitGroup(ctx)
-
-	for _, d := range devices {
+// StartDevices starts the devices that are not running, e.g. simulators.
+func (r *Runner) StartDevices(ctx context.Context, devices []DeviceMap) {
+	forEachDevice(ctx, devices, func(d DeviceMap) {
 		switch d.Device.DeviceState() {
-		case device.StateUnknown:
-			fallthrough
-		case device.StateShutdown:
-			wg.Add(1)
-			go func(dm manager.Devices, d device.Device, group sync.ExtendedWaitGroup) {
-				if err := dm.Start(d); err != nil {
-					logrus.Errorf("%v", err)
-					tr.LogError("unable to start device: %v", err)
-				}
-				group.Done()
-			}(tr.DeviceManager, d.Device, wg)
-		case device.StateBooted:
+		case device.StateUnknown, device.StateShutdown:
+			if err := r.Devices.Start(d.Device); err != nil {
+				r.LogError("unable to start device: %v", err)
+			}
 		}
+	})
+}
+
+// forEachDevice runs fn for every device in parallel and waits until all are
+// done or the context ends.
+func forEachDevice(ctx context.Context, devices []DeviceMap, fn func(DeviceMap)) {
+	wg := sync.NewExtendedWaitGroup(ctx)
+	for _, d := range devices {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn(d)
+		}()
 	}
-	wg.Wait()
-	return nil
+	_ = wg.Wait()
 }

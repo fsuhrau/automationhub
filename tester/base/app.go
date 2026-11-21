@@ -3,136 +3,154 @@ package base
 import (
 	"context"
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/utils/sync"
-	"time"
+	hubsync "github.com/fsuhrau/automationhub/utils/sync"
 )
 
-type DeviceFunc = func(d device.Device)
+// installAttempts is how often an installation is tried; a failed attempt
+// uninstalls the app first.
+const installAttempts = 2
 
-func (tr *TestRunner) InstallApp(ctx context.Context, params app.Parameter, devices []DeviceMap) {
-
-	wg := sync.NewExtendedWaitGroup(ctx)
-
-	for _, d := range devices {
-		wg.Add(1)
-		go func(appp app.Parameter, d device.Device, group sync.ExtendedWaitGroup) {
-			defer group.Done()
-
-			/*
-				available, err := d.IsAppBundleAvailable(&params)
-				if err != nil {
-					tr.LogError("check installation failed: %v", err)
-					return
-				}
-			*/
-
-			installed, err := d.IsAppInstalled(&params)
-			if err != nil {
-				tr.LogError("check installation failed: %v", err)
-				return
-			}
-
-			if !installed {
-				tries := 0
-				for {
-					if tries > 1 {
-						tr.LogError("unable to install app: %v", err)
-						break
-					}
-					if err := d.InstallApp(&appp); err != nil {
-						tr.LogInfo("installation failed try delete first: %v", err)
-						d.UninstallApp(&appp)
-						tries++
-						continue
-					}
-					break
-				}
-			}
-		}(params, d.Device, wg)
-	}
-	wg.Wait()
+// installApps installs the app on the devices that don't have it.
+func (r *Runner) installApps(ctx context.Context, params app.Parameter, devices []DeviceMap) {
+	forEachDevice(ctx, devices, func(d DeviceMap) {
+		p := params
+		installed, err := d.Device.IsAppInstalled(&p)
+		if err != nil {
+			r.LogError("check installation failed: %v", err)
+			return
+		}
+		if !installed {
+			r.installWithRetry(d.Device, &p)
+		}
+	})
 }
 
-func (tr *TestRunner) StopApp(ctx context.Context, params app.Parameter, devices []DeviceMap) {
-
-	wg := sync.NewExtendedWaitGroup(ctx)
-
-	for _, d := range devices {
-		wg.Add(1)
-		go func(dm manager.Devices, param app.Parameter, d device.Device, group sync.ExtendedWaitGroup) {
-			if err := StopAndClearApp(d, &param); err != nil {
-				tr.LogError("unable to stop app: %v", err)
-			}
-			group.Done()
-		}(tr.DeviceManager, params, d.Device, wg)
+func (r *Runner) installWithRetry(d device.Device, p *app.Parameter) {
+	var err error
+	for range installAttempts {
+		if err = d.InstallApp(p); err == nil {
+			return
+		}
+		r.LogInfo("installation failed try delete first: %v", err)
+		_ = d.UninstallApp(p)
 	}
-	wg.Wait()
+	r.LogError("unable to install app: %v", err)
 }
 
-func (tr *TestRunner) StartApp(ctx context.Context, params app.Parameter, devices []DeviceMap, appStartedFunc DeviceFunc, connectedFunc DeviceFunc) ([]DeviceMap, error) {
+// stopApps stops the app on the devices and clears its data.
+func (r *Runner) stopApps(ctx context.Context, params app.Parameter, devices []DeviceMap) {
+	forEachDevice(ctx, devices, func(d DeviceMap) {
+		p := params
+		if err := StopAndClearApp(d.Device, &p); err != nil {
+			r.LogError("unable to stop app: %v", err)
+		}
+	})
+}
 
-	cancelContext, cancel := context.WithCancel(ctx)
+// appStart is what starting the app on one device needs.
+type appStart struct {
+	params   app.Parameter
+	observer StartObserver
+	out      chan<- DeviceMap
+}
+
+// startApps starts the app on the devices and returns those whose app
+// connected in time. Apps that did not connect are stopped before it returns.
+func (r *Runner) startApps(ctx context.Context, s *runState) ([]DeviceMap, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	wg := sync.NewExtendedWaitGroup(cancelContext)
-	connectedChan := make(chan DeviceMap, len(devices)) // Buffered channel to collect connected devices
-
-	for _, d := range devices {
-		wg.Add(1)
-		go tr.startApp(cancelContext, wg, connectedChan, params, d, tr.ProtocolWriter.SessionID(), appStartedFunc, connectedFunc)
+	observer, _ := r.strategy.(StartObserver)
+	var inflight sync.WaitGroup
+	// buffered for every device, so late devices never block
+	connected := make(chan DeviceMap, len(s.devices))
+	for _, d := range s.devices {
+		inflight.Add(1)
+		go func() {
+			defer inflight.Done()
+			r.startApp(ctx, d, appStart{params: s.params, observer: observer, out: connected})
+		}()
 	}
-	err := wg.WaitWithTimeout(1 * time.Minute)
-
-	close(connectedChan)
-	var connectedDevices []DeviceMap
-	for d := range connectedChan {
-		connectedDevices = append(connectedDevices, d)
-	}
-
-	return connectedDevices, err
+	err := r.waitForStart(ctx, &inflight)
+	cancel()
+	inflight.Wait()
+	return drain(connected), err
 }
 
-func (tr *TestRunner) startApp(context context.Context, group sync.ExtendedWaitGroup, deviceChan chan DeviceMap, appp app.Parameter, d DeviceMap, sessionId string, appStartedFunc DeviceFunc, connectedFunc DeviceFunc) {
-	waitTime := 500 * time.Millisecond
-	waitTrigger := time.NewTimer(waitTime)
-	defer group.Done()
-	startTime := time.Now()
-	defer waitTrigger.Stop()
-
-	tr.LogInfo("Start App '%s' on Device '%s' with Session '%s'", appp.Identifier, d.Device.DeviceID(), tr.ProtocolWriter.SessionID())
-	if err := d.Device.StartApp(nil, &appp, tr.ProtocolWriter.SessionID(), tr.NodeUrl); err != nil {
-		tr.LogError("unable to start app: %v", err)
-		return
+// waitForStart waits until all apps are started or connected, the timeout
+// ends or the context does.
+func (r *Runner) waitForStart(ctx context.Context, inflight *sync.WaitGroup) error {
+	done := make(chan struct{})
+	go func() {
+		inflight.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-r.Clock.After(r.Timeouts.Start):
+		return hubsync.TimeoutError
 	}
+}
 
-	if appStartedFunc != nil {
-		appStartedFunc(d.Device)
-	}
-
+func drain(connected chan DeviceMap) []DeviceMap {
+	var out []DeviceMap
 	for {
 		select {
-		case <-context.Done():
-			_ = StopAndClearApp(d.Device, &appp)
-			tr.LogInfo("Context cancelled, stopping app start process")
-			return
-		case <-waitTrigger.C:
-			if d.Device.IsAppConnected() {
-				break
-			}
-			waitTrigger.Reset(waitTime)
-			continue
+		case d := <-connected:
+			out = append(out, d)
+		default:
+			return out
 		}
-		break
 	}
-	tr.ProtocolWriter.TrackStartupTime(d.Model.ID, time.Now().Sub(startTime).Milliseconds())
-	if connectedFunc != nil {
-		connectedFunc(d.Device)
-	}
+}
 
-	deviceChan <- d
+func (r *Runner) startApp(ctx context.Context, d DeviceMap, st appStart) {
+	began := r.Clock.Now()
+	session := r.ProtocolWriter.SessionID()
+	r.LogInfo("Start App '%s' on Device '%s' with Session '%s'", st.params.Identifier, d.Device.DeviceID(), session)
+	if err := d.Device.StartApp(nil, &st.params, session, r.NodeURL); err != nil {
+		r.LogError("unable to start app: %v", err)
+		return
+	}
+	if st.observer != nil {
+		st.observer.AppStarted(ctx, d.Device)
+	}
+	if !r.awaitConnection(ctx, d.Device, &st.params) {
+		return
+	}
+	r.trackStartupTime(d.Model.ID, r.Clock.Now().Sub(began))
+	st.out <- d
+}
+
+// trackStartupTime is serialized: the devices connect in parallel, and the
+// protocol writer appends to the run.
+func (r *Runner) trackStartupTime(deviceID uint, took time.Duration) {
+	r.startupMu.Lock()
+	defer r.startupMu.Unlock()
+	r.ProtocolWriter.TrackStartupTime(deviceID, took.Milliseconds())
+}
+
+// awaitConnection waits until the app of the device is connected; it stops
+// the app when the context ends first.
+func (r *Runner) awaitConnection(ctx context.Context, d device.Device, p *app.Parameter) bool {
+	for !d.IsAppConnected() {
+		select {
+		case <-ctx.Done():
+			_ = StopAndClearApp(d, p)
+			r.LogInfo("Context cancelled, stopping app start process")
+			return false
+		case <-r.Clock.After(r.Timeouts.Poll):
+		}
+	}
+	return true
 }
 
 // StopAndClearApp stops the app and, where the platform supports it, wipes its
