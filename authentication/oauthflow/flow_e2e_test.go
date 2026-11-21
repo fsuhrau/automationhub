@@ -45,6 +45,7 @@ func TestFlowWithAStrategy(t *testing.T) {
 	flowtest.Run(t, flowtest.Case{
 		Name:              "fake",
 		UserJSON:          `{"login":"octo","name":"Octo Cat"}`,
+		NoEmailUsersJSON:  [2]string{`{"login":"first","name":"First"}`, `{"login":"second","name":"Second"}`},
 		CallbackStatus:    http.StatusTemporaryRedirect,
 		FailsOnBrokenUser: true,
 		Build: func(db *gorm.DB, idp string, s oauthflow.Settings) (*oauthflow.Flow, error) {

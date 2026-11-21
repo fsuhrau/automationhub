@@ -36,8 +36,12 @@ func TestStrategyConstants(t *testing.T) {
 
 func TestGenericOAuth2Flow(t *testing.T) {
 	flowtest.Run(t, flowtest.Case{
-		Name:           ProviderName,
-		UserJSON:       `{"userid":"octo","name":"Octo Cat"}`,
+		Name:     ProviderName,
+		UserJSON: `{"userid":"octo","name":"Octo Cat"}`,
+		NoEmailUsersJSON: [2]string{
+			`{"userid":"first","name":"First"}`,
+			`{"userid":"second","name":"Second"}`,
+		},
 		CallbackStatus: http.StatusOK,
 		Build: func(db *gorm.DB, idp string, s oauthflow.Settings) (*oauthflow.Flow, error) {
 			return New(db, Endpoints{AuthURL: idp + "/auth", TokenURL: idp + "/token", UserURL: idp + "/user"}, s)

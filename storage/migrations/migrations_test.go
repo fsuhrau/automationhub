@@ -54,7 +54,7 @@ func apply(t *testing.T, m func(*gorm.DB) error, db *gorm.DB) {
 }
 
 func TestAllIDsAreUniqueAndOrdered(t *testing.T) {
-	want := []string{"AddAppParameter", "AddPersonalAccessTokens", "AddBundleInfo", "AddBundleArchivedAt", "AddSessionRecording", "AddProtocolKeys"}
+	want := []string{"AddAppParameter", "AddPersonalAccessTokens", "AddBundleInfo", "AddBundleArchivedAt", "AddSessionRecording", "AddProtocolKeys", "PartialAuthIndexes"}
 	all := All()
 	if len(all) != len(want) {
 		t.Fatalf("got %d migrations, want %d", len(all), len(want))

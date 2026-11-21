@@ -46,3 +46,18 @@ func displayNameDoesNotSelectTheAccount(t *testing.T, p Case) {
 	found, err := accessstore.New(h.db).FindUser(context.Background(), renamed)
 	check(t, err == nil && found.ID == own.ID, "stored user of the session: %+v, %v", found, err)
 }
+
+// Providers that give no email (the generic one always, GitHub for private
+// emails) must not make accounts collide: every provider user gets their own.
+func usersWithoutEmailGetOwnAccounts(t *testing.T, p Case) {
+	h := newHub(t, p)
+	var ids [2]uint
+	for i, answer := range p.NoEmailUsersJSON {
+		h.idp.answerUsersWith(http.StatusOK, answer)
+		c := signIn(t, h)
+		check(t, statusOf(t, c, h.URL+"/private") == http.StatusOK, "user %d is not signed in", i)
+		ids[i] = sessionUser(t, h, c).ID
+	}
+	check(t, ids[0] != 0 && ids[0] != ids[1], "accounts of the two users: %v", ids)
+	check(t, countUsers(h) == 2, "users: %d, want 2", countUsers(h))
+}

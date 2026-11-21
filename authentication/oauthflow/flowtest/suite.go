@@ -15,6 +15,8 @@ type Case struct {
 	Name string
 	// UserJSON is what the fake user endpoint answers; it maps to the user "octo" / "Octo Cat".
 	UserJSON string
+	// NoEmailUsersJSON holds the answers for two different provider users that have no email.
+	NoEmailUsersJSON [2]string
 	// CallbackStatus is the status of a successful callback.
 	CallbackStatus int
 	// FailsOnBrokenUser tells whether an unreadable user answer refuses the login.
@@ -33,6 +35,7 @@ func Run(t *testing.T, c Case) {
 		"concurrent logins":             concurrentLoginsDoNotInterfere,
 		"session answers":               sessionAnswersNameTheMethod,
 		"display name is not identity":  displayNameDoesNotSelectTheAccount,
+		"users without an email":        usersWithoutEmailGetOwnAccounts,
 	}
 	for name, run := range scenarios {
 		t.Run(name, func(t *testing.T) { run(t, c) })

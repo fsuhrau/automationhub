@@ -15,6 +15,7 @@ func All() []*gormigrate.Migration {
 		addBundleArchivedAt(),
 		addSessionRecording(),
 		addProtocolKeys(),
+		partialAuthIndexes(),
 	}
 }
 

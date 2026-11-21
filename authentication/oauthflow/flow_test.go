@@ -133,6 +133,20 @@ func TestEnsureUser(t *testing.T) {
 	}
 }
 
+// Providers that give no email still create one account per provider user.
+func TestEnsureUsersWithoutAnEmail(t *testing.T) {
+	db := testkit.DB(t)
+	u := users{db: db, provider: "fake"}
+	first, err := u.ensure(Profile{ProviderUserID: "1", Name: "Ada"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := u.ensure(Profile{ProviderUserID: "2", Name: "Bob"})
+	if err != nil || second.ID == first.ID {
+		t.Fatalf("second user got %+v, %v; first is %d", second, err, first.ID)
+	}
+}
+
 // A taken display name never refuses or takes over a login: the new account
 // gets a free name of its own.
 func TestEnsureUserWithATakenName(t *testing.T) {

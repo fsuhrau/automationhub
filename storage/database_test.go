@@ -200,6 +200,22 @@ func TestOpenCreatesFullSchema(t *testing.T) {
 	}
 }
 
+// A new database has the partial unique indexes of the sign in accounts.
+func TestOpenCreatesTheAuthIndexes(t *testing.T) {
+	db, err := Open(sqliteConfig(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"idx_user_auths_email", "idx_user_auths_identity", "idx_userid_provider"} {
+		if !db.Migrator().HasIndex(&models.UserAuth{}, name) {
+			t.Errorf("index %s missing", name)
+		}
+	}
+	if db.Migrator().HasIndex(&models.UserAuth{}, "idx_email_provider") {
+		t.Error("old index idx_email_provider exists")
+	}
+}
+
 func TestOpenErrors(t *testing.T) {
 	broken := sqliteConfig(t)
 	seed, err := gorm.Open(sqlite.Open(broken.SQLite.Path), &gorm.Config{})

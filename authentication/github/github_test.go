@@ -51,8 +51,12 @@ func TestStrategyConstants(t *testing.T) {
 
 func TestGitHubFlow(t *testing.T) {
 	flowtest.Run(t, flowtest.Case{
-		Name:              ProviderName,
-		UserJSON:          `{"id":42,"login":"octo","name":"Octo Cat","email":"octo@example.com","url":"https://api.example/users/octo"}`,
+		Name:     ProviderName,
+		UserJSON: `{"id":42,"login":"octo","name":"Octo Cat","email":"octo@example.com","url":"https://api.example/users/octo"}`,
+		NoEmailUsersJSON: [2]string{
+			`{"id":1,"login":"first","name":"First"}`,
+			`{"id":2,"login":"second","name":"Second"}`,
+		},
 		CallbackStatus:    http.StatusTemporaryRedirect,
 		FailsOnBrokenUser: true,
 		Build: func(db *gorm.DB, idp string, s oauthflow.Settings) (*oauthflow.Flow, error) {
