@@ -12,11 +12,13 @@ type hook struct {
 	cfg    config.Hook
 }
 
-func NewHook(cfg config.Hook) *hook {
+// NewHook posts to the Slack channel of cfg; opts adjust the Slack client
+// (e.g. its API URL).
+func NewHook(cfg config.Hook, opts ...slack.Option) *hook {
 	h := &hook{
 		cfg: cfg,
 	}
-	h.client = slack.New(cfg.Token, slack.OptionDebug(true))
+	h.client = slack.New(cfg.Token, append([]slack.Option{slack.OptionDebug(true)}, opts...)...)
 	return h
 }
 
@@ -34,19 +36,19 @@ func mapLevelToColor(level hooks.Level) string {
 	return "white"
 }
 
-func (h *hook) Send(title, message, link string, level hooks.Level) {
+func (h *hook) Send(msg hooks.Message) {
 
 	attachment := slack.Attachment{
-		Title: title,
-		Text:  message,
-		Color: mapLevelToColor(level),
+		Title: msg.Title,
+		Text:  msg.Text,
+		Color: mapLevelToColor(msg.Level),
 	}
-	if len(link) > 0 {
+	if len(msg.Link) > 0 {
 		attachment.Actions = append(attachment.Actions, slack.AttachmentAction{
 			Name: "Open",
 			Text: "Open",
 			Type: "button",
-			URL:  link,
+			URL:  msg.Link,
 		})
 	}
 	_, _, err := h.client.PostMessage(h.cfg.Channel, slack.MsgOptionAttachments(attachment))

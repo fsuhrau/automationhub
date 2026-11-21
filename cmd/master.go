@@ -1,20 +1,8 @@
-// Copyright © 2020 Fabian Suhrau <fabian.suhrau@me.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints/api"
 	"github.com/fsuhrau/automationhub/endpoints/manager"
@@ -22,68 +10,60 @@ import (
 	"github.com/fsuhrau/automationhub/endpoints/web"
 	"github.com/fsuhrau/automationhub/hub"
 	"github.com/fsuhrau/automationhub/storage"
-	"github.com/fsuhrau/automationhub/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"net"
 )
 
-// masterCmd represents the run command
-var masterCmd = &cobra.Command{
-	Use:   "master",
-	Short: "start the automaton hub master server",
-	Long:  `automation hub server is a service which handle device connections and provides a device inspector gui`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+// masterService is the wired master, ready to run.
+type masterService struct {
+	server   *hub.Service
+	nodes    *hub.NodeManager
+	sessions *hub.SessionManager
+}
 
-		var serviceConfig config.Service
-		if err := viper.Unmarshal(&serviceConfig); err != nil {
-			return err
-		}
+func newMasterCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "master",
+		Short: "start the automaton hub master server",
+		Long:  `automation hub server is a service which handle device connections and provides a device inspector gui`,
+		RunE: func(*cobra.Command, []string) error {
+			cfg, err := loadServiceConfig()
+			if err != nil {
+				return err
+			}
+			return runMaster(cfg)
+		},
+	}
+}
 
-		hostIP := getHostIP(serviceConfig)
+func runMaster(cfg config.Service) error {
+	m, err := buildMaster(cfg)
+	if err != nil {
+		return err
+	}
+	return m.server.RunMaster(m.nodes, m.sessions)
+}
 
-		db, err := storage.GetDB(serviceConfig.Database)
-		if err != nil {
-			return err
-		}
-
-		deviceStore := storage.NewDeviceStore(db)
-
-		logger := logrus.New()
-
-		deviceManager := hub.NewDeviceManager(logger, serviceConfig)
-		sessionManager := hub.NewSessionManager(logger, deviceManager)
-		nodeManager := hub.NewNodeManager(logger, db)
-
-		server := hub.NewService(logger, hostIP, deviceManager, serviceConfig, deviceStore, db)
-
-		server.AddEndpoint(api.New(logger, db, serviceConfig.NodeUrl, deviceManager, sessionManager, serviceConfig, nodeManager))
-		server.AddEndpoint(manager.New(logger, deviceManager, serviceConfig))
-		server.AddEndpoint(web.New(db, serviceConfig))
-		server.AddEndpoint(node_master.New(serviceConfig, deviceManager, nodeManager, nil))
-
+// buildMaster wires the master; the service is only usable when err is nil.
+func buildMaster(cfg config.Service) (*masterService, error) {
+	db, err := storage.GetDB(cfg.Database)
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	logger := logrus.New()
+	deviceManager := hub.NewDeviceManager(logger, cfg)
+	m := &masterService{
+		sessions: hub.NewSessionManager(logger, deviceManager),
+		nodes:    hub.NewNodeManager(logger, db),
+		server:   hub.NewService(logger, getHostIP(cfg), deviceManager, cfg, storage.NewDeviceStore(db), db),
+	}
+	m.server.RegisterHooks(cfg.Hooks)
+	return m, addEndpoints(m.server,
+		api.New(logger, db, cfg.NodeUrl, deviceManager, m.sessions, cfg, m.nodes),
+		manager.New(logger, deviceManager, cfg),
+		web.New(db, cfg),
+		node_master.New(cfg, deviceManager, m.nodes, nil),
 		// endpoint for websocket connection
-		server.AddEndpoint(deviceManager)
-
-		server.RegisterHooks(serviceConfig.Hooks)
-
-		return server.RunMaster(nodeManager, sessionManager)
-	},
-}
-
-func getHostIP(cfg config.Service) net.IP {
-	var hostIP net.IP
-	if len(cfg.HostIP) > 0 {
-		hostIP = net.ParseIP(cfg.HostIP)
-	}
-
-	if hostIP == nil {
-		hostIP = utils.GetOutboundIP()
-	}
-	return hostIP
-}
-
-func init() {
-	rootCmd.AddCommand(masterCmd)
+		deviceManager,
+	)
 }

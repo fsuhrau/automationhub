@@ -95,6 +95,7 @@ type Database struct {
 }
 
 type Service struct {
+	LogLevel      string             `yaml:"log,omitempty" mapstructure:"log"`
 	Identifier    string             `yaml:"identifier,omitempty" mapstructure:"identifier"`
 	Port          int32              `yaml:"port,omitempty" mapstructure:"port"`
 	Autodetect    bool               `yaml:"autodetect_ip,omitempty" mapstructure:"autodetect_ip"`

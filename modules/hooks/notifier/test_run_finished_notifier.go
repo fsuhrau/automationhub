@@ -5,16 +5,19 @@ import (
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/modules/hooks"
 	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/spf13/viper"
 )
 
 type testRunFinishedNotifier struct {
-	hooks []hooks.Hook
+	hooks  []hooks.Hook
+	hostIP string
 }
 
-func RegisterEventTestRunFinishedListener(hooks []hooks.Hook) {
+// RegisterEventTestRunFinishedListener sends every finished test run to the
+// hooks; hostIP is the host the links in the messages point to.
+func RegisterEventTestRunFinishedListener(hooks []hooks.Hook, hostIP string) {
 	notifier := testRunFinishedNotifier{
-		hooks: hooks,
+		hooks:  hooks,
+		hostIP: hostIP,
 	}
 	events.TestRunFinished.Register(notifier)
 }
@@ -37,9 +40,8 @@ func buildTitle(payload events.TestRunFinishedPayload) string {
 	return "TestRun finished"
 }
 
-func getUrl(payload events.TestRunFinishedPayload) string {
+func getUrl(payload events.TestRunFinishedPayload, ip string) string {
 	if testRun, ok := payload.TestRun.(*models.TestRun); ok {
-		ip := viper.GetString("host_ip")
 		return fmt.Sprintf("http://%s:8002/project/%s/app/%d/test/%d/run/%d", ip, payload.ProjectID, payload.AppID, testRun.TestID, testRun.ID)
 	}
 	return ""
@@ -60,6 +62,11 @@ func getLevel(payload events.TestRunFinishedPayload) hooks.Level {
 
 func (u testRunFinishedNotifier) Handle(payload events.TestRunFinishedPayload) {
 	for _, hook := range u.hooks {
-		hook.Send(buildTitle(payload), buildMessage(payload), getUrl(payload), getLevel(payload))
+		hook.Send(hooks.Message{
+			Title: buildTitle(payload),
+			Text:  buildMessage(payload),
+			Link:  getUrl(payload, u.hostIP),
+			Level: getLevel(payload),
+		})
 	}
 }

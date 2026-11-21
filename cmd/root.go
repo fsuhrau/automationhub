@@ -1,17 +1,3 @@
-// Copyright © 2020 Fabian Suhrau <fabian.suhrau@me.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -23,56 +9,55 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use: "hub",
+// newRootCmd builds the command tree.
+func newRootCmd() *cobra.Command {
+	var cfgFile string
+	root := &cobra.Command{
+		Use: "hub",
+		PersistentPreRunE: func(*cobra.Command, []string) error {
+			return initConfig(cfgFile, homedir.Dir)
+		},
+	}
+	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.automationhub.yaml)")
+	root.AddCommand(newConfigureCmd(), newMasterCmd(), newNodeCmd(), newVersionCmd(), newMCPProxyCmd())
+	return root
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute runs the command line of the process. It is called by main.main().
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	exitOnError(newRootCmd().Execute(), os.Exit)
+}
+
+func exitOnError(err error, exit func(int)) {
+	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.automationhub.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+// initConfig reads the config file and the environment variables into viper.
+func initConfig(cfgFile string, homeDir func() (string, error)) error {
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".automationhub" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".automationhub")
+	} else if err := useHomeConfig(homeDir); err != nil {
+		return err
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	_ = viper.ReadInConfig()
+	return nil
+}
+
+// useHomeConfig searches the config ".automationhub" in the home directory.
+func useHomeConfig(homeDir func() (string, error)) error {
+	home, err := homeDir()
+	if err != nil {
+		return fmt.Errorf("find home directory: %w", err)
+	}
+	viper.AddConfigPath(home)
+	viper.SetConfigType("yaml")
+	viper.SetConfigName(".automationhub")
+	return nil
 }

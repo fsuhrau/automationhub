@@ -1,20 +1,9 @@
-// Copyright © 2020 Fabian Suhrau <fabian.suhrau@me.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device/node"
 	"github.com/fsuhrau/automationhub/endpoints/manager"
@@ -24,60 +13,58 @@ import (
 	"github.com/fsuhrau/automationhub/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-// nodeCmd represents the node command
-var nodeCmd = &cobra.Command{
-	Use:   "node",
-	Short: "start an automaton hub node and connect to the server",
-	Long:  `an automation hub node will handle every connection on the local machine and will act as a proxy between local attached devices and the automation hub server`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var serviceConfig config.Service
-
-		if err := viper.Unmarshal(&serviceConfig); err != nil {
-			return err
-		}
-
-		hostIP := getHostIP(serviceConfig)
-
-		db, err := storage.GetDB(serviceConfig.Database)
-		if err != nil {
-			return err
-		}
-
-		logger := logrus.New()
-
-		deviceStore := node.NewMemoryDeviceStore(serviceConfig.DeviceManager)
-		deviceManager := hub.NewDeviceManager(logger, serviceConfig)
-
-		reconnectHandler := node_hub.ReconnectHandler{}
-		rpcNode := node_hub.NewRPCNode(serviceConfig, deviceManager, &reconnectHandler)
-
-		server := hub.NewService(logger, hostIP, deviceManager, serviceConfig, deviceStore, db)
-
-		server.AddEndpoint(manager.New(logger, deviceManager, serviceConfig))
-
-		// endpoint for websocket connection
-		server.AddEndpoint(deviceManager)
-
-		var deviceManagers []string
-
-		for k, _ := range serviceConfig.DeviceManager {
-			deviceManagers = append(deviceManagers, k)
-		}
-
-		nodeClient := node_client.New(logger, db, rpcNode, deviceManager, serviceConfig, deviceManagers, &reconnectHandler)
-		server.AddEndpoint(nodeClient)
-
-		reconnectHandler.ConnectFunction = nodeClient.ConnectAndServe
-
-		reconnectHandler.HandleConnect()
-
-		return server.RunNode(&reconnectHandler)
-	},
+// nodeService is the wired node, ready to run.
+type nodeService struct {
+	server  *hub.Service
+	handler *node_hub.ReconnectHandler
 }
 
-func init() {
-	rootCmd.AddCommand(nodeCmd)
+func newNodeCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "node",
+		Short: "start an automaton hub node and connect to the server",
+		Long:  `an automation hub node will handle every connection on the local machine and will act as a proxy between local attached devices and the automation hub server`,
+		RunE: func(*cobra.Command, []string) error {
+			cfg, err := loadServiceConfig()
+			if err != nil {
+				return err
+			}
+			return runNode(cfg)
+		},
+	}
+}
+
+func runNode(cfg config.Service) error {
+	n, err := buildNode(cfg)
+	if err != nil {
+		return err
+	}
+	return errors.Join(n.handler.HandleConnect(), n.server.RunNode(n.handler))
+}
+
+// buildNode wires the node; the service is only usable when err is nil.
+func buildNode(cfg config.Service) (*nodeService, error) {
+	db, err := storage.GetDB(cfg.Database)
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	logger := logrus.New()
+	deviceManager := hub.NewDeviceManager(logger, cfg)
+	handler := &node_hub.ReconnectHandler{}
+	rpcNode := node_hub.NewRPCNode(cfg, deviceManager, handler)
+	server := hub.NewService(logger, getHostIP(cfg), deviceManager, cfg, node.NewMemoryDeviceStore(cfg.DeviceManager), db)
+
+	nodeClient := node_client.New(logger, db, rpcNode, deviceManager, cfg, managerNames(cfg), handler)
+	handler.ConnectFunction = nodeClient.ConnectAndServe
+	return &nodeService{server: server, handler: handler}, addEndpoints(server, manager.New(logger, deviceManager, cfg), deviceManager, nodeClient)
+}
+
+func managerNames(cfg config.Service) []string {
+	names := make([]string, 0, len(cfg.DeviceManager))
+	for name := range cfg.DeviceManager {
+		names = append(names, name)
+	}
+	return names
 }

@@ -65,3 +65,36 @@ func TestNewServiceWithoutAuthIsOpen(t *testing.T) {
 		t.Errorf("open route: %d", w.Code)
 	}
 }
+
+func TestNewServiceAppliesTheConfiguredLogLevel(t *testing.T) {
+	tests := map[string]struct {
+		level string
+		want  logrus.Level
+	}{
+		"debug":   {"debug", logrus.DebugLevel},
+		"warn":    {"warn", logrus.WarnLevel},
+		"empty":   {"", logrus.InfoLevel},
+		"invalid": {"loud", logrus.InfoLevel},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			logger := logrus.New()
+			logger.SetOutput(&strings.Builder{})
+			NewService(logger, net.IPv4(127, 0, 0, 1), &testkit.FakeDeviceManager{}, config.Service{LogLevel: tc.level}, nil, testkit.DB(t))
+			if logger.GetLevel() != tc.want {
+				t.Errorf("level = %v, want %v", logger.GetLevel(), tc.want)
+			}
+		})
+	}
+}
+
+func TestRegisterHooksKeepsOnlySlackHooks(t *testing.T) {
+	s := newTestService(t, config.Auth{})
+
+	s.RegisterHooks([]config.Hook{{Provider: "slack"}, {Provider: "unknown"}})
+
+	if len(s.hooks) != 1 {
+		t.Errorf("hooks = %d, want 1", len(s.hooks))
+	}
+}

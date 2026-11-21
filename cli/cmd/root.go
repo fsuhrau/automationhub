@@ -17,54 +17,63 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+	"io"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var (
-	cfgFile  string
+// globalOptions are the flags every command shares.
+type globalOptions struct {
 	apiToken string
-)
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use: "cli",
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// newRootCmd builds the command tree.
+func newRootCmd() *cobra.Command {
+	var (
+		cfgFile string
+		global  globalOptions
+	)
+	root := &cobra.Command{
+		Use: "cli",
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			return initConfig(cfgFile, homedir.Dir, cmd.ErrOrStderr())
+		},
+	}
+	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
+	root.PersistentFlags().StringVar(&global.apiToken, "token", "", "token for authentication")
+	root.AddCommand(newTestCmd(&global), newVersionCmd())
+	return root
+}
+
+// Execute runs the command line of the process. It is called by main.main().
 func Execute() {
-	cobra.CheckErr(rootCmd.Execute())
+	exitOnError(newRootCmd().Execute(), os.Stderr, os.Exit)
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+// fprintf writes to out; a failing terminal is not worth reporting.
+func fprintf(out io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(out, format, args...)
+}
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
-	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "token for authentication")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func exitOnError(err error, stderr io.Writer, exit func(int)) {
+	if err != nil {
+		fprintf(stderr, "%v\n", err)
+		exit(1)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
+func initConfig(cfgFile string, homeDir func() (string, error), stderr io.Writer) error {
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		cobra.CheckErr(err)
-
+		home, err := homeDir()
+		if err != nil {
+			return fmt.Errorf("find home directory: %w", err)
+		}
 		// Search config in home directory with name ".cli" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".cli")
@@ -74,6 +83,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		fprintf(stderr, "Using config file: %s\n", viper.ConfigFileUsed())
 	}
+	return nil
 }

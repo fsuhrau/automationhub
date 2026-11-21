@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
@@ -41,14 +40,7 @@ type Service struct {
 }
 
 func NewService(logger *logrus.Logger, ip net.IP, devices manager.Devices, cfg config.Service, sd storage.Device, db *gorm.DB) *Service {
-	level, err := logrus.ParseLevel(viper.GetString("log"))
-	if err != nil {
-		logrus.Infof("Parse Log Level: %s", err)
-		logrus.Info("using default info")
-		logger.SetLevel(logrus.InfoLevel)
-	} else {
-		logger.SetLevel(level)
-	}
+	applyLogLevel(logger, cfg.LogLevel)
 	logger.Formatter = new(prefixed.TextFormatter)
 	router := newRouter(logger)
 
@@ -115,6 +107,17 @@ func authProvider(db *gorm.DB, auth config.Auth) (authentication.Provider, error
 	return nil, nil
 }
 
+// applyLogLevel sets the level named in the config, info when it is empty or invalid.
+func applyLogLevel(logger *logrus.Logger, name string) {
+	level, err := logrus.ParseLevel(name)
+	if err != nil {
+		logrus.Infof("Parse Log Level: %s", err)
+		logrus.Info("using default info")
+		level = logrus.InfoLevel
+	}
+	logger.SetLevel(level)
+}
+
 func newRouter(logger *logrus.Logger) *gin.Engine {
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -137,5 +140,5 @@ func (s *Service) RegisterHooks(hooksCfgs []config.Hook) {
 		}
 	}
 
-	notifier.RegisterEventTestRunFinishedListener(s.hooks)
+	notifier.RegisterEventTestRunFinishedListener(s.hooks, s.cfg.HostIP)
 }

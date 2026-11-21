@@ -1,175 +1,138 @@
-/*
-Copyright © 2021 Fabian Suhrau <fabian.suhrau@me.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/fsuhrau/automationhub/cli/api"
-	"github.com/fsuhrau/automationhub/events"
-	"github.com/fsuhrau/automationhub/utils/sync"
-	sse "github.com/r3labs/sse/v2"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"strconv"
+	"io"
 	"strings"
 	"time"
+
+	"github.com/fsuhrau/automationhub/cli/api"
+	apiv "github.com/fsuhrau/automationhub/endpoints/api"
+	"github.com/spf13/cobra"
 )
 
-var (
-	appPath  string
-	binaryID int
-	params   string
-	async    *bool
-	success  bool
-	tags     string
-)
-
-// runCmd represents the run command
-var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "run http://localhost:8002 projectID appID testName --binaryID 50 --binary path_to_app --tags \"tag1,tag2,tag3\" --params \"param1=1;parameter2=2\" --async",
-	Long: `Run a new test.
-	`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 4 {
-			return fmt.Errorf("missing parameter")
-		}
-		var (
-			testID    uint
-			apiURL    string
-			projectID string
-			appID     uint
-			testName  string
-		)
-
-		apiURL = args[0]
-		projectID = args[1]
-		u, _ := strconv.ParseUint(args[2], 10, 64)
-		appID = uint(u)
-		testName = args[3]
-
-		client := api.NewClient(apiURL, apiToken, projectID, appID)
-
-		if len(appPath) > 0 {
-			logrus.Info("uploading appBundle")
-			appBundle, err := client.UploadBundle(appPath)
-			if err != nil {
-				return err
-			}
-			binaryID = int(appBundle.ID)
-			logrus.Infof("upload finished new binaryID: %d", binaryID)
-
-			if len(tags) > 0 {
-				appBundle.Tags = tags
-				if err := client.UpdateApp(context.Background(), appBundle); err != nil {
-					return err
-				}
-			}
-		}
-
-		if len(testName) > 0 {
-			tests, err := client.GetTests(context.Background())
-			if err != nil {
-				return err
-			}
-			for _, t := range tests {
-				if t.Name == testName {
-					testID = t.ID
-				}
-			}
-		}
-
-		if testID == 0 {
-			return fmt.Errorf("no test provided or test could not be found")
-		}
-
-		logrus.Infof("execute test %d with binaryId: %d\n%s", testID, binaryID, params)
-		parameter := strings.Split(params, ";")
-		logrus.Infof("execute test %d with binaryId: %d", testID, binaryID)
-		testRun, err := client.ExecuteTest(context.Background(), testID, binaryID, strings.Join(parameter, "\n"))
-		if err != nil {
-			return err
-		}
-		defer func() {
-			logrus.Infof("Check your restults at: %s/project/%s/app/%d/test/%d/run/%d", apiURL, projectID, appID, testID, testRun.ID)
-		}()
-		if async != nil && *async == true {
-			logrus.Infof("Test Running...")
-		} else {
-			client := sse.NewClient(fmt.Sprintf("%s/api/sse", apiURL))
-
-			eventsChannel := make(chan *sse.Event)
-			if err := client.SubscribeChan(fmt.Sprintf("test_run_%d_finished", testRun.ID), eventsChannel); err != nil {
-				return err
-			}
-
-			runLogChannel := make(chan *sse.Event)
-			if err := client.SubscribeChan(fmt.Sprintf("test_run_%d_log", testRun.ID), runLogChannel); err != nil {
-				return err
-			}
-
-			wg := sync.NewExtendedWaitGroup(context.Background())
-			wg.Add(1)
-			go waitForResult(wg, eventsChannel, runLogChannel)
-			if err := wg.WaitWithTimeout(5 * time.Minute); err != nil {
-				return err
-			}
-			close(eventsChannel)
-			if success {
-				logrus.Infof("Test finished Successfully!")
-			}
-		}
-		return nil
-	},
+// runOptions are the flags of the run command.
+type runOptions struct {
+	binaryPath string
+	binaryID   int
+	params     string
+	tags       string
+	async      bool
+	timeout    time.Duration
 }
 
-func waitForResult(wg sync.ExtendedWaitGroup, eventsChannel, runLogChannel chan *sse.Event) {
-	for {
-		select {
-		case event, ok := <-eventsChannel:
-			if !ok {
-				return
-			}
+// runCommand starts a test and, unless async, waits for its result.
+type runCommand struct {
+	out       io.Writer
+	token     string
+	opts      *runOptions
+	newStream func(apiURL string) eventStream
+}
 
-			var finishedEvent events.TestRunFinishedPayload
-			json.Unmarshal(event.Data, &finishedEvent)
-			success = finishedEvent.Success
-			wg.Done()
-			return
-		case log, ok := <-runLogChannel:
-			if !ok {
-				return
-			}
-			
-			var ev events.NewTestLogEntryPayload
-			json.Unmarshal(log.Data, &ev)
-			logrus.Infof("log: %v", ev)
+func newRunCmd(global *globalOptions, opts *runOptions) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "run",
+		Short: "run http://localhost:8002 projectID appID testName --binaryID 50 --binary path_to_app --tags \"tag1,tag2,tag3\" --params \"param1=1;parameter2=2\" --async",
+		Long:  `Run a new test.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r := runCommand{out: cmd.OutOrStdout(), token: global.apiToken, opts: opts, newStream: newSSEStream}
+			return r.run(cmd.Context(), args)
+		},
+	}
+	f := cmd.PersistentFlags()
+	f.StringVar(&opts.binaryPath, "binary", "", "binary /path/to/apk/ipa/zip")
+	f.IntVar(&opts.binaryID, "binaryID", 0, "binaryID 123")
+	f.StringVar(&opts.params, "params", "", "params \"param1=1;param2=2\"")
+	f.StringVar(&opts.tags, "tags", "", "tag \"tag1,tag2,tag3\"")
+	f.DurationVar(&opts.timeout, "timeout", 5*time.Minute, "how long to wait for the result")
+	return cmd
+}
+
+func (r *runCommand) printf(format string, args ...any) {
+	fprintf(r.out, format+"\n", args...)
+}
+
+func (r *runCommand) run(ctx context.Context, args []string) error {
+	if len(args) < 4 {
+		return fmt.Errorf("missing parameter")
+	}
+	t, err := parseTarget(args)
+	if err != nil {
+		return err
+	}
+	client := t.client(r.token)
+	binaryID, err := r.prepareBinary(ctx, client)
+	if err != nil {
+		return err
+	}
+	testID, err := findTestID(ctx, client, args[3])
+	if err != nil {
+		return err
+	}
+	return r.execute(ctx, execution{client, t, testID, binaryID})
+}
+
+// execution is a test, the binary it runs with and where it runs.
+type execution struct {
+	client   *api.Client
+	target   target
+	testID   uint
+	binaryID int
+}
+
+func (r *runCommand) execute(ctx context.Context, ex execution) error {
+	t, ref := ex.target, ex
+	r.printf("execute test %d with binaryId: %d\n%s", ref.testID, ref.binaryID, r.opts.params)
+	testRun, err := ex.client.ExecuteTest(ctx, ref.testID, apiv.RunTestRequest{AppBinaryID: ref.binaryID, Params: strings.ReplaceAll(r.opts.params, ";", "\n")})
+	if err != nil {
+		return err
+	}
+	defer r.printf("Check your restults at: %s/project/%s/app/%d/test/%d/run/%d", t.apiURL, t.projectID, t.appID, ref.testID, testRun.ID)
+	if r.opts.async {
+		r.printf("Test Running...")
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, r.opts.timeout)
+	defer cancel()
+	success, err := waiter{stream: r.newStream(t.apiURL), out: r.out}.await(ctx, testRun.ID)
+	if err == nil && success {
+		r.printf("Test finished Successfully!")
+	}
+	return err
+}
+
+// prepareBinary uploads the binary (and tags it) when one is given and returns
+// the id of the binary to run with.
+func (r *runCommand) prepareBinary(ctx context.Context, client *api.Client) (int, error) {
+	if r.opts.binaryPath == "" {
+		return r.opts.binaryID, nil
+	}
+	r.printf("uploading appBundle")
+	bundle, err := client.UploadBundle(ctx, r.opts.binaryPath)
+	if err != nil {
+		return 0, err
+	}
+	r.printf("upload finished new binaryID: %d", bundle.ID)
+	if r.opts.tags != "" {
+		bundle.Tags = r.opts.tags
+		if err := client.UpdateApp(ctx, bundle); err != nil {
+			return 0, err
 		}
 	}
+	return int(bundle.ID), nil
 }
 
-func init() {
-	success = false
-	testCmd.AddCommand(runCmd)
-
-	runCmd.PersistentFlags().StringVar(&appPath, "binary", "", "binary /path/to/apk/ipa/zip")
-	runCmd.PersistentFlags().IntVar(&binaryID, "binaryID", 0, "binaryID 123")
-	runCmd.PersistentFlags().StringVar(&params, "params", "", "params \"param1=1;param2=2\"")
-	runCmd.PersistentFlags().StringVar(&tags, "tags", "", "tag \"tag1,tag2,tag3\"")
-	async = testCmd.PersistentFlags().BoolP("async", "a", false, "run command async observe status manually")
+// findTestID is the id of the test called name.
+func findTestID(ctx context.Context, client *api.Client, name string) (uint, error) {
+	tests, err := client.GetTests(ctx)
+	if err != nil {
+		return 0, err
+	}
+	for _, t := range tests {
+		if t.Name == name && name != "" {
+			return t.ID, nil
+		}
+	}
+	return 0, fmt.Errorf("no test provided or test could not be found")
 }

@@ -16,46 +16,32 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
-	"fmt"
-	"github.com/fsuhrau/automationhub/cli/api"
 	"github.com/spf13/cobra"
-	"strconv"
 )
 
-// testCmd represents the test command
-var testCmd = &cobra.Command{
-	Use:   "test",
-	Short: "test http://localhost:8002 projectID appID",
-	Long:  `list all available tests with id and name`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 4 {
-			return fmt.Errorf("missing parameter")
-		}
-		var (
-			apiURL    string
-			projectID string
-			appID     uint
-		)
-		apiURL = args[1]
-		projectID = args[2]
-		u, _ := strconv.ParseUint(args[3], 10, 64)
-		appID = uint(u)
-
-		client := api.NewClient(apiURL, apiToken, projectID, appID)
-
-		tests, err := client.GetTests(context.Background())
-		if err != nil {
-			return err
-		}
-
-		for i := range tests {
-			fmt.Printf("ID: %d Name: %s\n", tests[i].ID, tests[i].Name)
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(testCmd)
+// newTestCmd lists the tests of an app; its run subcommand starts one.
+func newTestCmd(global *globalOptions) *cobra.Command {
+	opts := &runOptions{}
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "test http://localhost:8002 projectID appID",
+		Long:  `list all available tests with id and name`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			t, err := parseTarget(args)
+			if err != nil {
+				return err
+			}
+			tests, err := t.client(global.apiToken).GetTests(cmd.Context())
+			if err != nil {
+				return err
+			}
+			for i := range tests {
+				fprintf(cmd.OutOrStdout(), "ID: %d Name: %s\n", tests[i].ID, tests[i].Name)
+			}
+			return nil
+		},
+	}
+	cmd.PersistentFlags().BoolVarP(&opts.async, "async", "a", false, "run command async observe status manually")
+	cmd.AddCommand(newRunCmd(global, opts))
+	return cmd
 }
