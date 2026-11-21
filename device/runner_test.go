@@ -7,18 +7,9 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/internal/testkit"
 )
 
 var _ device.CommandRunner = device.ExecRunner{}
-
-// The Run signature of testkit.FakeRunner is the one of device.CommandRunner.
-// Its Start returns testkit.Process, which has the methods of device.Process
-// but is another type, so the fake needs an adapter or testkit.Process must
-// become an alias of device.Process.
-var _ func(context.Context, string, ...string) ([]byte, error) = (*testkit.FakeRunner)(nil).Run
-var _ func(context.Context, string, ...string) (testkit.Process, error) = (*testkit.FakeRunner)(nil).Start
-var _ device.Process = testkit.Process(nil)
 
 func TestExecRunnerRun(t *testing.T) {
 	out, err := device.ExecRunner{}.Run(context.Background(), "echo", "hello")

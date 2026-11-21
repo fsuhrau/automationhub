@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/fsuhrau/automationhub/device"
 )
 
 func TestRecorder(t *testing.T) {
@@ -96,3 +98,8 @@ func TestFakeRunnerStart(t *testing.T) {
 		t.Error("unscripted start must fail")
 	}
 }
+
+var (
+	_ device.CommandRunner = (*FakeRunner)(nil)
+	_ device.Clock         = (*FakeClock)(nil)
+)

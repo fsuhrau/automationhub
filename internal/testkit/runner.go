@@ -5,16 +5,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/fsuhrau/automationhub/device"
 )
 
-// Process is the handle returned by FakeRunner.Start. G12 adopts it as the
-// result of device.CommandRunner.Start(ctx, name, args...) (Process, error).
-type Process interface {
-	// Wait blocks until the process ended and returns its error.
-	Wait() error
-	// Kill stops the process.
-	Kill() error
-}
+// Process is the handle returned by FakeRunner.Start, the device.Process.
+type Process = device.Process
 
 type result struct {
 	out []byte
