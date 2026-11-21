@@ -35,7 +35,7 @@ func contractGroups() map[string][]contractCase {
 
 func projectCases() []contractCase {
 	return []contractCase{
-		{name: "stats", route: "GET /api/stats", path: "/api/stats"},
+		{name: "stats", route: "GET /api/:project_id/stats", path: p + "/stats"},
 		{name: "list", route: "GET /api/projects", path: "/api/projects"},
 		{name: "create", route: "POST /api/project", path: "/api/project", body: `{"name":"New Project"}`},
 		{name: "create without name", route: "POST /api/project", path: "/api/project", body: `{"name":" "}`},

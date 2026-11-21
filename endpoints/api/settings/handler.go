@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/fsuhrau/automationhub/service/access"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -51,16 +50,6 @@ func (h *Handler) Register(settings gin.IRoutes) {
 	settings.POST("/nodes/:node_id/token", h.issueNodeToken)
 }
 
-// bindJSON reads the request body into request; a body that doesn't fit is
-// an Invalid error and the response is already written.
-func bindJSON(c *gin.Context, request any) bool {
-	if err := c.ShouldBindJSON(request); err != nil {
-		httpx.Fail(c, apperr.Invalid("%v", err))
-		return false
-	}
-	return true
-}
-
 // reply is the status a use case answers with when it succeeds.
 type reply int
 
@@ -97,7 +86,8 @@ func (h *Handler) createToken(c *gin.Context) {
 		Name      string     `json:"name"`
 		ExpiresAt *time.Time `json:"expiresAt"`
 	}
-	if !bindJSON(c, &request) {
+	if err := httpx.BindJSON(c, &request); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	token, err := h.svc.CreateProjectToken(c.Request.Context(), httpx.Project(c).ID, access.NewToken(request))

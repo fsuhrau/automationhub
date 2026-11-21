@@ -27,7 +27,8 @@ func (h *Handler) createNode(c *gin.Context) {
 	var request struct {
 		Name string `json:"name"`
 	}
-	if !bindJSON(c, &request) {
+	if err := httpx.BindJSON(c, &request); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	node, err := h.svc.CreateNode(c.Request.Context(), request.Name)

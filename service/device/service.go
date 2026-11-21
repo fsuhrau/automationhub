@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/control"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -42,17 +43,29 @@ type Executor interface {
 	Execute(ctx context.Context, dev device.Device, test action.TestStart, timeout time.Duration) error
 }
 
+// Locker locks and unlocks a device and announces the change.
+type Locker interface {
+	SetLock(dev device.Device, locked bool) error
+}
+
+// busLocker announces lock changes on an event bus.
+type busLocker struct {
+	bus *events.Bus[events.DeviceLockChangedPayload]
+}
+
+func (l busLocker) SetLock(dev device.Device, locked bool) error {
+	return events.SetDeviceLock(l.bus, dev, locked)
+}
+
 // Deps are what a Service needs. NewExecutor returns a fresh executor per
-// call because an executor keeps the state of one run. ExtractParams reads
-// the run parameters of a request and CleanProtocol makes a protocol
-// serializable; both are shared with the other endpoints.
+// call because an executor keeps the state of one run.
 type Deps struct {
-	Repo          Repo
-	Devices       Devices
-	Leases        Leases
-	NewExecutor   func() Executor
-	ExtractParams func(string) map[string]string
-	CleanProtocol func(*models.TestProtocol)
+	Repo        Repo
+	Devices     Devices
+	Leases      Leases
+	NewExecutor func() Executor
+	// Locker defaults to the global device lock bus.
+	Locker Locker
 }
 
 // Service is the device use cases.
@@ -61,4 +74,9 @@ type Service struct {
 }
 
 // New returns a Service on the dependencies.
-func New(deps Deps) *Service { return &Service{deps: deps} }
+func New(deps Deps) *Service {
+	if deps.Locker == nil {
+		deps.Locker = busLocker{bus: events.DeviceLockChanged}
+	}
+	return &Service{deps: deps}
+}

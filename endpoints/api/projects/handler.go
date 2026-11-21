@@ -5,7 +5,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/fsuhrau/automationhub/service/project"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -36,16 +35,6 @@ func (h *Handler) Register(api gin.IRoutes) {
 	api.DELETE("/project/:project_id", h.remove)
 }
 
-// bindJSON reads the request body into request; a body that doesn't fit is
-// an Invalid error and the response is already written.
-func bindJSON(c *gin.Context, request any) bool {
-	if err := c.ShouldBindJSON(request); err != nil {
-		httpx.Fail(c, apperr.Invalid("%v", err))
-		return false
-	}
-	return true
-}
-
 func (h *Handler) list(c *gin.Context) {
 	projects, err := h.svc.List(c.Request.Context())
 	if err != nil {
@@ -61,7 +50,8 @@ func (h *Handler) create(c *gin.Context) {
 	var request struct {
 		Name string `json:"name"`
 	}
-	if !bindJSON(c, &request) {
+	if err := httpx.BindJSON(c, &request); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	created, err := h.svc.Create(c.Request.Context(), request.Name)
@@ -77,7 +67,8 @@ func (h *Handler) rename(c *gin.Context) {
 		Name       string `json:"name"`
 		Identifier string `json:"identifier"`
 	}
-	if !bindJSON(c, &request) {
+	if err := httpx.BindJSON(c, &request); err != nil {
+		httpx.Fail(c, err)
 		return
 	}
 	change := project.Change{Name: request.Name, Identifier: request.Identifier}

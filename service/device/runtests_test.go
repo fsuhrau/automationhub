@@ -67,9 +67,9 @@ func TestRunTestsStartsTheTestAfterAReset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := action.TestStart{Class: "Suite", Method: "Method", Env: map[string]string{"raw": "k=v"}}
+	want := action.TestStart{Class: "Suite", Method: "Method", Env: map[string]string{"k": "v"}}
 	if len(e.executor.tests) != 1 || e.executor.tests[0].Class != want.Class || e.executor.tests[0].Method != want.Method ||
-		e.executor.tests[0].Env["raw"] != "k=v" {
+		e.executor.tests[0].Env["k"] != "v" {
 		t.Fatalf("started %+v", e.executor.tests)
 	}
 	if len(e.pool.CallsTo("SendAction")) != 1 {

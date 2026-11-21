@@ -6,7 +6,7 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/events"
+	"github.com/fsuhrau/automationhub/service/protocol"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 )
@@ -56,7 +56,7 @@ func (s *Service) Unlock(ctx context.Context, project *models.Project, id string
 	}
 	s.deps.Leases.ForceRelease(dev.DeviceID())
 	if dev.IsLocked() {
-		if err := events.UnlockDevice(dev); err != nil {
+		if err := s.deps.Locker.SetLock(dev, false); err != nil {
 			return nil, apperr.Conflict("%v", err)
 		}
 	}
@@ -87,7 +87,7 @@ func (s *Service) Protocols(ctx context.Context, project *models.Project, q Prot
 		return nil, err
 	}
 	for i := range protocols {
-		s.deps.CleanProtocol(&protocols[i])
+		protocol.Clean(&protocols[i])
 	}
 	return protocols, nil
 }

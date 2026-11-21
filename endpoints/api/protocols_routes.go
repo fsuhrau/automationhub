@@ -1,7 +1,23 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	protocolsapi "github.com/fsuhrau/automationhub/endpoints/api/protocols"
+	devicesvc "github.com/fsuhrau/automationhub/service/device"
+	protocolsvc "github.com/fsuhrau/automationhub/service/protocol"
+	"github.com/fsuhrau/automationhub/storage/runstore"
+	"github.com/gin-gonic/gin"
+)
+
+// protocolService builds the protocol use cases on the database; a run is
+// checked by the run service.
+func (s *Service) protocolService() *protocolsvc.Service {
+	return protocolsvc.New(protocolsvc.Deps{
+		Repo:       runstore.New(s.db),
+		Scope:      s.runService(),
+		DeviceName: devicesvc.DisplayName,
+	})
+}
 
 func (s *Service) registerProtocolRoutes(appApi *gin.RouterGroup) {
-	appApi.GET("/test/:test_id/run/:run_id/:protocol_id", s.WithApp(s.getTestRunProtocol))
+	protocolsapi.New(s.protocolService()).RegisterProtocols(appApi)
 }

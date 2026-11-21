@@ -7,8 +7,8 @@ import (
 
 	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/service/protocol"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -48,16 +48,16 @@ func (s *Service) parseTest(req TestRequest) (action.TestStart, error) {
 	if len(parts) != 2 {
 		return action.TestStart{}, apperr.Invalid("invalid method signature")
 	}
-	return action.TestStart{Class: parts[0], Method: parts[1], Env: s.deps.ExtractParams(req.Env)}, nil
+	return action.TestStart{Class: parts[0], Method: parts[1], Env: protocol.ExtractParams(req.Env)}, nil
 }
 
 // runLocked runs the test with the device locked, and only when the app
 // of the device is connected.
 func (s *Service) runLocked(ctx context.Context, dev device.Device, test action.TestStart) error {
-	if err := events.LockDevice(dev); err != nil {
+	if err := s.deps.Locker.SetLock(dev, true); err != nil {
 		return apperr.NotFound("%v", err)
 	}
-	defer func() { _ = events.UnlockDevice(dev) }()
+	defer func() { _ = s.deps.Locker.SetLock(dev, false) }()
 
 	if !dev.IsAppConnected() {
 		return apperr.NotFound("no app connected")

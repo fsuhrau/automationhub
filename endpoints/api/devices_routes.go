@@ -9,8 +9,7 @@ import (
 )
 
 // deviceHandler builds the device service on this service's database, pool
-// and leases. extractParams and defaultNaN stay here until the endpoints
-// that own them move to services.
+// and leases.
 func (s *Service) deviceHandler() *devicesapi.Handler {
 	return devicesapi.New(devicesvc.New(devicesvc.Deps{
 		Repo:    devicestore.New(s.db),
@@ -19,8 +18,6 @@ func (s *Service) deviceHandler() *devicesapi.Handler {
 		NewExecutor: func() devicesvc.Executor {
 			return unity.NewExecutor(s.devicesManager, nil)
 		},
-		ExtractParams: extractParams,
-		CleanProtocol: defaultNaN,
 	}))
 }
 

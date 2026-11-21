@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+
 	bundlesapi "github.com/fsuhrau/automationhub/endpoints/api/bundles"
 	"github.com/fsuhrau/automationhub/hub/runs"
 	appsvc "github.com/fsuhrau/automationhub/service/app"
@@ -26,9 +28,10 @@ func (s *Service) appService() *appsvc.Service {
 	})
 }
 
-// summarizeBundleRuns is summarizeRuns in the shape the app service uses.
+// summarizeBundleRuns is the test service's run summaries in the shape the
+// app service uses.
 func (s *Service) summarizeBundleRuns(testRuns []models.TestRun) ([]appsvc.RunSummary, error) {
-	summaries, err := s.summarizeRuns(testRuns)
+	summaries, err := s.testService().Summaries(context.Background(), testRuns)
 	if err != nil {
 		return nil, err
 	}

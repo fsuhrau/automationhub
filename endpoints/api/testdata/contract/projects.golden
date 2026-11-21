@@ -1,5 +1,5 @@
 == stats
-GET /api/stats
+GET /api/proj/stats
 200 application/json; charset=utf-8
 {
   "appsCount": 1,

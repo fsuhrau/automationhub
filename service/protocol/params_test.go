@@ -1,8 +1,10 @@
-package api
+package protocol_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/fsuhrau/automationhub/service/protocol"
 )
 
 func TestExtractParams(t *testing.T) {
@@ -20,8 +22,8 @@ func TestExtractParams(t *testing.T) {
 		"":                                     {},
 	}
 	for in, want := range cases {
-		if got := extractParams(in); !reflect.DeepEqual(got, want) {
-			t.Errorf("extractParams(%q) = %v, want %v", in, got, want)
+		if got := protocol.ExtractParams(in); !reflect.DeepEqual(got, want) {
+			t.Errorf("ExtractParams(%q) = %v, want %v", in, got, want)
 		}
 	}
 }

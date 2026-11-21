@@ -2,6 +2,7 @@ package device_test
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/apperr"
@@ -30,12 +31,10 @@ func newEnv(devices ...models.Device) *env {
 		project:  &models.Project{Model: models.Model{ID: 7}},
 	}
 	e.svc = svc.New(svc.Deps{
-		Repo:          e.repo,
-		Devices:       e.pool,
-		Leases:        e.leases,
-		NewExecutor:   func() svc.Executor { return e.executor },
-		ExtractParams: func(s string) map[string]string { return map[string]string{"raw": s} },
-		CleanProtocol: func(p *models.TestProtocol) { p.AvgFPS = -1 },
+		Repo:        e.repo,
+		Devices:     e.pool,
+		Leases:      e.leases,
+		NewExecutor: func() svc.Executor { return e.executor },
 	})
 	return e
 }
@@ -223,11 +222,11 @@ func TestUnlockUnknownDevice(t *testing.T) {
 
 func TestProtocols(t *testing.T) {
 	e := newEnv(stored(1, "dev-1"))
-	e.repo.protocols = []models.TestProtocol{{}, {}}
+	e.repo.protocols = []models.TestProtocol{{AvgFPS: math.NaN()}, {AvgMEM: math.NaN()}}
 
 	got, err := e.svc.Protocols(context.Background(), e.project, svc.ProtocolQuery{DeviceID: "1", Limit: 5})
 
-	if err != nil || len(got) != 2 || got[0].AvgFPS != -1 || got[1].AvgFPS != -1 || e.repo.limit != 5 {
+	if err != nil || len(got) != 2 || got[0].AvgFPS != 0 || got[1].AvgMEM != 0 || e.repo.limit != 5 {
 		t.Fatalf("got %+v err %v limit %d", got, err, e.repo.limit)
 	}
 }
