@@ -1,0 +1,5 @@
+diff --git a/pkg/doc.go b/pkg/doc.go
+--- a/pkg/doc.go
++++ b/pkg/doc.go
+@@ -0,0 +2,1 @@
++package pkg

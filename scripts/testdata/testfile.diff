@@ -1,0 +1,5 @@
+diff --git a/pkg/a_test.go b/pkg/a_test.go
+--- a/pkg/a_test.go
++++ b/pkg/a_test.go
+@@ -0,0 +15,1 @@
++	y := 2

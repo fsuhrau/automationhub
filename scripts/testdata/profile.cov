@@ -1,0 +1,3 @@
+mode: atomic
+github.com/fsuhrau/automationhub/pkg/a.go:10.20,12.2 2 1
+github.com/fsuhrau/automationhub/pkg/a.go:14.20,20.2 3 0

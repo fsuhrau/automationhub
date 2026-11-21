@@ -16,6 +16,11 @@ help:
 	@echo "  make node             Run a node (automationhub_slave.yaml)"
 	@echo "  make run              Run the web UI dev server (proxies /api to :8002)"
 	@echo "  make lint             Lint and fix the frontend"
+	@echo "Go checks (PKG=./dir/... COVER=file BASE=rev):"
+	@echo "  make go-build         go build ./..."
+	@echo "  make go-test          go test -race with coverprofile (PKG, COVER)"
+	@echo "  make go-lint          golangci-lint run (PKG)"
+	@echo "  make go-cover-diff    Report changed lines (working tree vs BASE, optional DIRS=a b) not covered by COVER"
 	@echo "DevContainer:"
 	@echo "  make dev-bootstrap    Fetch/install devcontainer base layer (first time setup)"
 	@echo "  make dev-help         Show all devcontainer commands"
@@ -65,6 +70,31 @@ server:
 .PHONY: node
 node:
 	go run main.go node --config automationhub_slave.yaml
+
+# Go checks. GOPROXY has an overridable default and is exported to these targets.
+GOPROXY ?= http://10.35.111.10:3000,direct
+PKG ?= ./...
+COVER ?= coverage.out
+BASE ?= HEAD
+DIRS ?=
+go-build go-test go-lint go-cover-diff: export GOPROXY := $(GOPROXY)
+
+.PHONY: go-build
+go-build:
+	go build ./...
+
+.PHONY: go-test
+go-test:
+	go test -race -coverprofile=$(COVER) $(PKG)
+
+.PHONY: go-lint
+go-lint:
+	golangci-lint run $(PKG)
+
+# diffs the working tree (staged, unstaged and untracked) against BASE
+.PHONY: go-cover-diff
+go-cover-diff:
+	bash scripts/go-cover-diff.sh $(BASE) $(COVER) $(DIRS)
 
 # Bootstrap target — always available even before base/ exists
 .PHONY: dev-bootstrap

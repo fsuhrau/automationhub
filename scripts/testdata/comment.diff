@@ -1,0 +1,7 @@
+diff --git a/pkg/a.go b/pkg/a.go
+--- a/pkg/a.go
++++ b/pkg/a.go
+@@ -0,0 +15,3 @@
++	// note
++
++	}

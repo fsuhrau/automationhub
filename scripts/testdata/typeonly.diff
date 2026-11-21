@@ -1,0 +1,5 @@
+diff --git a/pkg/t.go b/pkg/t.go
+--- a/pkg/t.go
++++ b/pkg/t.go
+@@ -0,0 +3,1 @@
++type T struct{}
