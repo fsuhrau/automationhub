@@ -2,195 +2,136 @@ package androiddevice
 
 import (
 	"fmt"
-	"github.com/antchfx/xmlquery"
-	lua "github.com/yuin/gopher-lua"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/antchfx/xmlquery"
+	"github.com/fsuhrau/automationhub/device/luascript"
 )
 
+const (
+	clickRetries    = 4
+	clickRetryPause = 500 * time.Millisecond
+)
+
+var boundsPattern = regexp.MustCompile(`\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]`)
+
+// screen is what the XML dump strategy needs from the device.
+type screen interface {
+	getScreenXml() (*xmlquery.Node, error)
+	pressKey(key int) error
+	sendText(text string) error
+	Tap(x, y int) error
+	Log(tag, format string, args ...interface{})
+	Error(tag, format string, args ...interface{})
+}
+
+// LuaScriptHandler runs hub scripts on an Android device.
 type LuaScriptHandler struct {
-	dev *Device
+	*luascript.Handler
 }
 
+// New creates the script handler of an Android device.
 func New(dev *Device) *LuaScriptHandler {
-	scriptHandler := LuaScriptHandler{
-		dev: dev,
+	return newScriptHandler(dev, luascript.SystemClock())
+}
+
+func newScriptHandler(dev screen, clock luascript.Clock) *LuaScriptHandler {
+	xml := &xmlScreen{dev: dev, clock: clock}
+	return &LuaScriptHandler{luascript.New(luascript.Deps{
+		Finder: xml, Clicker: xml, Keyboard: xml, Logger: dev, Clock: clock,
+	})}
+}
+
+// xmlScreen finds and taps elements through the uiautomator XML dump.
+type xmlScreen struct {
+	dev   screen
+	clock luascript.Clock
+}
+
+// Find reports whether the xpath lookup matches an element of the current screen.
+func (s *xmlScreen) Find(_, lookup string) (bool, error) {
+	node, err := s.findNode(lookup)
+	return node != nil, err
+}
+
+func (s *xmlScreen) findNode(lookup string) (*xmlquery.Node, error) {
+	xml, err := s.dev.getScreenXml()
+	if err != nil {
+		return nil, fmt.Errorf("get screen failed: %w", err)
 	}
-	return &scriptHandler
+	return xmlquery.FindOne(xml, lookup), nil
 }
 
-func (l *LuaScriptHandler) Execute(script string) error {
-	defer func() {
-		if err := recover(); err != nil {
-			if l.dev != nil {
-				l.dev.Error("device", "script execution failed: %v", err)
-			}
-		}
-	}()
-
-	executor := lua.NewState()
-	defer executor.Close()
-	l.init(executor)
-	return executor.DoString(script)
+// SendText types the text on the device.
+func (s *xmlScreen) SendText(text string) error {
+	return s.dev.sendText(text)
 }
 
-func (l *LuaScriptHandler) init(L *lua.LState) int {
-
-	mod := L.RegisterModule("hub", map[string]lua.LGFunction{
-		"click":   l.click,
-		"waitFor": l.waitFor,
-		"exists":  l.exists,
-		// "waitForAlertWith": l.waitForAlertWith,
-		"sendKeys": l.sendKeys,
-	})
-	L.Push(mod)
-
-	return 1
-}
-
-func (l *LuaScriptHandler) click(L *lua.LState) int {
-	lookupType := L.CheckString(1)
-	lookup := L.CheckString(2)
-
+// Click taps the center of the element. Failures are logged and answered with
+// the back key; they never fail the script.
+func (s *xmlScreen) Click(lookupType, lookup string) error {
 	if lookupType != "xpath" {
-		l.dev.Error("device", "native script lookupType '%s' not supported", lookupType)
-		return 0
+		s.dev.Error("device", "native script lookupType '%s' not supported", lookupType)
+		return nil
 	}
-
-	boundsEx := regexp.MustCompile(`\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]`)
-
-	l.dev.Log("device", "try click: %s", lookup)
-
-	retryCounter := 0
-	for {
-		l.dev.Log("device", "click: %s", lookup)
-		xml, err := l.dev.getScreenXml()
-		if err != nil {
-			l.dev.Error("device", "get screen failed: %v", err)
-		}
-		element := xmlquery.FindOne(xml, lookup)
-		if element == nil {
-			if retryCounter > 3 {
-				l.dev.Error("device", "Element '%s' not found", lookup)
-				l.dev.pressKey(KEYCODE_BACK)
-				return 0
-			} else {
-				time.Sleep(500 * time.Millisecond)
-				retryCounter++
-				continue
-			}
-		}
-
-		var bounds string
-		for _, attr := range element.Attr {
-			if attr.Name.Local == "bounds" {
-				bounds = attr.Value
-				break
-			}
-		}
-
-		actionContent := boundsEx.FindAllStringSubmatch(bounds, -1)
-		if len(actionContent) == 0 {
-			l.dev.Error("device", "No valid bounds for element '%s'", lookup)
-			l.dev.pressKey(KEYCODE_BACK)
-			return 0
-		}
-		xs, _ := strconv.ParseFloat(actionContent[0][1], 64)
-		ys, _ := strconv.ParseFloat(actionContent[0][2], 64)
-		xe, _ := strconv.ParseFloat(actionContent[0][3], 64)
-		ye, _ := strconv.ParseFloat(actionContent[0][4], 64)
-
-		x := (xs + xe) * 0.5
-		y := (ys + ye) * 0.5
-
-		if err := l.dev.Tap(int(x), int(y)); err != nil {
-			l.dev.Error("device", "Touch element '%s' failed: '%v'", lookup, err)
-			l.dev.pressKey(KEYCODE_BACK)
-			return 0
-		}
-		break
+	s.dev.Log("device", "try click: %s", lookup)
+	node := s.locate(lookup)
+	if node == nil {
+		s.fail("Element '%s' not found", lookup)
+		return nil
 	}
-
-	return 0
+	x, y, ok := center(node)
+	if !ok {
+		s.fail("No valid bounds for element '%s'", lookup)
+		return nil
+	}
+	if err := s.dev.Tap(x, y); err != nil {
+		s.fail("Touch element '%s' failed: '%v'", lookup, err)
+	}
+	return nil
 }
 
-func (l *LuaScriptHandler) waitFor(L *lua.LState) int {
-	lookupType := L.CheckString(1)
-	lookup := L.CheckString(2)
-	duration := L.CheckInt(3)
-
-	l.dev.Log("device", "wait for: %s duration: %d", lookup, duration)
-	if err := l.waitForFunc(lookupType, lookup, duration); err != nil {
-		L.RaiseError("Timeout: Element '%s' not found", lookup)
-	}
-	return 0
-}
-
-func (l *LuaScriptHandler) waitForFunc(lookupType, lookup string, duration int) error {
-	timeout := time.Now().Add(time.Duration(duration) * time.Second)
-	for {
-		xml, err := l.dev.getScreenXml()
-		if err != nil {
-			l.dev.Error("device", "get screen failed: %v", err)
+func (s *xmlScreen) locate(lookup string) *xmlquery.Node {
+	for attempt := 0; attempt <= clickRetries; attempt++ {
+		if attempt > 0 {
+			<-s.clock.After(clickRetryPause)
 		}
-		element := xmlquery.FindOne(xml, lookup)
-		if element == nil {
-			if time.Now().After(timeout) {
-				return fmt.Errorf("Timeout: wait for element '%s'", lookup)
-			}
-			time.Sleep(1 * time.Second)
-		} else {
-			break
+		s.dev.Log("device", "click: %s", lookup)
+		node, err := s.findNode(lookup)
+		if err != nil {
+			s.dev.Error("device", "%v", err)
+		}
+		if node != nil {
+			return node
 		}
 	}
 	return nil
 }
 
-func (l *LuaScriptHandler) exists(L *lua.LState) int {
-	lookupType := L.CheckString(1)
-	lookup := L.CheckString(2)
-	duration := L.CheckInt(3)
-	L.Push(lua.LBool(l.waitForFunc(lookupType, lookup, duration) == nil))
-	return 1
+func (s *xmlScreen) fail(format string, args ...interface{}) {
+	s.dev.Error("device", format, args...)
+	_ = s.dev.pressKey(KEYCODE_BACK)
 }
 
-func (l *LuaScriptHandler) waitForAlertWith(L *lua.LState) int {
-	contains := L.CheckString(1)
-	duration := L.CheckInt(2)
-
-	l.dev.Log("device", "waitForAlertWith: %s with timeout: %d", contains, duration)
-	/*
-		// alerts are not implemented
-		timeout := time.Now().Add(time.Duration(duration) * time.Second)
-		for {
-			text, err := l.webDriver.GetAlertText()
-			if err != nil {
-				logrus.Errorf("get alert text failed failed: %v", err)
-			}
-
-			if !strings.Contains(text, contains) {
-				if time.Now().After(timeout) {
-					L.RaiseError("Timeout: no alert found which contains'%s'", contains)
-					return 0
-				}
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			break
+// center is the middle of the element's bounds attribute.
+func center(node *xmlquery.Node) (x, y int, ok bool) {
+	for _, attr := range node.Attr {
+		if attr.Name.Local != "bounds" {
+			continue
 		}
-	*/
-
-	return 0
+		m := boundsPattern.FindStringSubmatch(attr.Value)
+		if m == nil {
+			return 0, 0, false
+		}
+		xs, ys, xe, ye := atof(m[1]), atof(m[2]), atof(m[3]), atof(m[4])
+		return int((xs + xe) * 0.5), int((ys + ye) * 0.5), true
+	}
+	return 0, 0, false
 }
 
-func (l *LuaScriptHandler) sendKeys(L *lua.LState) int {
-	content := L.CheckString(1)
-	l.dev.Log("device", "send_keys")
-	err := l.dev.sendText(content)
-	if err != nil {
-		L.RaiseError("send_keys failed: %v", err)
-		return 0
-	}
-	return 0
+func atof(s string) float64 {
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
 }
