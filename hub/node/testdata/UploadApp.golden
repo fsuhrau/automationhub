@@ -1,0 +1,2 @@
+RPCNode.UploadApp {"AppID":7,"Identifier":"com.demo","Name":"app.apk","Hash":"h1","Size":4,"URL":"http://master.test/upload/app.apk"}
+RPCNode.UploadAppProgress {"AppID":7}

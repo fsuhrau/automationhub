@@ -1,0 +1,1 @@
+RPCNode.StopApp {"DeviceID":"dev-1","Platform":"android","Identifier":"com.demo","Name":"Demo","Version":"1.2.3","App":{"AppID":7,"Additional":"extra","hash":"h1","Size":4,"Android":{"LaunchActivity":"com.demo.Main"},"Executable":{"Executable":"demo.exe"}},"Web":{"StartURL":"http://demo.test"}}

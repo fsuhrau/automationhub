@@ -9,6 +9,7 @@ import (
 	hubnode "github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/glebarez/sqlite"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -52,15 +53,20 @@ type fakeDeviceStore struct {
 	mu      sync.Mutex
 	devices map[string]*models.Device
 	states  map[string]device.State
+	// stored and getErr are the answer of GetDevices
+	stored models.Devices
+	getErr error
+	// writeErr is returned by NewDevice and Update
+	writeErr error
 }
 
-func (s *fakeDeviceStore) GetDevices(string) (models.Devices, error) { return nil, nil }
+func (s *fakeDeviceStore) GetDevices(string) (models.Devices, error) { return s.stored, s.getErr }
 
 func (s *fakeDeviceStore) NewDevice(_ string, dev models.Device) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.devices[dev.DeviceIdentifier] = &dev
-	return nil
+	return s.writeErr
 }
 
 func (s *fakeDeviceStore) GetDevice(_ string, id string) (*models.Device, error) {
@@ -73,7 +79,7 @@ func (s *fakeDeviceStore) Update(_ string, dev device.Device) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.states[dev.DeviceID()] = dev.DeviceState()
-	return nil
+	return s.writeErr
 }
 
 func (s *fakeDeviceStore) state(id string) device.State {
@@ -88,7 +94,16 @@ func pushed(devices ...*hubnode.DeviceResponse) map[string][]device.Device {
 
 func newTestHandler(t *testing.T) (*Handler, *fakeNodes, *fakeDeviceStore) {
 	t.Helper()
-	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=shared"), &gorm.Config{})
+	nodes := &fakeNodes{connected: map[manager.NodeIdentifier]bool{"node-1": true}}
+	h, store := newHandlerFor(t, nodes)
+	return h, nodes, store
+}
+
+// newHandlerFor returns a handler over nodes and a database that knows
+// "node-1".
+func newHandlerFor(t *testing.T, nodes manager.Nodes) (*Handler, *fakeDeviceStore) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+uuid.NewString()+"?mode=memory&cache=shared"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
@@ -98,9 +113,8 @@ func newTestHandler(t *testing.T) (*Handler, *fakeNodes, *fakeDeviceStore) {
 	if err := db.Create(&models.Node{Identifier: "node-1"}).Error; err != nil {
 		t.Fatalf("create node: %v", err)
 	}
-	nodes := &fakeNodes{connected: map[manager.NodeIdentifier]bool{"node-1": true}}
 	store := &fakeDeviceStore{devices: map[string]*models.Device{}, states: map[string]device.State{}}
-	return NewHandler(logrus.New(), store, nodes, db), nodes, store
+	return NewHandler(logrus.New(), store, nodes, db), store
 }
 
 func TestUpdateNodeDevicesAppliesPushWithoutRPC(t *testing.T) {

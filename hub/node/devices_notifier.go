@@ -60,6 +60,8 @@ type DevicesNotifier struct {
 // NewDevicesNotifier returns nil when there is no master to notify (the
 // service runs as master itself); Notify on nil is a no-op. snapshot returns
 // the node's current device list.
+//
+//nolint:revive // argument-limit: the signature is fixed by its caller in hub/device_manager_notifier.go
 func NewDevicesNotifier(masterURL, nodeIdentifier string, authToken *string, snapshot func() []*DeviceResponse) *DevicesNotifier {
 	if masterURL == "" || nodeIdentifier == "" || snapshot == nil {
 		return nil
@@ -98,6 +100,21 @@ func (n *DevicesNotifier) flush() {
 	n.sendMu.Lock()
 	defer n.sendMu.Unlock()
 
+	devices := n.sortedSnapshot()
+	data, _ := json.Marshal(devices) // a list of plain structs always encodes
+	if bytes.Equal(data, n.lastSent) {
+		return
+	}
+	if err := n.send(devices); err != nil {
+		n.sendFailed(err)
+		return
+	}
+	n.sendSucceeded(data)
+}
+
+// sortedSnapshot is the node's device list in a stable order, so an
+// unchanged list encodes to the same bytes.
+func (n *DevicesNotifier) sortedSnapshot() []*DeviceResponse {
 	devices := n.snapshot()
 	if devices == nil {
 		devices = []*DeviceResponse{}
@@ -108,33 +125,36 @@ func (n *DevicesNotifier) flush() {
 		}
 		return devices[i].DeviceID < devices[j].DeviceID
 	})
-	data, err := json.Marshal(devices)
-	if err != nil {
-		logrus.Errorf("encode device list: %v", err)
-		return
-	}
-	if bytes.Equal(data, n.lastSent) {
-		return
-	}
+	return devices
+}
 
-	if err := n.send(devices); err != nil {
-		n.mu.Lock()
-		n.retry = min(max(n.retry*2, devicesNotifierMinRetry), devicesNotifierMaxRetry)
-		retry := n.retry
-		n.mu.Unlock()
-		if errors.Is(err, errTokenRejected) {
-			// retrying won't help until the token is replaced, so say it once
-			// where the operator sees it instead of at debug level
-			if !n.rejected {
-				n.rejected = true
-				logrus.Warnf("push device list to master: %v; issue a new token for this node in the master's settings and put it in the node config (retry in %v)", err, retry)
-			}
-		} else {
-			logrus.Debugf("push device list to master (retry in %v): %v", retry, err)
-		}
-		n.schedule(retry)
+// sendFailed logs the failure and schedules the retry with backoff. The
+// caller holds sendMu.
+func (n *DevicesNotifier) sendFailed(err error) {
+	n.mu.Lock()
+	n.retry = min(max(n.retry*2, devicesNotifierMinRetry), devicesNotifierMaxRetry)
+	retry := n.retry
+	n.mu.Unlock()
+	n.logFailure(err, retry)
+	n.schedule(retry)
+}
+
+// logFailure says a rejected token once where the operator sees it: retrying
+// won't help until the token is replaced. Other failures are debug output.
+func (n *DevicesNotifier) logFailure(err error, retry time.Duration) {
+	if !errors.Is(err, errTokenRejected) {
+		logrus.Debugf("push device list to master (retry in %v): %v", retry, err)
 		return
 	}
+	if n.rejected {
+		return
+	}
+	n.rejected = true
+	logrus.Warnf("push device list to master: %v; issue a new token for this node in the master's settings and put it in the node config (retry in %v)", err, retry)
+}
+
+// sendSucceeded remembers the accepted list. The caller holds sendMu.
+func (n *DevicesNotifier) sendSucceeded(data []byte) {
 	n.rejected = false
 	n.lastSent = data
 	n.mu.Lock()
@@ -159,7 +179,7 @@ func (n *DevicesNotifier) send(devices []*DeviceResponse) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 		return fmt.Errorf("%w (%s)", errTokenRejected, resp.Status)
 	}

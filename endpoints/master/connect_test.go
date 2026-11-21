@@ -3,10 +3,14 @@ package master
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/hub/videostream"
+	"github.com/fsuhrau/automationhub/internal/testkit"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
 )
@@ -58,11 +62,27 @@ func TestUpgradeFailure_ReturnsBadRequest(t *testing.T) {
 	}
 }
 
+// rendezvousNodes is a node manager that owns a rendezvous, like the real one.
+type rendezvousNodes struct {
+	*testkit.FakeNodes
+	rendezvous *videostream.Rendezvous
+}
+
+func (n rendezvousNodes) Rendezvous() *videostream.Rendezvous { return n.rendezvous }
+
 func TestVideo_DeliversConnectionToWaiter(t *testing.T) {
-	f := newFixture(t)
-	ch, done := videostream.Default.Expect("g35-delivered")
+	rendezvous := videostream.NewRendezvous()
+	engine := gin.New()
+	nodes := rendezvousNodes{&testkit.FakeNodes{}, rendezvous}
+	if err := New(config.Service{}, &testkit.FakeDeviceManager{}, nodes, nil).RegisterRoutes(engine, engine.Group("/")); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(engine)
+	defer server.Close()
+
+	ch, done := rendezvous.Expect("g35-delivered")
 	defer done()
-	conn, _, err := f.dial("/node/video/g35-delivered")
+	conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(server.URL, "http")+"/node/video/g35-delivered", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

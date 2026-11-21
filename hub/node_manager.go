@@ -3,10 +3,10 @@ package hub
 import (
 	"context"
 	"fmt"
-	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
 	"sync"
@@ -24,19 +24,27 @@ const (
 )
 
 type NodeManager struct {
-	db    *gorm.DB
-	mu    sync.RWMutex
-	nodes map[manager.NodeIdentifier]Node
-	log   *logrus.Entry
+	db         *gorm.DB
+	mu         sync.RWMutex
+	nodes      map[manager.NodeIdentifier]Node
+	log        *logrus.Entry
+	rendezvous *videostream.Rendezvous
 }
 
 func NewNodeManager(logger *logrus.Logger, db *gorm.DB) *NodeManager {
 	return &NodeManager{log: logger.WithFields(logrus.Fields{
 		"prefix": "dm",
 	}),
-		db:    db,
-		nodes: make(map[manager.NodeIdentifier]Node),
+		db:         db,
+		nodes:      make(map[manager.NodeIdentifier]Node),
+		rendezvous: videostream.NewRendezvous(),
 	}
+}
+
+// Rendezvous pairs the video streams the nodes open with the requests that
+// wait for them. Everything of the master process shares this one.
+func (nm *NodeManager) Rendezvous() *videostream.Rendezvous {
+	return nm.rendezvous
 }
 
 func (nm *NodeManager) Run(ctx context.Context) {
@@ -119,6 +127,7 @@ func (nm *NodeManager) IsNodeKnown(nodeIdentifier manager.NodeIdentifier) bool {
 	return true
 }
 
+//nolint:revive // argument-limit: fixed by manager.NodeRegistry
 func (nm *NodeManager) RegisterNode(nodeIdentifier manager.NodeIdentifier, client manager.RPCClient, hostname, address, operationSystem, environment string, port int32, managers []string) {
 	/*
 		host, _, err := net.SplitHostPort(address)
@@ -141,18 +150,18 @@ func (nm *NodeManager) RegisterNode(nodeIdentifier manager.NodeIdentifier, clien
 	}
 }
 
-func (nm *NodeManager) getNode(nodeIdentifier manager.NodeIdentifier) (error, *Node) {
+func (nm *NodeManager) getNode(nodeIdentifier manager.NodeIdentifier) (*Node, error) {
 	nm.mu.RLock()
 	defer nm.mu.RUnlock()
 	if v, ok := nm.nodes[nodeIdentifier]; ok {
-		return nil, &v
+		return &v, nil
 	}
 
-	return ErrNodeNotFound, nil
+	return nil, ErrNodeNotFound
 }
 
 func (nm *NodeManager) getHandler(nodeIdentifier manager.NodeIdentifier) (manager.RPCClient, error) {
-	err, n := nm.getNode(nodeIdentifier)
+	n, err := nm.getNode(nodeIdentifier)
 	if err != nil {
 		return nil, err
 	}
@@ -164,210 +173,10 @@ func (nm *NodeManager) getHandler(nodeIdentifier manager.NodeIdentifier) (manage
 }
 
 func (nm *NodeManager) GetStatus(nodeIdentifier manager.NodeIdentifier) (int, error) {
-	err, n := nm.getNode(nodeIdentifier)
+	n, err := nm.getNode(nodeIdentifier)
 	if err != nil {
 		return 0, err
 	}
 
 	return int(n.Status), nil
-}
-
-// Manager Actions
-func (nm *NodeManager) StartDevice(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StartDevice(deviceId)
-}
-func (nm *NodeManager) StopDevice(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StopDevice(deviceId)
-}
-
-// device Actions
-func (nm *NodeManager) IsAppInstalled(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) (bool, error) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return false, err
-	}
-
-	return handler.IsAppInstalled(deviceId, parameter)
-}
-
-func (nm *NodeManager) IsAppUploaded(nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) (bool, error) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return false, err
-	}
-
-	return handler.IsAppUploaded(parameter)
-}
-
-func (nm *NodeManager) UploadApp(ctx context.Context, nodeIdentifier manager.NodeIdentifier, parameter *app.Parameter) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	// check if we need to upload or of it exists already
-	exists, err := handler.IsAppUploaded(parameter)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		return nil
-	}
-
-	return handler.UploadApp(ctx, parameter)
-}
-
-func (nm *NodeManager) InstallApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.InstallApp(deviceId, parameter)
-}
-
-func (nm *NodeManager) UninstallApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.UninstallApp(deviceId, parameter)
-}
-
-func (nm *NodeManager) StartApp(nodeIdentifier manager.NodeIdentifier, deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StartApp(deviceId, config, parameter, sessionId, nodeUrl)
-}
-
-func (nm *NodeManager) StopApp(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StopApp(deviceId, parameter)
-}
-
-func (nm *NodeManager) ClearAppData(nodeIdentifier manager.NodeIdentifier, deviceId string, parameter *app.Parameter) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.ClearAppData(deviceId, parameter)
-}
-
-func (nm *NodeManager) Control(nodeIdentifier manager.NodeIdentifier, req device.ControlRequest) (device.ControlResponse, error) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return device.ControlResponse{}, err
-	}
-
-	return handler.Control(req)
-}
-
-func (nm *NodeManager) StartVideoStream(nodeIdentifier manager.NodeIdentifier, req device.VideoStreamRequest) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StartVideoStream(req)
-}
-
-func (nm *NodeManager) IsConnected(nodeIdentifier manager.NodeIdentifier, deviceId string) bool {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return false
-	}
-
-	return handler.IsConnected(deviceId)
-}
-
-func (nm *NodeManager) StartRecording(nodeIdentifier manager.NodeIdentifier, deviceId string, path string) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StartRecording(deviceId, "")
-}
-
-func (nm *NodeManager) StopRecording(nodeIdentifier manager.NodeIdentifier, deviceId string) error {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return err
-	}
-
-	return handler.StopRecording(deviceId)
-}
-
-func (nm *NodeManager) GetScreenshot(nodeIdentifier manager.NodeIdentifier, deviceId string) ([]byte, int, int, error) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-
-	return handler.GetScreenshot(deviceId)
-}
-
-func (nm *NodeManager) HasFeature(nodeIdentifier manager.NodeIdentifier, deviceId string, feature string) bool {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return false
-	}
-
-	return handler.HasFeature(deviceId, feature)
-}
-
-func (nm *NodeManager) Execute(nodeIdentifier manager.NodeIdentifier, deviceId string, data string) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return
-	}
-
-	handler.Execute(deviceId, data)
-}
-
-func (nm *NodeManager) ConnectionTimeout(nodeIdentifier manager.NodeIdentifier, deviceId string) time.Duration {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return 5 * time.Minute
-	}
-
-	return handler.ConnectionTimeout(deviceId)
-}
-
-func (nm *NodeManager) RunNativeScript(nodeIdentifier manager.NodeIdentifier, deviceId string, script []byte) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return
-	}
-
-	handler.RunNativeScript(deviceId, script)
-}
-
-func (nm *NodeManager) SendAction(nodeIdentifier manager.NodeIdentifier, deviceId string, action []byte) {
-	handler, err := nm.getHandler(nodeIdentifier)
-	if err != nil {
-		return
-	}
-
-	handler.SendAction(deviceId, action)
 }

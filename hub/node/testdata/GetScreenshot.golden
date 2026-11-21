@@ -1,0 +1,2 @@
+RPCNode.TakeScreenshot {"DeviceID":"dev-1"}
+RPCNode.GetScreenshotData {"hash":"dev-1","End":9}

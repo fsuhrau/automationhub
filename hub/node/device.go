@@ -5,16 +5,13 @@ import (
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/generic"
-	"github.com/fsuhrau/automationhub/hub/manager"
 	"net"
 	"time"
 )
 
 type RPCDevice struct {
 	generic.Device
-	Dev        *DeviceResponse
-	client     manager.RPCClient
-	connection *device.Connection
+	Dev *DeviceResponse
 }
 
 func (d *RPCDevice) PlatformType() int {

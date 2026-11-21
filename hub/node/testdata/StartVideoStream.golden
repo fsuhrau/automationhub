@@ -1,0 +1,1 @@
+RPCNode.StartVideoStream {"DeviceID":"dev-1","StreamID":"s-1","Options":{"MaxSize":720,"MaxFPS":0,"BitRate":0}}

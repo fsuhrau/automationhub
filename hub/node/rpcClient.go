@@ -1,413 +1,120 @@
 package node
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"github.com/fsuhrau/automationhub/app"
+	netrpc "net/rpc"
+	"time"
+
 	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/node/jsonrpc"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	netrpc "net/rpc"
-	"net/url"
-	"path/filepath"
-	"time"
 )
 
+// rpcService is the name the node registers its RPC receiver under; it is
+// part of the wire format.
+const rpcService = "RPCNode."
+
+// RPCClient is the master's RPC connection to one node.
 type RPCClient struct {
 	client    *netrpc.Client
 	masterURL string
+
+	uploadInterval time.Duration
+	uploadStall    time.Duration
 }
 
 func NewRPCClient(conn *websocket.Conn, masterURL string) *RPCClient {
 	conn.SetReadLimit(protocol.SocketFrameSize)
-	client := jsonrpc.NewClient(conn)
 	return &RPCClient{
-		client:    client,
-		masterURL: masterURL,
+		client:         jsonrpc.NewClient(conn),
+		masterURL:      masterURL,
+		uploadInterval: time.Second,
+		uploadStall:    UploadStallTimeout,
 	}
 }
 
-func (rpc *RPCClient) safeCall(serviceMethod string, args interface{}, reply interface{}) error {
+func (c *RPCClient) safeCall(serviceMethod string, args interface{}, reply interface{}) error {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Errorf("Recovered from panic in %s: %v", serviceMethod, r)
 		}
 	}()
-	return rpc.client.Call(serviceMethod, args, reply)
+	return c.client.Call(serviceMethod, args, reply)
 }
 
-func (rpc *RPCClient) Ping() error {
-	return rpc.safeCall("RPCNode.Ping", &Void{}, &Void{})
+// failing is a node response that can carry an error the node reported.
+type failing[R any] interface {
+	*R
+	failure() error
 }
 
-func (rpc *RPCClient) GetDevices() (map[string][]device.Device, error) {
-	logrus.Info("RPCNode.GetDevices")
+// call sends one request and returns the node's response.
+func call[R any](c *RPCClient, method string, req any) (R, error) {
+	logrus.Info(rpcService + method)
+	var resp R
+	err := c.safeCall(rpcService+method, req, &resp)
+	return resp, err
+}
 
-	var resp DevicesResponse
-	if err := rpc.safeCall("RPCNode.GetDevices", &Void{}, &resp); err != nil {
+// forward is call for responses that carry an error code: a failure the node
+// reported becomes the returned error. Every forwarded call is one line.
+func forward[R any, P failing[R]](c *RPCClient, method string, req any) (R, error) {
+	resp, err := call[R](c, method, req)
+	if err != nil {
+		return resp, err
+	}
+	return resp, P(&resp).failure()
+}
+
+// forwardOK forwards a call whose BoolResponse only matters for its error.
+func (c *RPCClient) forwardOK(method string, req any) error {
+	_, err := forward[BoolResponse](c, method, req)
+	return err
+}
+
+// forwardBool forwards a call and returns the value of its BoolResponse.
+func (c *RPCClient) forwardBool(method string, req any) (bool, error) {
+	resp, err := forward[BoolResponse](c, method, req)
+	if err != nil {
+		return false, err
+	}
+	return resp.Value, nil
+}
+
+// notify forwards a call whose outcome the caller doesn't care about.
+func (c *RPCClient) notify(method string, req any) {
+	_, _ = call[Void](c, method, req)
+}
+
+// controlError maps an error the node returned to a device.ControlError.
+func controlError(err error) error {
+	var serverErr netrpc.ServerError
+	if errors.As(err, &serverErr) {
+		return device.ControlError(string(serverErr))
+	}
+	return err
+}
+
+func (c *RPCClient) Ping() error {
+	return c.safeCall(rpcService+"Ping", &Void{}, &Void{})
+}
+
+func (c *RPCClient) GetDevices() (map[string][]device.Device, error) {
+	resp, err := call[DevicesResponse](c, "GetDevices", &Void{})
+	if err != nil {
 		return nil, err
 	}
-
 	return FromDevicesResponse(resp.Devices), nil
 }
 
-func (rpc *RPCClient) StartDevice(deviceId string) error {
-	logrus.Info("RPCNode.StartDevice")
-
-	var resp ErrorResponse
-	if err := rpc.safeCall("RPCNode.StartDevice", &DeviceRequest{
-		DeviceID: deviceId,
-	}, &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
+func (c *RPCClient) StartDevice(deviceId string) error {
+	_, err := forward[ErrorResponse](c, "StartDevice", &DeviceRequest{DeviceID: deviceId})
+	return err
 }
 
-func (rpc *RPCClient) StopDevice(deviceId string) error {
-	logrus.Info("RPCNode.StopDevice")
-
-	var resp ErrorResponse
-	if err := rpc.safeCall("RPCNode.StopDevice", &DeviceRequest{
-		DeviceID: deviceId,
-	}, &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-func getAppParameterRequest(deviceId string, parameter *app.Parameter) *AppParameterRequest {
-	var appParams *AppParams
-	if parameter.App != nil {
-		var androidParams *AndroidParams
-		if parameter.App.Android != nil {
-			androidParams = &AndroidParams{
-				LaunchActivity: parameter.App.Android.LaunchActivity,
-			}
-		}
-
-		var executableParams *ExecutableParams
-		if parameter.App.Executable != nil {
-			executableParams = &ExecutableParams{
-				Executable: parameter.App.Executable.Executable,
-			}
-		}
-
-		appParams = &AppParams{
-			AppID:      int32(parameter.App.AppBinaryID),
-			Additional: parameter.App.Additional,
-			Hash:       parameter.App.Hash,
-			Size:       int64(parameter.App.Size),
-			Android:    androidParams,
-			Executable: executableParams,
-		}
-	}
-
-	var webParams *WebParams
-	if parameter.Web != nil {
-		webParams = &WebParams{
-			StartURL: parameter.Web.StartURL,
-		}
-	}
-
-	return &AppParameterRequest{
-		DeviceID:   deviceId,
-		Platform:   parameter.Platform,
-		Name:       parameter.Name,
-		Identifier: parameter.Identifier,
-		Version:    parameter.Version,
-		App:        appParams,
-		Web:        webParams,
-	}
-}
-
-func (rpc *RPCClient) IsAppInstalled(deviceId string, parameter *app.Parameter) (bool, error) {
-	logrus.Info("RPCNode.IsAppInstalled")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.IsAppInstalled", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
-		return false, err
-	}
-	if resp.ErrorCode != 0 {
-		return false, errors.New(resp.ErrorMessage)
-	}
-	return resp.Value, nil
-}
-
-func (rpc *RPCClient) IsAppUploaded(parameter *app.Parameter) (bool, error) {
-	logrus.Info("RPCNode.IsAppUploaded")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.IsAppUploaded", getAppParameterRequest("", parameter), &resp); err != nil {
-		return false, err
-	}
-	if resp.ErrorCode != 0 {
-		return false, errors.New(resp.ErrorMessage)
-	}
-	return resp.Value, nil
-}
-
-func (rpc *RPCClient) UploadApp(ctx context.Context, parameter *app.Parameter) error {
-	logrus.Info("RPCNode.UploadApp")
-
-	filename := filepath.Base(parameter.App.AppPath)
-
-	fileURL, _ := url.JoinPath("http://"+rpc.masterURL, "upload", filename)
-	appId := int32(parameter.App.AppBinaryID)
-	appSize := int64(parameter.App.Size)
-	uploadRequest := &UploadAppRequest{
-		AppID:      appId,
-		Identifier: parameter.Identifier,
-		Name:       filename,
-		Hash:       parameter.App.Hash,
-		Size:       appSize,
-		URL:        fileURL,
-	}
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.UploadApp", uploadRequest, &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-	lastReceived := int64(-1)
-	lastProgress := time.Now()
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-		}
-
-		var progressResponse UploadAppProgressResponse
-		if err := rpc.safeCall("RPCNode.UploadAppProgress", &UploadAppProgressRequest{AppID: appId}, &progressResponse); err != nil {
-			return fmt.Errorf("upload app to node: %w", err)
-		}
-
-		if progressResponse.DataReceived >= appSize {
-			logrus.Info("RPCNode.UploadApp complete")
-			return nil
-		}
-
-		if progressResponse.DataReceived != lastReceived {
-			lastReceived = progressResponse.DataReceived
-			lastProgress = time.Now()
-		} else if time.Since(lastProgress) > UploadStallTimeout {
-			return fmt.Errorf("upload app to node: no progress for %v (%d/%d bytes)", UploadStallTimeout, lastReceived, appSize)
-		}
-	}
-}
-
-// UploadStallTimeout aborts an app upload to a node when no progress was made.
-const UploadStallTimeout = 2 * time.Minute
-
-// ScreenshotChunkSize is the number of bytes requested per GetScreenshotData call.
-const ScreenshotChunkSize = 512 * 1024
-
-func (rpc *RPCClient) InstallApp(deviceId string, parameter *app.Parameter) error {
-	logrus.Info("RPCNode.InstallApp")
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.InstallApp", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-func (rpc *RPCClient) UninstallApp(deviceId string, parameter *app.Parameter) error {
-	logrus.Info("RPCNode.UninstallApp")
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.UninstallApp", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-func (rpc *RPCClient) StartApp(deviceId string, config *device.DeviceConfig, parameter *app.Parameter, sessionId string, nodeUrl string) error {
-	logrus.Info("RPCNode.StartApp")
-
-	deviceConnectionParameter := &DeviceConnectionParams{
-		Type: DeviceConnectionType(config.Connection),
-		IP:   config.IP,
-		Port: int64(config.Port),
-	}
-
-	var deviceCustomParameter []*DeviceCustomParameter
-	for k, v := range config.DeviceParameter {
-		deviceCustomParameter = append(deviceCustomParameter, &DeviceCustomParameter{
-			Key:   k,
-			Value: v,
-		})
-	}
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.StartApp", &StartAppRequest{
-		App:              getAppParameterRequest(deviceId, parameter),
-		SessionID:        sessionId,
-		HostIP:           nodeUrl,
-		ConnectionParams: deviceConnectionParameter,
-		CustomParameter:  deviceCustomParameter,
-	}, &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-func (rpc *RPCClient) StopApp(deviceId string, parameter *app.Parameter) error {
-	logrus.Info("RPCNode.StopApp")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.StopApp", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-func (rpc *RPCClient) ClearAppData(deviceId string, parameter *app.Parameter) error {
-	logrus.Info("RPCNode.ClearAppData")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.ClearAppData", getAppParameterRequest(deviceId, parameter), &resp); err != nil {
-		return err
-	}
-	if resp.ErrorCode != 0 {
-		return errors.New(resp.ErrorMessage)
-	}
-	return nil
-}
-
-// Control forwards a native control call (tap, swipe, text, key, logs).
-func (rpc *RPCClient) Control(req device.ControlRequest) (device.ControlResponse, error) {
-	var resp device.ControlResponse
-	if err := rpc.safeCall("RPCNode.Control", &req, &resp); err != nil {
-		var serverErr netrpc.ServerError
-		if errors.As(err, &serverErr) {
-			return resp, device.ControlError(string(serverErr))
-		}
-		return resp, err
-	}
-	return resp, nil
-}
-
-// StartVideoStream asks the node to stream a device's video to the master.
-func (rpc *RPCClient) StartVideoStream(req device.VideoStreamRequest) error {
-	if err := rpc.safeCall("RPCNode.StartVideoStream", &req, &Void{}); err != nil {
-		var serverErr netrpc.ServerError
-		if errors.As(err, &serverErr) {
-			return device.ControlError(string(serverErr))
-		}
-		return err
-	}
-	return nil
-}
-
-func (rpc *RPCClient) IsConnected(deviceId string) bool {
-	logrus.Info("RPCNode.IsConnected")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.IsConnected", &DeviceRequest{DeviceID: deviceId}, &resp); err != nil {
-		return false
-	}
-	return resp.Value
-}
-
-func (rpc *RPCClient) StartRecording(deviceId string, path string) error {
-	return nil
-}
-
-func (rpc *RPCClient) StopRecording(deviceId string) error {
-	return nil
-}
-
-func (rpc *RPCClient) GetScreenshot(deviceId string) ([]byte, int, int, error) {
-	logrus.Info("RPCNode.GetScreenshot")
-
-	var resp ScreenShotResponse
-	if err := rpc.safeCall("RPCNode.TakeScreenshot", &DeviceRequest{DeviceID: deviceId}, &resp); err != nil {
-		return nil, 0, 0, err
-	}
-
-	screenshotData := make([]byte, 0, resp.Size)
-	chunkSize := ScreenshotChunkSize
-	for start := 0; start < int(resp.Size); start += chunkSize {
-		end := start + chunkSize
-		if end > int(resp.Size) {
-			end = int(resp.Size)
-		}
-
-		var dataResp ScreenShotDataResponse
-		if err := rpc.safeCall("RPCNode.GetScreenshotData", &ScreenShotDataRequest{
-			Hash:  resp.Hash,
-			Start: int32(start),
-			End:   int32(end),
-		}, &dataResp); err != nil {
-			return nil, 0, 0, err
-		}
-
-		screenshotData = append(screenshotData, dataResp.Data...)
-	}
-
-	return screenshotData, int(resp.Width), int(resp.Height), nil
-}
-
-func (rpc *RPCClient) HasFeature(deviceId string, feature string) bool {
-	logrus.Info("RPCNode.HasFeature")
-
-	var resp BoolResponse
-	if err := rpc.safeCall("RPCNode.HasFeature", &FeatureRequest{DeviceID: deviceId, Feature: feature}, &resp); err != nil {
-		return false
-	}
-	if resp.ErrorCode != 0 {
-		return false
-	}
-	return resp.Value
-}
-
-func (rpc *RPCClient) Execute(deviceId string, data string) {
-	logrus.Info("RPCNode.Execute")
-
-	_ = rpc.safeCall("RPCNode.Execute", &ExecuteRequest{DeviceID: deviceId, Data: data}, &Void{})
-}
-
-func (rpc *RPCClient) ConnectionTimeout(deviceId string) time.Duration {
-	logrus.Info("RPCNode.ConnectionTimeout")
-
-	var resp TimeoutResponse
-	if err := rpc.safeCall("RPCNode.ConnectionTimeout", &DeviceRequest{DeviceID: deviceId}, &resp); err != nil {
-		return 5 * time.Minute
-	}
-	return time.Duration(resp.Timeout)
-}
-
-func (rpc *RPCClient) RunNativeScript(deviceId string, script []byte) {
-	logrus.Info("RPCNode.RunNativeScript")
-	_ = rpc.safeCall("RPCNode.RunNativeScript", &ExecuteRequest{DeviceID: deviceId, Data: string(script)}, &Void{})
-}
-
-func (rpc *RPCClient) SendAction(deviceId string, script []byte) {
-	logrus.Info("RPCNode.SendAction")
-	_ = rpc.safeCall("RPCNode.SendAction", &ExecuteRequest{DeviceID: deviceId, Data: string(script)}, &Void{})
+func (c *RPCClient) StopDevice(deviceId string) error {
+	_, err := forward[ErrorResponse](c, "StopDevice", &DeviceRequest{DeviceID: deviceId})
+	return err
 }

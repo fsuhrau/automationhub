@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/generic"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/videostream"
 	"github.com/fsuhrau/automationhub/hub/videostream/videostreamtest"
@@ -26,17 +27,18 @@ type videoNodes struct {
 
 func (n *videoNodes) StartVideoStream(_ manager.NodeIdentifier, req device.VideoStreamRequest) error {
 	n.req = req
-	return videostream.ServeToMaster(n.masterHost, "", req.StreamID, n.stream)
+	return videostream.ServeToMaster(videostream.MasterTarget{Host: n.masterHost}, req.StreamID, n.stream)
 }
 
 func TestNodeDeviceVideoRelay(t *testing.T) {
+	rendezvous := videostream.NewRendezvous()
 	// the master's /node/video/:stream_id endpoint
 	master := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
 		if err != nil {
 			return
 		}
-		if !videostream.Default.Deliver(strings.TrimPrefix(r.URL.Path, "/node/video/"), conn) {
+		if !rendezvous.Deliver(strings.TrimPrefix(r.URL.Path, "/node/video/"), conn) {
 			_ = conn.Close()
 		}
 	}))
@@ -45,7 +47,7 @@ func TestNodeDeviceVideoRelay(t *testing.T) {
 	meta := device.VideoMeta{Codec: "h264", Width: 720, Height: 1280}
 	src := videostreamtest.New(meta, device.VideoPacket{KeyFrame: true, PTS: 5, Data: []byte{0, 0, 0, 1, 0x65}})
 	nodes := &videoNodes{masterHost: strings.TrimPrefix(master.URL, "http://"), stream: src}
-	dev := &NodeDevice{nodeId: "node-1", nodeManager: nodes, deviceID: "emulator-5554"}
+	dev := &NodeDevice{Info: generic.Info{ID: "emulator-5554"}, nodeId: "node-1", nodeManager: nodes, rendezvous: rendezvous}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	stream, err := dev.StartVideo(ctx, device.VideoOptions{MaxSize: 1280})

@@ -49,13 +49,14 @@ func (s *nodeMaster) handleNode(conn *websocket.Conn, c *gin.Context) {
 }
 
 // Video accepts the websocket a node opens to deliver a device video stream
-// the master asked for (see videostream.Rendezvous).
+// the master asked for (see videostream.Rendezvous). The rendezvous is the one
+// of the node manager, which the node devices wait on.
 func (s *nodeMaster) Video(c *gin.Context) {
 	conn, err := s.videoUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}
-	if !videostream.Default.Deliver(c.Param("stream_id"), conn) {
+	if !videostream.From(s.nm).Deliver(c.Param("stream_id"), conn) {
 		_ = conn.Close()
 	}
 }

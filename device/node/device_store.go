@@ -17,8 +17,7 @@ type deviceStore struct {
 }
 
 func NewMemoryDeviceStore(cfg map[string]config.Manager) *deviceStore {
-	var devices map[string]models.Devices
-	devices = make(map[string]models.Devices)
+	devices := make(map[string]models.Devices)
 	for k, v := range cfg {
 		var devs models.Devices
 

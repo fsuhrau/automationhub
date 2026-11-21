@@ -6,4 +6,8 @@ import "github.com/fsuhrau/automationhub/device/remote"
 type RemoteActionHandler = remote.ActionHandler
 
 // NewRemoteActionHandler is kept for the platform handlers.
-var NewRemoteActionHandler = remote.NewActionHandler
+//
+//nolint:revive // argument-limit: signature is fixed by the platform handlers that call it
+func NewRemoteActionHandler(masterURL, nodeIdentifier, deviceID string, authToken *string) *RemoteActionHandler {
+	return remote.NewActionHandler(masterURL, nodeIdentifier, deviceID, authToken)
+}
