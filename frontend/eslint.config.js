@@ -12,6 +12,17 @@ import importPlugin from 'eslint-plugin-import';
 const refactored = [
     'src/setupTests.ts',
     'src/services/device.video.test.ts',
+    // F2 shared kit
+    'src/lib/**',
+    'src/components/common/**',
+    'src/hooks/useAsyncAction*',
+    'src/hooks/useNow*',
+    'src/hooks/useSseLog*',
+    // F3 state and API core
+    'src/api/**',
+    'src/application/HubState*',
+    'src/hooks/HubStateProvider*',
+    'src/types/**',
 ];
 
 // Generated-looking theme files are data tables and stay exempt.
