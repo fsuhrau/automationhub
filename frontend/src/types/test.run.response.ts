@@ -1,5 +1,5 @@
 import ITestRunData from './test.run';
-import {RunLifecycle} from '../pages/tests/testRunModel';
+import {RunLifecycle} from './run.lifecycle';
 
 export default interface ITestRunResponseData {
     nextRunId: number,

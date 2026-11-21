@@ -9,7 +9,19 @@ export default interface IAccessTokenData {
     deletedAt: Date | null,
 }
 
-export const parseAccessTokenData = (json: any): IAccessTokenData => {
+// the token as the master sends it
+export interface AccessTokenJson {
+    id: number,
+    company_id: number,
+    name: string,
+    token: string,
+    expires_at: string,
+    created_at: string,
+    updated_at: string,
+    deleted_at?: string | null,
+}
+
+export const parseAccessTokenData = (json: AccessTokenJson): IAccessTokenData => {
     return {
         id: json.id,
         companyId: json.company_id,

@@ -22,7 +22,7 @@ const HubMainLayout: React.FC = () => {
     const {dispatch, state} = useHubState()
 
     const handleDrawerToggle = (): void => {
-        dispatch({type: HubStateActions.ToggleMobileOpen, payload: {}});
+        dispatch({type: HubStateActions.ToggleMobileOpen});
     };
 
     useEffect(() => {

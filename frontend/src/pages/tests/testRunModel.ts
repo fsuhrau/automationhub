@@ -5,9 +5,9 @@ import IProtocolKeyData from '../../types/protocol.key';
 import ITestProtocolData from '../../types/test.protocol';
 import {TestResultState} from '../../types/test.result.state.enum';
 
-// the run's lifecycle as the master reports it; undefined for masters that
-// predate the field
-export type RunLifecycle = 'running' | 'finished' | 'not_running' | undefined;
+import type {RunLifecycle} from '../../types/run.lifecycle';
+
+export type {RunLifecycle} from '../../types/run.lifecycle';
 
 export const isTopLevel = (p: ITestProtocolData): boolean =>
     p.parentTestProtocolId === null || p.parentTestProtocolId === undefined || p.parentTestProtocolId === 0;

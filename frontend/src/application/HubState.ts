@@ -4,34 +4,11 @@ import IAccessTokenData from "../types/access.token";
 import {INodeData} from "../types/node";
 import {IUserData} from "../types/user";
 import IDeviceData from "../types/device";
+import {HubStateAction, HubStateActions} from "./HubStateActions";
+import * as r from "./HubStateReducers";
 
-export enum HubStateActions {
-    ProjectsUpdate = 'ProjectsUpdate',
-    ToggleMobileOpen = 'ToggleMobileOpen',
-    ProjectAttributeUpdate = 'ProjectAttributeUpdate',
-    AppsUpdate = 'AppsUpdate',
-    AppAdd = 'AppAdd',
-    AppAttributeUpdate = 'AppAttributeUpdate',
-    AccessTokensUpdate = 'AccessTokensUpdate',
-    AccessTokenAdd = 'AccessTokenAdd',
-    AccessTokenDelete = 'AccessTokenDelete',
-    NodesUpdate = 'NodesUpdate',
-    NodeAdd = 'NodeAdd',
-    NodeDelete = 'NodeDelete',
-    UsersUpdate = 'UsersUpdate',
-    UpdateDevices = 'UpdateDevices',
-    UpdateDevice = 'UpdateDevice',
-    UpdateDeviceState = "UpdateDeviceState",
-    UnlockDevice = "UnlockDevice",
-    AddAppParameter = 'AddAppParameter',
-    UpdateAppParameter = 'UpdateAppParameter',
-    DeleteAppParameter = 'DeleteAppParameter',
-}
-
-export interface HubStateAction {
-    type: HubStateActions,
-    payload?: any,
-}
+export {HubStateActions};
+export type {HubStateAction};
 
 export interface HubState {
     mobileOpen: boolean,
@@ -53,160 +30,39 @@ export const InitialHubState: HubState = {
     devices: null,
 }
 
+// one pure transition per action type; the mapped type makes the compiler
+// require an entry, with the matching payload, for every action
+type Handlers = {
+    [K in HubStateActions]: (state: HubState, payload: Extract<HubStateAction, { type: K }>['payload']) => HubState
+};
+
+const handlers: Handlers = {
+    [HubStateActions.UsersUpdate]: (state, users) => ({...state, users}),
+    [HubStateActions.AppsUpdate]: (state, apps) => ({...state, apps}),
+    [HubStateActions.AppAdd]: r.appAdd,
+    [HubStateActions.AppAttributeUpdate]: r.appAttributeUpdate,
+    [HubStateActions.AddAppParameter]: r.addAppParameter,
+    [HubStateActions.UpdateAppParameter]: r.updateAppParameter,
+    [HubStateActions.DeleteAppParameter]: r.deleteAppParameter,
+    [HubStateActions.ProjectAttributeUpdate]: r.projectAttributeUpdate,
+    [HubStateActions.ProjectsUpdate]: (state, projects) => ({...state, projects}),
+    [HubStateActions.ToggleMobileOpen]: (state) => ({...state, mobileOpen: !state.mobileOpen}),
+    [HubStateActions.AccessTokensUpdate]: (state, accessTokens) => ({...state, accessTokens}),
+    [HubStateActions.AccessTokenAdd]: (state, token) => ({...state, accessTokens: r.append(state.accessTokens, token)}),
+    [HubStateActions.AccessTokenDelete]: r.accessTokenDelete,
+    [HubStateActions.NodesUpdate]: (state, nodes) => ({...state, nodes}),
+    [HubStateActions.NodeAdd]: (state, node) => ({...state, nodes: r.append(state.nodes, node)}),
+    [HubStateActions.NodeDelete]: r.nodeDelete,
+    [HubStateActions.UpdateDevices]: (state, devices) => ({...state, devices}),
+    [HubStateActions.UpdateDevice]: r.updateDevice,
+    [HubStateActions.UpdateDeviceState]: r.updateDeviceState,
+    [HubStateActions.UnlockDevice]: (state, {deviceId}) => r.unlockDevice(state, deviceId),
+};
+
+type AnyHandler = (state: HubState, payload: unknown) => HubState | undefined;
+
 export function hubReducer(state: HubState, action: HubStateAction): HubState {
-
-    const {type, payload} = action;
-
-    switch (type) {
-        case HubStateActions.UsersUpdate: {
-            return {
-                ...state,
-                users: payload,
-            }
-        }
-        case HubStateActions.AppsUpdate: {
-            return {
-                ...state,
-                apps: payload,
-            }
-        }
-        case HubStateActions.AppAdd: {
-            return {
-                ...state,
-                apps: state.apps ? [...state.apps, payload] : [payload],
-            }
-        }
-        case HubStateActions.AppAttributeUpdate: {
-            return {
-                ...state,
-                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
-                    ...a,
-                    [payload.attribute]: payload.value
-                } as IAppData : a as IAppData) : [],
-            }
-        }
-        case HubStateActions.AddAppParameter: {
-            return {
-                ...state,
-                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
-                    ...a,
-                    // a new app has no parameter list yet
-                    parameter: [...(a.parameter ?? []), payload],
-                } as IAppData : a as IAppData) : [],
-            }
-        }
-        case HubStateActions.UpdateAppParameter: {
-            return {
-                ...state,
-                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
-                    ...a,
-                    parameter: (a.parameter ?? []).map(p => p.id === payload.id ? payload : p),
-                } as IAppData : a as IAppData) : [],
-            }
-        }
-        case HubStateActions.DeleteAppParameter: {
-            return {
-                ...state,
-                apps: state.apps ? state.apps.map(a => (a.id as number) === (payload.appId as number) ? {
-                    ...a,
-                    parameter: (a.parameter ?? []).filter(p => p.id !== payload.id),
-                } as IAppData : a as IAppData) : [],
-            }
-        }
-        case HubStateActions.ProjectAttributeUpdate: {
-            return {
-                ...state,
-                projects: state.projects!.map(p => {
-                    if (p.identifier == payload.projectIdentifier) {
-                        return {
-                            ...p,
-                            [payload.attribute]: payload.value
-                        }
-                    }
-                    return p
-                })
-            }
-        }
-
-        case HubStateActions.ProjectsUpdate: {
-            return {
-                ...state,
-                projects: payload,
-            }
-        }
-        case HubStateActions.ToggleMobileOpen:
-            return {
-                ...state,
-                mobileOpen: !state.mobileOpen,
-            }
-        case HubStateActions.AccessTokensUpdate: {
-            return {
-                ...state,
-                accessTokens: payload,
-            }
-        }
-        case HubStateActions.AccessTokenAdd: {
-            return {
-                ...state,
-                accessTokens: state.accessTokens ? [...state.accessTokens, payload] : [payload],
-            }
-        }
-        case HubStateActions.AccessTokenDelete: {
-            return {
-                ...state,
-                accessTokens: state.accessTokens ? state.accessTokens.filter(token => token.id !== payload) : [],
-            }
-        }
-        case HubStateActions.NodesUpdate: {
-            return {
-                ...state,
-                nodes: payload,
-            }
-        }
-        case HubStateActions.NodeAdd: {
-            return {
-                ...state,
-                nodes: state.nodes ? [...state.nodes, payload] : [payload],
-            }
-        }
-        case HubStateActions.NodeDelete: {
-            return {
-                ...state,
-                nodes: state.nodes ? state.nodes.filter(node => node.id !== payload) : [],
-            }
-        }
-        case HubStateActions.UpdateDevices: {
-            return {
-                ...state,
-                devices: payload,
-            }
-        }
-        case HubStateActions.UpdateDevice: {
-            return {
-                ...state,
-                devices: state.devices ? state.devices?.map(d => d.id === payload.id ? payload : d) : [],
-            }
-        }
-        case HubStateActions.UpdateDeviceState: {
-            return {
-                ...state,
-                devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
-                    ...d,
-                    status: payload.deviceState
-                } : d)] : []
-            }
-        }
-        case HubStateActions.UnlockDevice: {
-            return {
-                ...state,
-                devices: state.devices ? [...state.devices.map(d => d.id === payload.deviceId ? {
-                    ...d,
-                    isLocked: false,
-                    lockedBy: undefined,
-                } : d)] : []
-            }
-        }
-        default:
-            return state
-    }
+    // the lookup may miss for a type that doesn't exist at runtime
+    const handler = handlers[action.type] as AnyHandler | undefined;
+    return handler?.(state, action.payload) ?? state;
 }

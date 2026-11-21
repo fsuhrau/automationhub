@@ -5,7 +5,7 @@ export enum DeviceConnectionType {
     Remote,
     HubNode,
 }
-export const getConnectionTypes = (): Array<Object> => {
+export const getConnectionTypes = (): Array<object> => {
     return ToArray(DeviceConnectionType);
 };
 
