@@ -1,45 +1,52 @@
 package unityeditor
 
 import (
-	"context"
 	"fmt"
-	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/device/generic"
-	"github.com/fsuhrau/automationhub/hub/node"
-	"github.com/fsuhrau/automationhub/storage"
-	"github.com/fsuhrau/automationhub/storage/models"
-	"github.com/fsuhrau/automationhub/tools/exec"
-	sync2 "github.com/fsuhrau/automationhub/utils/sync"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"regexp"
-	"runtime"
 	"sync"
 	"time"
 
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/generic"
+	"github.com/fsuhrau/automationhub/device/remote"
+	"github.com/fsuhrau/automationhub/storage"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	Manager        = "unity_editor"
-	StartupTimeout = 2 * time.Minute
+	Manager = "unity_editor"
+	// staleAfter is how long a registered editor may stay silent.
+	staleAfter = time.Minute
 )
 
-var (
-	ErrorGetProjectVersion = fmt.Errorf("Could not determinate project project / unity version")
-)
+// Deps are the external collaborators of the Handler. Zero fields get the real
+// implementations.
+type Deps struct {
+	Runner device.CommandRunner
+	Clock  device.Clock
+	// GOOS is the operating system the editor runs on, runtime.GOOS by default.
+	GOOS string
+}
 
 type Handler struct {
-	devices       map[string]*Device
+	generic.Registry[*Device]
+
 	deviceStorage storage.Device
-	init          bool
 	managerCfg    config.Manager
-	mu            sync.Mutex
+	runner        device.CommandRunner
+	clock         device.Clock
+	goos          string
+	// mu makes registering a device atomic.
+	mu sync.Mutex
 }
 
 func NewHandler(cfg config.Manager, ds storage.Device) *Handler {
-	return &Handler{devices: make(map[string]*Device), deviceStorage: ds, managerCfg: cfg}
+	return NewHandlerWithDeps(cfg, ds, Deps{})
+}
+
+func NewHandlerWithDeps(cfg config.Manager, ds storage.Device, deps Deps) *Handler {
+	deps = deps.withDefaults()
+	return &Handler{deviceStorage: ds, managerCfg: cfg, runner: deps.Runner, clock: deps.Clock, goos: deps.GOOS}
 }
 
 func (m *Handler) Name() string {
@@ -47,36 +54,25 @@ func (m *Handler) Name() string {
 }
 
 func (m *Handler) Init(masterUrl, nodeIdentifier string, authToken *string) error {
-	m.init = true
-	defer func() {
-		m.init = false
-	}()
 	devs, err := m.deviceStorage.GetDevices(Manager)
 	if err != nil {
-		return err
+		return fmt.Errorf("load unity editors: %w", err)
 	}
 	for i := range devs {
-		deviceId := devs[i].DeviceIdentifier
-		dev := &Device{
-			deviceOSName:    devs[i].OS,
-			deviceOSVersion: devs[i].OSVersion,
-			deviceOSInfos:   devs[i].OSInfos,
-			unityVersion:    devs[i].TargetVersion,
-			deviceName:      devs[i].Name,
-			deviceID:        devs[i].DeviceIdentifier,
-		}
+		dev := newDevice(generic.Info{
+			ID:        devs[i].DeviceIdentifier,
+			Name:      devs[i].Name,
+			OSName:    devs[i].OS,
+			OSVersion: devs[i].OSVersion,
+			Target:    devs[i].TargetVersion,
+		}, m.clock)
+		dev.osInfos = devs[i].OSInfos
 		dev.SetConfig(devs[i])
-		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.deviceID, authToken))
-		dev.AddActionHandler(node.NewRemoteActionHandler(masterUrl, nodeIdentifier, dev.deviceID, authToken))
-		m.mu.Lock()
-		m.devices[deviceId] = dev
-		m.mu.Unlock()
+		dev.SetLogWriter(generic.NewRemoteLogWriter(masterUrl, nodeIdentifier, dev.DeviceID(), authToken))
+		dev.AddActionHandler(remote.NewActionHandler(masterUrl, nodeIdentifier, dev.DeviceID(), authToken))
+		m.Add(dev)
 	}
-
-	if err := m.RefreshDevices(true); err != nil {
-		return err
-	}
-	return nil
+	return m.RefreshDevices(true)
 }
 
 func (m *Handler) Start() error {
@@ -87,258 +83,54 @@ func (m *Handler) Stop() error {
 	return nil
 }
 
-func (m *Handler) StartDevice(deviceID string) error {
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer func() {
-		cancelFunc()
-	}()
-
-	wg := sync2.NewExtendedWaitGroup(ctx)
-	m.mu.Lock()
-	dev, ok := m.devices[deviceID]
-	m.mu.Unlock()
-
-	if ok {
-		config := dev.GetConfig()
-		var projectDir string
-		if config != nil {
-			projectDir = config.GetAttribute("projectDir")
-		}
-		instanceFile := filepath.Join(projectDir, ".hub")
-		_ = os.Remove(instanceFile)
-
-		projectVersion, err := GetUsedUnityVersion(projectDir)
-		if err != nil {
-			return err
-		}
-
-		unityEditorPath := GetUnityEditorPath(m.managerCfg.UnityPath, projectVersion)
-
-		// Generate a random log file name
-		logFileName := fmt.Sprintf("automation_hub_unity_%d.log", rand.Int())
-		dev.instanceLogFile = filepath.Join(projectDir, logFileName)
-
-		unityParams := []string{
-			"-buildTarget",
-			m.managerCfg.UnityBuildTarget,
-			"-projectPath", projectDir, "-overrideProfile", "automation", "-executeMethod", "AutomationLoader.LoadSceneAndConnect", "-logFile", dev.instanceLogFile, "-debugCodeOptimization", "--ump-channel-service-on-startup",
-		}
-		dev.process = exec.NewCommand(unityEditorPath, unityParams...)
-		dev.startedAt = time.Now()
-		if err := dev.process.Start(); err != nil {
-			return err
-		}
-
-		dev.UnityLogStartListening()
-
-		m.mu.Lock()
-		m.devices[deviceID] = dev
-		m.mu.Unlock()
-		waitUntil := dev.startedAt.Add(StartupTimeout)
-
-		wg.Add(1)
-
-		var functionError error
-
-		go func() {
-			triggerTime := 5 * time.Second
-
-			defer wg.Done()
-			timer := time.NewTimer(triggerTime)
-			defer timer.Stop()
-
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-timer.C:
-					if _, err := os.Stat(instanceFile); os.IsNotExist(err) {
-						if time.Now().After(waitUntil) {
-							functionError = fmt.Errorf("device didn't start in time")
-							return
-						}
-						timer.Reset(triggerTime)
-						continue
-					}
-				}
-				break
-			}
-			timer.Reset(triggerTime)
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-timer.C:
-					m.mu.Lock()
-					if m.devices[deviceID].DeviceState() == device.StateBooted {
-						m.mu.Unlock()
-						break
-					}
-					m.mu.Unlock()
-
-					if time.Now().After(waitUntil) {
-						functionError = fmt.Errorf("device didn't start in time")
-						return
-					}
-					timer.Reset(triggerTime)
-					continue
-				}
-				break
-			}
-		}()
-
-		err = wg.WaitUntil(waitUntil)
-
-		if functionError != nil {
-			return functionError
-		}
-
+func (m *Handler) StopDevice(deviceID string) error {
+	dev, ok := m.Get(deviceID)
+	if !ok {
+		return nil
+	}
+	if err := dev.stopProcess(); err != nil {
 		return err
 	}
-
-	return device.DeviceNotFoundError
-}
-
-func GetUnityEditorPath(editorPath string, projectVersion string) string {
-	if runtime.GOOS == "darwin" {
-		return filepath.Join(editorPath, projectVersion, "Unity.app/Contents/MacOS/Unity")
-	}
-	return ""
-}
-
-func GetUsedUnityVersion(projectDir string) (string, error) {
-	projectVersionFile := filepath.Join(projectDir, "ProjectSettings", "ProjectVersion.txt")
-	data, err := os.ReadFile(projectVersionFile)
-	if err != nil {
-		return "", ErrorGetProjectVersion
-	}
-
-	var projectVersion string
-	re := regexp.MustCompile(`m_EditorVersion:\s*([0-9]+\.[0-9]+\.[0-9]+[a-z0-9]*)`)
-	match := re.FindStringSubmatch(string(data))
-	if len(match) > 1 {
-		projectVersion = match[1]
-	} else {
-		return "", ErrorGetProjectVersion
-	}
-	return projectVersion, nil
-}
-
-func (m *Handler) StopDevice(deviceID string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if dev, ok := m.devices[deviceID]; ok {
-		if dev.process != nil && dev.process.Process != nil {
-			if err := dev.process.Process.Kill(); err != nil {
-				return err
-			}
-			dev.process = nil
-		}
-		dev.UnityLogStopListening()
-	}
+	dev.UnityLogStopListening()
 	return nil
 }
 
-func (m *Handler) GetDevices() ([]device.Device, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	devices := make([]device.Device, 0, len(m.devices))
-	for _, d := range m.devices {
-		devices = append(devices, d)
-	}
-	return devices, nil
-}
-
-func (m *Handler) RefreshDevices(force bool) error {
-	now := time.Now().UTC()
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	for i := range m.devices {
-		if now.Sub(m.devices[i].lastUpdateAt) > 1*time.Minute {
-			if m.devices[i].deviceState != device.StateShutdown {
-				m.devices[i].deviceState = device.StateShutdown
-				m.devices[i].updated = true
-			}
-		}
-		if m.devices[i].updated {
-			m.deviceStorage.Update(m.Name(), m.devices[i])
-			m.devices[i].updated = false
+// RefreshDevices marks editors that were silent for too long as shut down and
+// stores the devices that changed.
+func (m *Handler) RefreshDevices(_ bool) error {
+	now := m.clock.Now().UTC()
+	for _, dev := range m.List() {
+		if dev.expire(now) || dev.takeUpdated() {
+			m.storeUpdate(dev)
 		}
 	}
 	return nil
 }
 
-func (m *Handler) HasDevice(dev device.Device) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	for _, device := range m.devices {
-		if device == dev {
-			return true
-		}
+func (m *Handler) storeUpdate(dev *Device) {
+	if err := m.deviceStorage.Update(Manager, dev); err != nil {
+		logrus.WithError(err).Warnf("unity editor %s: store update", dev.DeviceID())
 	}
-	return false
 }
 
-func (m *Handler) RegisterDevice(data device.RegisterData) (device.Device, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// fmt.Printf("Register device: %v\n", data)
-
-	lastUpdate := time.Now().UTC()
-
-	if d, ok := m.devices[data.DeviceID]; ok {
-		d.deviceOSName = data.DeviceOS
-		d.deviceOSVersion = data.DeviceOSVersion
-		d.unityVersion = data.TargetVersion
-		d.deviceOSInfos = data.DeviceOSInfos
-		d.deviceName = fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name)
-		d.deviceIP = data.DeviceIP
-		d.lastUpdateAt = lastUpdate
-		d.managerConnection = data.Conn
-		d.updated = true
-		m.devices[data.DeviceID] = d
-		m.deviceStorage.Update(m.Name(), d)
-
-	} else {
-		d = &Device{
-			deviceName:        fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name),
-			deviceID:          data.DeviceID,
-			deviceOSName:      data.DeviceOS,
-			deviceOSVersion:   data.DeviceOSVersion,
-			unityVersion:      data.TargetVersion,
-			deviceOSInfos:     data.DeviceOSInfos,
-			deviceIP:          data.DeviceIP,
-			lastUpdateAt:      lastUpdate,
-			managerConnection: data.Conn,
-			updated:           true,
-		}
-		dev := models.Device{
-			DeviceIdentifier: data.DeviceID,
-			DeviceType:       models.DeviceTypeUnityEditor,
-			Name:             fmt.Sprintf("Unity (%s) @ %s", data.TargetVersion, data.Name),
-			Manager:          Manager,
-			OS:               data.DeviceOS,
-			OSVersion:        data.DeviceOSVersion,
-			OSInfos:          data.DeviceOSInfos,
-			TargetVersion:    data.TargetVersion,
-			ConnectionParameter: &models.ConnectionParameter{
-				ConnectionType: models.ConnectionTypeRemote,
-			},
-			CustomParameter: []models.CustomParameter{
-				{
-					Key:   "projectDir",
-					Value: data.ProjectDir,
-				},
-			},
-		}
-		d.SetConfig(&dev)
-		m.deviceStorage.NewDevice(m.Name(), dev)
-		m.devices[data.DeviceID] = d
+// expire shuts the device down when it was silent since staleAfter and
+// reports whether its state changed.
+func (d *Device) expire(now time.Time) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if now.Sub(d.lastUpdateAt) <= staleAfter || d.State == device.StateShutdown {
+		return false
 	}
-	go m.devices[data.DeviceID].HandleManagerConnection()
-	return m.devices[data.DeviceID], nil
+	d.State = device.StateShutdown
+	d.updated = false
+	return true
+}
+
+// takeUpdated reports and clears the updated flag.
+func (d *Device) takeUpdated() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	updated := d.updated
+	d.updated = false
+	return updated
 }
