@@ -1,6 +1,6 @@
 // The logic of the device control page that doesn't need React: what a key
-// press on the computer sends to the device, picking an element of the scene
-// graph by position, the system log, the lease and the default app.
+// press on the computer sends to the device, the system log, the lease and
+// the default app. The scene graph is in control/sceneModel.ts.
 import {PlatformType} from '../../types/platform.type.enum';
 
 // --- keyboard ---
@@ -44,36 +44,6 @@ export const keyForEvent = (e: KeyLike): DeviceKey | null => {
     return null;
 };
 
-// --- scene graph ---
-
-export interface SceneElement {
-    getAttribute(name: string): string | null,
-    readonly children: ArrayLike<SceneElement>,
-}
-
-const rect = (e: SceneElement) => {
-    const n = (a: string) => Number(e.getAttribute(a)) || 0;
-    return {x: n('X'), y: n('Y'), w: n('RectangleX'), h: n('RectangleY')};
-};
-
-// elementAt finds the deepest visible element at a point in scene
-// coordinates; later siblings are drawn on top, so they win
-export const elementAt = (root: SceneElement, x: number, y: number): SceneElement | null => {
-    const inside = (e: SceneElement) => {
-        const r = rect(e);
-        return r.w > 0 && r.h > 0 && x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
-    };
-    const visit = (e: SceneElement): SceneElement | null => {
-        const kids = Array.from(e.children);
-        for (let i = kids.length - 1; i >= 0; i--) {
-            const hit = visit(kids[i]);
-            if (hit) return hit;
-        }
-        return inside(e) ? e : null;
-    };
-    return visit(root);
-};
-
 // --- system log ---
 
 export type LogLevel = 'V' | 'D' | 'I' | 'W' | 'E' | 'F';
@@ -89,7 +59,7 @@ export const logLevel = (line: string): LogLevel | null => {
     return tagged ? tagged[1] as LogLevel : null;
 };
 
-export const isProblem = (level: LogLevel | null) => level === 'E' || level === 'F' || level === 'W';
+export const isProblem = (level: LogLevel | null): boolean => level === 'E' || level === 'F' || level === 'W';
 
 export const filterLogLines = (lines: string[], text: string, problemsOnly: boolean): string[] => {
     const needle = text.trim().toLowerCase();
@@ -117,7 +87,21 @@ export const runsOn = (app: PlatformType, device: PlatformType): boolean =>
 
 // defaultApp picks the app to offer for a device: the remembered app when it
 // runs there, else the first that does
-export const defaultApp = <T extends { id: number, platform: PlatformType }>(apps: T[], device: PlatformType | undefined, remembered: number | null): T | null => {
+type AppLike = { id: number, platform: PlatformType };
+
+export const defaultApp = <T extends AppLike>(apps: T[], device: PlatformType | undefined, remembered: number | null): T | null => {
     const fitting = device === undefined ? apps : apps.filter(a => runsOn(a.platform, device));
     return fitting.find(a => a.id === remembered) ?? fitting[0] ?? null;
 };
+
+// the name the page shows for a device that may not be loaded yet
+export const deviceTitle = (device: { alias?: string, name: string } | null, deviceId: number): string =>
+    device ? (device.alias || device.name) : `Device ${deviceId}`;
+
+// the server's "not supported" answer needs no explanation to the user
+const PLAIN_UNSUPPORTED = 'operation not supported by this device';
+
+// unsupportedNotice is the error to show when live video falls back to
+// screenshots, or null when the reason is nothing worth saying
+export const unsupportedNotice = (message?: string): string | null =>
+    message && message !== PLAIN_UNSUPPORTED ? `Live video unavailable, showing screenshots: ${message}` : null;
