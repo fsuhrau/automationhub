@@ -22,7 +22,7 @@ func legacyStatusFor(err error) int {
 		return http.StatusConflict
 	case errors.Is(err, device.ErrUnsupported):
 		return http.StatusNotImplemented
-	case errors.Is(err, sync.TimeoutError):
+	case errors.Is(err, sync.ErrTimeout):
 		return http.StatusGatewayTimeout
 	}
 	return http.StatusInternalServerError
@@ -39,7 +39,7 @@ func TestFailErrKeepsTheStatusOfEverySentinel(t *testing.T) {
 		{"device busy", hubcontrol.ErrDeviceBusy, http.StatusConflict},
 		{"app not connected", hubcontrol.ErrAppNotConnected, http.StatusConflict},
 		{"unsupported", device.ErrUnsupported, http.StatusNotImplemented},
-		{"timeout", sync.TimeoutError, http.StatusGatewayTimeout},
+		{"timeout", sync.ErrTimeout, http.StatusGatewayTimeout},
 		{"wrapped sentinel", fmt.Errorf("tap: %w", hubcontrol.ErrLeaseRequired), http.StatusPreconditionRequired},
 		{"other error", errors.New("boom"), http.StatusInternalServerError},
 	}

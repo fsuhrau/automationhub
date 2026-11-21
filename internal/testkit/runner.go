@@ -10,9 +10,6 @@ import (
 	"github.com/fsuhrau/automationhub/device"
 )
 
-// Process is the handle returned by FakeRunner.Start, the device.Process.
-type Process = device.Process
-
 type result struct {
 	out    []byte
 	stderr []byte
@@ -86,7 +83,7 @@ func (r *FakeRunner) Run(_ context.Context, name string, args ...string) ([]byte
 
 // Start returns a process whose Wait gives the scripted error. Its Kill is
 // recorded in Killed. An unscripted command line is an error.
-func (r *FakeRunner) Start(_ context.Context, name string, args ...string) (Process, error) {
+func (r *FakeRunner) Start(_ context.Context, name string, args ...string) (device.Process, error) {
 	res, err := r.lookup(name, args)
 	if err != nil {
 		return nil, err
@@ -100,7 +97,7 @@ func (r *FakeRunner) Start(_ context.Context, name string, args ...string) (Proc
 // an error.
 //
 //nolint:revive // argument-limit: fixed by device.CommandRunner
-func (r *FakeRunner) StartStreaming(_ context.Context, out io.Writer, name string, args ...string) (Process, error) {
+func (r *FakeRunner) StartStreaming(_ context.Context, out io.Writer, name string, args ...string) (device.Process, error) {
 	res, err := r.lookup(name, args)
 	if err != nil {
 		return nil, err

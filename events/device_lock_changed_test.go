@@ -58,27 +58,28 @@ func expectNoLockEvent(t *testing.T, r lockRecorder) {
 	}
 }
 
-func TestLockAndUnlockDeviceAnnounceTheChange(t *testing.T) {
+func TestSetDeviceLockAnnouncesTheChange(t *testing.T) {
+	bus := NewBus[DeviceLockChangedPayload]()
 	r := make(lockRecorder, 4)
-	DeviceLockChanged.Register(r)
+	bus.Register(r)
 	dev := &lockDevice{id: "phone"}
 
-	if err := LockDevice(dev); err != nil {
+	if err := SetDeviceLock(bus, dev, true); err != nil {
 		t.Fatal(err)
 	}
 	expectLockEvent(t, r, DeviceLockChangedPayload{DeviceIdentifier: "phone", Locked: true})
 
-	if err := UnlockDevice(dev); err != nil {
+	if err := SetDeviceLock(bus, dev, false); err != nil {
 		t.Fatal(err)
 	}
 	expectLockEvent(t, r, DeviceLockChangedPayload{DeviceIdentifier: "phone", Locked: false})
 
 	// nothing changed, so nothing is announced
-	if err := UnlockDevice(dev); err == nil {
+	if err := SetDeviceLock(bus, dev, false); err == nil {
 		t.Fatal("unlocking an unlocked device should fail")
 	}
 	dev.lockErr = errors.New("busy")
-	if err := LockDevice(dev); err == nil {
+	if err := SetDeviceLock(bus, dev, true); err == nil {
 		t.Fatal("lock error should be returned")
 	}
 	expectNoLockEvent(t, r)

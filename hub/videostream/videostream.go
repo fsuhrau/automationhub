@@ -11,17 +11,13 @@
 package videostream
 
 import (
-	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -86,71 +82,6 @@ func DecodePacket(data []byte) (device.VideoPacket, error) {
 	}, nil
 }
 
-// Pump writes the meta and then every packet of the stream to the websocket
-// until the stream ends, a write fails or ctx is done. It closes the stream
-// but not the socket. A reader goroutine passes the client's text messages to
-// handle (which may be nil) and notices close frames and disconnects; those
-// end the pump as well.
-func Pump(ctx context.Context, conn *websocket.Conn, stream device.VideoStream, handle InputHandler) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var writeMu sync.Mutex
-	reply := func(m Message) {
-		writeMu.Lock()
-		defer writeMu.Unlock()
-		_ = writeJSON(conn, m)
-	}
-
-	go func() {
-		defer cancel()
-		for {
-			kind, data, err := conn.ReadMessage()
-			if err != nil {
-				return
-			}
-			if kind != websocket.TextMessage || handle == nil {
-				continue
-			}
-			var m Message
-			if err := json.Unmarshal(data, &m); err != nil {
-				reply(Message{Type: TypeInputError, Message: "invalid message: " + err.Error()})
-				continue
-			}
-			handle(m, reply)
-		}
-	}()
-	// a blocked ReadPacket only returns once the stream is closed
-	go func() {
-		<-ctx.Done()
-		_ = stream.Close()
-	}()
-
-	meta := stream.Meta()
-	writeMu.Lock()
-	err := writeJSON(conn, Message{Type: TypeMeta, Meta: &meta})
-	writeMu.Unlock()
-	if err != nil {
-		return err
-	}
-	for {
-		p, err := stream.ReadPacket()
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil
-			}
-			return err
-		}
-		writeMu.Lock()
-		_ = conn.SetWriteDeadline(time.Now().Add(writeTimeout))
-		err = conn.WriteMessage(websocket.BinaryMessage, EncodePacket(p))
-		writeMu.Unlock()
-		if err != nil {
-			return err
-		}
-	}
-}
-
 // WriteError sends an error message to the client.
 func WriteError(conn *websocket.Conn, err error) error {
 	return writeJSON(conn, Message{Type: TypeError, Message: err.Error(), Unsupported: errors.Is(err, device.ErrUnsupported)})
@@ -177,71 +108,4 @@ func InjectInto(stream device.VideoStream) InputHandler {
 			reply(Message{Type: TypeInputError, Message: err.Error()})
 		}
 	}
-}
-
-// remoteStream reads a stream that a node pumps into a websocket. Input is
-// written back to the node over the same socket.
-type remoteStream struct {
-	conn      *websocket.Conn
-	meta      device.VideoMeta
-	writeMu   sync.Mutex
-	closeOnce sync.Once
-}
-
-// InjectInput implements device.VideoInput by forwarding to the node. Errors
-// of the node arrive asynchronously and are only logged there.
-func (s *remoteStream) InjectInput(ev device.InputEvent) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	return writeJSON(s.conn, Message{Type: TypeInput, Input: &ev})
-}
-
-// Receive reads the meta message from a pumped websocket and returns the
-// stream. Closing the stream closes the socket.
-func Receive(conn *websocket.Conn, timeout time.Duration) (device.VideoStream, error) {
-	_ = conn.SetReadDeadline(time.Now().Add(timeout))
-	var m Message
-	if err := conn.ReadJSON(&m); err != nil {
-		_ = conn.Close()
-		return nil, fmt.Errorf("read video meta: %w", err)
-	}
-	_ = conn.SetReadDeadline(time.Time{})
-	switch {
-	case m.Type == TypeError && m.Unsupported:
-		_ = conn.Close()
-		return nil, device.ErrUnsupported
-	case m.Type == TypeError:
-		_ = conn.Close()
-		return nil, errors.New(m.Message)
-	case m.Type != TypeMeta || m.Meta == nil:
-		_ = conn.Close()
-		return nil, fmt.Errorf("unexpected video message %q", m.Type)
-	}
-	return &remoteStream{conn: conn, meta: *m.Meta}, nil
-}
-
-func (s *remoteStream) Meta() device.VideoMeta { return s.meta }
-
-func (s *remoteStream) ReadPacket() (device.VideoPacket, error) {
-	for {
-		kind, data, err := s.conn.ReadMessage()
-		if err != nil {
-			return device.VideoPacket{}, err
-		}
-		if kind == websocket.BinaryMessage {
-			return DecodePacket(data)
-		}
-		var m Message
-		if json.Unmarshal(data, &m) == nil && m.Type == TypeInputError {
-			logrus.Debugf("node rejected video input: %s", m.Message)
-		}
-	}
-}
-
-func (s *remoteStream) Close() error {
-	s.closeOnce.Do(func() {
-		_ = s.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Now().Add(time.Second))
-		_ = s.conn.Close()
-	})
-	return nil
 }

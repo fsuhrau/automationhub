@@ -66,6 +66,9 @@ type Deps struct {
 	NewExecutor func() Executor
 	// Locker defaults to the global device lock bus.
 	Locker Locker
+	// StoreDir is the folder of the uploaded bundles, for the install
+	// parameters of an app.
+	StoreDir string
 }
 
 // Service is the device use cases.

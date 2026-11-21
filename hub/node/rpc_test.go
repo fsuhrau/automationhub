@@ -628,12 +628,6 @@ func TestGetScreenshot_ChunkFailure(t *testing.T) {
 	}
 }
 
-func TestNewRemoteActionHandler(t *testing.T) {
-	if NewRemoteActionHandler("master", "node", "dev", nil) == nil {
-		t.Fatal("no handler")
-	}
-}
-
 func TestOptionalRoles_UnsupportedDevice(t *testing.T) {
 	w := newWire(t)
 	w.dm.Add("android_device", bare{testDeviceNamed("bare-1")})

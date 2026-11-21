@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 )
 
 // Lock locks the device unless a failure is scripted for "Lock".
@@ -69,14 +69,14 @@ func (d *FakeDevice) Exception(source, format string, params ...interface{}) {
 	_ = d.record("Exception", source, format, params)
 }
 
-func (d *FakeDevice) AddActionHandler(h action.ActionHandler) {
+func (d *FakeDevice) AddActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	d.handlers = append(d.handlers, h)
 	d.mu.Unlock()
 }
 
 // RemoveActionHandler removes the first handler equal to h.
-func (d *FakeDevice) RemoveActionHandler(h action.ActionHandler) {
+func (d *FakeDevice) RemoveActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for i, have := range d.handlers {
@@ -87,10 +87,10 @@ func (d *FakeDevice) RemoveActionHandler(h action.ActionHandler) {
 	}
 }
 
-func (d *FakeDevice) ActionHandlers() []action.ActionHandler {
+func (d *FakeDevice) ActionHandlers() []appproto.ActionHandler {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return append([]action.ActionHandler(nil), d.handlers...)
+	return append([]appproto.ActionHandler(nil), d.handlers...)
 }
 
 // Optional capabilities.

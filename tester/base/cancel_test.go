@@ -9,8 +9,8 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/device/generic"
-	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/gorilla/websocket"
 )
@@ -60,7 +60,7 @@ func appSocket(t *testing.T) (*websocket.Conn, <-chan struct{}) {
 func TestStopAndClearAppDropsTheConnection(t *testing.T) {
 	ws, closed := appSocket(t)
 	d := &appDevice{}
-	d.SetConnection(&device.Connection{Connection: ws, ConnectionParameter: &action.Connect{DeviceID: "phone"}})
+	d.SetConnection(&device.Connection{Connection: ws, ConnectionParameter: &appproto.Connect{DeviceID: "phone"}})
 
 	if err := StopAndClearApp(d, &app.Parameter{Identifier: "com.example"}); err != nil {
 		t.Fatal(err)
@@ -79,7 +79,7 @@ func TestStopAndClearAppDropsTheConnection(t *testing.T) {
 func TestDropAppConnectionWithoutConnection(t *testing.T) {
 	d := &appDevice{}
 	device.DropAppConnection(d)
-	newer := &device.Connection{ConnectionParameter: &action.Connect{}}
+	newer := &device.Connection{ConnectionParameter: &appproto.Connect{}}
 	d.SetConnection(newer)
 	device.DropAppConnection(&appDevice{})
 	if d.Connection() != newer {

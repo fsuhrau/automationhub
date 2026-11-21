@@ -3,6 +3,7 @@ package control
 import (
 	"context"
 	"errors"
+	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,7 +64,7 @@ func (h *Handler) pumpVideo(conn *websocket.Conn, dev device.Device, opts device
 		_ = videostream.WriteError(conn, err)
 		return
 	}
-	if err := videostream.Pump(ctx, conn, stream, h.videoInput(dev, stream)); err != nil {
+	if err := videostream.Pump(ctx, conn, videostream.Feed{Stream: stream, Input: h.videoInput(dev, stream)}); err != nil {
 		logrus.Debugf("video stream of %s ended: %v", dev.DeviceID(), err)
 	}
 }
@@ -73,7 +74,7 @@ func (h *Handler) videoInput(dev device.Device, stream device.VideoStream) video
 		if m.Type != videostream.TypeInput || m.Input == nil {
 			return
 		}
-		if err := h.svc.InjectInput(dev, m.Lease, stream, *m.Input); err != nil {
+		if err := h.svc.InjectInput(hubcontrol.Target{Device: dev, Token: m.Lease}, stream, *m.Input); err != nil {
 			reply(videostream.Message{
 				Type:        videostream.TypeInputError,
 				Message:     err.Error(),

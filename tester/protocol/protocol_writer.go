@@ -5,6 +5,7 @@ import (
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"gorm.io/gorm"
+	"sync"
 	"time"
 )
 
@@ -41,17 +42,28 @@ func (p *logProtocol) TestProtocolId() *uint {
 
 type ProtocolWriter struct {
 	// failed marks a run that couldn't run its tests, e.g. without devices
-	failed    bool
-	db        *gorm.DB
-	run       *models.TestRun
-	testName  string
+	failed   bool
+	db       *gorm.DB
+	run      *models.TestRun
+	testName string
+	// protocols grows from several devices of a run at once
+	mu        sync.Mutex
 	protocols []*logProtocol
 	projectId string
 	appId     uint
 }
 
-func NewProtocolWriter(db *gorm.DB, projectId string, appId uint, testName string, run *models.TestRun) *ProtocolWriter {
-	return &ProtocolWriter{db: db, projectId: projectId, appId: appId, testName: testName, run: run}
+// RunTarget names the run a ProtocolWriter writes the protocols of: its test
+// and the app and project the test belongs to.
+type RunTarget struct {
+	ProjectID string
+	AppID     uint
+	TestName  string
+	Run       *models.TestRun
+}
+
+func NewProtocolWriter(db *gorm.DB, target RunTarget) *ProtocolWriter {
+	return &ProtocolWriter{db: db, projectId: target.ProjectID, appId: target.AppID, testName: target.TestName, run: target.Run}
 }
 
 func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logProtocol, error) {
@@ -67,10 +79,10 @@ func (w *ProtocolWriter) NewProtocol(dev models.Device, testname string) (*logPr
 	}
 	protocol.Device = &dev
 
-	writer := NewLogWriter(w.db, w.run.ID, protocol.ID, &dev, nil)
+	writer := NewLogWriter(w.db, LogTarget{RunID: w.run.ID, ProtocolID: protocol.ID, Device: &dev})
 
 	p := &logProtocol{w.db, protocol, writer}
-	w.protocols = append(w.protocols, p)
+	w.track(p)
 
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
 
@@ -94,10 +106,10 @@ func (w *ProtocolWriter) NewSubProtocol(testname string, pw device.LogWriter) (*
 	}
 	protocol.Device = dev
 
-	writer := NewLogWriter(w.db, w.run.ID, protocol.ID, dev, pw)
+	writer := NewLogWriter(w.db, LogTarget{RunID: w.run.ID, ProtocolID: protocol.ID, Device: dev, Parent: pw})
 
 	p := &logProtocol{w.db, protocol, writer}
-	w.protocols = append(w.protocols, p)
+	w.track(p)
 
 	events.NewTestProtocol.Trigger(events.NewTestProtocolPayload{TestRunID: w.run.ID, Protocol: protocol})
 
@@ -135,12 +147,27 @@ func (c *resultCounts) add(state models.TestResultState) {
 	}
 }
 
+// track remembers the protocol, to close it with the run.
+func (w *ProtocolWriter) track(p *logProtocol) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.protocols = append(w.protocols, p)
+}
+
+// tracked returns the protocols of the run so far.
+func (w *ProtocolWriter) tracked() []*logProtocol {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return append([]*logProtocol(nil), w.protocols...)
+}
+
 func (w *ProtocolWriter) Close() {
 	var c resultCounts
 
-	for i := len(w.protocols) - 1; i >= 0; i-- {
-		w.protocols[i].Close()
-		c.add(w.protocols[i].p.TestResult)
+	protocols := w.tracked()
+	for i := len(protocols) - 1; i >= 0; i-- {
+		protocols[i].Close()
+		c.add(protocols[i].p.TestResult)
 	}
 
 	events.TestRunFinished.Trigger(events.TestRunFinishedPayload{

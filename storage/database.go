@@ -49,7 +49,11 @@ func Open(cfg config.Database) (*gorm.DB, error) {
 	}
 	db, err := gorm.Open(dialect, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger:                                   newLogger(os.Stdout),
+		// a duplicate key or a violated reference reaches the stores as
+		// gorm.ErrDuplicatedKey / gorm.ErrForeignKeyViolated, which
+		// storeerr.Map turns into a conflict
+		TranslateError: true,
+		Logger:         newLogger(os.Stdout),
 	})
 	if err != nil {
 		return nil, err
@@ -58,9 +62,4 @@ func Open(cfg config.Database) (*gorm.DB, error) {
 		return nil, fmt.Errorf("migrate database: %w", err)
 	}
 	return db, nil
-}
-
-// GetDB is Open under its old name. Deleted with the other aliases by G34.
-func GetDB(database config.Database) (*gorm.DB, error) {
-	return Open(database)
 }

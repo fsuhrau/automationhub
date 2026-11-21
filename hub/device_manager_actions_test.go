@@ -8,32 +8,32 @@ import (
 	"testing"
 
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 )
 
-// recordingHandler is an action.ActionHandler that keeps what it received.
+// recordingHandler is an appproto.ActionHandler that keeps what it received.
 type recordingHandler struct {
 	mu   sync.Mutex
-	resp []*action.Response
+	resp []*appproto.Response
 }
 
-func (h *recordingHandler) OnActionResponse(_ interface{}, r *action.Response) {
+func (h *recordingHandler) OnActionResponse(_ interface{}, r *appproto.Response) {
 	h.mu.Lock()
 	h.resp = append(h.resp, r)
 	h.mu.Unlock()
 }
 
-func (h *recordingHandler) received() []*action.Response {
+func (h *recordingHandler) received() []*appproto.Response {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return append([]*action.Response(nil), h.resp...)
+	return append([]*appproto.Response(nil), h.resp...)
 }
 
 func newConnection() *device.Connection {
 	return &device.Connection{
 		ResponseChannel: make(chan device.ResponseData, 10),
-		ActionChannel:   make(chan action.Response, 1),
+		ActionChannel:   make(chan appproto.Response, 1),
 	}
 }
 
@@ -49,19 +49,19 @@ func mustJSON(t *testing.T, v any) []byte {
 func TestDispatchRoutesEveryResponseKind(t *testing.T) {
 	tests := []struct {
 		name  string
-		resp  action.Response
+		resp  appproto.Response
 		check func(t *testing.T, d *testkit.FakeDevice, con *device.Connection)
 	}{
-		{"exception log", logResponse(action.LogLevel_Exception), expectCall("Exception")},
-		{"error log", logResponse(action.LogLevel_Error), expectCall("Error")},
-		{"info log", logResponse(action.LogLevel_Info), expectCall("Log")},
-		{"log without data", action.Response{ActionType: action.ActionType_Log}, expectNoCall("Log")},
-		{"run key", action.Response{ActionType: action.ActionType_RunKey, Payload: action.ResponseData{RunKey: &action.RunKey{Key: "k", Value: "v"}}}, expectCall("SetKey")},
-		{"empty run key", action.Response{ActionType: action.ActionType_RunKey, Payload: action.ResponseData{RunKey: &action.RunKey{}}}, expectNoCall("SetKey")},
-		{"run key without payload", action.Response{ActionType: action.ActionType_RunKey}, expectNoCall("SetKey")},
-		{"performance dropped", action.Response{ActionType: action.ActionType_Performance, ActionID: "p"}, expectNoQueued},
-		{"response with id queued", action.Response{ActionType: action.ActionType_GetScreenshot, ActionID: "a1"}, expectQueued("a1")},
-		{"response without id logged", action.Response{ActionType: action.ActionType_GetScreenshot}, expectCall("Log")},
+		{"exception log", logResponse(appproto.LogLevel_Exception), expectCall("Exception")},
+		{"error log", logResponse(appproto.LogLevel_Error), expectCall("Error")},
+		{"info log", logResponse(appproto.LogLevel_Info), expectCall("Log")},
+		{"log without data", appproto.Response{ActionType: appproto.ActionType_Log}, expectNoCall("Log")},
+		{"run key", appproto.Response{ActionType: appproto.ActionType_RunKey, Payload: appproto.ResponseData{RunKey: &appproto.RunKey{Key: "k", Value: "v"}}}, expectCall("SetKey")},
+		{"empty run key", appproto.Response{ActionType: appproto.ActionType_RunKey, Payload: appproto.ResponseData{RunKey: &appproto.RunKey{}}}, expectNoCall("SetKey")},
+		{"run key without payload", appproto.Response{ActionType: appproto.ActionType_RunKey}, expectNoCall("SetKey")},
+		{"performance dropped", appproto.Response{ActionType: appproto.ActionType_Performance, ActionID: "p"}, expectNoQueued},
+		{"response with id queued", appproto.Response{ActionType: appproto.ActionType_GetScreenshot, ActionID: "a1"}, expectQueued("a1")},
+		{"response without id logged", appproto.Response{ActionType: appproto.ActionType_GetScreenshot}, expectCall("Log")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -74,8 +74,8 @@ func TestDispatchRoutesEveryResponseKind(t *testing.T) {
 	}
 }
 
-func logResponse(level action.LogLevel) action.Response {
-	return action.Response{ActionType: action.ActionType_Log, Payload: action.ResponseData{LogData: &action.LogData{Level: level, Message: "m"}}}
+func logResponse(level appproto.LogLevel) appproto.Response {
+	return appproto.Response{ActionType: appproto.ActionType_Log, Payload: appproto.ResponseData{LogData: &appproto.LogData{Level: level, Message: "m"}}}
 }
 
 func expectCall(method string) func(*testing.T, *testkit.FakeDevice, *device.Connection) {
@@ -125,7 +125,7 @@ func TestDispatchPrefersRegisteredActionHandlers(t *testing.T) {
 	d.AddActionHandler(h2)
 	con := newConnection()
 
-	dm.dispatchData(d, con, mustJSON(t, action.Response{ActionType: action.ActionType_GetScreenshot, ActionID: "a"}))
+	dm.dispatchData(d, con, mustJSON(t, appproto.Response{ActionType: appproto.ActionType_GetScreenshot, ActionID: "a"}))
 
 	if len(h1.received()) != 1 || len(h2.received()) != 1 {
 		t.Fatal("every handler must see the response")
@@ -138,7 +138,7 @@ func TestDispatchDropsResponseWhenNobodyListens(t *testing.T) {
 	d := testkit.NewFakeDevice("phone")
 	con := newConnection()
 	for _, id := range []string{"first", "second"} { // the channel holds one
-		dm.dispatchData(d, con, mustJSON(t, action.Response{ActionType: action.ActionType_GetScreenshot, ActionID: id}))
+		dm.dispatchData(d, con, mustJSON(t, appproto.Response{ActionType: appproto.ActionType_GetScreenshot, ActionID: id}))
 	}
 	expectQueued("first")(t, d, con)
 	expectNoQueued(t, d, con)
@@ -200,7 +200,7 @@ func TestHandleActionsKeepsNewerConnection(t *testing.T) {
 	d.SetConnection(old)
 	done := runHandleActions(dm, d, context.Background())
 	// a handled response proves the loop runs on the old connection
-	old.ResponseChannel <- device.ResponseData{Data: mustJSON(t, logResponse(action.LogLevel_Info))}
+	old.ResponseChannel <- device.ResponseData{Data: mustJSON(t, logResponse(appproto.LogLevel_Info))}
 	waitFor(t, "first response", func() bool { return len(d.CallsTo("Log")) == 1 })
 	d.SetConnection(newer)
 	old.ResponseChannel <- device.ResponseData{Err: errors.New("closed")}
@@ -258,13 +258,13 @@ func TestSendActionOutcomes(t *testing.T) {
 }
 
 func TestGetTypeOfLog(t *testing.T) {
-	tests := map[action.LogType]string{
-		action.LogType_DeviceLog:      "app",
-		action.LogType_StepLog:        "step",
-		action.LogType_StatusLog:      "status",
-		action.LogType_CheckpointLog:  "checkpoint",
-		action.LogType_PerformanceLog: "performance",
-		action.LogType(99):            "",
+	tests := map[appproto.LogType]string{
+		appproto.LogType_DeviceLog:      "app",
+		appproto.LogType_StepLog:        "step",
+		appproto.LogType_StatusLog:      "status",
+		appproto.LogType_CheckpointLog:  "checkpoint",
+		appproto.LogType_PerformanceLog: "performance",
+		appproto.LogType(99):            "",
 	}
 	for in, want := range tests {
 		if got := getTypeOfLog(in); got != want {
@@ -275,10 +275,10 @@ func TestGetTypeOfLog(t *testing.T) {
 
 func TestLogErrorReportsExceptions(t *testing.T) {
 	d := testkit.NewFakeDevice("phone")
-	if !logError(d, &action.LogData{Level: action.LogLevel_Exception}) {
+	if !logError(d, &appproto.LogData{Level: appproto.LogLevel_Exception}) {
 		t.Fatal("exception must be reported")
 	}
-	if logError(d, &action.LogData{Level: action.LogLevel_Error}) {
+	if logError(d, &appproto.LogData{Level: appproto.LogLevel_Error}) {
 		t.Fatal("error is not an exception")
 	}
 }

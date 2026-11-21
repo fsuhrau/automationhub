@@ -11,6 +11,7 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"github.com/fsuhrau/automationhub/internal/testkit"
@@ -30,9 +31,9 @@ func (m *fakeApp) SendAction(d device.Device, a action.Interface) error {
 	if err := m.FakeDeviceManager.SendAction(d, a); err != nil {
 		return err
 	}
-	resp := &action.Response{ActionType: a.GetActionType(), Success: true}
-	if a.GetActionType() == action.ActionType_GetSceneGraph {
-		resp.Payload.Screenshot = &action.Screenshot{ContentType: action.ContentType_Xml, Sceengraph: []byte(sceneXML)}
+	resp := &appproto.Response{ActionType: a.GetActionType(), Success: true}
+	if a.GetActionType() == appproto.ActionType_GetSceneGraph {
+		resp.Payload.Screenshot = &appproto.Screenshot{ContentType: appproto.ContentType_Xml, Sceengraph: []byte(sceneXML)}
 	}
 	for _, h := range d.(*testkit.FakeDevice).ActionHandlers() {
 		h.OnActionResponse(d, resp)

@@ -10,10 +10,7 @@ package control
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -65,6 +62,10 @@ type Service struct {
 	idleTimeout   time.Duration
 	actionTimeout time.Duration
 	now           func() time.Time
+	// after waits between two reads of a followed log
+	after func(time.Duration) <-chan time.Time
+	// reapEvery is how often Run releases the idle leases
+	reapEvery time.Duration
 
 	mu       sync.Mutex
 	leases   map[string]*leaseEntry // by device id
@@ -77,6 +78,8 @@ func New(dm manager.Devices) *Service {
 		idleTimeout:   DefaultIdleTimeout,
 		actionTimeout: DefaultActionTimeout,
 		now:           time.Now,
+		after:         time.After,
+		reapEvery:     reapInterval,
 		leases:        make(map[string]*leaseEntry),
 	}
 }
@@ -111,7 +114,7 @@ func (s *Service) notify(deviceIDs ...string) {
 
 // Run releases idle leases until ctx is done.
 func (s *Service) Run(ctx context.Context) {
-	ticker := time.NewTicker(reapInterval)
+	ticker := time.NewTicker(s.reapEvery)
 	defer ticker.Stop()
 	for {
 		select {
@@ -123,178 +126,7 @@ func (s *Service) Run(ctx context.Context) {
 	}
 }
 
-// ReapExpired releases all leases that were idle longer than the timeout.
-func (s *Service) ReapExpired() int {
-	now := s.now()
-	var expired []*leaseEntry
-	s.mu.Lock()
-	for id, l := range s.leases {
-		if now.After(l.ExpiresAt) {
-			expired = append(expired, l)
-			delete(s.leases, id)
-		}
-	}
-	s.mu.Unlock()
-	for _, l := range expired {
-		unlockDevice(l.dev)
-		s.notify(l.DeviceID)
-	}
-	return len(expired)
-}
-
-func newToken() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
-func unlockDevice(dev device.Device) {
-	if r, ok := dev.(releaser); ok {
-		_ = r.Release()
-		return
-	}
-	_ = dev.Unlock()
-}
-
-// Acquire locks the device for owner. Calling it again with the same owner
-// renews and returns the existing lease.
-func (s *Service) Acquire(dev device.Device, owner string) (Lease, error) {
-	if owner == "" {
-		return Lease{}, errors.New("lease owner is required")
-	}
-	changed := false
-	defer func() {
-		// runs after the unlock below
-		if changed {
-			s.notify(dev.DeviceID())
-		}
-	}()
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	now := s.now()
-	if l, ok := s.leases[dev.DeviceID()]; ok {
-		if now.After(l.ExpiresAt) {
-			delete(s.leases, dev.DeviceID())
-			unlockDevice(l.dev)
-			changed = true
-		} else if l.Owner == owner {
-			s.touch(l, now)
-			return l.Lease, nil
-		} else {
-			return Lease{}, fmt.Errorf("%w: controlled by %s", ErrDeviceBusy, l.Owner)
-		}
-	}
-
-	if err := dev.Lock(); err != nil {
-		return Lease{}, fmt.Errorf("%w: locked by a test run", ErrDeviceBusy)
-	}
-	l := &leaseEntry{
-		Lease: Lease{
-			DeviceID:   dev.DeviceID(),
-			Token:      newToken(),
-			Owner:      owner,
-			AcquiredAt: now,
-		},
-		dev: dev,
-	}
-	s.touch(l, now)
-	s.leases[dev.DeviceID()] = l
-	changed = true
-	return l.Lease, nil
-}
-
 func (s *Service) touch(l *leaseEntry, now time.Time) {
 	l.LastUsed = now
 	l.ExpiresAt = now.Add(s.idleTimeout)
-}
-
-// Release ends the lease identified by token.
-func (s *Service) Release(deviceID, token string) error {
-	s.mu.Lock()
-	l, ok := s.leases[deviceID]
-	if !ok || l.Token != token || token == "" {
-		s.mu.Unlock()
-		return ErrLeaseInvalid
-	}
-	delete(s.leases, deviceID)
-	s.mu.Unlock()
-	unlockDevice(l.dev)
-	s.notify(deviceID)
-	return nil
-}
-
-// ForceRelease drops any lease on the device without unlocking it; used when
-// the device is unlocked through the regular unlock route.
-func (s *Service) ForceRelease(deviceID string) bool {
-	s.mu.Lock()
-	_, ok := s.leases[deviceID]
-	delete(s.leases, deviceID)
-	s.mu.Unlock()
-	if ok {
-		s.notify(deviceID)
-	}
-	return ok
-}
-
-// ReleaseOwner releases every lease held by owner, e.g. when an MCP session ends.
-func (s *Service) ReleaseOwner(owner string) int {
-	var released []*leaseEntry
-	s.mu.Lock()
-	for id, l := range s.leases {
-		if l.Owner == owner {
-			released = append(released, l)
-			delete(s.leases, id)
-		}
-	}
-	s.mu.Unlock()
-	for _, l := range released {
-		unlockDevice(l.dev)
-		s.notify(l.DeviceID)
-	}
-	return len(released)
-}
-
-// Holder returns the active lease on the device, without its token.
-func (s *Service) Holder(deviceID string) (Lease, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	l, ok := s.leases[deviceID]
-	if !ok || s.now().After(l.ExpiresAt) {
-		return Lease{}, false
-	}
-	lease := l.Lease
-	lease.Token = ""
-	return lease, true
-}
-
-// Authorize checks the token against the device's lease and renews it.
-func (s *Service) Authorize(deviceID, token string) error {
-	if token == "" {
-		return ErrLeaseRequired
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	l, ok := s.leases[deviceID]
-	now := s.now()
-	if !ok || l.Token != token || now.After(l.ExpiresAt) {
-		return ErrLeaseInvalid
-	}
-	s.touch(l, now)
-	return nil
-}
-
-// TokenFor returns the lease token if owner holds the device. It lets callers
-// that are identified by owner (e.g. an MCP session) use the token based API.
-func (s *Service) TokenFor(deviceID, owner string) (string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	l, ok := s.leases[deviceID]
-	if !ok || s.now().After(l.ExpiresAt) {
-		return "", ErrLeaseRequired
-	}
-	if l.Owner != owner {
-		return "", fmt.Errorf("%w: controlled by %s", ErrDeviceBusy, l.Owner)
-	}
-	return l.Token, nil
 }

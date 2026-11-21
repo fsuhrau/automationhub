@@ -99,3 +99,12 @@ func (s *Store) Bundle(ctx context.Context, project *models.Project, id uint) (*
 	}
 	return &binary, nil
 }
+
+// IDByIdentifier returns the id of the device with the identifier.
+func (s *Store) IDByIdentifier(ctx context.Context, identifier string) (uint, error) {
+	var d models.Device
+	if err := s.db.WithContext(ctx).Select("id").First(&d, "device_identifier = ?", identifier).Error; err != nil {
+		return 0, mapErr(err, "device "+identifier)
+	}
+	return d.ID, nil
+}

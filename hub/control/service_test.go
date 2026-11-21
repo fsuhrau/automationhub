@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 )
@@ -23,7 +24,7 @@ type fakeDevice struct {
 	locked   bool
 	unlocked int // Unlock calls (cancel the device context)
 	released int // Release calls (keep the app connected)
-	handlers []action.ActionHandler
+	handlers []appproto.ActionHandler
 	taps     [][2]int
 	texts    []string
 }
@@ -75,12 +76,12 @@ func (d *fakeDevice) InputText(text string) error {
 	return nil
 }
 func (d *fakeDevice) PressKey(string) error { return nil }
-func (d *fakeDevice) AddActionHandler(h action.ActionHandler) {
+func (d *fakeDevice) AddActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.handlers = append(d.handlers, h)
 }
-func (d *fakeDevice) RemoveActionHandler(h action.ActionHandler) {
+func (d *fakeDevice) RemoveActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for i := range d.handlers {
@@ -90,21 +91,24 @@ func (d *fakeDevice) RemoveActionHandler(h action.ActionHandler) {
 		}
 	}
 }
-func (d *fakeDevice) respond(resp *action.Response) {
+func (d *fakeDevice) respond(resp *appproto.Response) {
 	d.mu.Lock()
-	hs := append([]action.ActionHandler(nil), d.handlers...)
+	hs := append([]appproto.ActionHandler(nil), d.handlers...)
 	d.mu.Unlock()
 	for _, h := range hs {
 		h.OnActionResponse(d, resp)
 	}
 }
 
-type devicesManager = manager.Devices
+// devicesManager names the embedded device manager of the fake app.
+type devicesManager interface{ manager.Devices }
 
 // fakeApp plays the Unity plugin: it answers scene graph and touch requests.
 type fakeApp struct {
 	devicesManager
 	sceneXML string
+	// reject makes the app answer every action as failed
+	reject bool
 
 	mu      sync.Mutex
 	touched []string
@@ -115,14 +119,14 @@ func (m *fakeApp) SendAction(dev device.Device, a action.Interface) error {
 	if err != nil {
 		return err
 	}
-	var req action.Request
+	var req appproto.Request
 	_ = json.Unmarshal(raw, &req)
 	fd := dev.(*fakeDevice)
-	resp := &action.Response{ActionType: a.GetActionType(), Success: true}
+	resp := &appproto.Response{ActionType: a.GetActionType(), Success: !m.reject}
 	switch a.GetActionType() {
-	case action.ActionType_GetSceneGraph:
-		resp.Payload.Screenshot = &action.Screenshot{ContentType: action.ContentType_Xml, Sceengraph: []byte(m.sceneXML)}
-	case action.ActionType_ElementTouch:
+	case appproto.ActionType_GetSceneGraph:
+		resp.Payload.Screenshot = &appproto.Screenshot{ContentType: appproto.ContentType_Xml, Sceengraph: []byte(m.sceneXML)}
+	case appproto.ActionType_ElementTouch:
 		m.mu.Lock()
 		m.touched = append(m.touched, *req.Payload.Id)
 		m.mu.Unlock()
@@ -131,7 +135,7 @@ func (m *fakeApp) SendAction(dev device.Device, a action.Interface) error {
 	return nil
 }
 
-func TestLeaseLifecycle(t *testing.T) {
+func TestAcquireRenewsForTheOwnerAndRefusesOthers(t *testing.T) {
 	s := New(nil)
 	dev := newFakeDevice("d1")
 
@@ -153,24 +157,38 @@ func TestLeaseLifecycle(t *testing.T) {
 	if _, err := s.Acquire(dev, "bob"); !errors.Is(err, ErrDeviceBusy) {
 		t.Fatalf("expected ErrDeviceBusy, got %v", err)
 	}
+	if _, err := s.Acquire(dev, ""); err == nil {
+		t.Fatal("an owner is required")
+	}
+}
 
-	if err := s.Tap(dev, "", 1, 2); !errors.Is(err, ErrLeaseRequired) {
+func TestControlCallsNeedTheTokenOfTheLease(t *testing.T) {
+	s := New(nil)
+	dev := newFakeDevice("d1")
+	lease, _ := s.Acquire(dev, "alice")
+
+	if err := s.Tap(Target{dev, ""}, 1, 2); !errors.Is(err, ErrLeaseRequired) {
 		t.Fatalf("expected ErrLeaseRequired, got %v", err)
 	}
-	if err := s.Tap(dev, "wrong", 1, 2); !errors.Is(err, ErrLeaseInvalid) {
+	if err := s.Tap(Target{dev, "wrong"}, 1, 2); !errors.Is(err, ErrLeaseInvalid) {
 		t.Fatalf("expected ErrLeaseInvalid, got %v", err)
 	}
-	if err := s.Tap(dev, lease.Token, 10, 20); err != nil {
+	if err := s.Tap(Target{dev, lease.Token}, 10, 20); err != nil {
 		t.Fatal(err)
 	}
 	if len(dev.taps) != 1 || dev.taps[0] != [2]int{10, 20} {
 		t.Fatalf("tap not forwarded: %v", dev.taps)
 	}
-
 	holder, ok := s.Holder("d1")
 	if !ok || holder.Owner != "alice" || holder.Token != "" {
 		t.Fatalf("unexpected holder %+v", holder)
 	}
+}
+
+func TestReleaseEndsTheLeaseWithoutCancellingTheDevice(t *testing.T) {
+	s := New(nil)
+	dev := newFakeDevice("d1")
+	lease, _ := s.Acquire(dev, "alice")
 
 	if err := s.Release("d1", "wrong"); !errors.Is(err, ErrLeaseInvalid) {
 		t.Fatalf("expected ErrLeaseInvalid, got %v", err)
@@ -204,7 +222,7 @@ func TestIdleLeaseExpires(t *testing.T) {
 		t.Fatal(err)
 	}
 	now = now.Add(2 * time.Minute)
-	if err := s.Tap(dev, lease.Token, 0, 0); !errors.Is(err, ErrLeaseInvalid) {
+	if err := s.Tap(Target{dev, lease.Token}, 0, 0); !errors.Is(err, ErrLeaseInvalid) {
 		t.Fatalf("expected expired lease, got %v", err)
 	}
 	if n := s.ReapExpired(); n != 1 {
@@ -245,10 +263,10 @@ func TestTouchElementByXPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.TouchElement(context.Background(), dev, lease.Token, ElementRef{XPath: "//Button[@Name='Play']"}); err != nil {
+	if err := s.TouchElement(context.Background(), Target{dev, lease.Token}, ElementRef{XPath: "//Button[@Name='Play']"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.TouchElement(context.Background(), dev, lease.Token, ElementRef{XPath: "//Button[@Name='Nope']"}); err == nil {
+	if err := s.TouchElement(context.Background(), Target{dev, lease.Token}, ElementRef{XPath: "//Button[@Name='Nope']"}); err == nil {
 		t.Fatal("expected error for unknown element")
 	}
 	if len(app.touched) != 1 || app.touched[0] != "8" {

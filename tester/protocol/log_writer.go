@@ -63,6 +63,7 @@ func (w *LogWriter) GetAvgPerformanceMetrics() (cpu, fps, mem, vertexCount, tria
 	return
 }
 
+//nolint:revive // implements device.LogWriter, which fixes the signature
 func (w *LogWriter) LogPerformance(checkpoint string, cpu, fps, mem, vertexCount, triangles float64, other string) {
 	w.performanceMetrics.Count++
 	if math.IsNaN(cpu) {
@@ -97,14 +98,17 @@ func (w *LogWriter) getRuntime() float64 {
 	return float64(time.Now().UTC().UnixNano()-w.startTime.UnixNano()) / float64(time.Second)
 }
 
-func (w *LogWriter) write(source, level, message, data string) {
+// logLine is one entry of the protocol log.
+type logLine struct{ source, level, message, data string }
+
+func (w *LogWriter) write(line logLine) {
 	entry := models.ProtocolEntry{
 		Timestamp:      time.Now(),
 		TestProtocolID: w.protocolId,
-		Source:         source,
-		Level:          level,
-		Message:        message,
-		Data:           data,
+		Source:         line.source,
+		Level:          line.level,
+		Message:        line.message,
+		Data:           line.data,
 		Runtime:        w.getRuntime(),
 	}
 	w.db.Create(&entry)
@@ -133,30 +137,39 @@ func (w *LogWriter) SetKey(key, value string) {
 }
 
 func (w *LogWriter) Data(source, data string) {
-	w.write(source, "log", "", data)
+	w.write(logLine{source: source, level: "log", data: data})
 }
 
 func (w *LogWriter) Log(source, format string, params ...interface{}) {
-	w.write(source, "log", fmt.Sprintf(format, params...), "")
+	w.write(logLine{source: source, level: "log", message: fmt.Sprintf(format, params...)})
 }
 
 func (w *LogWriter) Error(source, format string, params ...interface{}) {
 	msg := fmt.Sprintf(format, params...)
 	w.errs = append(w.errs, errors.New(msg))
-	w.write(source, "error", msg, "")
+	w.write(logLine{source: source, level: "error", message: msg})
 }
 
 func (w *LogWriter) Passed(passed bool) {
 	w.passed = passed
 }
 
-func NewLogWriter(db *gorm.DB, runId, protocolId uint, dev *models.Device, parent device.LogWriter) *LogWriter {
+// LogTarget says which protocol of which run a LogWriter writes to, for which
+// device, and the writer it hands the entries on to.
+type LogTarget struct {
+	RunID      uint
+	ProtocolID uint
+	Device     *models.Device
+	Parent     device.LogWriter
+}
+
+func NewLogWriter(db *gorm.DB, target LogTarget) *LogWriter {
 	return &LogWriter{
 		db:         db,
-		runId:      runId,
-		protocolId: protocolId,
+		runId:      target.RunID,
+		protocolId: target.ProtocolID,
 		startTime:  time.Now().UTC(),
-		dev:        dev,
-		parent:     parent,
+		dev:        target.Device,
+		parent:     target.Parent,
 	}
 }

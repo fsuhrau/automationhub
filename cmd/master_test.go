@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,35 +10,20 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 )
 
-func TestBuildMasterWiresTheServices(t *testing.T) {
-	cfg := sqliteConfig(t)
-	cfg.Hooks = []config.Hook{{Provider: "slack"}}
-
-	m, err := buildMaster(cfg)
-
-	if err != nil || m.server == nil || m.nodes == nil || m.sessions == nil {
-		t.Errorf("master = %+v, err = %v", m, err)
-	}
-}
-
-func TestBuildMasterFailsWithoutDatabase(t *testing.T) {
-	if _, err := buildMaster(config.Service{}); err == nil || !strings.Contains(err.Error(), "open database") {
-		t.Errorf("err = %v", err)
-	}
-}
-
 func TestRunMasterReturnsTheListenError(t *testing.T) {
 	cfg := sqliteConfig(t)
 	cfg.Port = busyPort(t)
 
-	if err := runMaster(cfg); err == nil || !strings.Contains(err.Error(), "address already in use") {
+	if err := runMaster(context.Background(), cfg); err == nil || !strings.Contains(err.Error(), "address already in use") {
 		t.Errorf("err = %v", err)
 	}
 }
 
 func TestRunMasterFailsWithoutDatabase(t *testing.T) {
-	if err := runMaster(config.Service{}); err == nil {
-		t.Error("no error")
+	err := runMaster(context.Background(), config.Service{Paths: sqliteConfig(t).Paths})
+
+	if err == nil || !strings.Contains(err.Error(), "open database") {
+		t.Errorf("err = %v", err)
 	}
 }
 

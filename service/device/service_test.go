@@ -35,6 +35,7 @@ func newEnv(devices ...models.Device) *env {
 		Devices:     e.pool,
 		Leases:      e.leases,
 		NewExecutor: func() svc.Executor { return e.executor },
+		StoreDir:    "/store",
 	})
 	return e
 }
@@ -263,7 +264,7 @@ func TestControlApp(t *testing.T) {
 		fail   error
 		want   apperr.Kind
 	}{
-		{"found", &models.AppBinary{Model: models.Model{ID: 4}, Identifier: "com.x"}, nil, apperr.KindNone},
+		{"found", &models.AppBinary{Model: models.Model{ID: 4}, Identifier: "com.x", AppPath: "a.apk"}, nil, apperr.KindNone},
 		{"archived", &models.AppBinary{ArchivedAt: ptrNow()}, nil, apperr.KindInvalid},
 		{"missing", nil, apperr.NotFound("app bundle 4 not found"), apperr.KindNotFound},
 	}
@@ -275,7 +276,7 @@ func TestControlApp(t *testing.T) {
 			params, err := e.svc.ControlApp(context.Background(), e.project, 4)
 
 			assertKind(t, err, tc.want)
-			if tc.want == apperr.KindNone && params.Identifier != "com.x" {
+			if tc.want == apperr.KindNone && (params.Identifier != "com.x" || params.App.AppPath != "/store/a.apk") {
 				t.Fatalf("params %+v", params)
 			}
 		})

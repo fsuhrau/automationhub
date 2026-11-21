@@ -13,6 +13,7 @@ import (
 
 	hubapp "github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"github.com/fsuhrau/automationhub/hub/runs"
@@ -56,12 +57,12 @@ type appPool struct {
 }
 
 func (p *appPool) SendAction(dev device.Device, a action.Interface) error {
-	resp := &action.Response{ActionType: a.GetActionType(), Success: true}
+	resp := &appproto.Response{ActionType: a.GetActionType(), Success: true}
 	switch a.GetActionType() {
-	case action.ActionType_GetSceneGraph:
-		resp.Payload.Screenshot = &action.Screenshot{ContentType: action.ContentType_Xml, Sceengraph: []byte(p.scene)}
-	case action.ActionType_GetScreenshot:
-		resp.Payload.Screenshot = &action.Screenshot{Screenshot: p.screenshot}
+	case appproto.ActionType_GetSceneGraph:
+		resp.Payload.Screenshot = &appproto.Screenshot{ContentType: appproto.ContentType_Xml, Sceengraph: []byte(p.scene)}
+	case appproto.ActionType_GetScreenshot:
+		resp.Payload.Screenshot = &appproto.Screenshot{Screenshot: p.screenshot}
 	}
 	go func() {
 		for _, h := range dev.(*testkit.FakeDevice).ActionHandlers() {

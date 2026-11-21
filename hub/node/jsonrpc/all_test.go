@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -53,6 +54,13 @@ func (t *Arith) Blob(args *BlobRequest, reply *BlobReply) error {
 // connected rpc client.
 func newPair(t *testing.T) *rpc.Client {
 	t.Helper()
+	return NewClient(dialServer(t))
+}
+
+// dialServer starts a websocket server serving the rpc server and returns
+// the client side of its socket.
+func dialServer(t *testing.T) *websocket.Conn {
+	t.Helper()
 	server := rpc.NewServer()
 	if err := server.Register(new(Arith)); err != nil {
 		t.Fatal(err)
@@ -71,9 +79,8 @@ func newPair(t *testing.T) *rpc.Client {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := NewClient(conn)
-	t.Cleanup(func() { _ = client.Close() })
-	return client
+	t.Cleanup(func() { _ = conn.Close() })
+	return conn
 }
 
 func TestCall(t *testing.T) {
@@ -135,5 +142,22 @@ func TestLargePayload(t *testing.T) {
 	}
 	if len(reply.Data) != size {
 		t.Fatalf("expected %d bytes, got %d", size, len(reply.Data))
+	}
+}
+
+// A request without an id is answered with the id null.
+func TestRequestWithoutIdIsAnsweredWithNull(t *testing.T) {
+	conn := dialServer(t)
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{"method":"Arith.Add","params":[{"A":1,"B":2}]}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	var reply map[string]json.RawMessage
+	if err := conn.ReadJSON(&reply); err != nil {
+		t.Fatal(err)
+	}
+
+	if id, ok := reply["id"]; !ok || string(id) != "null" || !strings.Contains(string(reply["result"]), `"C":3`) {
+		t.Fatalf("reply %s", reply)
 	}
 }

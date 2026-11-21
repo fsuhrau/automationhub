@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fsuhrau/automationhub/endpoints/api"
+	"github.com/fsuhrau/automationhub/endpoints/httpx"
 )
 
 const jsonContentType = "application/json; charset=utf-8"
@@ -95,7 +95,7 @@ func (c *Client) send(ctx context.Context, call rawCall, out any) error {
 
 // responseError is the message of the hub's error answer, or the status code.
 func responseError(res *http.Response) error {
-	var errRes api.ErrorResponse
+	var errRes httpx.ErrorResponse
 	if err := json.NewDecoder(res.Body).Decode(&errRes); err == nil {
 		return errors.New(errRes.Message)
 	}

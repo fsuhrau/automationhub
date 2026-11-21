@@ -158,7 +158,8 @@ func TestUpdateTestKeepsTheOldDevicesWhenAnInsertFails(t *testing.T) {
 	err := w.store.UpdateTest(bg(), current, want)
 
 	saved, _ := w.store.Test(bg(), w.ref(w.mine.ID))
-	wantKind(t, err, apperr.KindInternal)
+	// a duplicate key is a conflict since the database translates it
+	wantKind(t, err, apperr.KindConflict)
 	if len(saved.TestConfig.Devices) != 1 || saved.TestConfig.Devices[0].DeviceID != w.device.ID {
 		t.Fatalf("devices %+v after a failed update", saved.TestConfig.Devices)
 	}

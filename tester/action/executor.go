@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	hubsync "github.com/fsuhrau/automationhub/utils/sync"
@@ -16,9 +17,6 @@ import (
 // ErrDeviceDisconnected is returned when the app disconnects before it
 // answered the action.
 var ErrDeviceDisconnected = errors.New("device disconnected before action completed")
-
-// TimeoutError is returned when the action was not answered in time.
-var TimeoutError = hubsync.TimeoutError
 
 type actionExecutor struct {
 	devicesManager manager.Devices
@@ -35,25 +33,32 @@ func NewExecutor(devices manager.Devices) *actionExecutor {
 	}
 }
 
+// Call is one action for a device and how long the app has to answer it.
+type Call struct {
+	Device  device.Device
+	Action  action.Interface
+	Timeout time.Duration
+}
+
 // Execute sends the action to the device and waits for the matching response.
 // It returns when the response arrived, the app disconnected, the context was
 // cancelled or the timeout elapsed. A late response after Execute returned is
 // ignored and never blocks the caller delivering it.
-func (e *actionExecutor) Execute(ctx context.Context, dev device.Device, a action.Interface, timeout time.Duration) error {
+func (e *actionExecutor) Execute(ctx context.Context, call Call) error {
 	// reset state; the executor is not registered yet, so no concurrent access
-	e.request = a
+	e.request = call.Action
 	e.done = make(chan struct{})
 	e.once = sync.Once{}
 	e.disconnected.Store(false)
 
-	dev.AddActionHandler(e)
-	defer dev.RemoveActionHandler(e)
+	call.Device.AddActionHandler(e)
+	defer call.Device.RemoveActionHandler(e)
 
-	if err := e.devicesManager.SendAction(dev, a); err != nil {
+	if err := e.devicesManager.SendAction(call.Device, call.Action); err != nil {
 		return err
 	}
 
-	timer := time.NewTimer(timeout)
+	timer := time.NewTimer(call.Timeout)
 	defer timer.Stop()
 
 	select {
@@ -65,7 +70,7 @@ func (e *actionExecutor) Execute(ctx context.Context, dev device.Device, a actio
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-timer.C:
-		return TimeoutError
+		return hubsync.ErrTimeout
 	}
 }
 
@@ -78,7 +83,7 @@ func (e *actionExecutor) finish(fn func()) {
 	})
 }
 
-func (e *actionExecutor) OnActionResponse(d interface{}, response *action.Response) {
+func (e *actionExecutor) OnActionResponse(d interface{}, response *appproto.Response) {
 	if response == nil {
 		e.disconnected.Store(true)
 		e.finish(nil)
@@ -90,7 +95,9 @@ func (e *actionExecutor) OnActionResponse(d interface{}, response *action.Respon
 
 	if response.ActionType == e.request.GetActionType() {
 		e.finish(func() {
-			e.request.ProcessResponse(response)
+			// an action that cannot read its response stays without content;
+			// its caller sees that in the action
+			_ = e.request.ProcessResponse(response)
 		})
 	}
 }

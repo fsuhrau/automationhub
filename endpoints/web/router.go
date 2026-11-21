@@ -3,27 +3,21 @@ package web
 import (
 	"fmt"
 	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"path/filepath"
 )
 
 type wf struct {
-	cfg         config.Service
+	paths       config.Paths
 	filesystem  http.FileSystem
 	indexBuffer []byte
-	db          *gorm.DB
 }
 
-func New(db *gorm.DB, config config.Service) *wf {
-	return &wf{
-		cfg:        config,
-		db:         db,
-		filesystem: http.FS(Content),
-	}
+// New serves the frontend, the uploaded bundles and the test data of the paths.
+func New(paths config.Paths) *wf {
+	return &wf{paths: paths, filesystem: http.FS(Content)}
 }
 
 func (s *wf) loadIndex() error {
@@ -55,9 +49,9 @@ func (s *wf) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
 	}
 
 	uploads := auth.Group("/upload")
-	uploads.Static("/", apps.AppStoragePath)
+	uploads.Static("/", s.paths.AppStore)
 	data := auth.Group("/data")
-	data.Static("/", apps.TestDataPath)
+	data.Static("/", s.paths.TestData)
 
 	r.GET("/static/*filepath", s.StaticRoute)
 	r.GET("/asset-manifest.json", s.StaticRoute)

@@ -2,10 +2,12 @@ package protocol
 
 import (
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/fsuhrau/automationhub/events"
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -33,7 +35,7 @@ func TestClosedProtocolWithoutSamplesEncodes(t *testing.T) {
 
 	r := make(protocolRecorder, 4)
 	events.NewTestProtocol.Register(r)
-	p, err := NewProtocolWriter(db, "p", 1, "t", &run).NewProtocol(dev, "Suite/A")
+	p, err := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: &run}).NewProtocol(dev, "Suite/A")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +82,7 @@ func TestFailedRunIsNoSuccess(t *testing.T) {
 	result := func(fail bool) bool {
 		run := models.TestRun{}
 		db.Create(&run)
-		w := NewProtocolWriter(db, "p", 1, "t", &run)
+		w := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: &run})
 		if fail {
 			w.Fail()
 		}
@@ -101,5 +103,30 @@ func TestFailedRunIsNoSuccess(t *testing.T) {
 	}
 	if !result(false) {
 		t.Fatal("run without failures reported as failed")
+	}
+}
+
+// The devices of a run start their tests at once; every protocol they open
+// is remembered, with no data race (run with -race).
+func TestNewProtocolIsSafeForTheDevicesOfARun(t *testing.T) {
+	db := testkit.DB(t)
+	run := testkit.TestRun(db)
+	w := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: run})
+	const devices = 8
+	var wg sync.WaitGroup
+
+	for i := 0; i < devices; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := w.NewProtocol(models.Device{}, "Suite/A"); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if got := len(w.tracked()); got != devices {
+		t.Fatalf("%d protocols tracked, want %d", got, devices)
 	}
 }

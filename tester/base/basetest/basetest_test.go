@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/internal/testkit"
@@ -15,15 +16,15 @@ import (
 	_ "image/png"
 )
 
-type handler func(*action.Response)
+type handler func(*appproto.Response)
 
-func (h handler) OnActionResponse(_ interface{}, r *action.Response) { h(r) }
+func (h handler) OnActionResponse(_ interface{}, r *appproto.Response) { h(r) }
 
 func TestAppManagerAnswersTheActionsOfARun(t *testing.T) {
-	m := &AppManager{TestPassed: false, Tests: []action.Test{{Method: "m"}}, Screenshot: PNG()}
+	m := &AppManager{TestPassed: false, Tests: []appproto.Test{{Method: "m"}}, Screenshot: PNG()}
 	dev := testkit.NewFakeDevice("a")
-	var got []*action.Response
-	dev.AddActionHandler(handler(func(r *action.Response) { got = append(got, r) }))
+	var got []*appproto.Response
+	dev.AddActionHandler(handler(func(r *appproto.Response) { got = append(got, r) }))
 
 	for _, a := range []action.Interface{&action.TestsGet{}, &action.TestStart{}, &action.GetScreenshot{}, &action.GetSceenGraph{}} {
 		if err := m.SendAction(dev, a); err != nil {
@@ -33,7 +34,7 @@ func TestAppManagerAnswersTheActionsOfARun(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("%d answers, want 3 (the scene graph is not answered)", len(got))
 	}
-	if got[0].Payload.Tests == nil || got[1].ActionType != action.ActionType_ExecutionResult || got[1].Success || got[2].Payload.Screenshot == nil {
+	if got[0].Payload.Tests == nil || got[1].ActionType != appproto.ActionType_ExecutionResult || got[1].Success || got[2].Payload.Screenshot == nil {
 		t.Fatalf("answers %+v", got)
 	}
 }

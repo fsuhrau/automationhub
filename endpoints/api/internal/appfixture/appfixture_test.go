@@ -6,22 +6,15 @@ import (
 	"testing"
 
 	"github.com/fsuhrau/automationhub/endpoints/api/internal/appfixture"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
-func TestEnvRestoresTheStorePath(t *testing.T) {
-	old := apps.AppStoragePath
-	t.Run("env", func(t *testing.T) { checkEnv(t) })
-	if apps.AppStoragePath != old {
-		t.Errorf("the store path is %q, want %q back", apps.AppStoragePath, old)
-	}
-}
+func TestEnvServesBundlesFromItsStoreFolder(t *testing.T) { checkEnv(t) }
 
 func checkEnv(t *testing.T) {
 	e := appfixture.New(t)
-	if apps.AppStoragePath != e.Store || e.Mine.ProjectID == e.Other.ProjectID {
-		t.Fatalf("store %q (%q), projects %d and %d", apps.AppStoragePath, e.Store, e.Mine.ProjectID, e.Other.ProjectID)
+	if e.Store == "" || e.Store != e.Paths.AppStore || e.Mine.ProjectID == e.Other.ProjectID {
+		t.Fatalf("store %q (%q), projects %d and %d", e.Paths.AppStore, e.Store, e.Mine.ProjectID, e.Other.ProjectID)
 	}
 	b := e.AddBundle(models.AppBinary{Version: "1"})
 	if b.ID == 0 || b.AppID != e.Mine.ID {

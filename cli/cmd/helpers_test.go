@@ -129,5 +129,3 @@ func (f fakeStream) Subscribe(ctx context.Context, stream string, ch chan *sse.E
 	}()
 	return nil
 }
-
-type sseEvent = sse.Event

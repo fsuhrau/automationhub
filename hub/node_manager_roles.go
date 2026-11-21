@@ -40,8 +40,8 @@ func forwardRoleErr[R any](nm *NodeManager, id manager.NodeIdentifier, fn func(R
 
 // forwardRoleOr is forwardRole for calls without an error: fallback is
 // returned when the node can't be reached or lacks the role.
-func forwardRoleOr[R, T any](nm *NodeManager, id manager.NodeIdentifier, fallback T, fn func(R) T) T {
-	value, err := forwardRole(nm, id, func(r R) (T, error) { return fn(r), nil })
+func forwardRoleOr[R, T any](at nodeRef, fallback T, fn func(R) T) T {
+	value, err := forwardRole(at.nm, at.id, func(r R) (T, error) { return fn(r), nil })
 	if err != nil {
 		return fallback
 	}
@@ -50,7 +50,7 @@ func forwardRoleOr[R, T any](nm *NodeManager, id manager.NodeIdentifier, fallbac
 
 // forwardRoleDo is forwardRole for fire-and-forget calls.
 func forwardRoleDo[R any](nm *NodeManager, id manager.NodeIdentifier, fn func(R)) {
-	forwardRoleOr(nm, id, struct{}{}, func(r R) struct{} { fn(r); return struct{}{} })
+	forwardRoleOr(nm.node(id), struct{}{}, func(r R) struct{} { fn(r); return struct{}{} })
 }
 
 // StartRecording ignores path: the node decides where a recording goes.
@@ -77,7 +77,7 @@ type screenshot struct {
 }
 
 func (nm *NodeManager) HasFeature(id manager.NodeIdentifier, deviceId string, feature string) bool {
-	return forwardRoleOr(nm, id, false, func(r manager.RPCFeatures) bool { return r.HasFeature(deviceId, feature) })
+	return forwardRoleOr(nm.node(id), false, func(r manager.RPCFeatures) bool { return r.HasFeature(deviceId, feature) })
 }
 
 func (nm *NodeManager) Execute(id manager.NodeIdentifier, deviceId string, data string) {

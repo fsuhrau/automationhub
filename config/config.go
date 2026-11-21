@@ -108,4 +108,5 @@ type Service struct {
 	Hooks         []Hook             `yaml:"hooks,omitempty" mapstructure:"hooks"`
 	Auth          Auth               `yaml:"auth,omitempty" mapstructure:"auth"`
 	Database      Database           `yaml:"database,omitempty" mapstructure:"database"`
+	Paths         Paths              `yaml:"paths,omitempty" mapstructure:"paths"`
 }

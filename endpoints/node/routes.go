@@ -4,21 +4,19 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/hub/node"
-	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"net/rpc"
 	"sync"
 	"sync/atomic"
 )
 
+// Service is the node side of the connection to the master: it dials the
+// master and serves the node's RPC methods over that connection.
 type Service struct {
 	logger         *logrus.Entry
-	db             *gorm.DB
 	devicesManager manager.Devices
-	sseBroker      *sse.Broker
 	cfg            config.Service
 	reconnect      node.ConnectionHandler
 	rpcNode        *node.RPCNode
@@ -29,17 +27,25 @@ type Service struct {
 	rpcServer      *rpc.Server
 }
 
-//nolint:revive // argument-limit: the constructor signature is fixed by its callers in cmd/ and hub/
-func New(logger *logrus.Logger, db *gorm.DB, rpcNode *node.RPCNode, dm manager.Devices, config config.Service, managers []string, reconnect node.ConnectionHandler) *Service {
+// Deps are what the node service is built on.
+type Deps struct {
+	Logger    *logrus.Logger
+	RPCNode   *node.RPCNode
+	Devices   manager.Devices
+	Config    config.Service
+	Managers  []string
+	Reconnect node.ConnectionHandler
+}
+
+// New builds the node service.
+func New(deps Deps) *Service {
 	return &Service{
-		logger:         logger.WithField("Service", "NodeAPI"),
-		db:             db,
-		devicesManager: dm,
-		sseBroker:      sse.NewBroker(),
-		cfg:            config,
-		managers:       managers,
-		reconnect:      reconnect,
-		rpcNode:        rpcNode,
+		logger:         deps.Logger.WithField("Service", "NodeAPI"),
+		devicesManager: deps.Devices,
+		cfg:            deps.Config,
+		managers:       deps.Managers,
+		reconnect:      deps.Reconnect,
+		rpcNode:        deps.RPCNode,
 		rpcServer:      rpc.NewServer(),
 	}
 }

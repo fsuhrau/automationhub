@@ -3,12 +3,9 @@ package control
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/fsuhrau/automationhub/hub/manager"
 	tester_action "github.com/fsuhrau/automationhub/tester/action"
 )
 
@@ -21,14 +18,6 @@ type ElementRef struct {
 
 func (r ElementRef) IsZero() bool {
 	return r.ID == "" && r.XPath == ""
-}
-
-func inputOf(dev device.Device) (device.InputCapable, error) {
-	input, ok := dev.(device.InputCapable)
-	if !ok {
-		return nil, device.ErrUnsupported
-	}
-	return input, nil
 }
 
 // --- read-only, no lease needed ---
@@ -50,22 +39,6 @@ func (s *Service) Video(ctx context.Context, dev device.Device, opts device.Vide
 		return nil, device.ErrUnsupported
 	}
 	return streamer.StartVideo(ctx, opts)
-}
-
-// InjectInput injects low latency input through a running video stream of
-// the device. It needs the lease like the other control calls, except for a
-// video reset, which only asks for a new key frame.
-func (s *Service) InjectInput(dev device.Device, token string, stream device.VideoStream, ev device.InputEvent) error {
-	if ev.Kind != device.InputResetVideo {
-		if err := s.Authorize(dev.DeviceID(), token); err != nil {
-			return err
-		}
-	}
-	input, ok := stream.(device.VideoInput)
-	if !ok {
-		return device.ErrUnsupported
-	}
-	return input.InjectInput(ev)
 }
 
 // AppScreenshot asks the connected app (Unity plugin) for a screenshot.
@@ -99,142 +72,13 @@ func (s *Service) Logs(dev device.Device, lines int) ([]string, error) {
 	return reader.ReadLogs(lines)
 }
 
-// --- control, lease required ---
-
-func (s *Service) Tap(dev device.Device, token string, x, y int) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	input, err := inputOf(dev)
-	if err != nil {
-		return err
-	}
-	return input.Tap(x, y)
-}
-
-func (s *Service) Swipe(dev device.Device, token string, fromX, fromY, toX, toY int, duration time.Duration) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	input, err := inputOf(dev)
-	if err != nil {
-		return err
-	}
-	return input.Swipe(fromX, fromY, toX, toY, duration)
-}
-
-func (s *Service) InputText(dev device.Device, token, text string) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	input, err := inputOf(dev)
-	if err != nil {
-		return err
-	}
-	return input.InputText(text)
-}
-
-func (s *Service) PressKey(dev device.Device, token, key string) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	input, err := inputOf(dev)
-	if err != nil {
-		return err
-	}
-	return input.PressKey(key)
-}
-
-// TouchElement touches an app element through the Unity plugin.
-func (s *Service) TouchElement(ctx context.Context, dev device.Device, token string, ref ElementRef) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	id, err := s.resolveElement(ctx, dev, ref)
-	if err != nil {
-		return err
-	}
-	a := action.TouchElement{ElementID: id}
-	if err := s.execute(ctx, dev, &a); err != nil {
-		return err
-	}
-	if !a.Success {
-		return fmt.Errorf("app could not touch element %s", id)
-	}
-	return nil
-}
-
-// SetElementValue sets an attribute (e.g. "text") of an app element.
-func (s *Service) SetElementValue(ctx context.Context, dev device.Device, token string, ref ElementRef, attr, value string) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	id, err := s.resolveElement(ctx, dev, ref)
-	if err != nil {
-		return err
-	}
-	a := action.SetValue{ElementID: id, Attr: attr, Value: value}
-	if err := s.execute(ctx, dev, &a); err != nil {
-		return err
-	}
-	if !a.Success {
-		return fmt.Errorf("app could not set %s on element %s", attr, id)
-	}
-	return nil
-}
-
-// InstallApp installs the app; for node devices the bundle is uploaded to the
-// node first.
-func (s *Service) InstallApp(ctx context.Context, dev device.Device, token string, params *app.Parameter) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	if nd, ok := dev.(nodeDevice); ok {
-		if err := nd.NodeManager().UploadApp(ctx, nd.GetNodeID(), params); err != nil {
-			return fmt.Errorf("upload app to node: %w", err)
-		}
-	}
-	return dev.InstallApp(params)
-}
-
-// StartApp starts the app. The app connects back to nodeURL with sessionID.
-func (s *Service) StartApp(dev device.Device, token string, params *app.Parameter, sessionID, nodeURL string) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	return dev.StartApp(nil, params, sessionID, nodeURL)
-}
-
-// StopApp stops the app and, when clearData is set and supported, wipes its data.
-func (s *Service) StopApp(dev device.Device, token string, params *app.Parameter, clearData bool) error {
-	if err := s.Authorize(dev.DeviceID(), token); err != nil {
-		return err
-	}
-	if err := dev.StopApp(params); err != nil {
-		return err
-	}
-	if clearData {
-		clearer, ok := dev.(device.AppDataClearer)
-		if !ok {
-			return fmt.Errorf("clear app data: %w", device.ErrUnsupported)
-		}
-		return clearer.ClearAppData(params)
-	}
-	return nil
-}
-
 // --- helpers ---
-
-type nodeDevice interface {
-	GetNodeID() manager.NodeIdentifier
-	NodeManager() manager.Nodes
-}
 
 func (s *Service) execute(ctx context.Context, dev device.Device, a action.Interface) error {
 	if !dev.IsAppConnected() {
 		return fmt.Errorf("%w (%s); start the app first", ErrAppNotConnected, dev.DeviceID())
 	}
-	return tester_action.NewExecutor(s.dm).Execute(ctx, dev, a, s.actionTimeout)
+	return tester_action.NewExecutor(s.dm).Execute(ctx, tester_action.Call{Device: dev, Action: a, Timeout: s.actionTimeout})
 }
 
 func (s *Service) resolveElement(ctx context.Context, dev device.Device, ref ElementRef) (string, error) {

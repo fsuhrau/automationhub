@@ -19,7 +19,7 @@ help:
 	@echo "Go checks (PKG=./dir/... COVER=file BASE=rev):"
 	@echo "  make go-build         go build ./..."
 	@echo "  make go-test          go test -race with coverprofile (PKG, COVER)"
-	@echo "  make go-lint          golangci-lint run (PKG)"
+	@echo "  make go-lint          golangci-lint run (PKG) and the Go file-size check (max 200 lines)"
 	@echo "  make go-cover-diff    Report changed lines (working tree vs BASE, optional DIRS=a b) not covered by COVER"
 	@echo "DevContainer:"
 	@echo "  make dev-bootstrap    Fetch/install devcontainer base layer (first time setup)"
@@ -90,6 +90,7 @@ go-test:
 .PHONY: go-lint
 go-lint:
 	golangci-lint run $(PKG)
+	bash scripts/go-file-size.sh
 
 # diffs the working tree (staged, unstaged and untracked) against BASE
 .PHONY: go-cover-diff

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/hub/runs"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -39,7 +38,7 @@ type Deps struct {
 	NodeURL   string
 	Version   string
 	// DataDir holds the screenshot files of protocols and StoreDir the bundle
-	// files; they default to the folders of the storage.
+	// files.
 	DataDir  string
 	StoreDir string
 	// MaxUpload limits one upload in bytes; it defaults to MaxUploadBytes.
@@ -62,12 +61,6 @@ type Handler struct {
 func NewHandler(deps Deps) *Handler {
 	if deps.Version == "" {
 		deps.Version = "dev"
-	}
-	if deps.DataDir == "" {
-		deps.DataDir = apps.TestDataPath
-	}
-	if deps.StoreDir == "" {
-		deps.StoreDir = apps.AppStoragePath
 	}
 	if deps.MaxUpload <= 0 {
 		deps.MaxUpload = MaxUploadBytes

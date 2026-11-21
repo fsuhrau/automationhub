@@ -15,7 +15,7 @@ import (
 )
 
 // Runner executes one test run; the Unity and the scenario runner are two.
-type Runner = tester.Interface
+type Runner interface{ tester.Interface }
 
 // Key names one run: the test it must live in and its id.
 type Key struct {

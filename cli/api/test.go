@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/fsuhrau/automationhub/endpoints/api"
+	runsapi "github.com/fsuhrau/automationhub/endpoints/api/runs"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -17,7 +17,7 @@ func (c *Client) GetTests(ctx context.Context) ([]models.Test, error) {
 	return tests, nil
 }
 
-func (c *Client) ExecuteTest(ctx context.Context, testID uint, request api.RunTestRequest) (*models.TestRun, error) {
+func (c *Client) ExecuteTest(ctx context.Context, testID uint, request runsapi.StartRequest) (*models.TestRun, error) {
 	var run models.TestRun
 	call := jsonCall{http.MethodPost, fmt.Sprintf("/test/%d/run", testID), request, &run}
 	if err := c.sendJSON(ctx, call); err != nil {

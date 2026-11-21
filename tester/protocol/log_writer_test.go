@@ -3,6 +3,7 @@ package protocol
 import (
 	"testing"
 
+	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ func TestKeysAreStoredPerProtocol(t *testing.T) {
 	run := models.TestRun{}
 	db.Create(&run)
 
-	w := NewProtocolWriter(db, "p", 1, "t", &run)
+	w := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: &run})
 	runner, err := w.NewProtocol(dev, "Runner")
 	if err != nil {
 		t.Fatal(err)
@@ -68,5 +69,36 @@ func TestKeysAreStoredPerProtocol(t *testing.T) {
 	}
 	if len(a.Writer.errs) > 0 || len(b.Writer.errs) > 0 {
 		t.Fatalf("errors: %v %v", a.Writer.errs, b.Writer.errs)
+	}
+}
+
+// Everything a test logs lands in the protocol log with its level; an error
+// is remembered besides.
+func TestLogWriterStoresDataLogsAndErrors(t *testing.T) {
+	db := testkit.DB(t)
+	run := testkit.TestRun(db)
+	dev := testkit.Device(db)
+	runner, err := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: run}).NewProtocol(*dev, "Runner")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runner.Writer.Data("screen", "shot.png")
+	runner.Writer.Log("step", "tap %d", 3)
+	runner.Writer.Error("step", "failed %s", "badly")
+
+	var entries []models.ProtocolEntry
+	db.Where("test_protocol_id = ?", runner.p.ID).Order("id").Find(&entries)
+	if len(entries) != 3 {
+		t.Fatalf("entries %+v", entries)
+	}
+	if entries[0].Level != "log" || entries[0].Data != "shot.png" || entries[0].Message != "" {
+		t.Errorf("data entry %+v", entries[0])
+	}
+	if entries[1].Level != "log" || entries[1].Message != "tap 3" || entries[1].Data != "" {
+		t.Errorf("log entry %+v", entries[1])
+	}
+	if entries[2].Level != "error" || entries[2].Message != "failed badly" || len(runner.Writer.errs) != 1 {
+		t.Errorf("error entry %+v, errors %v", entries[2], runner.Writer.errs)
 	}
 }

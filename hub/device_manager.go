@@ -7,8 +7,8 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/config/protocol"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/events"
-	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
@@ -38,7 +38,7 @@ type DeviceManager struct {
 	notifier        ChangeNotifier
 	newNotifier     NotifierFactory
 	lockEvents      *events.Bus[events.DeviceLockChangedPayload]
-	responseHandler map[action.ActionType]responseHandler
+	responseHandler map[appproto.ActionType]responseHandler
 }
 
 // DeviceManagerOption replaces a default dependency of the DeviceManager.

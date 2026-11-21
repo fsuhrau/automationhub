@@ -9,8 +9,8 @@ import (
 
 	"github.com/fsuhrau/automationhub/authentication"
 	"github.com/fsuhrau/automationhub/authentication/token"
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
 	"github.com/fsuhrau/automationhub/endpoints/api/profile"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 )

@@ -9,24 +9,26 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
+	hubsync "github.com/fsuhrau/automationhub/utils/sync"
 )
 
 // fakeDevice implements only the methods the executor uses.
 type fakeDevice struct {
 	device.Device
 	mu       sync.Mutex
-	handlers []action.ActionHandler
+	handlers []appproto.ActionHandler
 }
 
-func (d *fakeDevice) AddActionHandler(h action.ActionHandler) {
+func (d *fakeDevice) AddActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.handlers = append(d.handlers, h)
 }
 
-func (d *fakeDevice) RemoveActionHandler(h action.ActionHandler) {
+func (d *fakeDevice) RemoveActionHandler(h appproto.ActionHandler) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for i := range d.handlers {
@@ -39,9 +41,9 @@ func (d *fakeDevice) RemoveActionHandler(h action.ActionHandler) {
 
 func (d *fakeDevice) Error(source, format string, params ...interface{}) {}
 
-func (d *fakeDevice) deliver(resp *action.Response) {
+func (d *fakeDevice) deliver(resp *appproto.Response) {
 	d.mu.Lock()
-	hs := append([]action.ActionHandler(nil), d.handlers...)
+	hs := append([]appproto.ActionHandler(nil), d.handlers...)
 	d.mu.Unlock()
 	for _, h := range hs {
 		h.OnActionResponse(d, resp)
@@ -55,9 +57,12 @@ func (d *fakeDevice) handlerCount() int {
 }
 
 // alias so the embedded field is not named Devices (clashes with the method)
-type devicesManager = manager.Devices
 
 // fakeManager calls onSend for every SendAction.
+// devicesManager names the embedded device manager of the fake, so its
+// field does not clash with the Devices method.
+type devicesManager interface{ manager.Devices }
+
 type fakeManager struct {
 	devicesManager
 	onSend func(dev device.Device, a action.Interface)
@@ -74,9 +79,9 @@ type fakeAction struct {
 	processed atomic.Int32
 }
 
-func (a *fakeAction) GetActionType() action.ActionType { return action.ActionType_GetSceneGraph }
-func (a *fakeAction) Serialize() ([]byte, error)       { return nil, nil }
-func (a *fakeAction) ProcessResponse(*action.Response) error {
+func (a *fakeAction) GetActionType() appproto.ActionType { return appproto.ActionType_GetSceneGraph }
+func (a *fakeAction) Serialize() ([]byte, error)         { return nil, nil }
+func (a *fakeAction) ProcessResponse(*appproto.Response) error {
 	a.processed.Add(1)
 	return nil
 }
@@ -84,12 +89,12 @@ func (a *fakeAction) ProcessResponse(*action.Response) error {
 func TestExecuteCompletesOnResponse(t *testing.T) {
 	dev := &fakeDevice{}
 	mgr := &fakeManager{onSend: func(d device.Device, a action.Interface) {
-		dev.deliver(&action.Response{ActionType: a.GetActionType(), Success: true})
+		dev.deliver(&appproto.Response{ActionType: a.GetActionType(), Success: true})
 		// duplicate responses must neither block nor be processed twice
-		dev.deliver(&action.Response{ActionType: a.GetActionType(), Success: true})
+		dev.deliver(&appproto.Response{ActionType: a.GetActionType(), Success: true})
 	}}
 	a := &fakeAction{}
-	if err := NewExecutor(mgr).Execute(context.Background(), dev, a, time.Second); err != nil {
+	if err := NewExecutor(mgr).Execute(context.Background(), Call{dev, a, time.Second}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if a.processed.Load() != 1 {
@@ -106,8 +111,8 @@ func TestExecuteTimeoutAndLateResponseDoesNotBlock(t *testing.T) {
 	e := NewExecutor(mgr)
 
 	start := time.Now()
-	err := e.Execute(context.Background(), dev, &fakeAction{}, 50*time.Millisecond)
-	if !errors.Is(err, TimeoutError) {
+	err := e.Execute(context.Background(), Call{dev, &fakeAction{}, 50 * time.Millisecond})
+	if !errors.Is(err, hubsync.ErrTimeout) {
 		t.Fatalf("expected timeout, got %v", err)
 	}
 	if time.Since(start) > time.Second {
@@ -117,7 +122,7 @@ func TestExecuteTimeoutAndLateResponseDoesNotBlock(t *testing.T) {
 	// a late response delivered directly to the executor must return immediately
 	done := make(chan struct{})
 	go func() {
-		e.OnActionResponse(dev, &action.Response{ActionType: action.ActionType_GetSceneGraph})
+		e.OnActionResponse(dev, &appproto.Response{ActionType: appproto.ActionType_GetSceneGraph})
 		e.OnActionResponse(dev, nil)
 		close(done)
 	}()
@@ -136,7 +141,7 @@ func TestExecuteContextCancel(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 	}()
-	err := NewExecutor(mgr).Execute(ctx, dev, &fakeAction{}, 5*time.Second)
+	err := NewExecutor(mgr).Execute(ctx, Call{dev, &fakeAction{}, 5 * time.Second})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
@@ -147,7 +152,7 @@ func TestExecuteDisconnectReturnsError(t *testing.T) {
 	mgr := &fakeManager{onSend: func(d device.Device, a action.Interface) {
 		dev.deliver(nil)
 	}}
-	err := NewExecutor(mgr).Execute(context.Background(), dev, &fakeAction{}, time.Second)
+	err := NewExecutor(mgr).Execute(context.Background(), Call{dev, &fakeAction{}, time.Second})
 	if !errors.Is(err, ErrDeviceDisconnected) {
 		t.Fatalf("expected ErrDeviceDisconnected, got %v", err)
 	}

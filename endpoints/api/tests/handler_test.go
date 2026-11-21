@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	service "github.com/fsuhrau/automationhub/service/test"
 	"github.com/fsuhrau/automationhub/storage/models"
@@ -174,5 +174,20 @@ func TestDatabaseFailuresAreServerErrors(t *testing.T) {
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("%v: status %d, want 500: %s", req, rec.Code, rec.Body)
 		}
+	}
+}
+
+// A duplicate key in the storage is a conflict (409), not a server error
+// (500). The hub's schema has no such key for a test's name; the test adds
+// one to make the database refuse the second row.
+func TestCreateAnswersAConflictWhenTheDatabaseRefusesADuplicate(t *testing.T) {
+	w := newWorld(t)
+	w.env.DB.Exec("CREATE UNIQUE INDEX one_name ON tests (app_id, name)")
+	body := map[string]any{"type": 0, "name": "Smoke", "allDevices": true}
+
+	rec := w.env.Do("POST", w.path+"/test", body)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status %d, want 409: %s", rec.Code, rec.Body)
 	}
 }

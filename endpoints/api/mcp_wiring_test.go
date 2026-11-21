@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

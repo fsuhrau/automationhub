@@ -4,6 +4,8 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"testing/fstest"
 
@@ -22,7 +24,7 @@ func (unreadableFS) Open(string) (http.File, error) { return http.Dir(".").Open(
 func newRouter(t *testing.T, fsys http.FileSystem) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	s := New(nil, config.Service{})
+	s := New(config.Paths{})
 	s.filesystem = fsys
 	r := gin.New()
 	if err := s.RegisterRoutes(r, r.Group("/")); err != nil {
@@ -67,8 +69,34 @@ func TestRoutes(t *testing.T) {
 	}
 }
 
+func TestRoutesServeTheUploadAndDataFolders(t *testing.T) {
+	paths := config.Paths{AppStore: t.TempDir(), TestData: t.TempDir()}
+	writeFile(t, filepath.Join(paths.AppStore, "bundle.txt"), "bundle")
+	writeFile(t, filepath.Join(paths.TestData, "shot.txt"), "shot")
+	s := New(paths)
+	s.filesystem = mapFS()
+	r := gin.New()
+	if err := s.RegisterRoutes(r, r.Group("/")); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := get(r, "/upload/bundle.txt").Body.String(); got != "bundle" {
+		t.Errorf("upload: %q", got)
+	}
+	if got := get(r, "/data/shot.txt").Body.String(); got != "shot" {
+		t.Errorf("data: %q", got)
+	}
+}
+
+func writeFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRegisterRoutes_IndexMissing(t *testing.T) {
-	s := New(nil, config.Service{})
+	s := New(config.Paths{})
 	s.filesystem = brokenFS{}
 	if err := s.RegisterRoutes(gin.New(), gin.New().Group("/")); err == nil {
 		t.Fatal("expected an error when index.html is missing")
@@ -76,7 +104,7 @@ func TestRegisterRoutes_IndexMissing(t *testing.T) {
 }
 
 func TestRegisterRoutes_IndexUnreadable(t *testing.T) {
-	s := New(nil, config.Service{})
+	s := New(config.Paths{})
 	s.filesystem = unreadableFS{} // opens a directory, reading it fails
 	if err := s.RegisterRoutes(gin.New(), gin.New().Group("/")); err == nil {
 		t.Fatal("expected an error when index.html cannot be read")
@@ -84,7 +112,7 @@ func TestRegisterRoutes_IndexUnreadable(t *testing.T) {
 }
 
 func TestNew_DefaultsToEmbeddedContent(t *testing.T) {
-	f, err := New(nil, config.Service{}).filesystem.Open("/data/index.html")
+	f, err := New(config.Paths{}).filesystem.Open("/data/index.html")
 	if err != nil {
 		t.Skipf("frontend build not embedded: %v", err)
 	}

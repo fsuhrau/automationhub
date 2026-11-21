@@ -84,8 +84,6 @@ func writeBundle(t *testing.T) *app.Parameter {
 	}
 }
 
-type appExe = app.ExecutableParams
-
 // paramsWith returns a copy of params that uses the given app parameters.
 func paramsWith(params *app.Parameter, a *app.AppParams) *app.Parameter {
 	p := *params

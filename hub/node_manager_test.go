@@ -363,7 +363,10 @@ func TestNodeManager_ForwardsToARealNode(t *testing.T) {
 	dev.PNG, dev.Width, dev.Height = []byte("png"), 4, 5
 	dm.Add("android_device", dev)
 
-	rpcNode := node.NewRPCNode(config.Service{}, dm, nil)
+	rpcNode, err := node.NewRPCNode(config.Service{Paths: config.Paths{Bundles: t.TempDir()}}, dm, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
 		if err != nil {

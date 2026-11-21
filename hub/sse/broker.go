@@ -14,9 +14,9 @@ import (
 // client is considered too slow and gets evicted.
 const DefaultClientBuffer = 256
 
-// KeepAliveInterval is how often an idle stream gets a comment line, so
-// proxies don't time out the connection.
-var KeepAliveInterval = 25 * time.Second
+// DefaultKeepAliveInterval is how often an idle stream gets a comment line,
+// so proxies don't time out the connection.
+const DefaultKeepAliveInterval = 25 * time.Second
 
 // Client is a single SSE subscriber.
 type Client struct {
@@ -37,6 +37,7 @@ type Broker struct {
 	mu         sync.RWMutex
 	clients    map[*Client]struct{}
 	bufferSize int
+	keepAlive  time.Duration
 }
 
 func NewBroker() *Broker {
@@ -50,6 +51,7 @@ func NewBrokerWithBuffer(bufferSize int) *Broker {
 	return &Broker{
 		clients:    make(map[*Client]struct{}),
 		bufferSize: bufferSize,
+		keepAlive:  DefaultKeepAliveInterval,
 	}
 }
 
@@ -116,42 +118,59 @@ func (b *Broker) ServeHTTP() gin.HandlerFunc {
 		client := b.Subscribe()
 		defer b.Unsubscribe(client)
 
-		ctx := c.Request.Context()
 		// send a first byte right away: some proxies (e.g. the Vite dev
 		// server) hold back the headers until body data arrives, so the
 		// browser's EventSource would never see the stream open
-		if _, err := io.WriteString(c.Writer, ": connected\n\n"); err != nil {
+		if !writeComment(c, "connected") {
 			return
 		}
-		c.Writer.Flush()
+		b.stream(c, client)
+	}
+}
 
-		keepAlive := time.NewTicker(KeepAliveInterval)
-		defer keepAlive.Stop()
-		for {
-			select {
-			case <-ctx.Done():
+// stream sends the events of the client and a keep-alive comment while it is
+// idle.
+func (b *Broker) stream(c *gin.Context, client *Client) {
+	keepAlive := time.NewTicker(b.keepAlive)
+	defer keepAlive.Stop()
+	for {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		case <-keepAlive.C:
+			if !writeComment(c, "keep-alive") {
 				return
-			case <-keepAlive.C:
-				if _, err := io.WriteString(c.Writer, ": keep-alive\n\n"); err != nil {
-					return
-				}
-				c.Writer.Flush()
-			case msg, ok := <-client.Events():
-				if !ok {
-					return
-				}
-				data, err := encode(msg.Content)
-				if err != nil {
-					// an event that can't be encoded would reach the
-					// client as an empty message and be lost silently
-					log.Printf("SSE event %s dropped: %v", msg.Channel, err)
-					continue
-				}
-				c.SSEvent(msg.Channel, data)
-				c.Writer.Flush()
 			}
+		case msg, ok := <-client.Events():
+			if !ok {
+				return
+			}
+			sendEvent(c, msg)
 		}
 	}
+}
+
+// writeComment sends a comment line, which clients ignore; false when the
+// client is gone.
+func writeComment(c *gin.Context, text string) bool {
+	if _, err := io.WriteString(c.Writer, ": "+text+"\n\n"); err != nil {
+		return false
+	}
+	c.Writer.Flush()
+	return true
+}
+
+// sendEvent sends the event; one that can't be encoded is logged and dropped.
+func sendEvent(c *gin.Context, msg Event) {
+	data, err := encode(msg.Content)
+	if err != nil {
+		// an event that can't be encoded would reach the client as an empty
+		// message and be lost silently
+		log.Printf("SSE event %s dropped: %v", msg.Channel, err)
+		return
+	}
+	c.SSEvent(msg.Channel, data)
+	c.Writer.Flush()
 }
 
 // encode turns the event content into the data line: text as it is, anything

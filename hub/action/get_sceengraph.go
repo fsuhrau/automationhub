@@ -5,12 +5,13 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/antchfx/xmlquery"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/networking"
 )
 
 type GetSceenGraph struct {
 	content     []byte
-	contentType ContentType
+	contentType appproto.ContentType
 }
 
 type Node struct {
@@ -65,15 +66,15 @@ func convertFlatToXml(content []byte, pretty bool) []byte {
 	return output
 }
 
-func (a *GetSceenGraph) GetActionType() ActionType {
-	return ActionType_GetSceneGraph
+func (a *GetSceenGraph) GetActionType() appproto.ActionType {
+	return appproto.ActionType_GetSceneGraph
 }
 
 func (a *GetSceenGraph) Serialize() ([]byte, error) {
-	return serialize(ActionType_GetSceneGraph, RequestData{})
+	return serialize(appproto.ActionType_GetSceneGraph, appproto.RequestData{})
 }
 
-func (a *GetSceenGraph) ProcessResponse(response *Response) error {
+func (a *GetSceenGraph) ProcessResponse(response *appproto.Response) error {
 	if response.Payload.Screenshot != nil {
 		a.content = response.Payload.Screenshot.Sceengraph
 		a.contentType = response.Payload.Screenshot.ContentType
@@ -89,15 +90,12 @@ func (a *GetSceenGraph) Content() string {
 	}
 
 	switch a.contentType {
-	case ContentType_Flatbuffer:
+	case appproto.ContentType_Flatbuffer:
 		result = string(convertFlatToXml(a.content, true))
-		break
-	case ContentType_Json:
+	case appproto.ContentType_Json:
 		result = string(a.content)
-		break
-	case ContentType_Xml:
+	case appproto.ContentType_Xml:
 		result = string(a.content)
-		break
 	}
 
 	return result
@@ -110,9 +108,9 @@ func (a *GetSceenGraph) XMLBytes(pretty bool) ([]byte, error) {
 		return nil, fmt.Errorf("can't convert sceengraph because no content available")
 	}
 	switch a.contentType {
-	case ContentType_Flatbuffer:
+	case appproto.ContentType_Flatbuffer:
 		return convertFlatToXml(a.content, pretty), nil
-	case ContentType_Xml:
+	case appproto.ContentType_Xml:
 		return a.content, nil
 	}
 	return nil, fmt.Errorf("scene graph content type %v is not xml", a.contentType)

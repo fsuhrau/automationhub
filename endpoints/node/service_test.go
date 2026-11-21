@@ -19,7 +19,7 @@ import (
 func newService(cfg config.Service) *Service {
 	logger := logrus.New()
 	logger.SetOutput(io.Discard)
-	return New(logger, nil, &node.RPCNode{}, nil, cfg, []string{"android"}, nil)
+	return New(Deps{Logger: logger, RPCNode: &node.RPCNode{}, Config: cfg, Managers: []string{"android"}})
 }
 
 // fakeMaster accepts node connections and hands each one to onConn.

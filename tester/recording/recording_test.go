@@ -98,7 +98,7 @@ func annexB(nals ...[]byte) []byte {
 	return out
 }
 
-var testPPS = []byte{0x68, 0xce, 0x3c, 0x80}
+var testPPS = []byte{0x68, 0xce, 0x3c, 0x80} //nolint:gochecknoglobals // read-only fixture shared by the tests
 
 func TestSPSSize(t *testing.T) {
 	for _, size := range [][2]int{{1080, 2400}, {720, 1280}, {1280, 720}, {1920, 1080}} {
@@ -149,9 +149,12 @@ func mp4Box(t *testing.T, data []byte, path ...string) []byte {
 	return data
 }
 
-func TestMP4Writer(t *testing.T) {
+// writeSampleFile writes four samples (two of them key frames) of a 720x1280
+// stream and returns the file and its sps.
+func writeSampleFile(t *testing.T) (file, sps []byte) {
+	t.Helper()
 	path := filepath.Join(t.TempDir(), "a.mp4")
-	sps := testSPS(720, 1280)
+	sps = testSPS(720, 1280)
 	w, err := newMP4Writer(osFS{}, path, h264Config{sps: sps, pps: testPPS})
 	if err != nil {
 		t.Fatal(err)
@@ -172,18 +175,28 @@ func TestMP4Writer(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	data, _ := os.ReadFile(path)
+	file, _ = os.ReadFile(path)
+	return file, sps
+}
+
+func TestMP4WriterStoresTheSamplesAndTheVideoSize(t *testing.T) {
+	data, _ := writeSampleFile(t)
 
 	mdat := mp4Box(t, data, "mdat")
 	// samples are length prefixed and carry no parameter sets or AUDs
 	if first := mdat[:4+5]; binary.BigEndian.Uint32(first) != 5 || first[4] != 0x65 {
 		t.Errorf("first sample %x", first)
 	}
-	stbl := []string{"moov", "trak", "mdia", "minf", "stbl"}
 	tkhd := mp4Box(t, data, "moov", "trak", "tkhd")
 	if w, h := binary.BigEndian.Uint32(tkhd[len(tkhd)-8:])>>16, binary.BigEndian.Uint32(tkhd[len(tkhd)-4:])>>16; w != 720 || h != 1280 {
 		t.Errorf("tkhd size %dx%d", w, h)
 	}
+}
+
+func TestMP4WriterSampleTables(t *testing.T) {
+	data, sps := writeSampleFile(t)
+	stbl := []string{"moov", "trak", "mdia", "minf", "stbl"}
+
 	stsz := mp4Box(t, data, append(stbl, "stsz")...)
 	if n := binary.BigEndian.Uint32(stsz[8:]); n != 4 {
 		t.Errorf("%d samples", n)

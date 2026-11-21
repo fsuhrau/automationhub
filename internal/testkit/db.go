@@ -24,7 +24,9 @@ func DB(t testing.TB) *gorm.DB {
 func openDB(dsn string, migrate func(*gorm.DB) error) (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger:                                   logger.Default.LogMode(logger.Silent),
+		// like storage.Open: duplicate keys are translated for storeerr.Map
+		TranslateError: true,
+		Logger:         logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	sse "github.com/r3labs/sse/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,7 +133,7 @@ func TestRunFailures(t *testing.T) {
 func TestRunCommandDoesNotReportSuccessForAFailedRun(t *testing.T) {
 	hub := newFakeHub(t)
 	var out bytes.Buffer
-	stream := fakeStream{events: map[string][]*sseEvent{"test_run_5_finished": {{Data: []byte(`{"success":false}`)}}}}
+	stream := fakeStream{events: map[string][]*sse.Event{"test_run_5_finished": {{Data: []byte(`{"success":false}`)}}}}
 	r := runCommand{
 		out: &out, opts: &runOptions{timeout: time.Second},
 		newStream: func(string) eventStream { return stream },

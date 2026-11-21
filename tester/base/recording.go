@@ -3,7 +3,6 @@ package base
 import (
 	"sync"
 
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/tester/recording"
 )
 
@@ -17,7 +16,7 @@ func (r *Runner) RecordSessions(devices []DeviceMap) func() {
 	recorders := make([]*recording.Recorder, 0, len(devices))
 	for _, d := range devices {
 		recorders = append(recorders, recording.Start(d.Device, recording.Options{
-			Dir:      apps.TestDataPath,
+			Dir:      r.DataDir,
 			DB:       r.DB,
 			RunID:    r.TestRun.ID,
 			DeviceID: d.Model.ID,

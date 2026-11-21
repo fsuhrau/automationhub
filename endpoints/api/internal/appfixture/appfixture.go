@@ -15,9 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -31,22 +30,16 @@ type Env struct {
 	t testing.TB
 }
 
-// New builds the environment; the bundle folder is restored when the test
-// ends, so tests that use it must not run in parallel.
+// New builds the environment on a temporary bundle folder.
 func New(t testing.TB) *Env {
 	t.Helper()
-	store := t.TempDir()
-	old := apps.AppStoragePath
-	apps.AppStoragePath = store
-	t.Cleanup(func() { apps.AppStoragePath = old })
-
 	env := apitest.New(t)
 	project := func(identifier string) uint {
 		return testkit.Project(env.DB, func(p *models.Project) { p.Identifier = identifier }).ID
 	}
 	mine := testkit.App(env.DB, func(a *models.App) { a.ProjectID = project("mine") })
 	other := testkit.App(env.DB, func(a *models.App) { a.ProjectID = project("other") })
-	return &Env{Env: env, Mine: mine, Other: other, Store: store, t: t}
+	return &Env{Env: env, Mine: mine, Other: other, Store: env.Paths.AppStore, t: t}
 }
 
 // AppPath is the route below the app of the project "mine".

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -32,13 +33,13 @@ func setup(t *testing.T, tokenErr error) (*httptest.Server, chan seen) {
 		if r.Method == http.MethodGet {
 			// an MCP event stream: the first event must arrive before the end
 			w.Header().Set("Content-Type", "text/event-stream")
-			fmt.Fprint(w, "data: first\n\n")
+			_, _ = fmt.Fprint(w, "data: first\n\n")
 			w.(http.Flusher).Flush()
 			time.Sleep(500 * time.Millisecond)
-			fmt.Fprint(w, "data: second\n\n")
+			_, _ = fmt.Fprint(w, "data: second\n\n")
 			return
 		}
-		fmt.Fprint(w, `{"ok":true}`)
+		_, _ = fmt.Fprint(w, `{"ok":true}`)
 	}))
 	t.Cleanup(upstream.Close)
 	u, _ := url.Parse(upstream.URL)
@@ -66,7 +67,7 @@ func send(t *testing.T, method, url, key string, headers ...string) *http.Respon
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { resp.Body.Close() })
+	t.Cleanup(func() { _ = resp.Body.Close() })
 	return resp
 }
 
@@ -150,7 +151,9 @@ func TestTokenSources(t *testing.T) {
 	if _, err := FileToken(file).Token(); !errors.Is(err, ErrNoToken) {
 		t.Fatalf("missing file: %v", err)
 	}
-	os.WriteFile(file, []byte("ahp_file\n"), 0o644)
+	if err := os.WriteFile(file, []byte("ahp_file\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := FileToken(file).Token(); err == nil || errors.Is(err, ErrNoToken) || !strings.Contains(err.Error(), "chmod 600") {
 		t.Fatalf("readable file must be refused: %v", err)
 	}
@@ -158,7 +161,9 @@ func TestTokenSources(t *testing.T) {
 	if _, err := FirstToken(FileToken(file), EnvToken("MCPPROXY_TEST_UNSET")).Token(); err == nil || errors.Is(err, ErrNoToken) {
 		t.Fatalf("misconfigured file skipped: %v", err)
 	}
-	os.Chmod(file, 0o600)
+	if err := os.Chmod(file, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	t.Setenv("MCPPROXY_TEST_TOKEN", "ahp_env")
 	if v, err := FirstToken(EnvToken("MCPPROXY_TEST_UNSET"), FileToken(file)).Token(); err != nil || v != "ahp_file" {
 		t.Fatalf("file: %q %v", v, err)
@@ -253,5 +258,30 @@ func TestForwardsUploads(t *testing.T) {
 	case r := <-requests:
 		t.Fatalf("forwarded %+v", r)
 	default:
+	}
+}
+
+// A master that is gone is a bad gateway; without a configured logger the
+// proxy logs with the standard one.
+func TestUnreachableUpstreamIsABadGateway(t *testing.T) {
+	gone := httptest.NewServer(http.NotFoundHandler())
+	u, _ := url.Parse(gone.URL)
+	gone.Close()
+	var logged strings.Builder
+	log.SetOutput(&logged)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	proxy := httptest.NewServer(Handler(Config{
+		Upstream: u, Project: "game", Token: TokenFunc(func() (string, error) { return "ahp_x", nil }),
+	}))
+	t.Cleanup(proxy.Close)
+
+	resp, err := http.Post(proxy.URL+"/mcp", "application/json", strings.NewReader("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = resp.Body.Close() })
+
+	if resp.StatusCode != http.StatusBadGateway || !strings.Contains(logged.String(), "mcp-proxy: upstream") {
+		t.Fatalf("status %d, log %q", resp.StatusCode, logged.String())
 	}
 }

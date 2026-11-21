@@ -139,3 +139,15 @@ func TestDelete(t *testing.T) {
 		t.Fatalf("err %v", err)
 	}
 }
+
+func TestGetReturnsTheProjectWithTheIdentifier(t *testing.T) {
+	svc := project.New(project.Deps{Repo: &fakeRepo{projects: []models.Project{{Identifier: "alpha", Name: "Alpha"}}}})
+
+	got, err := svc.Get(context.Background(), "alpha")
+	if err != nil || got.Name != "Alpha" {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+	if _, err := svc.Get(context.Background(), "nope"); apperr.KindOf(err) != apperr.KindNotFound {
+		t.Fatalf("err %v, want not found", err)
+	}
+}

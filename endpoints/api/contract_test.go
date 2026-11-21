@@ -15,13 +15,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 )
 
 // The contract snapshots pin status and body of every route of the api, so
 // refactorings of the handlers can't change what clients see. Refresh the
 // golden files with: go test ./endpoints/api/ -run Contract -update-contract
-var updateContract = flag.Bool("update-contract", false, "rewrite the contract golden files in testdata/contract")
+var updateContract = flag.Bool("update-contract", false, "rewrite the contract golden files in testdata/contract") //nolint:gochecknoglobals // test flag
 
 // contractCase is one request against a freshly seeded api.
 type contractCase struct {
@@ -51,7 +51,7 @@ func (c contractCase) request() *http.Request {
 
 // volatile matches the values that differ from run to run: timestamps,
 // generated tokens and hints, and uuids.
-var volatile = []struct {
+var volatile = []struct { //nolint:gochecknoglobals // read-only lookup table of the test
 	pattern *regexp.Regexp
 	with    string
 }{

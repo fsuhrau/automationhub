@@ -3,6 +3,7 @@ package sse
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -123,11 +124,9 @@ func waitFor(t *testing.T, cond func() bool) {
 
 func TestServeHTTPSendsFirstByteAndKeepAlive(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	old := KeepAliveInterval
-	KeepAliveInterval = 20 * time.Millisecond
-	defer func() { KeepAliveInterval = old }()
 
 	b := NewBroker()
+	b.keepAlive = 20 * time.Millisecond
 	r := gin.New()
 	r.GET("/sse", HeadersMiddleware(), b.ServeHTTP())
 	srv := httptest.NewServer(r)
@@ -140,7 +139,7 @@ func TestServeHTTPSendsFirstByteAndKeepAlive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.Header.Get("Content-Type") != "text/event-stream" {
 		t.Fatalf("unexpected content type %q", resp.Header.Get("Content-Type"))
 	}
@@ -156,5 +155,51 @@ func TestServeHTTPSendsFirstByteAndKeepAlive(t *testing.T) {
 	}
 	if !bytes.HasPrefix(buf, []byte(": connected\n\n")) {
 		t.Fatalf("stream must start with a comment, got %q", buf)
+	}
+}
+
+// brokenWriter is a response writer that fails every write.
+type brokenWriter struct{ *httptest.ResponseRecorder }
+
+func (brokenWriter) Write([]byte) (int, error)       { return 0, errors.New("client gone") }
+func (brokenWriter) WriteString(string) (int, error) { return 0, errors.New("client gone") }
+
+func brokenContext() *gin.Context {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(brokenWriter{httptest.NewRecorder()})
+	c.Request = httptest.NewRequest(http.MethodGet, "/sse", nil)
+	return c
+}
+
+func TestWriteCommentReportsAClientThatIsGone(t *testing.T) {
+	if writeComment(brokenContext(), "connected") {
+		t.Fatal("a write to a broken connection succeeded")
+	}
+}
+
+func TestStreamEndsWhenAKeepAliveCannotBeWritten(t *testing.T) {
+	b := NewBroker()
+	b.keepAlive = time.Millisecond
+	client := b.Subscribe()
+	defer b.Unsubscribe(client)
+	done := make(chan struct{})
+
+	go func() { b.stream(brokenContext(), client); close(done) }()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the stream of a client that is gone did not end")
+	}
+}
+
+func TestSendEventDropsAnEventThatCannotBeEncoded(t *testing.T) {
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	sendEvent(c, Event{Channel: "x", Content: make(chan int)})
+
+	if rec.Body.Len() != 0 {
+		t.Fatalf("wrote %q for an event that can't be encoded", rec.Body)
 	}
 }

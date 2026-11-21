@@ -1,20 +1,22 @@
 package action
 
+import "github.com/fsuhrau/automationhub/device/appproto"
+
 type TouchDownPosition struct {
 	PosX    int64
 	PosY    int64
 	Success bool
 }
 
-func (a *TouchDownPosition) GetActionType() ActionType {
-	return ActionType_TouchDown
+func (a *TouchDownPosition) GetActionType() appproto.ActionType {
+	return appproto.ActionType_TouchDown
 }
 
 func (a *TouchDownPosition) Serialize() ([]byte, error) {
-	return serialize(ActionType_TouchDown, touchPayload(a.PosX, a.PosY))
+	return serialize(appproto.ActionType_TouchDown, touchPayload(a.PosX, a.PosY))
 }
 
-func (a *TouchDownPosition) ProcessResponse(response *Response) error {
+func (a *TouchDownPosition) ProcessResponse(response *appproto.Response) error {
 	a.Success = response.Success
 	return nil
 }
@@ -25,15 +27,15 @@ type TouchUpPosition struct {
 	Success bool
 }
 
-func (a *TouchUpPosition) GetActionType() ActionType {
-	return ActionType_TouchUp
+func (a *TouchUpPosition) GetActionType() appproto.ActionType {
+	return appproto.ActionType_TouchUp
 }
 
 func (a *TouchUpPosition) Serialize() ([]byte, error) {
-	return serialize(ActionType_TouchUp, touchPayload(a.PosX, a.PosY))
+	return serialize(appproto.ActionType_TouchUp, touchPayload(a.PosX, a.PosY))
 }
 
-func (a *TouchUpPosition) ProcessResponse(response *Response) error {
+func (a *TouchUpPosition) ProcessResponse(response *appproto.Response) error {
 	a.Success = response.Success
 	return nil
 }
@@ -44,15 +46,15 @@ type TouchMovePosition struct {
 	Success bool
 }
 
-func (a *TouchMovePosition) GetActionType() ActionType {
-	return ActionType_TouchMove
+func (a *TouchMovePosition) GetActionType() appproto.ActionType {
+	return appproto.ActionType_TouchMove
 }
 
 func (a *TouchMovePosition) Serialize() ([]byte, error) {
-	return serialize(ActionType_TouchMove, touchPayload(a.PosX, a.PosY))
+	return serialize(appproto.ActionType_TouchMove, touchPayload(a.PosX, a.PosY))
 }
 
-func (a *TouchMovePosition) ProcessResponse(response *Response) error {
+func (a *TouchMovePosition) ProcessResponse(response *appproto.Response) error {
 	a.Success = response.Success
 	return nil
 }

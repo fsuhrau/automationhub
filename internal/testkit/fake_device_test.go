@@ -8,12 +8,12 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 )
 
 type handler struct{ id int }
 
-func (*handler) OnActionResponse(interface{}, *action.Response) {}
+func (*handler) OnActionResponse(interface{}, *appproto.Response) {}
 
 func TestFakeDeviceReportsConfiguredValues(t *testing.T) {
 	d := NewFakeDevice("id1")

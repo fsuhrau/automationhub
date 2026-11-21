@@ -26,7 +26,7 @@ func sentinelKinds() []sentinelKind {
 		{hubcontrol.ErrDeviceBusy, apperr.Conflict},
 		{hubcontrol.ErrAppNotConnected, apperr.Conflict},
 		{device.ErrUnsupported, apperr.Unsupported},
-		{sync.TimeoutError, apperr.Timeout},
+		{sync.ErrTimeout, apperr.Timeout},
 	}
 }
 

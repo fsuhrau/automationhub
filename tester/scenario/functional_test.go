@@ -92,10 +92,10 @@ func TestScenarioRunnerRejectsAUnityConfig(t *testing.T) {
 	}
 }
 
-// The deprecated constructor still builds a working runner.
-func TestDeprecatedNewBuildsARunner(t *testing.T) {
+// A runner built from the plain deps of a setup works end to end.
+func TestNewWithDepsBuildsARunner(t *testing.T) {
 	s := basetest.NewSetup(t, 1)
-	runner := scenario.New(s.DB, "node", s.Manager, nil, "p", 1)
+	runner := scenario.NewWithDeps(s.Deps)
 	s.Test.TestConfig = models.TestConfig{Type: models.TestTypeScenario}
 	if err := runner.Initialize(*s.Test, nil); err != nil {
 		t.Fatal(err)

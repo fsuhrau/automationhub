@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"time"
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
@@ -69,14 +68,14 @@ type Operations interface {
 	AppScreenshot(ctx context.Context, dev device.Device) ([]byte, int, int, error)
 	Hierarchy(ctx context.Context, dev device.Device, pretty bool) ([]byte, error)
 	Logs(dev device.Device, lines int) ([]string, error)
-	Tap(dev device.Device, token string, x, y int) error
-	Swipe(dev device.Device, token string, fromX, fromY, toX, toY int, duration time.Duration) error
-	InputText(dev device.Device, token, text string) error
-	PressKey(dev device.Device, token, key string) error
-	TouchElement(ctx context.Context, dev device.Device, token string, ref hubcontrol.ElementRef) error
-	InstallApp(ctx context.Context, dev device.Device, token string, params *app.Parameter) error
-	StartApp(dev device.Device, token string, params *app.Parameter, sessionID, nodeURL string) error
-	StopApp(dev device.Device, token string, params *app.Parameter, clearData bool) error
+	Tap(t hubcontrol.Target, x, y int) error
+	Swipe(t hubcontrol.Target, g hubcontrol.SwipeGesture) error
+	InputText(t hubcontrol.Target, text string) error
+	PressKey(t hubcontrol.Target, key string) error
+	TouchElement(ctx context.Context, t hubcontrol.Target, ref hubcontrol.ElementRef) error
+	InstallApp(ctx context.Context, t hubcontrol.Target, params *app.Parameter) error
+	StartApp(t hubcontrol.Target, params *app.Parameter, launch hubcontrol.Launch) error
+	StopApp(t hubcontrol.Target, params *app.Parameter, clearData bool) error
 }
 
 // Control is the live control of devices: the leases and the operations.

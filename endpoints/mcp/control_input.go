@@ -39,19 +39,19 @@ type KeyArgs struct {
 }
 
 func (t *tools) tap(ctx context.Context, req *mcp.CallToolRequest, in TapArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
 	ref := hubcontrol.ElementRef{ID: in.ElementID, XPath: in.XPath}
 	switch {
 	case !ref.IsZero():
-		if err := t.Control.TouchElement(ctx, dev, token, ref); err != nil {
+		if err := t.Control.TouchElement(ctx, target, ref); err != nil {
 			return nil, nil, err
 		}
 		return textResult("touched element %s%s", in.ElementID, in.XPath)
 	case in.X != nil && in.Y != nil:
-		if err := t.Control.Tap(dev, token, *in.X, *in.Y); err != nil {
+		if err := t.Control.Tap(target, *in.X, *in.Y); err != nil {
 			return nil, nil, err
 		}
 		return textResult("tapped %d,%d", *in.X, *in.Y)
@@ -60,7 +60,7 @@ func (t *tools) tap(ctx context.Context, req *mcp.CallToolRequest, in TapArgs) (
 }
 
 func (t *tools) swipe(ctx context.Context, req *mcp.CallToolRequest, in SwipeArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -68,29 +68,30 @@ func (t *tools) swipe(ctx context.Context, req *mcp.CallToolRequest, in SwipeArg
 	if d <= 0 {
 		d = defaultSwipe
 	}
-	if err := t.Control.Swipe(dev, token, in.FromX, in.FromY, in.ToX, in.ToY, d); err != nil {
+	gesture := hubcontrol.SwipeGesture{FromX: in.FromX, FromY: in.FromY, ToX: in.ToX, ToY: in.ToY, Duration: d}
+	if err := t.Control.Swipe(target, gesture); err != nil {
 		return nil, nil, err
 	}
 	return textResult("swiped %d,%d -> %d,%d", in.FromX, in.FromY, in.ToX, in.ToY)
 }
 
 func (t *tools) typeText(ctx context.Context, req *mcp.CallToolRequest, in TextArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := t.Control.InputText(dev, token, in.Text); err != nil {
+	if err := t.Control.InputText(target, in.Text); err != nil {
 		return nil, nil, err
 	}
 	return textResult("typed %d characters", len([]rune(in.Text)))
 }
 
 func (t *tools) pressKey(ctx context.Context, req *mcp.CallToolRequest, in KeyArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := t.Control.PressKey(dev, token, in.Key); err != nil {
+	if err := t.Control.PressKey(target, in.Key); err != nil {
 		return nil, nil, err
 	}
 	return textResult("pressed %s", in.Key)

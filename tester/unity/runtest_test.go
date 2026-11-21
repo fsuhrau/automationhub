@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/tester/base/basetest"
 )
@@ -20,9 +19,9 @@ func (f *strategyFixture) runTest() {
 	f.strategy.RunTest(context.Background(), base.DeviceMap{Device: f.Devices[0], Model: f.Models[0]}, testStart())
 }
 
-func screenFiles(t *testing.T) []string {
+func (f *strategyFixture) screenFiles(t *testing.T) []string {
 	t.Helper()
-	files, err := filepath.Glob(filepath.Join(apps.TestDataPath, "*.png"))
+	files, err := filepath.Glob(filepath.Join(f.runner.DataDir, "*.png"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +72,7 @@ func TestRunTestTakesAScreenshotOfAnErroredTest(t *testing.T) {
 		{"app has no screenshot", func(f *strategyFixture) {}, false, ""},
 		{"file can't be saved", func(f *strategyFixture) {
 			f.Devices[0].PNG = basetest.PNG()
-			apps.TestDataPath = filepath.Join(apps.TestDataPath, "missing")
+			f.runner.DataDir = filepath.Join(f.runner.DataDir, "missing")
 		}, false, "Save screenshot failed"},
 	}
 	for _, tc := range tests {
@@ -83,7 +82,7 @@ func TestRunTestTakesAScreenshotOfAnErroredTest(t *testing.T) {
 			tc.prepare(f)
 			f.strategy.captureScreenShot(context.Background(), testCase{dev: base.DeviceMap{Device: f.Devices[0]}, task: testStart()})
 
-			if got := len(screenFiles(t)) == 1; got != tc.wantFile {
+			if got := len(f.screenFiles(t)) == 1; got != tc.wantFile {
 				t.Fatalf("screenshot saved %v, want %v", got, tc.wantFile)
 			}
 			if got := len(f.Devices[0].CallsTo("Data")) == 1; got != tc.wantFile {
@@ -103,7 +102,7 @@ func TestRunTestReportsTheExecutionError(t *testing.T) {
 	f.Manager.FailWith("SendAction", errors.New("app gone"))
 	f.runTest()
 
-	if !f.logged("error", "failed with errors: app gone") || len(screenFiles(t)) != 1 {
+	if !f.logged("error", "failed with errors: app gone") || len(f.screenFiles(t)) != 1 {
 		t.Fatal("execution error not reported")
 	}
 }

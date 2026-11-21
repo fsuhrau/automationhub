@@ -56,6 +56,10 @@ type Deps struct {
 	Store   Store
 	Devices manager.Devices
 	NodeURL string
+	// DataDir holds the screenshots and recordings of the run; StoreDir the
+	// uploaded bundles.
+	DataDir  string
+	StoreDir string
 	// ProjectID and AppID name the project and app of the test.
 	ProjectID string
 	AppID     uint

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -48,8 +48,8 @@ func (f *wsFixture) dial(t *testing.T) *websocket.Conn {
 	return conn
 }
 
-func handshake(deviceID string) action.Response {
-	return action.Response{Payload: action.ResponseData{Connect: &action.Connect{DeviceID: deviceID, SessionID: "s1"}}}
+func handshake(deviceID string) appproto.Response {
+	return appproto.Response{Payload: appproto.ResponseData{Connect: &appproto.Connect{DeviceID: deviceID, SessionID: "s1"}}}
 }
 
 func (f *wsFixture) connectApp(t *testing.T) (*websocket.Conn, *device.Connection) {
@@ -70,7 +70,7 @@ func TestAppConnectionLifecycle(t *testing.T) {
 	}
 
 	// an action response reaches the waiting caller
-	if err := app.WriteJSON(action.Response{ActionID: "a1", ActionType: action.ActionType_GetScreenshot}); err != nil {
+	if err := app.WriteJSON(appproto.Response{ActionID: "a1", ActionType: appproto.ActionType_GetScreenshot}); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -114,7 +114,7 @@ func TestHandshakeForUnknownDeviceIsClosed(t *testing.T) {
 func TestBrokenHandshakesAreRejected(t *testing.T) {
 	tests := map[string]func(*websocket.Conn){
 		"not json":        func(c *websocket.Conn) { _ = c.WriteMessage(websocket.TextMessage, []byte("{")) },
-		"no connect data": func(c *websocket.Conn) { _ = c.WriteJSON(action.Response{}) },
+		"no connect data": func(c *websocket.Conn) { _ = c.WriteJSON(appproto.Response{}) },
 		"closed at once":  func(c *websocket.Conn) { _ = c.Close() },
 	}
 	for name, send := range tests {

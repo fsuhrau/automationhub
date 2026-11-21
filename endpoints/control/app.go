@@ -7,6 +7,7 @@ import (
 	"github.com/fsuhrau/automationhub/apperr"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
+	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -36,7 +37,7 @@ func (h *Handler) appInstall(c *gin.Context, dev device.Device) {
 	if !ok {
 		return
 	}
-	done(c, h.svc.InstallApp(c.Request.Context(), dev, lease(c), params))
+	done(c, h.svc.InstallApp(c.Request.Context(), target(c, dev), params))
 }
 
 func (h *Handler) appStart(c *gin.Context, dev device.Device) {
@@ -45,7 +46,7 @@ func (h *Handler) appStart(c *gin.Context, dev device.Device) {
 		return
 	}
 	sessionID := uuid.NewString()
-	if err := h.svc.StartApp(dev, lease(c), params, sessionID, h.nodeURL); err != nil {
+	if err := h.svc.StartApp(target(c, dev), params, hubcontrol.Launch{SessionID: sessionID, NodeURL: h.nodeURL}); err != nil {
 		failErr(c, err)
 		return
 	}
@@ -57,5 +58,5 @@ func (h *Handler) appStop(c *gin.Context, dev device.Device) {
 	if !ok {
 		return
 	}
-	done(c, h.svc.StopApp(dev, lease(c), params, req.ClearData))
+	done(c, h.svc.StopApp(target(c, dev), params, req.ClearData))
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/videostream/videostreamtest"
 )
 
@@ -41,7 +41,7 @@ type FakeDevice struct {
 	locked   bool
 	conn     *device.Connection
 	writer   device.LogWriter
-	handlers []action.ActionHandler
+	handlers []appproto.ActionHandler
 	cancel   context.CancelFunc
 }
 

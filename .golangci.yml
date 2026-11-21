@@ -1,14 +1,11 @@
 version: "2"
 
 # Size and structure rules (funlen, gocognit, nestif, revive argument-limit,
-# gochecknoglobals, gochecknoinits) are enforced only for refactored code.
-# Legacy code is not yet clean, so the exclusion rule below switches those
-# linters off for every path that is NOT on the allowlist.
+# gochecknoglobals, gochecknoinits) apply to the whole repo, next to the
+# default linters (errcheck, govet, staticcheck, ineffassign, unused).
 #
-# The default linters (errcheck, govet, staticcheck, ineffassign, unused) run
-# everywhere, but legacy code has ~130 findings. `issues.new-from-rev` pins the
-# pre-refactor baseline commit, so only lines changed since then are reported.
-# Do not move the revision forward.
+# Allowed exceptions, each with a targeted `//nolint:<linter> // <reason>`:
+# constants, lookup tables, generated code and cobra command variables.
 linters:
   default: standard
   enable:
@@ -31,21 +28,11 @@ linters:
         - name: argument-limit
           arguments: [3]
   exclusions:
+    # out/ is local, git-ignored scratch (probes and build output).
+    paths:
+      - '^out/'
     rules:
-      # ====================================================================
-      # refactored allowlist - each package adds its own dirs here.
-      # Add one `|<dir>/` alternative inside the group, e.g. `^(scripts/|hub/)`.
-      # Only paths matching this regex get the strict rules below.
-      # ====================================================================
-      - linters:
-          - funlen
-          - gocognit
-          - nestif
-          - revive
-          - gochecknoglobals
-          - gochecknoinits
-        path-except: '^(scripts/|events/|hub/action/|internal/testkit/|app/|tester/recording/|apperr/|storage/storeerr/|endpoints/httpx/|endpoints/api/apitest/|endpoints/api/(event_[^/]*|sse)\.go$|storage/migrations/|storage/(database|device|device_notifier|device_update)\.go$|device/[^/]+\.go$|device/generic/|device/appproto/|device/remote/|device/luascript/|device/(android|ios)device/lua_script_handler\.go$|hub/middleware/|hub/session/|service/|storage/[a-z]+store/|endpoints/api/[a-z]+/|authentication/|endpoints/control/|endpoints/(node|web|manager|master)/|device/(androiddevice|iosdevice|iossim|macos|web|hostinfo|unityeditor|node)/|modules/webdriver/|tester/(base|unity|scenario)/|tester/interface\.go$|hub/node/|hub/manager/|hub/node_manager\.go$|hub/videostream/rendezvous\.go$|hub/device_manager[^/]*\.go$|hub/service_device_manager\.go$|endpoints/mcp/|cmd/|cli/|config/|modules/hooks/)'
-      # Generated code and tests are exempt from funlen.
+      # Generated code and data tables are exempt from funlen.
       - linters:
           - funlen
         path: '(\.pb\.go|keycodes\.go|_test\.go)$'
@@ -54,6 +41,3 @@ linters:
           - revive
         path: '_test\.go$'
         text: 'argument-limit'
-
-issues:
-  new-from-rev: 72a2a32

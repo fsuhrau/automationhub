@@ -208,8 +208,9 @@ func newBlockingListener() *fakeListener {
 	return &fakeListener{events: make(chan bool), closed: make(chan struct{})}
 }
 
-func TestNewHandlerAddsTheHookToTheStandardLogger(t *testing.T) {
-	h := NewHandler(config.Manager{}, &fakeStore{})
+func TestHookReadsTheURLFromTheStandardLoggerOnceAdded(t *testing.T) {
+	h := NewHandlerWithDeps(config.Manager{}, &fakeStore{}, Deps{})
+	logrus.AddHook(h.Hook())
 	got, err := h.Hook().Await(time.Minute, func(time.Duration) <-chan time.Time { return nil }, func(func(error)) {
 		logrus.StandardLogger().SetOutput(discardWriter{})
 		logrus.Info("ServerURLHere->http://h:9<-ServerURLHere")

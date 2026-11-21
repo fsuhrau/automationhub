@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/endpoints/api/internal/runfixture"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	runsvc "github.com/fsuhrau/automationhub/service/run"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -151,10 +151,7 @@ func TestGetDataStaysInDataPath(t *testing.T) {
 	}
 	_ = os.WriteFile(filepath.Join(data, "shot.png"), []byte("png"), 0o644)
 	_ = os.WriteFile(filepath.Join(root, "secret.txt"), []byte("secret"), 0o644)
-	old := apps.TestDataPath
-	apps.TestDataPath = data
-	t.Cleanup(func() { apps.TestDataPath = old })
-	env := apitest.New(t)
+	env := apitest.New(t, apitest.WithConfig(config.Service{Paths: config.Paths{TestData: data}}))
 
 	if rec := env.Do("GET", "/api/data/shot.png", nil); rec.Code != http.StatusOK || rec.Body.String() != "png" {
 		t.Errorf("own file: %d %q", rec.Code, rec.Body.String())

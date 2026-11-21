@@ -94,3 +94,8 @@ func (s *Service) Rename(ctx context.Context, identifier string, change Change) 
 func (s *Service) Delete(ctx context.Context, id uint) error {
 	return s.repo.Delete(ctx, id)
 }
+
+// Get returns the project with the identifier.
+func (s *Service) Get(ctx context.Context, identifier string) (*models.Project, error) {
+	return s.repo.ByIdentifier(ctx, identifier)
+}

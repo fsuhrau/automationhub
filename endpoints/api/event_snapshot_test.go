@@ -19,7 +19,7 @@ var updateSSEGolden = flag.Bool("update-sse", false, //nolint:gochecknoglobals /
 	"rewrite the SSE golden files in testdata/sse")
 
 // registerAllSSE registers every event-to-SSE listener on the publisher.
-func registerAllSSE(p eventRecorder) { registerSSEBridges(p) }
+func registerAllSSE(p eventRecorder) { RegisterSSEBridges(p) }
 
 type sseCase struct {
 	name    string

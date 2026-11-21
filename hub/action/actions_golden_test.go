@@ -2,6 +2,7 @@ package action
 
 import (
 	"flag"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -29,64 +30,64 @@ func ptr[T any](v T) *T { return &v }
 type actionCase struct {
 	name     string
 	action   Interface
-	typ      ActionType
-	response Response
+	typ      appproto.ActionType
+	response appproto.Response
 	check    func(t *testing.T, a Interface)
 }
 
 func actionCases() []actionCase {
-	ok := func(p ResponseData) Response { return Response{Success: true, Payload: p} }
+	ok := func(p appproto.ResponseData) appproto.Response { return appproto.Response{Success: true, Payload: p} }
 	return []actionCase{
-		{"custom", &Custom{RequestData: `{"cmd":"x"}`}, ActionType_Custom,
-			ok(ResponseData{Data: ptr([]byte("abc"))}),
+		{"custom", &Custom{RequestData: `{"cmd":"x"}`}, appproto.ActionType_Custom,
+			ok(appproto.ResponseData{Data: ptr([]byte("abc"))}),
 			func(t *testing.T, a Interface) {
 				mustEqual(t, []byte("abc"), a.(*Custom).Content)
 				mustEqual(t, true, a.(*Custom).Success)
 			}},
-		{"drag_and_drop", &DragAndDrop{From: "a", To: "b"}, ActionType_DragAndDrop, ok(ResponseData{}), nil},
-		{"get_value", &GetValue{ElementID: "7", Attr: "text"}, ActionType_ElementGetValue,
-			ok(ResponseData{Value: ptr("hello")}),
+		{"drag_and_drop", &DragAndDrop{From: "a", To: "b"}, appproto.ActionType_DragAndDrop, ok(appproto.ResponseData{}), nil},
+		{"get_value", &GetValue{ElementID: "7", Attr: "text"}, appproto.ActionType_ElementGetValue,
+			ok(appproto.ResponseData{Value: ptr("hello")}),
 			func(t *testing.T, a Interface) {
 				mustEqual(t, "hello", a.(*GetValue).Value)
 				mustEqual(t, true, a.(*GetValue).Success)
 			}},
-		{"is_displayed", &IsDisplayed{ElementID: "7"}, ActionType_ElementIsDisplayed,
-			ok(ResponseData{Visible: ptr(true)}),
+		{"is_displayed", &IsDisplayed{ElementID: "7"}, appproto.ActionType_ElementIsDisplayed,
+			ok(appproto.ResponseData{Visible: ptr(true)}),
 			func(t *testing.T, a Interface) {
 				mustEqual(t, true, a.(*IsDisplayed).IsDisplayed)
 				mustEqual(t, true, a.(*IsDisplayed).Success)
 			}},
-		{"set_value", &SetValue{ElementID: "7", Attr: "text", Value: "v"}, ActionType_ElementSetValue, ok(ResponseData{}),
+		{"set_value", &SetValue{ElementID: "7", Attr: "text", Value: "v"}, appproto.ActionType_ElementSetValue, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*SetValue).Success) }},
-		{"touch_element", &TouchElement{ElementID: "7"}, ActionType_ElementTouch, ok(ResponseData{}),
+		{"touch_element", &TouchElement{ElementID: "7"}, appproto.ActionType_ElementTouch, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*TouchElement).Success) }},
-		{"longtouch_element", &LongTouchElement{ElementID: "7"}, ActionType_LongTouch, ok(ResponseData{}),
+		{"longtouch_element", &LongTouchElement{ElementID: "7"}, appproto.ActionType_LongTouch, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*LongTouchElement).Success) }},
-		{"get_screenshot", &GetScreenshot{}, ActionType_GetScreenshot,
-			ok(ResponseData{Screenshot: &Screenshot{Sceengraph: []byte("<a/>"), ContentType: ContentType_Xml}}),
+		{"get_screenshot", &GetScreenshot{}, appproto.ActionType_GetScreenshot,
+			ok(appproto.ResponseData{Screenshot: &appproto.Screenshot{Sceengraph: []byte("<a/>"), ContentType: appproto.ContentType_Xml}}),
 			func(t *testing.T, a Interface) {
 				mustEqual(t, true, a.(*GetScreenshot).Success)
 				mustEqual(t, []byte("<a/>"), a.(*GetScreenshot).SceengraphXML())
 			}},
-		{"scroll", &Scroll{OffsetX: 1, OffsetY: -2}, ActionType_Move, ok(ResponseData{}), nil},
-		{"tests_get", &TestsGet{}, ActionType_GetTests,
-			ok(ResponseData{Tests: &Tests{Tests: []Test{{Class: "C", Method: "M"}}}}),
+		{"scroll", &Scroll{OffsetX: 1, OffsetY: -2}, appproto.ActionType_Move, ok(appproto.ResponseData{}), nil},
+		{"tests_get", &TestsGet{}, appproto.ActionType_GetTests,
+			ok(appproto.ResponseData{Tests: &appproto.Tests{Tests: []appproto.Test{{Class: "C", Method: "M"}}}}),
 			func(t *testing.T, a Interface) {
-				mustEqual(t, []Test{{Class: "C", Method: "M"}}, a.(*TestsGet).Tests)
+				mustEqual(t, []appproto.Test{{Class: "C", Method: "M"}}, a.(*TestsGet).Tests)
 				mustEqual(t, true, a.(*TestsGet).Success)
 			}},
-		{"test_start", &TestStart{Assembly: "As", Class: "C", Method: "M", Env: map[string]string{"k": "v"}}, ActionType_ExecuteTest, ok(ResponseData{}),
+		{"test_start", &TestStart{Assembly: "As", Class: "C", Method: "M", Env: map[string]string{"k": "v"}}, appproto.ActionType_ExecuteTest, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*TestStart).Success) }},
-		{"touch_down", &TouchDownPosition{PosX: 3, PosY: 4}, ActionType_TouchDown, ok(ResponseData{}),
+		{"touch_down", &TouchDownPosition{PosX: 3, PosY: 4}, appproto.ActionType_TouchDown, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*TouchDownPosition).Success) }},
-		{"touch_up", &TouchUpPosition{PosX: 3, PosY: 4}, ActionType_TouchUp, ok(ResponseData{}),
+		{"touch_up", &TouchUpPosition{PosX: 3, PosY: 4}, appproto.ActionType_TouchUp, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*TouchUpPosition).Success) }},
-		{"touch_move", &TouchMovePosition{PosX: 3, PosY: 4}, ActionType_TouchMove, ok(ResponseData{}),
+		{"touch_move", &TouchMovePosition{PosX: 3, PosY: 4}, appproto.ActionType_TouchMove, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*TouchMovePosition).Success) }},
-		{"unity_reset", &UnityReset{}, ActionType_UnityReset, ok(ResponseData{}),
+		{"unity_reset", &UnityReset{}, appproto.ActionType_UnityReset, ok(appproto.ResponseData{}),
 			func(t *testing.T, a Interface) { mustEqual(t, true, a.(*UnityReset).Success) }},
-		{"get_sceengraph", &GetSceenGraph{}, ActionType_GetSceneGraph,
-			ok(ResponseData{Screenshot: &Screenshot{Sceengraph: []byte("<a/>"), ContentType: ContentType_Xml}}),
+		{"get_sceengraph", &GetSceenGraph{}, appproto.ActionType_GetSceneGraph,
+			ok(appproto.ResponseData{Screenshot: &appproto.Screenshot{Sceengraph: []byte("<a/>"), ContentType: appproto.ContentType_Xml}}),
 			func(t *testing.T, a Interface) { mustEqual(t, "<a/>", a.(*GetSceenGraph).Content()) }},
 	}
 }

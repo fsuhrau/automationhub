@@ -3,6 +3,7 @@ package action
 import (
 	"bytes"
 	"fmt"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
@@ -10,20 +11,20 @@ import (
 
 type GetScreenshot struct {
 	Success    bool
-	screenshot *Screenshot
+	screenshot *appproto.Screenshot
 	width      int
 	height     int
 }
 
-func (a *GetScreenshot) GetActionType() ActionType {
-	return ActionType_GetScreenshot
+func (a *GetScreenshot) GetActionType() appproto.ActionType {
+	return appproto.ActionType_GetScreenshot
 }
 
 func (a *GetScreenshot) Serialize() ([]byte, error) {
-	return serialize(ActionType_GetScreenshot, RequestData{})
+	return serialize(appproto.ActionType_GetScreenshot, appproto.RequestData{})
 }
 
-func (a *GetScreenshot) ProcessResponse(response *Response) error {
+func (a *GetScreenshot) ProcessResponse(response *appproto.Response) error {
 	a.Success = response.Success
 	a.screenshot = response.Payload.Screenshot
 	if a.screenshot != nil && len(a.screenshot.Screenshot) > 0 {
@@ -43,15 +44,12 @@ func (a *GetScreenshot) SceengraphXML() []byte {
 	}
 	var content []byte
 	switch a.screenshot.ContentType {
-	case ContentType_Flatbuffer:
+	case appproto.ContentType_Flatbuffer:
 		content = convertFlatToXml(a.screenshot.Sceengraph, true)
-		break
-	case ContentType_Json:
+	case appproto.ContentType_Json:
 		content = a.screenshot.Sceengraph
-		break
-	case ContentType_Xml:
+	case appproto.ContentType_Xml:
 		content = a.screenshot.Sceengraph
-		break
 	}
 	return content
 }

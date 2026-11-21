@@ -266,3 +266,17 @@ func dropTable(t *testing.T, db *gorm.DB, model any) {
 		t.Fatal(err)
 	}
 }
+
+func TestIDByIdentifier(t *testing.T) {
+	db := testkit.DB(t)
+	testkit.Device(db)
+	phone := testkit.Device(db, func(d *models.Device) { d.DeviceIdentifier = "phone" })
+	store := devicestore.New(db)
+
+	got, err := store.IDByIdentifier(t.Context(), "phone")
+	if err != nil || got != phone.ID {
+		t.Fatalf("got %d, %v, want %d", got, err, phone.ID)
+	}
+	_, err = store.IDByIdentifier(t.Context(), "nobody")
+	assertKind(t, err, apperr.KindNotFound)
+}

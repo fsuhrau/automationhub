@@ -52,7 +52,7 @@ func (r *Runner) Execute(ctx context.Context, in runInput) {
 	defer r.TestSessionFinished()
 	defer r.recoverRun()
 
-	s := &runState{runInput: in, params: GetParams(in.binary, in.startURL)}
+	s := &runState{runInput: in, params: GetParams(r.StoreDir, in.binary, in.startURL)}
 	defer s.unwind()
 	for _, step := range r.steps() {
 		if !step(ctx, s) {

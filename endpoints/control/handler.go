@@ -83,3 +83,8 @@ func (h *Handler) withDevice(fn func(*gin.Context, device.Device)) gin.HandlerFu
 func lease(c *gin.Context) string {
 	return c.GetHeader(LeaseHeader)
 }
+
+// target is the device of the request with the lease token it carries.
+func target(c *gin.Context, dev device.Device) hubcontrol.Target {
+	return hubcontrol.Target{Device: dev, Token: lease(c)}
+}

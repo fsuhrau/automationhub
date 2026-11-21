@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/storage/models"
 )

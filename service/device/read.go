@@ -116,6 +116,6 @@ func (s *Service) ControlApp(ctx context.Context, project *models.Project, binar
 	if binary.Archived() {
 		return nil, apperr.Invalid("app bundle %d is archived; upload its file again to install it", binaryID)
 	}
-	params := base.GetParams(binary, "")
+	params := base.GetParams(s.deps.StoreDir, binary, "")
 	return &params, nil
 }

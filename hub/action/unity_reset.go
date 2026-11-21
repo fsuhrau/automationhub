@@ -1,5 +1,7 @@
 package action
 
+import "github.com/fsuhrau/automationhub/device/appproto"
+
 type UnityReset struct {
 	Assembly string
 	Class    string
@@ -7,15 +9,15 @@ type UnityReset struct {
 	Success  bool
 }
 
-func (a *UnityReset) GetActionType() ActionType {
-	return ActionType_UnityReset
+func (a *UnityReset) GetActionType() appproto.ActionType {
+	return appproto.ActionType_UnityReset
 }
 
 func (a *UnityReset) Serialize() ([]byte, error) {
-	return serialize(ActionType_UnityReset, RequestData{})
+	return serialize(appproto.ActionType_UnityReset, appproto.RequestData{})
 }
 
-func (a *UnityReset) ProcessResponse(response *Response) error {
+func (a *UnityReset) ProcessResponse(response *appproto.Response) error {
 	a.Success = response.Success
 	return nil
 }

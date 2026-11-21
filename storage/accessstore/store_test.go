@@ -217,3 +217,18 @@ func TestCreateNodeFailsWhenTheTokenTableIsGone(t *testing.T) {
 		t.Fatal("the node stayed although its token failed")
 	}
 }
+
+// A token or a node that already exists is a conflict (409), not an internal
+// error (500): the database translates a duplicate key.
+func TestADuplicateKeyIsAConflict(t *testing.T) {
+	store, _ := setup(t)
+	if err := store.CreateToken(ctx(), &models.AccessToken{Name: "ci", Token: "same"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.CreateNode(ctx(), &models.Node{Identifier: "n1", Name: "one"}, "t1"); err != nil {
+		t.Fatal(err)
+	}
+
+	wantKind(t, store.CreateToken(ctx(), &models.AccessToken{Name: "again", Token: "same"}), apperr.KindConflict)
+	wantKind(t, store.CreateNode(ctx(), &models.Node{Identifier: "n1", Name: "two"}, "t2"), apperr.KindConflict)
+}

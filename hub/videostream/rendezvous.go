@@ -105,7 +105,7 @@ func ServeToMaster(master MasterTarget, streamID string, stream device.VideoStre
 	}
 	go func() {
 		defer func() { _ = conn.Close() }()
-		if err := Pump(context.Background(), conn, stream, InjectInto(stream)); err != nil {
+		if err := Pump(context.Background(), conn, Feed{Stream: stream, Input: InjectInto(stream)}); err != nil {
 			logrus.Debugf("video stream %s ended: %v", streamID, err)
 		}
 	}()

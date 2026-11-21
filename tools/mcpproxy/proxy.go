@@ -51,11 +51,23 @@ type Config struct {
 
 // Handler returns the proxy handler.
 func Handler(cfg Config) http.Handler {
-	logf := cfg.Logf
-	if logf == nil {
-		logf = log.Printf
+	if cfg.Logf == nil {
+		cfg.Logf = log.Printf
 	}
-	proxy := &httputil.ReverseProxy{
+	p := &proxy{cfg: cfg, reverse: newReverseProxy(cfg)}
+	return http.HandlerFunc(p.serve)
+}
+
+// proxy checks the requests and forwards the ones it allows.
+type proxy struct {
+	cfg     Config
+	reverse *httputil.ReverseProxy
+}
+
+// newReverseProxy forwards a request to the route the handler put into its
+// context.
+func newReverseProxy(cfg Config) *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			rt := r.In.Context().Value(targetKey{}).(route)
 			r.SetURL(cfg.Upstream)
@@ -74,43 +86,38 @@ func Handler(cfg Config) http.Handler {
 			return nil
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			logf("mcp-proxy: upstream %s: %v", cfg.Upstream, err)
+			cfg.Logf("mcp-proxy: upstream %s: %v", cfg.Upstream, err)
 			http.Error(w, "automationhub master not reachable: "+err.Error(), http.StatusBadGateway)
 		},
 	}
+}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rt, ok := resolve(r.URL.Path, cfg.Project)
-		if !ok {
-			http.Error(w, "only the MCP endpoint is forwarded: /mcp or /<project>/mcp (and their uploads/<id>)", http.StatusNotFound)
-			return
-		}
-		allowed := r.Method == http.MethodGet || r.Method == http.MethodPost || r.Method == http.MethodDelete
-		if rt.upload {
-			allowed = r.Method == http.MethodPut
-		}
-		if !allowed {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		if cfg.Key != "" && !rt.upload && !validKey(r.Header.Get("Authorization"), cfg.Key) {
-			http.Error(w, "missing or wrong proxy key", http.StatusUnauthorized)
-			return
-		}
-		token, err := cfg.Token.Token()
-		if err != nil {
-			logf("mcp-proxy: %v", err)
-			http.Error(w, "no AutomationHub token on the host: "+err.Error(), http.StatusBadGateway)
-			return
-		}
-
-		// nothing of the client's credentials goes upstream
-		for _, h := range []string{"Authorization", "Cookie", "X-Auth-Token", "Proxy-Authorization"} {
-			r.Header.Del(h)
-		}
-		r.Header.Set("X-Auth-Token", token)
-		proxy.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), targetKey{}, rt)))
-	})
+func (p *proxy) serve(w http.ResponseWriter, r *http.Request) {
+	rt, ok := resolve(r.URL.Path, p.cfg.Project)
+	if !ok {
+		http.Error(w, "only the MCP endpoint is forwarded: /mcp or /<project>/mcp (and their uploads/<id>)", http.StatusNotFound)
+		return
+	}
+	if !rt.allows(r.Method) {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if p.cfg.Key != "" && !rt.upload && !validKey(r.Header.Get("Authorization"), p.cfg.Key) {
+		http.Error(w, "missing or wrong proxy key", http.StatusUnauthorized)
+		return
+	}
+	token, err := p.cfg.Token.Token()
+	if err != nil {
+		p.cfg.Logf("mcp-proxy: %v", err)
+		http.Error(w, "no AutomationHub token on the host: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	// nothing of the client's credentials goes upstream
+	for _, h := range []string{"Authorization", "Cookie", "X-Auth-Token", "Proxy-Authorization"} {
+		r.Header.Del(h)
+	}
+	r.Header.Set("X-Auth-Token", token)
+	p.reverse.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), targetKey{}, rt)))
 }
 
 // route is a request path the proxy forwards.
@@ -120,6 +127,15 @@ type route struct {
 	// mcpPath is the client's path of the MCP endpoint, e.g. /game/mcp
 	mcpPath string
 	upload  bool
+}
+
+// allows tells whether the proxy forwards the method on the route: uploads
+// are PUT, the rest of MCP is GET, POST and DELETE.
+func (rt route) allows(method string) bool {
+	if rt.upload {
+		return method == http.MethodPut
+	}
+	return method == http.MethodGet || method == http.MethodPost || method == http.MethodDelete
 }
 
 // resolve maps /mcp and /<project>/mcp to the master's /api/<project>/mcp,

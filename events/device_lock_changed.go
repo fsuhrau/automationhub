@@ -25,18 +25,3 @@ func SetDeviceLock(bus *Bus[DeviceLockChangedPayload], dev device.Device, locked
 	bus.Trigger(DeviceLockChangedPayload{DeviceIdentifier: dev.DeviceID(), Locked: locked})
 	return nil
 }
-
-// LockDevice locks dev and announces the change.
-//
-// Deprecated: use hub.DeviceManager.LockDevice, which takes the bus it
-// announces on from the manager.
-func LockDevice(dev device.Device) error {
-	return SetDeviceLock(DeviceLockChanged, dev, true)
-}
-
-// UnlockDevice unlocks dev and announces the change.
-//
-// Deprecated: use hub.DeviceManager.UnlockDevice.
-func UnlockDevice(dev device.Device) error {
-	return SetDeviceLock(DeviceLockChanged, dev, false)
-}

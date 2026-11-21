@@ -3,6 +3,7 @@ package control
 import (
 	"encoding/json"
 	"fmt"
+	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 	"net/http"
 	"strconv"
 
@@ -54,7 +55,7 @@ func (h *Handler) logStream(c *gin.Context, dev device.Device) {
 	c.Writer.Flush()
 
 	s := &eventSender{c: c}
-	err := h.svc.FollowLogs(c.Request.Context(), dev, logLines(c), s.lines, s.failure)
+	err := h.svc.FollowLogs(c.Request.Context(), dev, hubcontrol.LogFollow{Backlog: logLines(c), OnLines: s.lines, OnError: s.failure})
 	if err != nil {
 		logrus.Debugf("log stream of %s ended: %v", dev.DeviceID(), err)
 	}

@@ -1,95 +1,73 @@
+// Package api is the REST endpoint of the hub: it mounts the handlers of
+// every resource under /api. It builds nothing itself; the composition root
+// hands it the services in Deps.
 package api
 
 import (
-	"context"
-	"sync"
-
-	"github.com/fsuhrau/automationhub/config"
+	appsapi "github.com/fsuhrau/automationhub/endpoints/api/apps"
+	bundlesapi "github.com/fsuhrau/automationhub/endpoints/api/bundles"
+	devicesapi "github.com/fsuhrau/automationhub/endpoints/api/devices"
+	overviewapi "github.com/fsuhrau/automationhub/endpoints/api/overview"
+	profileapi "github.com/fsuhrau/automationhub/endpoints/api/profile"
+	projectsapi "github.com/fsuhrau/automationhub/endpoints/api/projects"
+	protocolsapi "github.com/fsuhrau/automationhub/endpoints/api/protocols"
+	runsapi "github.com/fsuhrau/automationhub/endpoints/api/runs"
+	settingsapi "github.com/fsuhrau/automationhub/endpoints/api/settings"
+	testsapi "github.com/fsuhrau/automationhub/endpoints/api/tests"
 	"github.com/fsuhrau/automationhub/endpoints/httpx"
-	hubmcp "github.com/fsuhrau/automationhub/endpoints/mcp"
-	"github.com/fsuhrau/automationhub/events"
-	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/hub/runs"
-	"github.com/fsuhrau/automationhub/hub/sse"
-	"github.com/fsuhrau/automationhub/tester"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-type Service struct {
-	logger          *logrus.Entry
-	db              *gorm.DB
-	devicesManager  manager.Devices
-	sessionsManager manager.Sessions
-	nodeManager     manager.Nodes
-	nodeUrl         string
-	sseBroker       *sse.Broker
-	cfg             config.Service
-
-	runners      map[string]tester.Interface
-	runnersMutex sync.Mutex
-
-	control    *hubcontrol.Service
-	runTracker *runs.Tracker
-	mcp        *hubmcp.Handler
+// Endpoint serves the REST API. It implements endpoints.ServiceEndpoint.
+type Endpoint struct {
+	deps    Deps
+	devices *devicesapi.Handler
 }
 
-func New(logger *logrus.Logger, db *gorm.DB, nodeUrl string, dm manager.Devices, sm manager.Sessions, config config.Service, nodeManager manager.Nodes) *Service {
-	svc := &Service{
-		logger:          logger.WithField("Service", "Api"),
-		nodeUrl:         nodeUrl,
-		db:              db,
-		devicesManager:  dm,
-		sessionsManager: sm,
-		nodeManager:     nodeManager,
-		sseBroker:       sse.NewBroker(),
-		cfg:             config,
-		runners:         make(map[string]tester.Interface),
-		control:         hubcontrol.New(dm),
-	}
-	svc.control.OnChange(svc.onDeviceControlChanged)
-	svc.runTracker = runs.NewTracker(svc.onRunFinished)
-	events.TestRunFinished.Register(svc.runTracker)
-	svc.mcp = svc.newMCPHandler()
-	return svc
+// New returns the endpoint on the services of deps.
+func New(deps Deps) *Endpoint {
+	return &Endpoint{deps: deps, devices: devicesapi.New(deps.Devices)}
 }
 
-func (s *Service) RegisterRoutes(r *gin.Engine, auth *gin.RouterGroup) error {
+// RegisterRoutes mounts the API below the authenticated group.
+func (e *Endpoint) RegisterRoutes(_ *gin.Engine, auth *gin.RouterGroup) error {
+	d := e.deps
+	resolveProject := httpx.ResolveProject(d.Projects)
 	api := auth.Group("/api")
-	api.Use(httpx.WithLogger(s.logger))
+	api.Use(httpx.WithLogger(d.Logger))
 
-	s.initSSE(api)
-	go s.control.Run(context.Background())
+	registerSSE(api, d.Broker)
+	overviewapi.New(d.Overview).RegisterStats(api.Group("/:project_id", resolveProject))
+	profileapi.New(d.Access).Register(api.Group("/me"), requireSession)
+	settingsapi.New(d.Access).Register(api.Group("/:project_id/settings", requireSession, resolveProject))
+	projectsapi.New(d.Projects).Register(api)
+	registerDataRoutes(api, d.DataDir)
 
-	s.registerStatsRoutes(api)
-	s.registerProfileRoutes(api)
-	s.registerSettingsRoutes(api)
-	s.registerProjectRoutes(api)
-	s.registerDataRoutes(api)
-
-	projectApi := api.Group("/:project_id")
-	projectApi.Use(s.ResolveProject)
-	{
-		s.registerDeviceRoutes(projectApi)
-		s.registerDeviceProtocolRoutes(projectApi)
-		s.registerOverviewRoutes(projectApi)
-		s.registerDeviceControlRoutes(projectApi)
-		s.registerMCPRoutes(projectApi)
-		s.registerAppRoutes(projectApi)
-
-		appApi := projectApi.Group("/app/:app_id")
-		appApi.Use(s.ResolveApp)
-		{
-			s.registerAppDetailRoutes(appApi)
-			s.registerBundleRoutes(appApi)
-			s.registerTestRoutes(appApi)
-			s.registerTestRunRoutes(appApi)
-			s.registerProtocolRoutes(appApi)
-			s.registerBaselineRoutes(appApi)
-		}
-	}
-
+	e.registerProjectScope(api.Group("/:project_id", resolveProject))
 	return nil
+}
+
+// registerProjectScope adds the routes of one project, and below them the
+// routes of its apps.
+func (e *Endpoint) registerProjectScope(projectApi *gin.RouterGroup) {
+	d := e.deps
+	e.devices.Register(projectApi)
+	e.devices.RegisterProtocols(projectApi)
+	overviewapi.New(d.Overview).RegisterOverview(projectApi)
+	registerDeviceControlRoutes(projectApi, e.deviceControl())
+	registerMCPRoutes(projectApi, d.MCP)
+	appsapi.New(d.Apps).RegisterProject(projectApi)
+
+	e.registerAppScope(projectApi.Group("/app/:app_id", httpx.ResolveApp(d.Apps)))
+}
+
+// registerAppScope adds the routes of one app of the project.
+func (e *Endpoint) registerAppScope(appApi *gin.RouterGroup) {
+	d := e.deps
+	appsapi.New(d.Apps).RegisterApp(appApi)
+	bundlesapi.New(d.Apps).Register(appApi)
+	testsapi.New(d.Tests).Register(appApi)
+	runsapi.New(d.Runs).Register(appApi)
+	protocolsapi.New(d.Protocols).RegisterProtocols(appApi)
+	protocolsapi.New(d.Protocols).RegisterBaselines(appApi)
 }

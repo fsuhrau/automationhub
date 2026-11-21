@@ -38,7 +38,7 @@ func (r *Runner) ListTests(ctx context.Context, connected []DeviceMap) ([]models
 func (r *Runner) appTests(ctx context.Context, dev DeviceMap, unity *models.TestConfigUnity) ([]models.UnityTestFunction, error) {
 	r.LogInfo("UnityTestCategoryType active requesting PlayMode tests")
 	get := &action.TestsGet{}
-	if err := tester_action.NewExecutor(r.Devices).Execute(ctx, dev.Device, get, testListTimeout); err != nil {
+	if err := tester_action.NewExecutor(r.Devices).Execute(ctx, tester_action.Call{Device: dev.Device, Action: get, Timeout: testListTimeout}); err != nil {
 		return nil, fmt.Errorf("send action to select all tests failed: %w", err)
 	}
 	var list []models.UnityTestFunction

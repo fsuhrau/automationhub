@@ -1,19 +1,21 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
 	"path/filepath"
 
-	"github.com/fsuhrau/automationhub/storage/apps"
+	"github.com/fsuhrau/automationhub/apperr"
+	"github.com/fsuhrau/automationhub/endpoints/httpx"
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Service) getData(c *gin.Context) {
-	name := c.Param("name")
-	if !filepath.IsLocal(name) {
-		s.error(c, http.StatusBadRequest, fmt.Errorf("invalid data name %q", name))
-		return
-	}
-	c.File(filepath.Join(apps.TestDataPath, name))
+// registerDataRoutes serves the files of the test data folder.
+func registerDataRoutes(api *gin.RouterGroup, dir string) {
+	api.GET("/data/:name", func(c *gin.Context) {
+		name := c.Param("name")
+		if !filepath.IsLocal(name) {
+			httpx.Fail(c, apperr.Invalid("invalid data name %q", name))
+			return
+		}
+		c.File(filepath.Join(dir, name))
+	})
 }

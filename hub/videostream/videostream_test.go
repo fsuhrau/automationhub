@@ -39,7 +39,7 @@ func serve(t *testing.T, fn func(*websocket.Conn)) *websocket.Conn {
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		fn(conn)
 	}))
 	t.Cleanup(srv.Close)
@@ -58,7 +58,9 @@ func TestPumpAndReceive(t *testing.T) {
 		device.VideoPacket{KeyFrame: true, PTS: 10, Data: []byte{0, 0, 0, 1, 0x65}},
 	)
 	pumped := make(chan error, 1)
-	conn := serve(t, func(c *websocket.Conn) { pumped <- Pump(context.Background(), c, src, InjectInto(src)) })
+	conn := serve(t, func(c *websocket.Conn) {
+		pumped <- Pump(context.Background(), c, Feed{Stream: src, Input: InjectInto(src)})
+	})
 
 	stream, err := Receive(conn, 2*time.Second)
 	if err != nil {
@@ -98,7 +100,8 @@ func TestPumpAndReceive(t *testing.T) {
 		t.Fatal("source stream not closed after the client hung up")
 	}
 	select {
-	case <-pumped:
+	case err := <-pumped:
+		t.Logf("pump returned: %v", err)
 	case <-time.After(2 * time.Second):
 		t.Fatal("pump did not return")
 	}
@@ -130,7 +133,7 @@ func TestRendezvous(t *testing.T) {
 
 	ch, done := r.Expect("s1")
 	src := videostreamtest.New(device.VideoMeta{Codec: "h264"})
-	conn := serve(t, func(c *websocket.Conn) { _ = Pump(context.Background(), c, src, InjectInto(src)) })
+	conn := serve(t, func(c *websocket.Conn) { _ = Pump(context.Background(), c, Feed{Stream: src, Input: InjectInto(src)}) })
 	if !r.Deliver("s1", conn) {
 		t.Fatal("not delivered")
 	}

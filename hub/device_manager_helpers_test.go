@@ -8,7 +8,7 @@ import (
 
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/node"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/sirupsen/logrus"
@@ -112,8 +112,8 @@ func factoryFor(n *countingNotifier) NotifierFactory {
 // fakeAction is an action.Interface.
 type fakeAction struct{ err error }
 
-func (a *fakeAction) GetActionType() action.ActionType { return action.ActionType_Custom }
-func (a *fakeAction) Serialize() ([]byte, error)       { return []byte("payload"), a.err }
-func (a *fakeAction) ProcessResponse(*action.Response) error {
+func (a *fakeAction) GetActionType() appproto.ActionType { return appproto.ActionType_Custom }
+func (a *fakeAction) Serialize() ([]byte, error)         { return []byte("payload"), a.err }
+func (a *fakeAction) ProcessResponse(*appproto.Response) error {
 	return errors.New("unused")
 }

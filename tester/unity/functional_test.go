@@ -3,6 +3,7 @@ package unity_test
 import (
 	"testing"
 
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base/basetest"
@@ -34,7 +35,7 @@ func runUnity(t *testing.T, s *basetest.Setup, cfg models.TestConfig, binary *mo
 // run finishes as a success with a protocol per test.
 func TestUnityRunsTheTestsTheAppLists(t *testing.T) {
 	s := basetest.NewSetup(t, 2)
-	s.Manager.Tests = []action.Test{{Class: "A", Method: "one"}, {Class: "B", Method: "two"}, {Class: "C", Method: "three"}}
+	s.Manager.Tests = []appproto.Test{{Class: "A", Method: "one"}, {Class: "B", Method: "two"}, {Class: "C", Method: "three"}}
 	cfg := models.TestConfig{ExecutionType: models.ConcurrentExecutionType, Unity: &models.TestConfigUnity{UnityTestCategoryType: models.AllTest}}
 
 	run, success, prots := runUnity(t, s, cfg, &models.AppBinary{Identifier: "com.example", AppPath: "x.apk"})
@@ -102,10 +103,10 @@ func TestUnityRunnerRejectsAScenarioConfig(t *testing.T) {
 	}
 }
 
-// The deprecated constructor still builds a working runner.
-func TestDeprecatedNewBuildsARunner(t *testing.T) {
+// A runner built from the plain deps of a setup works end to end.
+func TestNewWithDepsBuildsARunner(t *testing.T) {
 	s := basetest.NewSetup(t, 1)
-	runner := unity.New(s.DB, "node", s.Manager, nil, "p", 1)
+	runner := unity.NewWithDeps(s.Deps)
 	s.Test.TestConfig = models.TestConfig{Type: models.TestTypeUnity, Unity: &models.TestConfigUnity{UnityTestCategoryType: models.AllTest}}
 	if err := runner.Initialize(*s.Test, nil); err != nil {
 		t.Fatal(err)

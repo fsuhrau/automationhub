@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fsuhrau/automationhub/app"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/device/hostinfo"
 	"github.com/fsuhrau/automationhub/internal/testkit"
@@ -89,7 +90,7 @@ func TestInstallErrors(t *testing.T) {
 		t.Error("unzip of a missing archive must fail")
 	}
 	wrongExe := *params.App
-	wrongExe.Executable = &appExe{Executable: "Contents/MacOS/Other"}
+	wrongExe.Executable = &app.ExecutableParams{Executable: "Contents/MacOS/Other"}
 	if err := d.InstallApp(paramsWith(params, &wrongExe)); err == nil {
 		t.Error("chmod of a missing executable must fail")
 	}

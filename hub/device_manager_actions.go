@@ -8,28 +8,29 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 )
 
 // responseHandler consumes a response of one action type before the generic
 // dispatch sees it.
-type responseHandler func(d device.Device, resp *action.Response)
+type responseHandler func(d device.Device, resp *appproto.Response)
 
-func (dm *DeviceManager) responseHandlers() map[action.ActionType]responseHandler {
-	return map[action.ActionType]responseHandler{
-		action.ActionType_Log:    handleLogResponse,
-		action.ActionType_RunKey: handleRunKeyResponse,
+func (dm *DeviceManager) responseHandlers() map[appproto.ActionType]responseHandler {
+	return map[appproto.ActionType]responseHandler{
+		appproto.ActionType_Log:    handleLogResponse,
+		appproto.ActionType_RunKey: handleRunKeyResponse,
 	}
 }
 
-func handleLogResponse(d device.Device, resp *action.Response) {
+func handleLogResponse(d device.Device, resp *appproto.Response) {
 	if resp.Payload.LogData != nil {
 		logError(d, resp.Payload.LogData)
 	}
 }
 
 // handleRunKeyResponse hands keys to the running test, whichever executor runs it.
-func handleRunKeyResponse(d device.Device, resp *action.Response) {
+func handleRunKeyResponse(d device.Device, resp *appproto.Response) {
 	if k := resp.Payload.RunKey; k != nil && k.Key != "" {
 		d.SetKey(k.Key, k.Value)
 	}
@@ -93,7 +94,7 @@ func (dm *DeviceManager) handleActions(d device.Device, ctx context.Context) {
 }
 
 func (dm *DeviceManager) dispatchData(d device.Device, con *device.Connection, data []byte) {
-	resp := action.Response{}
+	resp := appproto.Response{}
 	if err := json.Unmarshal(data, &resp); err != nil {
 		dm.log.Errorf("invalid action response from %s: %v", d.DeviceID(), err)
 		return
@@ -112,8 +113,8 @@ func (dm *DeviceManager) dispatchData(d device.Device, con *device.Connection, d
 }
 
 // deliverResponse passes a response nobody else consumed to the waiting caller.
-func (dm *DeviceManager) deliverResponse(d device.Device, con *device.Connection, resp action.Response) {
-	if resp.ActionType == action.ActionType_Performance {
+func (dm *DeviceManager) deliverResponse(d device.Device, con *device.Connection, resp appproto.Response) {
+	if resp.ActionType == appproto.ActionType_Performance {
 		return
 	}
 	if resp.ActionID == "" {

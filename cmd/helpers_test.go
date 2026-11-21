@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/fsuhrau/automationhub/config"
-	"github.com/fsuhrau/automationhub/endpoints"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
@@ -38,6 +37,7 @@ func sqliteConfig(t *testing.T) config.Service {
 	return config.Service{
 		HostIP:   "127.0.0.1",
 		Database: config.Database{SQLite: &config.SQLite{Path: filepath.Join(t.TempDir(), "hub.db")}},
+		Paths:    config.Paths{AppStore: t.TempDir(), Bundles: t.TempDir(), TestData: t.TempDir()},
 	}
 }
 
@@ -65,17 +65,4 @@ func execute(t *testing.T, args ...string) (string, error) {
 	root.SetArgs(args)
 	err := root.Execute()
 	return out.String(), err
-}
-
-type fakeEndpointAdder struct {
-	added []any
-	fail  error
-}
-
-func (f *fakeEndpointAdder) AddEndpoint(ep endpoints.ServiceEndpoint) error {
-	if f.fail != nil {
-		return f.fail
-	}
-	f.added = append(f.added, ep)
-	return nil
 }

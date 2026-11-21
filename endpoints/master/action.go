@@ -1,16 +1,16 @@
 package master
 
 import (
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func (s *nodeMaster) Action(c *gin.Context) {
 	type request struct {
-		Node     string           `json:"node"`
-		DeviceID string           `json:"deviceId"`
-		Response *action.Response `json:"response"`
+		Node     string             `json:"node"`
+		DeviceID string             `json:"deviceId"`
+		Response *appproto.Response `json:"response"`
 	}
 
 	var req request

@@ -7,7 +7,6 @@ import (
 	"github.com/fsuhrau/automationhub/config"
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,10 +23,12 @@ type RPCNode struct {
 	screenshots       map[string][]byte
 }
 
-func NewRPCNode(config config.Service, dm manager.Devices, ch ConnectionHandler) *RPCNode {
-	abm, err := NewAppBundleManager(apps.AppBundleStoragePath)
+// NewRPCNode builds the receiver; the bundles it receives live in the bundle
+// folder of the config.
+func NewRPCNode(config config.Service, dm manager.Devices, ch ConnectionHandler) (*RPCNode, error) {
+	abm, err := NewAppBundleManager(config.Paths.Bundles)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("open the bundle store: %w", err)
 	}
 	return &RPCNode{
 		config:            config,
@@ -36,7 +37,7 @@ func NewRPCNode(config config.Service, dm manager.Devices, ch ConnectionHandler)
 		abm:               abm,
 		uploadRequests:    make(map[int32]*UploadProgress),
 		screenshots:       make(map[string][]byte),
-	}
+	}, nil
 }
 
 // withDevice runs fn with the local device id, or fails when there is none.

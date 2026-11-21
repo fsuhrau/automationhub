@@ -36,9 +36,9 @@ func (h *Handler) tap(c *gin.Context, dev device.Device) {
 	}
 	switch {
 	case !req.IsZero():
-		done(c, h.svc.TouchElement(c.Request.Context(), dev, lease(c), req.ElementRef))
+		done(c, h.svc.TouchElement(c.Request.Context(), target(c, dev), req.ElementRef))
 	case req.X != nil && req.Y != nil:
-		done(c, h.svc.Tap(dev, lease(c), *req.X, *req.Y))
+		done(c, h.svc.Tap(target(c, dev), *req.X, *req.Y))
 	default:
 		httpx.Fail(c, apperr.Invalid("x and y, or xpath/elementId are required"))
 	}
@@ -57,8 +57,11 @@ func (h *Handler) swipe(c *gin.Context, dev device.Device) {
 	if !bind(c, &req) {
 		return
 	}
-	duration := time.Duration(req.DurationMs) * time.Millisecond
-	done(c, h.svc.Swipe(dev, lease(c), req.FromX, req.FromY, req.ToX, req.ToY, duration))
+	gesture := hubcontrol.SwipeGesture{
+		FromX: req.FromX, FromY: req.FromY, ToX: req.ToX, ToY: req.ToY,
+		Duration: time.Duration(req.DurationMs) * time.Millisecond,
+	}
+	done(c, h.svc.Swipe(target(c, dev), gesture))
 }
 
 type textRequest struct {
@@ -70,7 +73,7 @@ func (h *Handler) text(c *gin.Context, dev device.Device) {
 	if !bind(c, &req) {
 		return
 	}
-	done(c, h.svc.InputText(dev, lease(c), req.Text))
+	done(c, h.svc.InputText(target(c, dev), req.Text))
 }
 
 type keyRequest struct {
@@ -82,7 +85,7 @@ func (h *Handler) key(c *gin.Context, dev device.Device) {
 	if !bind(c, &req) {
 		return
 	}
-	done(c, h.svc.PressKey(dev, lease(c), req.Key))
+	done(c, h.svc.PressKey(target(c, dev), req.Key))
 }
 
 func (h *Handler) elementTouch(c *gin.Context, dev device.Device) {
@@ -90,7 +93,7 @@ func (h *Handler) elementTouch(c *gin.Context, dev device.Device) {
 	if !bind(c, &req) {
 		return
 	}
-	done(c, h.svc.TouchElement(c.Request.Context(), dev, lease(c), req))
+	done(c, h.svc.TouchElement(c.Request.Context(), target(c, dev), req))
 }
 
 type elementValueRequest struct {
@@ -107,5 +110,5 @@ func (h *Handler) elementValue(c *gin.Context, dev device.Device) {
 	if req.Attr == "" {
 		req.Attr = defaultElementAttr
 	}
-	done(c, h.svc.SetElementValue(c.Request.Context(), dev, lease(c), req.ElementRef, req.Attr, req.Value))
+	done(c, h.svc.SetElementValue(c.Request.Context(), target(c, dev), hubcontrol.ElementChange{Ref: req.ElementRef, Attr: req.Attr, Value: req.Value}))
 }

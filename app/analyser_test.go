@@ -116,14 +116,16 @@ func writeZip(t *testing.T, path string, files map[string][]byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	w := zip.NewWriter(f)
 	for name, data := range files {
 		fw, err := w.Create(name)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fw.Write(data)
+		if _, err := fw.Write(data); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
@@ -139,7 +141,10 @@ func mustPlist(t *testing.T, v interface{}) []byte {
 	return data
 }
 
-func TestAnalyseIPA(t *testing.T) {
+// analyseSampleIPA analyses an ipa of a Unity game with an extension, a
+// profile and an icon in two sizes.
+func analyseSampleIPA(t *testing.T) *Parameter {
+	t.Helper()
 	dir := t.TempDir()
 	ipa := filepath.Join(dir, "Game.ipa")
 	profile := mustPlist(t, map[string]interface{}{
@@ -167,7 +172,11 @@ func TestAnalyseIPA(t *testing.T) {
 	if err := a.AnalyseFile(); err != nil {
 		t.Fatal(err)
 	}
-	p := a.GetParameter()
+	return a.GetParameter()
+}
+
+func TestAnalyseIPAReadsTheBundleInfo(t *testing.T) {
+	p := analyseSampleIPA(t)
 	if p.Platform != "ios" || p.Identifier != "com.example.game" || p.Version != "45" || p.Name != "Game" {
 		t.Fatalf("parameter = %+v", p)
 	}
@@ -181,6 +190,10 @@ func TestAnalyseIPA(t *testing.T) {
 	if len(info.Apple.UsageDescriptions) != 1 || len(info.Apple.Extensions) != 1 {
 		t.Errorf("usage %v extensions %v", info.Apple.UsageDescriptions, info.Apple.Extensions)
 	}
+}
+
+func TestAnalyseIPAReadsIconEngineProfileAndContents(t *testing.T) {
+	info := analyseSampleIPA(t).Info
 	if info.Icon != "Payload/Game.app/AppIcon60x60@3x.png" {
 		t.Errorf("icon = %s", info.Icon)
 	}
@@ -256,8 +269,8 @@ func crush(t *testing.T, img *image.NRGBA) []byte {
 	}
 	var deflated bytes.Buffer
 	fw, _ := flate.NewWriter(&deflated, flate.BestCompression)
-	fw.Write(raw)
-	fw.Close()
+	_, _ = fw.Write(raw) // a buffer does not fail
+	_ = fw.Close()
 	var out bytes.Buffer
 	out.Write(pngSignature)
 	writeChunk(&out, "CgBI", []byte{0x50, 0x00, 0x20, 0x06})

@@ -34,7 +34,7 @@ func (r *Runner) InitNewTestSession(ctx context.Context, session Session) error 
 	if err := r.Store.CreateRun(ctx, &r.TestRun); err != nil {
 		return fmt.Errorf("init test session: %w", err)
 	}
-	r.ProtocolWriter = protocol.NewProtocolWriter(r.DB, r.ProjectID, r.AppID, r.Test.Name, &r.TestRun)
+	r.ProtocolWriter = protocol.NewProtocolWriter(r.DB, protocol.RunTarget{ProjectID: r.ProjectID, AppID: r.AppID, TestName: r.Test.Name, Run: &r.TestRun})
 	return nil
 }
 

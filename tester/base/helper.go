@@ -4,25 +4,24 @@ import (
 	"path/filepath"
 
 	"github.com/fsuhrau/automationhub/app"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
 // GetParams builds the start parameters of an app: the bundle when there is
 // one, else the web page to open.
-func GetParams(binary *models.AppBinary, startupUrl string) app.Parameter {
+func GetParams(storeDir string, binary *models.AppBinary, startupUrl string) app.Parameter {
 	if binary == nil {
 		return app.Parameter{Web: &app.WebParams{StartURL: startupUrl}}
 	}
-	return bundleParams(binary)
+	return bundleParams(storeDir, binary)
 }
 
 // bundleParams describes the bundle to install and start.
-func bundleParams(binary *models.AppBinary) app.Parameter {
+func bundleParams(storeDir string, binary *models.AppBinary) app.Parameter {
 	params := app.Parameter{Identifier: bundleIdentifier(binary), Name: binary.Name, Version: binary.Version}
 	params.App = &app.AppParams{
 		AppBinaryID: binary.ID,
-		AppPath:     filepath.Join(apps.AppStoragePath, binary.AppPath),
+		AppPath:     filepath.Join(storeDir, binary.AppPath),
 		Hash:        binary.Hash,
 		Size:        binary.Size,
 		Additional:  binary.Additional,

@@ -10,7 +10,7 @@ import (
 func TestWaitWithTimeoutLateDoneDoesNotPanic(t *testing.T) {
 	wg := NewExtendedWaitGroup(context.Background())
 	wg.Add(1)
-	if err := wg.WaitWithTimeout(10 * time.Millisecond); !errors.Is(err, TimeoutError) {
+	if err := wg.WaitWithTimeout(10 * time.Millisecond); !errors.Is(err, ErrTimeout) {
 		t.Fatalf("expected timeout, got %v", err)
 	}
 	if !wg.IsCanceled() {
@@ -37,7 +37,7 @@ func TestWaitUntilHonoursDeadline(t *testing.T) {
 	wg.Add(1)
 	start := time.Now()
 	err := wg.WaitUntil(time.Now().Add(50 * time.Millisecond))
-	if !errors.Is(err, TimeoutError) {
+	if !errors.Is(err, ErrTimeout) {
 		t.Fatalf("expected timeout, got %v", err)
 	}
 	if time.Since(start) > 2*time.Second {

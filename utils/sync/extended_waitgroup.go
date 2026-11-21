@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	TimeoutError = fmt.Errorf("group timed out")
+	ErrTimeout = errors.New("group timed out")
 )
 
 // deadlineCheckInterval is how often WaitUntil re-evaluates a deadline that
@@ -99,7 +100,7 @@ func (wg *extendedWaitGroup) WaitWithTimeout(duration time.Duration) error {
 	case <-wg.ctx.Done():
 		return wg.cancelWith(wg.ctx.Err())
 	case <-timer.C:
-		return wg.cancelWith(TimeoutError)
+		return wg.cancelWith(ErrTimeout)
 	}
 }
 
@@ -111,7 +112,7 @@ func (wg *extendedWaitGroup) WaitUntil(waitUntil time.Time) error {
 	for {
 		remaining := time.Until(wg.getUntil())
 		if remaining <= 0 {
-			return wg.cancelWith(TimeoutError)
+			return wg.cancelWith(ErrTimeout)
 		}
 		if remaining > deadlineCheckInterval {
 			remaining = deadlineCheckInterval

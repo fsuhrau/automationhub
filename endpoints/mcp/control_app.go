@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	hubcontrol "github.com/fsuhrau/automationhub/hub/control"
 
 	"github.com/fsuhrau/automationhub/app"
 	"github.com/google/uuid"
@@ -26,7 +27,7 @@ func (t *tools) bundleParams(ctx context.Context, bundleID uint) (*app.Parameter
 }
 
 func (t *tools) installApp(ctx context.Context, req *mcp.CallToolRequest, in AppBundleArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,14 +35,14 @@ func (t *tools) installApp(ctx context.Context, req *mcp.CallToolRequest, in App
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := t.Control.InstallApp(ctx, dev, token, params); err != nil {
+	if err := t.Control.InstallApp(ctx, target, params); err != nil {
 		return nil, nil, err
 	}
 	return textResult("installed %s %s", params.Identifier, params.Version)
 }
 
 func (t *tools) startApp(ctx context.Context, req *mcp.CallToolRequest, in AppBundleArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -49,14 +50,14 @@ func (t *tools) startApp(ctx context.Context, req *mcp.CallToolRequest, in AppBu
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := t.Control.StartApp(dev, token, params, uuid.NewString(), t.NodeURL); err != nil {
+	if err := t.Control.StartApp(target, params, hubcontrol.Launch{SessionID: uuid.NewString(), NodeURL: t.NodeURL}); err != nil {
 		return nil, nil, err
 	}
 	return textResult("started %s; it may take a few seconds until the app is connected (see get_device appConnected)", params.Identifier)
 }
 
 func (t *tools) stopApp(ctx context.Context, req *mcp.CallToolRequest, in StopAppArgs) (*mcp.CallToolResult, any, error) {
-	dev, token, err := t.leased(ctx, req, in.DeviceID)
+	target, err := t.leased(ctx, req, in.DeviceID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -64,7 +65,7 @@ func (t *tools) stopApp(ctx context.Context, req *mcp.CallToolRequest, in StopAp
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := t.Control.StopApp(dev, token, params, in.ClearData); err != nil {
+	if err := t.Control.StopApp(target, params, in.ClearData); err != nil {
 		return nil, nil, err
 	}
 	if in.ClearData {

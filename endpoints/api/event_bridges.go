@@ -28,8 +28,8 @@ type testRunChange struct {
 	State     string `json:"state"`
 }
 
-// registerSSEBridges publishes every event the UI listens to on its channel.
-func registerSSEBridges(publisher sse.Publisher) {
+// RegisterSSEBridges publishes every event the UI listens to on its channel.
+func RegisterSSEBridges(publisher sse.Publisher) {
 	registerDeviceBridges(publisher)
 	registerTestBridges(publisher)
 	registerProtocolBridges(publisher)

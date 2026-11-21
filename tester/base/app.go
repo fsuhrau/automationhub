@@ -96,7 +96,7 @@ func (r *Runner) waitForStart(ctx context.Context, inflight *sync.WaitGroup) err
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-r.Clock.After(r.Timeouts.Start):
-		return hubsync.TimeoutError
+		return hubsync.ErrTimeout
 	}
 }
 

@@ -30,10 +30,18 @@ func forwardErr(nm *NodeManager, id manager.NodeIdentifier, fn func(manager.RPCC
 	return err
 }
 
+// nodeRef names a node of a node manager.
+type nodeRef struct {
+	nm *NodeManager
+	id manager.NodeIdentifier
+}
+
+func (nm *NodeManager) node(id manager.NodeIdentifier) nodeRef { return nodeRef{nm, id} }
+
 // forwardOr is forward for calls without an error: fallback is returned when
 // the node can't be reached.
-func forwardOr[T any](nm *NodeManager, id manager.NodeIdentifier, fallback T, fn func(manager.RPCClient) T) T {
-	handler, err := nm.getHandler(id)
+func forwardOr[T any](at nodeRef, fallback T, fn func(manager.RPCClient) T) T {
+	handler, err := at.nm.getHandler(at.id)
 	if err != nil {
 		return fallback
 	}
@@ -43,7 +51,7 @@ func forwardOr[T any](nm *NodeManager, id manager.NodeIdentifier, fallback T, fn
 // forwardDo is forward for fire-and-forget calls; they are dropped when the
 // node can't be reached.
 func forwardDo(nm *NodeManager, id manager.NodeIdentifier, fn func(manager.RPCClient)) {
-	forwardOr(nm, id, struct{}{}, func(h manager.RPCClient) struct{} { fn(h); return struct{}{} })
+	forwardOr(nm.node(id), struct{}{}, func(h manager.RPCClient) struct{} { fn(h); return struct{}{} })
 }
 
 func (nm *NodeManager) StartDevice(id manager.NodeIdentifier, deviceId string) error {
@@ -103,11 +111,11 @@ func (nm *NodeManager) StartVideoStream(id manager.NodeIdentifier, req device.Vi
 }
 
 func (nm *NodeManager) IsConnected(id manager.NodeIdentifier, deviceId string) bool {
-	return forwardOr(nm, id, false, func(h manager.RPCClient) bool { return h.IsConnected(deviceId) })
+	return forwardOr(nm.node(id), false, func(h manager.RPCClient) bool { return h.IsConnected(deviceId) })
 }
 
 func (nm *NodeManager) ConnectionTimeout(id manager.NodeIdentifier, deviceId string) time.Duration {
-	return forwardOr(nm, id, NodeConnectionTimeout, func(h manager.RPCClient) time.Duration { return h.ConnectionTimeout(deviceId) })
+	return forwardOr(nm.node(id), NodeConnectionTimeout, func(h manager.RPCClient) time.Duration { return h.ConnectionTimeout(deviceId) })
 }
 
 func (nm *NodeManager) SendAction(id manager.NodeIdentifier, deviceId string, action []byte) {

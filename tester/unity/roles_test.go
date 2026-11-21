@@ -1,19 +1,21 @@
 package unity
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 	"github.com/fsuhrau/automationhub/tester/base/basetest"
+	"github.com/fsuhrau/automationhub/utils/sync"
 	"github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 )
 
-func nativeScriptResponse(script string) *action.Response {
+func nativeScriptResponse(script string) *appproto.Response {
 	data := []byte(script)
-	return &action.Response{Payload: action.ResponseData{Data: &data}}
+	return &appproto.Response{Payload: appproto.ResponseData{Data: &data}}
 }
 
 func TestHandleNativeScriptRunsTheScriptOfADeviceThatHasNativeScripts(t *testing.T) {
@@ -53,5 +55,28 @@ func TestDeviceScreenshotNeedsTheScreenshotterRole(t *testing.T) {
 	}
 	if got := deviceScreenshot(testkit.NewCoreDevice("d2")); got != nil {
 		t.Errorf("a core device has no native screenshot, got %d bytes", len(got))
+	}
+}
+
+func TestHandleLogFinishesTheExecutionOnAnException(t *testing.T) {
+	for name, tc := range map[string]struct {
+		level    appproto.LogLevel
+		finished bool
+	}{
+		"exception": {appproto.LogLevel_Exception, true},
+		"error":     {appproto.LogLevel_Error, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			e := NewExecutor(nil, nil)
+			e.wg = sync.NewExtendedWaitGroup(context.Background())
+			e.wg.Add(1)
+
+			e.handleLog(testkit.NewFakeDevice("d1"), &appproto.Response{Payload: appproto.ResponseData{LogData: &appproto.LogData{Level: tc.level}}})
+
+			finished := e.wg.WaitWithTimeout(20*time.Millisecond) == nil
+			if finished != tc.finished {
+				t.Fatalf("finished %v, want %v", finished, tc.finished)
+			}
+		})
 	}
 }

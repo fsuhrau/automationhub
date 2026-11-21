@@ -5,6 +5,9 @@ import (
 	"sort"
 )
 
+// plistDict is the generic dictionary the plist decoder produces. It is an
+// alias on purpose: the decoder hands out plain maps, which type switches on
+// this name must match.
 type plistDict = map[string]interface{}
 
 func plistString(m plistDict, key string) string {

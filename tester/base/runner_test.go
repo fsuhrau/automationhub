@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"github.com/fsuhrau/automationhub/tester/base/basetest"
@@ -104,7 +104,7 @@ func TestLogBeforeTheRunBegan(t *testing.T) {
 
 // The unity config names the tests: the app lists them or the config stores them.
 func TestListTests(t *testing.T) {
-	appTests := []action.Test{
+	appTests := []appproto.Test{
 		{Class: "A", Method: "a", Categories: []string{"fast"}},
 		{Class: "B", Method: "b", Categories: []string{"slow", "net"}},
 		{Class: "C", Method: "c"},

@@ -1,7 +1,9 @@
 package action
 
+import "github.com/fsuhrau/automationhub/device/appproto"
+
 type Interface interface {
-	GetActionType() ActionType
+	GetActionType() appproto.ActionType
 	Serialize() ([]byte, error)
-	ProcessResponse(response *Response) error
+	ProcessResponse(response *appproto.Response) error
 }

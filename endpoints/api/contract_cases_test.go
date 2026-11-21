@@ -2,7 +2,7 @@ package api_test
 
 import (
 	"github.com/fsuhrau/automationhub/authentication"
-	"github.com/fsuhrau/automationhub/endpoints/api/apitest"
+	"github.com/fsuhrau/automationhub/internal/apitest"
 	"github.com/fsuhrau/automationhub/internal/testkit"
 )
 

@@ -5,6 +5,7 @@ package networking
 import (
 	flatbuffers "github.com/google/flatbuffers/go"
 )
+
 type Node struct {
 	_tab flatbuffers.Table
 }
@@ -12,7 +13,7 @@ type Node struct {
 func GetRootAsNode(buf []byte, offset flatbuffers.UOffsetT) *Node {
 	n := flatbuffers.GetUOffsetT(buf[offset:])
 	x := &Node{}
-	x.Init(buf, n + offset)
+	x.Init(buf, n+offset)
 	return x
 }
 
@@ -107,9 +108,9 @@ func (rcv *Node) Children(obj *Node, j int) bool {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
 		x = rcv._tab.Indirect(x)
-	if obj == nil {
-		obj = new(Node)
-	}
+		if obj == nil {
+			obj = new(Node)
+		}
 		obj.Init(rcv._tab.Bytes, x)
 		return true
 	}
@@ -125,17 +126,34 @@ func (rcv *Node) ChildrenLength() int {
 }
 
 func NodeStart(builder *flatbuffers.Builder) { builder.StartObject(11) }
-func NodeAddClass(builder *flatbuffers.Builder, Class flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(Class), 0) }
+func NodeAddClass(builder *flatbuffers.Builder, Class flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(Class), 0)
+}
 func NodeAddID(builder *flatbuffers.Builder, ID int32) { builder.PrependInt32Slot(1, ID, 0) }
-func NodeAddName(builder *flatbuffers.Builder, Name flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(2, flatbuffers.UOffsetT(Name), 0) }
-func NodeAddCSS(builder *flatbuffers.Builder, CSS flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(CSS), 0) }
+func NodeAddName(builder *flatbuffers.Builder, Name flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(2, flatbuffers.UOffsetT(Name), 0)
+}
+func NodeAddCSS(builder *flatbuffers.Builder, CSS flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(CSS), 0)
+}
 func NodeAddX(builder *flatbuffers.Builder, X int32) { builder.PrependInt32Slot(4, X, 0) }
 func NodeAddY(builder *flatbuffers.Builder, Y int32) { builder.PrependInt32Slot(5, Y, 0) }
-func NodeAddRectangleX(builder *flatbuffers.Builder, RectangleX int32) { builder.PrependInt32Slot(6, RectangleX, 0) }
-func NodeAddRectangleY(builder *flatbuffers.Builder, RectangleY int32) { builder.PrependInt32Slot(7, RectangleY, 0) }
-func NodeAddIsVisible(builder *flatbuffers.Builder, IsVisible byte) { builder.PrependByteSlot(8, IsVisible, 0) }
-func NodeAddLabelText(builder *flatbuffers.Builder, LabelText flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(9, flatbuffers.UOffsetT(LabelText), 0) }
-func NodeAddChildren(builder *flatbuffers.Builder, Children flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(10, flatbuffers.UOffsetT(Children), 0) }
-func NodeStartChildrenVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(4, numElems, 4)
+func NodeAddRectangleX(builder *flatbuffers.Builder, RectangleX int32) {
+	builder.PrependInt32Slot(6, RectangleX, 0)
+}
+func NodeAddRectangleY(builder *flatbuffers.Builder, RectangleY int32) {
+	builder.PrependInt32Slot(7, RectangleY, 0)
+}
+func NodeAddIsVisible(builder *flatbuffers.Builder, IsVisible byte) {
+	builder.PrependByteSlot(8, IsVisible, 0)
+}
+func NodeAddLabelText(builder *flatbuffers.Builder, LabelText flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(9, flatbuffers.UOffsetT(LabelText), 0)
+}
+func NodeAddChildren(builder *flatbuffers.Builder, Children flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(10, flatbuffers.UOffsetT(Children), 0)
+}
+func NodeStartChildrenVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
+	return builder.StartVector(4, numElems, 4)
 }
 func NodeEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT { return builder.EndObject() }

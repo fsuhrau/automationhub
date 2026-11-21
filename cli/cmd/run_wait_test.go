@@ -7,11 +7,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	sse "github.com/r3labs/sse/v2"
 )
 
 func TestAwaitRun(t *testing.T) {
-	finished := func(data string) map[string][]*sseEvent {
-		return map[string][]*sseEvent{"test_run_5_finished": {{Data: []byte(data)}}}
+	finished := func(data string) map[string][]*sse.Event {
+		return map[string][]*sse.Event{"test_run_5_finished": {{Data: []byte(data)}}}
 	}
 	boom := errors.New("refused")
 	tests := map[string]struct {
@@ -41,7 +43,7 @@ func TestAwaitRun(t *testing.T) {
 }
 
 func TestAwaitRunPrintsTheLogEntries(t *testing.T) {
-	stream := fakeStream{events: map[string][]*sseEvent{
+	stream := fakeStream{events: map[string][]*sse.Event{
 		"test_run_5_log":      {{Data: []byte(`{"testRunId":5,"entry":"step"}`)}, {Data: []byte(`not json`)}},
 		"test_run_5_finished": {},
 	}}
@@ -76,7 +78,7 @@ func TestSSEStreamFailsAfterTheRetriesWhenTheHubHasNoStream(t *testing.T) {
 	hub := newFakeHub(t)
 	stream := sseStream{apiURL: hub.URL, delay: time.Millisecond}
 
-	err := stream.Subscribe(context.Background(), "unknown", make(chan *sseEvent))
+	err := stream.Subscribe(context.Background(), "unknown", make(chan *sse.Event))
 
 	if err == nil {
 		t.Error("subscribed to a stream that does not exist")

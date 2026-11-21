@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"errors"
-	"net"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fsuhrau/automationhub/config"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
@@ -45,55 +43,19 @@ func TestLoadServiceConfigFailsOnAWrongType(t *testing.T) {
 	}
 }
 
-func TestGetHostIP(t *testing.T) {
-	tests := map[string]struct {
-		hostIP string
-		want   string
-	}{
-		"configured": {"10.1.2.3", "10.1.2.3"},
+func TestLoadServiceConfigFillsTheFoldersBelowHome(t *testing.T) {
+	resetViper(t)
+	t.Setenv("HOME", "/home/hub")
+	viper.Set("paths.test_data", "/data")
+
+	cfg, err := loadServiceConfig()
+
+	want := config.Paths{
+		AppStore: filepath.Join("/home/hub", ".automationhub", "store"),
+		Bundles:  filepath.Join("/home/hub", ".automationhub", "bundles"),
+		TestData: "/data",
 	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := getHostIP(config.Service{HostIP: tc.hostIP}); got.String() != tc.want {
-				t.Errorf("got %v, want %v", got, tc.want)
-			}
-		})
-	}
-}
-
-func TestGetHostIPFallsBackToTheOutboundIP(t *testing.T) {
-	for name, hostIP := range map[string]string{"empty": "", "invalid": "nope"} {
-		t.Run(name, func(t *testing.T) {
-			if got := getHostIP(config.Service{HostIP: hostIP}); net.IP(got) == nil {
-				t.Error("no ip")
-			}
-		})
-	}
-}
-
-type fakeEndpoint struct{}
-
-func (fakeEndpoint) RegisterRoutes(*gin.Engine, *gin.RouterGroup) error { return nil }
-
-func TestAddEndpointsRegistersInOrder(t *testing.T) {
-	adder := &fakeEndpointAdder{}
-
-	if err := addEndpoints(adder, fakeEndpoint{}, fakeEndpoint{}); err != nil {
-		t.Fatal(err)
-	}
-
-	if len(adder.added) != 2 {
-		t.Errorf("added = %d", len(adder.added))
-	}
-}
-
-func TestAddEndpointsStopsAtTheFirstFailure(t *testing.T) {
-	boom := errors.New("boom")
-	adder := &fakeEndpointAdder{fail: boom}
-
-	err := addEndpoints(adder, fakeEndpoint{}, fakeEndpoint{})
-
-	if !errors.Is(err, boom) || len(adder.added) != 0 {
-		t.Errorf("err = %v, added = %d", err, len(adder.added))
+	if err != nil || cfg.Paths != want {
+		t.Errorf("paths = %+v, err = %v", cfg.Paths, err)
 	}
 }

@@ -17,29 +17,43 @@ import (
 // ErrNotFound means no aapt was found on PATH or in an SDK.
 var ErrNotFound = errors.New("aapt not found: put the Android SDK build-tools on PATH or set ANDROID_HOME")
 
-// lookPath and environment are replaced in tests.
-var (
-	lookPath = exec.LookPath
-	getenv   = os.Getenv
-	goos     = runtime.GOOS
-)
+// Finder looks for aapt on a machine; its fields are the machine, so tests
+// can replace them.
+type Finder struct {
+	// LookPath finds a program on PATH.
+	LookPath func(name string) (string, error)
+	// Getenv reads an environment variable.
+	Getenv func(key string) string
+	// GOOS names the operating system.
+	GOOS string
+}
+
+// SystemFinder looks on this machine.
+func SystemFinder() Finder {
+	return Finder{LookPath: exec.LookPath, Getenv: os.Getenv, GOOS: runtime.GOOS}
+}
 
 // AAPT returns the aapt to run for "dump badging": aapt from PATH, else from
 // the newest build-tools of $ANDROID_HOME, $ANDROID_SDK_ROOT or the default
 // SDK location. aapt2 is used where aapt is missing; its "dump badging"
 // prints the same format.
 func AAPT() (string, error) {
+	return SystemFinder().AAPT()
+}
+
+// AAPT is the package-level AAPT on the machine of the finder.
+func (f Finder) AAPT() (string, error) {
 	for _, name := range []string{"aapt", "aapt2"} {
-		if p, err := lookPath(name); err == nil {
+		if p, err := f.LookPath(name); err == nil {
 			return p, nil
 		}
 	}
 	var searched []string
-	for _, sdk := range sdkRoots() {
+	for _, sdk := range f.sdkRoots() {
 		for _, dir := range buildTools(sdk) {
 			for _, name := range []string{"aapt", "aapt2"} {
 				p := filepath.Join(dir, name)
-				if isExecutable(p) {
+				if f.isExecutable(p) {
 					return p, nil
 				}
 			}
@@ -53,7 +67,7 @@ func AAPT() (string, error) {
 }
 
 // sdkRoots lists the SDK folders to search, in order, without duplicates.
-func sdkRoots() []string {
+func (f Finder) sdkRoots() []string {
 	var roots []string
 	add := func(dir string) {
 		if dir == "" {
@@ -66,14 +80,14 @@ func sdkRoots() []string {
 		}
 		roots = append(roots, dir)
 	}
-	add(getenv("ANDROID_HOME"))
-	add(getenv("ANDROID_SDK_ROOT"))
-	if home := getenv("HOME"); home != "" {
-		switch goos {
+	add(f.Getenv("ANDROID_HOME"))
+	add(f.Getenv("ANDROID_SDK_ROOT"))
+	if home := f.Getenv("HOME"); home != "" {
+		switch f.GOOS {
 		case "darwin":
 			add(filepath.Join(home, "Library", "Android", "sdk"))
 		case "windows":
-			add(filepath.Join(getenv("LOCALAPPDATA"), "Android", "Sdk"))
+			add(filepath.Join(f.Getenv("LOCALAPPDATA"), "Android", "Sdk"))
 		default:
 			add(filepath.Join(home, "Android", "Sdk"))
 		}
@@ -137,12 +151,12 @@ func parseVersion(v string) ([]int, string) {
 	return nums, pre
 }
 
-func isExecutable(path string) bool {
+func (f Finder) isExecutable(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
 		return false
 	}
-	if goos == "windows" {
+	if f.GOOS == "windows" {
 		return true
 	}
 	return info.Mode().Perm()&0o111 != 0

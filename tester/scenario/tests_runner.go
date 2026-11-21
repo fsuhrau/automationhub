@@ -6,12 +6,9 @@ import (
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/fsuhrau/automationhub/tester/base"
-	"gorm.io/gorm"
 )
 
 // strategy is the scenario part of the pipeline.
@@ -29,15 +26,6 @@ func NewWithDeps(deps base.Deps) tester.Interface {
 	return base.NewRunner(deps, models.TestTypeScenario, func(r *base.Runner) base.Strategy {
 		return &strategy{runner: r}
 	})
-}
-
-// New builds the runner of scenarios.
-//
-// Deprecated: use NewWithDeps (G34 switches callers)
-//
-//nolint:revive // the signature is fixed by its callers until they use NewWithDeps
-func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, _ sse.Publisher, projectId string, appId uint) tester.Interface {
-	return NewWithDeps(base.Deps{DB: db, NodeURL: nodeUrl, Devices: deviceManager, ProjectID: projectId, AppID: appId})
 }
 
 // TestList returns the tests the config lists next to the steps; a scenario

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/hub/manager"
 	"github.com/fsuhrau/automationhub/tester/protocol"
@@ -17,7 +18,7 @@ type testExecutor struct {
 	devicesManager manager.Devices
 	finishOnce     gosync.Once
 	wg             sync.ExtendedWaitGroup
-	actionHandler  map[action.ActionType]func(device.Device, *action.Response)
+	actionHandler  map[appproto.ActionType]func(device.Device, *appproto.Response)
 	protocolWriter *protocol.ProtocolWriter
 }
 
@@ -26,14 +27,14 @@ func NewExecutor(devices manager.Devices, protocolWriter *protocol.ProtocolWrite
 		devicesManager: devices,
 		protocolWriter: protocolWriter,
 	}
-	executor.actionHandler = map[action.ActionType]func(device.Device, *action.Response){
-		action.ActionType_ExecuteTest:           executor.handleExecuteTest,
-		action.ActionType_ExecutionResult:       executor.handleExecutionResult,
-		action.ActionType_Performance:           executor.handlePerformance,
-		action.ActionType_NativeScript:          executor.handleNativeScript,
-		action.ActionType_Log:                   executor.handleLog,
-		action.ActionType_ExecuteMethodStart:    executor.handleTestMethodStart,
-		action.ActionType_ExecuteMethodFinished: executor.handleTestMethodFinished,
+	executor.actionHandler = map[appproto.ActionType]func(device.Device, *appproto.Response){
+		appproto.ActionType_ExecuteTest:           executor.handleExecuteTest,
+		appproto.ActionType_ExecutionResult:       executor.handleExecutionResult,
+		appproto.ActionType_Performance:           executor.handlePerformance,
+		appproto.ActionType_NativeScript:          executor.handleNativeScript,
+		appproto.ActionType_Log:                   executor.handleLog,
+		appproto.ActionType_ExecuteMethodStart:    executor.handleTestMethodStart,
+		appproto.ActionType_ExecuteMethodFinished: executor.handleTestMethodFinished,
 	}
 	return executor
 }
@@ -71,7 +72,7 @@ func (e *testExecutor) finish() {
 	e.finishOnce.Do(e.wg.Done)
 }
 
-func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handleExecuteTest(dev device.Device, response *appproto.Response) {
 	if response.Success {
 		dev.Log("testrunner", fmt.Sprintf("Timeout: %d", response.Payload.TestDetails.Timeout))
 		dev.Log("testrunner", fmt.Sprintf("Categories: %v", response.Payload.TestDetails.Categories))
@@ -84,7 +85,7 @@ func (tr *testExecutor) handleExecuteTest(dev device.Device, response *action.Re
 	}
 }
 
-func (tr *testExecutor) handleExecutionResult(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handleExecutionResult(dev device.Device, response *appproto.Response) {
 	if response.Success {
 		dev.Log("testrunner", "Test finished successfully")
 	} else {
@@ -97,7 +98,7 @@ func (tr *testExecutor) handleExecutionResult(dev device.Device, response *actio
 	tr.finish()
 }
 
-func (tr *testExecutor) handleTestMethodStart(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handleTestMethodStart(dev device.Device, response *appproto.Response) {
 	if response.Success {
 		writer := dev.GetLogWriter()
 		subProtocol, err := tr.protocolWriter.NewSubProtocol(response.Payload.TestDetails.Test, writer)
@@ -121,7 +122,7 @@ func (tr *testExecutor) handleTestMethodStart(dev device.Device, response *actio
 	}
 }
 
-func (tr *testExecutor) handleTestMethodFinished(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handleTestMethodFinished(dev device.Device, response *appproto.Response) {
 
 	if response.Success {
 		dev.Log("testrunner", fmt.Sprintf("Test %s Passed", response.Payload.TestDetails.Test))
@@ -136,11 +137,11 @@ func (tr *testExecutor) handleTestMethodFinished(dev device.Device, response *ac
 	}
 }
 
-func (tr *testExecutor) handlePerformance(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handlePerformance(dev device.Device, response *appproto.Response) {
 	dev.LogPerformance(response.Payload.PerformanceData.Checkpoint, response.Payload.PerformanceData.CPU, response.Payload.PerformanceData.FPS, response.Payload.PerformanceData.Memory, response.Payload.PerformanceData.VertexCount, response.Payload.PerformanceData.Triangles, "")
 }
 
-func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.Response) {
+func (tr *testExecutor) handleNativeScript(dev device.Device, response *appproto.Response) {
 	scripter, ok := device.As[device.NativeScripter](dev)
 	if !ok {
 		logrus.Warnf("native script skipped: device %s has no native scripts", dev.DeviceID())
@@ -149,13 +150,13 @@ func (tr *testExecutor) handleNativeScript(dev device.Device, response *action.R
 	go scripter.RunNativeScript(*response.Payload.Data)
 }
 
-func (tr *testExecutor) handleLog(dev device.Device, response *action.Response) {
-	if response.Payload.LogData.Level == action.LogLevel_Exception {
+func (tr *testExecutor) handleLog(dev device.Device, response *appproto.Response) {
+	if response.Payload.LogData.Level == appproto.LogLevel_Exception {
 		tr.finish()
 	}
 }
 
-func (tr *testExecutor) OnActionResponse(d interface{}, response *action.Response) {
+func (tr *testExecutor) OnActionResponse(d interface{}, response *appproto.Response) {
 	dev := d.(device.Device)
 	if response == nil {
 		tr.finish()

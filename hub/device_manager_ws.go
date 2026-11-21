@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
-	"github.com/fsuhrau/automationhub/hub/action"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -52,12 +52,12 @@ func (dm *DeviceManager) handleConnection(conn *websocket.Conn) {
 	dm.attachConnection(dev, conn, connect)
 }
 
-func readHandshake(conn *websocket.Conn) (*action.Connect, error) {
+func readHandshake(conn *websocket.Conn) (*appproto.Connect, error) {
 	_, buffer, err := conn.ReadMessage()
 	if err != nil {
 		return nil, err
 	}
-	resp := &action.Response{}
+	resp := &appproto.Response{}
 	if err := json.Unmarshal(buffer, resp); err != nil {
 		return nil, fmt.Errorf("handshake: %w", err)
 	}
@@ -67,13 +67,13 @@ func readHandshake(conn *websocket.Conn) (*action.Connect, error) {
 	return resp.Payload.Connect, nil
 }
 
-func (dm *DeviceManager) attachConnection(dev device.Device, conn *websocket.Conn, connect *action.Connect) {
+func (dm *DeviceManager) attachConnection(dev device.Device, conn *websocket.Conn, connect *appproto.Connect) {
 	connection := &device.Connection{
 		ConnectionParameter: connect,
 		Logger:              dm.log,
 		Connection:          conn,
 		ResponseChannel:     make(chan device.ResponseData, 100),
-		ActionChannel:       make(chan action.Response, 1),
+		ActionChannel:       make(chan appproto.Response, 1),
 	}
 	ctx := dev.NewContext()
 	dev.SetConnection(connection)

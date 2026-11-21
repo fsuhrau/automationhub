@@ -51,7 +51,7 @@ func closeWithPassed(t *testing.T, passed ...bool) events.TestRunFinishedPayload
 	r := make(finishedRecorder, 4)
 	events.TestRunFinished.Register(r)
 
-	w := NewProtocolWriter(db, "p", 1, "t", &run)
+	w := NewProtocolWriter(db, RunTarget{ProjectID: "p", AppID: 1, TestName: "t", Run: &run})
 	for _, ok := range passed {
 		p, err := w.NewProtocol(dev, "Suite/A")
 		if err != nil {

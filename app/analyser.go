@@ -69,7 +69,7 @@ func hashFile(path string) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read only
 	hash := sha1.New()
 	n, err := io.Copy(hash, f)
 	if err != nil {

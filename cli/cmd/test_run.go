@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/cli/api"
-	apiv "github.com/fsuhrau/automationhub/endpoints/api"
+	runsapi "github.com/fsuhrau/automationhub/endpoints/api/runs"
 	"github.com/spf13/cobra"
 )
 
@@ -84,7 +84,7 @@ type execution struct {
 func (r *runCommand) execute(ctx context.Context, ex execution) error {
 	t, ref := ex.target, ex
 	r.printf("execute test %d with binaryId: %d\n%s", ref.testID, ref.binaryID, r.opts.params)
-	testRun, err := ex.client.ExecuteTest(ctx, ref.testID, apiv.RunTestRequest{AppBinaryID: ref.binaryID, Params: strings.ReplaceAll(r.opts.params, ";", "\n")})
+	testRun, err := ex.client.ExecuteTest(ctx, ref.testID, runsapi.StartRequest{AppBinaryID: ref.binaryID, Params: strings.ReplaceAll(r.opts.params, ";", "\n")})
 	if err != nil {
 		return err
 	}

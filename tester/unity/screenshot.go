@@ -10,7 +10,6 @@ import (
 
 	"github.com/fsuhrau/automationhub/device"
 	"github.com/fsuhrau/automationhub/hub/action"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	tester_action "github.com/fsuhrau/automationhub/tester/action"
 )
 
@@ -25,7 +24,7 @@ func (s *strategy) captureScreenShot(ctx context.Context, tc testCase) {
 	}
 	nameData := []byte(fmt.Sprintf("%d%s%s%s", time.Now().UnixNano(), s.runner.TestRun.SessionID, tc.dev.Device.DeviceID(), tc.task.Method))
 	fileName := fmt.Sprintf("%x.png", sha1.Sum(nameData))
-	if err := os.WriteFile(filepath.Join(apps.TestDataPath, fileName), data, os.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(s.runner.DataDir, fileName), data, os.ModePerm); err != nil {
 		s.runner.LogError("Save screenshot failed: %v", err)
 		return
 	}
@@ -49,7 +48,7 @@ func (s *strategy) screenshot(ctx context.Context, tc testCase) []byte {
 		return data
 	}
 	var get action.GetScreenshot
-	if err := tester_action.NewExecutor(s.runner.Devices).Execute(ctx, tc.dev.Device, &get, screenshotTimeout); err != nil {
+	if err := tester_action.NewExecutor(s.runner.Devices).Execute(ctx, tester_action.Call{Device: tc.dev.Device, Action: &get, Timeout: screenshotTimeout}); err != nil {
 		s.runner.LogError("Take screenshot failed: %v", err)
 		return nil
 	}

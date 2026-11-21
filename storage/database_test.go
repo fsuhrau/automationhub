@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -38,7 +39,7 @@ func TestMigrateAddsPersonalTokenColumns(t *testing.T) {
 	sqlDB, _ := old.DB()
 	_ = sqlDB.Close()
 
-	db, err := GetDB(config.Database{SQLite: &config.SQLite{Path: path}})
+	db, err := Open(config.Database{SQLite: &config.SQLite{Path: path}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +84,7 @@ func TestMigrateAddsBundleInfo(t *testing.T) {
 	sqlDB, _ := old.DB()
 	_ = sqlDB.Close()
 
-	conn, err := GetDB(config.Database{SQLite: &config.SQLite{Path: path}})
+	conn, err := Open(config.Database{SQLite: &config.SQLite{Path: path}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +130,7 @@ func TestMigrateAddsSessionRecording(t *testing.T) {
 	sqlDB, _ := old.DB()
 	_ = sqlDB.Close()
 
-	conn, err := GetDB(config.Database{SQLite: &config.SQLite{Path: path}})
+	conn, err := Open(config.Database{SQLite: &config.SQLite{Path: path}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,5 +225,21 @@ func TestOpenErrors(t *testing.T) {
 				t.Fatalf("db=%v err=%v, want error", db, err)
 			}
 		})
+	}
+}
+
+// Open translates a duplicate key into gorm.ErrDuplicatedKey, which
+// storeerr.Map turns into a conflict (409) instead of an internal error.
+func TestOpenTranslatesADuplicateKey(t *testing.T) {
+	db, err := Open(config.Database{SQLite: &config.SQLite{Path: filepath.Join(t.TempDir(), "hub.db")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.Create(&models.Node{Identifier: "n1", Name: "one"})
+
+	err = db.Create(&models.Node{Identifier: "n1", Name: "two"}).Error
+
+	if !errors.Is(err, gorm.ErrDuplicatedKey) {
+		t.Fatalf("err = %v, want gorm.ErrDuplicatedKey", err)
 	}
 }

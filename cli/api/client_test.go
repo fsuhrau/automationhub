@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fsuhrau/automationhub/endpoints/api"
+	runsapi "github.com/fsuhrau/automationhub/endpoints/api/runs"
 	"github.com/fsuhrau/automationhub/storage/models"
 )
 
@@ -59,7 +59,7 @@ func TestGetTests(t *testing.T) {
 func TestExecuteTestSendsTheRequestAndReturnsTheRun(t *testing.T) {
 	c, got := hubServer(t, http.StatusOK, `{"ID":42}`)
 
-	run, err := c.ExecuteTest(context.Background(), 3, api.RunTestRequest{AppBinaryID: 50, Params: "a=1\nb=2"})
+	run, err := c.ExecuteTest(context.Background(), 3, runsapi.StartRequest{AppBinaryID: 50, Params: "a=1\nb=2"})
 
 	if err != nil || run.ID != 42 {
 		t.Fatalf("run = %+v, err = %v", run, err)
@@ -158,7 +158,7 @@ func TestRequestFailures(t *testing.T) {
 func TestExecuteTestReturnsTheError(t *testing.T) {
 	c, _ := hubServer(t, http.StatusNotFound, `{"message":"no such test"}`)
 
-	if _, err := c.ExecuteTest(context.Background(), 1, api.RunTestRequest{}); err == nil || err.Error() != "no such test" {
+	if _, err := c.ExecuteTest(context.Background(), 1, runsapi.StartRequest{}); err == nil || err.Error() != "no such test" {
 		t.Errorf("err = %v", err)
 	}
 }

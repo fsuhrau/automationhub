@@ -13,7 +13,6 @@ import (
 	"github.com/fsuhrau/automationhub/device/remote"
 	"github.com/fsuhrau/automationhub/modules/webdriver"
 	"github.com/fsuhrau/automationhub/storage"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -65,15 +64,6 @@ type Handler struct {
 
 	notifyChange func() // set by the device manager, may be nil
 	tracking     atomic.Bool
-}
-
-// NewHandler creates the handler with the go-ios and xcodebuild defaults. It
-// adds the hook that reads the WebDriverAgent URL from the go-ios log output to
-// the standard logger; use NewHandlerWithDeps to wire the hook yourself.
-func NewHandler(cfg config.Manager, ds storage.Device) *Handler {
-	hook := &webdriver.WDAConnectHook{}
-	logrus.AddHook(hook)
-	return NewHandlerWithDeps(cfg, ds, Deps{Hook: hook})
 }
 
 // NewHandlerWithDeps creates the handler with its collaborators, see Deps. It

@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/fsuhrau/automationhub/device"
+	"github.com/fsuhrau/automationhub/device/appproto"
 	"github.com/fsuhrau/automationhub/events"
 	"github.com/fsuhrau/automationhub/hub/action"
 	"github.com/fsuhrau/automationhub/internal/testkit"
-	"github.com/fsuhrau/automationhub/storage/apps"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester/base"
 	"gorm.io/gorm"
@@ -24,7 +24,7 @@ import (
 type AppManager struct {
 	testkit.FakeDeviceManager
 	// Tests is what the app answers to TestsGet.
-	Tests []action.Test
+	Tests []appproto.Test
 	// TestPassed is the result the app reports for a started test.
 	TestPassed bool
 	// Screenshot is what the app answers to GetScreenshot.
@@ -44,16 +44,16 @@ func (m *AppManager) SendAction(d device.Device, a action.Interface) error {
 	return nil
 }
 
-func (m *AppManager) answer(a action.Interface) *action.Response {
-	resp := &action.Response{ActionType: a.GetActionType(), Success: true}
+func (m *AppManager) answer(a action.Interface) *appproto.Response {
+	resp := &appproto.Response{ActionType: a.GetActionType(), Success: true}
 	switch a.GetActionType() {
-	case action.ActionType_GetTests:
-		resp.Payload.Tests = &action.Tests{Tests: m.Tests}
-	case action.ActionType_ExecuteTest:
-		resp.ActionType = action.ActionType_ExecutionResult
+	case appproto.ActionType_GetTests:
+		resp.Payload.Tests = &appproto.Tests{Tests: m.Tests}
+	case appproto.ActionType_ExecuteTest:
+		resp.ActionType = appproto.ActionType_ExecutionResult
 		resp.Success = m.TestPassed
-	case action.ActionType_GetScreenshot:
-		resp.Payload.Screenshot = &action.Screenshot{Screenshot: m.Screenshot}
+	case appproto.ActionType_GetScreenshot:
+		resp.Payload.Screenshot = &appproto.Screenshot{Screenshot: m.Screenshot}
 	default:
 		return nil
 	}
@@ -82,7 +82,6 @@ type Setup struct {
 func NewSetup(t *testing.T, n int) *Setup {
 	t.Helper()
 	db := testkit.DB(t)
-	setDataPath(t, t.TempDir())
 	project := testkit.Project(db)
 	appModel := testkit.App(db, func(m *models.App) { m.ProjectID = project.ID })
 	test := testkit.Test(db, func(m *models.Test) { m.AppID = appModel.ID })
@@ -99,17 +98,11 @@ func NewSetup(t *testing.T, n int) *Setup {
 		s.Manager.Add("fake", fake)
 	}
 	s.Deps = base.Deps{
+		DataDir: t.TempDir(), StoreDir: t.TempDir(),
 		DB: db, Devices: s.Manager, NodeURL: "node", ProjectID: project.Identifier, AppID: appModel.ID,
 		Timeouts: base.Timeouts{Poll: time.Millisecond, Start: 200 * time.Millisecond, Cancel: time.Second},
 	}
 	return s
-}
-
-func setDataPath(t *testing.T, dir string) {
-	t.Helper()
-	old := apps.TestDataPath
-	apps.TestDataPath = dir
-	t.Cleanup(func() { apps.TestDataPath = old })
 }
 
 // finishTimeout is how long a test waits for a run to finish.

@@ -6,12 +6,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/fsuhrau/automationhub/hub/manager"
-	"github.com/fsuhrau/automationhub/hub/sse"
 	"github.com/fsuhrau/automationhub/storage/models"
 	"github.com/fsuhrau/automationhub/tester"
 	"github.com/fsuhrau/automationhub/tester/base"
-	"gorm.io/gorm"
 )
 
 const (
@@ -33,15 +30,6 @@ func NewWithDeps(deps base.Deps) tester.Interface {
 	return base.NewRunner(deps, models.TestTypeUnity, func(r *base.Runner) base.Strategy {
 		return &strategy{runner: r}
 	})
-}
-
-// New builds the runner of unity tests.
-//
-// Deprecated: use NewWithDeps (G34 switches callers)
-//
-//nolint:revive // the signature is fixed by its callers until they use NewWithDeps
-func New(db *gorm.DB, nodeUrl string, deviceManager manager.Devices, _ sse.Publisher, projectId string, appId uint) tester.Interface {
-	return NewWithDeps(base.Deps{DB: db, NodeURL: nodeUrl, Devices: deviceManager, ProjectID: projectId, AppID: appId})
 }
 
 // TestList returns the tests the app lists or the config names.

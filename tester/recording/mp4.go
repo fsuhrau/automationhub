@@ -126,7 +126,7 @@ func (w *mp4Writer) lastDuration() int64 {
 
 // Close writes the sample tables and closes the file.
 func (w *mp4Writer) Close() error {
-	defer w.f.Close()
+	defer func() { _ = w.f.Close() }()
 	if len(w.samples) == 0 {
 		return errors.New("no samples")
 	}
